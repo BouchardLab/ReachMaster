@@ -1,2 +1,2 @@
-# Rat_Reaching_Project
+# rat_reaching_project
 Temporary description
