@@ -18,5 +18,5 @@ with open(path.join(here, 'README.md'), encoding='utf-8') as f:
 
 setup(
     name='reach_master',
-    description='Temp.',
+    description='experiment control gui.',
     long_description=long_description)

@@ -6,8 +6,8 @@ import cv2
 import PIL.Image, PIL.ImageTk
 # import cam_func.camera_start_acq as csa
 from ximea import xiapi
-import cam_Buffer.ImageTuple as imgTup
-import cam_Buffer.serializeBuffer as serBuf
+import reach_master.camera_utilities.ImageTuple as imgTup
+import reach_master.camera_utilities.serializeBuffer as serBuf
 import time
 import datetime
 import numpy as np
