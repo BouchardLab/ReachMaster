@@ -1,2 +1,2 @@
 # rat_reaching_project
-Temporary description.
+Control software for rat reaching rig, robot calibration, data postprcessing, etc.
