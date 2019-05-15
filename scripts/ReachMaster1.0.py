@@ -509,6 +509,7 @@ class CameraSettings:
         self.removePOIs = False
         self.addedPOIs = [[] for _ in range(numCams)]
         self.savedPOIs = [[] for _ in range(numCams)] 
+        self.capture = False
         self.setup_UI()
 
     def onQuit(self):
@@ -575,17 +576,18 @@ class CameraSettings:
         self.gpoModeMenu.grid(row=5, column=1)
         tk.Label(self.window,text="Image Buffer (sec):", font='Arial 10 bold', bg="white",width=23,anchor="e").grid(row=6, sticky='W')   
         tk.Entry(self.window,textvariable=self.bufferDur,width=17).grid(row=6, column=1)
-        tk.Button(self.window,text="Start Streaming",font='Arial 10 bold',width=14,command=self.startStreamCallback).grid(row=7, column=0,sticky="e")
-        tk.Button(self.window,text="Stop Streaming",font='Arial 10 bold',width=14,command=self.stopStreamCallback).grid(row=8, column=0,sticky="e")
-        tk.Button(self.window,text="Load POIs",font='Arial 10 bold',width=14,command=self.loadPOIsCallback).grid(row=7, column=1)
-        tk.Button(self.window,text="Save POIs",font='Arial 10 bold',width=14,command=self.savePOIsCallback).grid(row=8, column=1)
-        tk.Button(self.window,text="Add POIs",font='Arial 10 bold',width=14,command=self.addPOIsCallback).grid(row=7, column=2)
-        tk.Button(self.window,text="Remove POIs",font='Arial 10 bold',width=14,command=self.removePOIsCallback).grid(row=8, column=2)
-        tk.Label(self.window,text="Acquire Baseline (sec):", font='Arial 10 bold', bg="white",width=23,anchor="e").grid(row=9, sticky='W')   
-        tk.Entry(self.window,textvariable=self.baselineDur,width=17).grid(row=9, column=1)
-        tk.Button(self.window,text="Start",font='Arial 10 bold',width=14,command=self.baselineCallback).grid(row=9, column=2)
-        tk.Label(self.window,text="POI Threshold (stdev):", font='Arial 10 bold', bg="white",width=23,anchor="e").grid(row=10, sticky='W')   
-        tk.Entry(self.window,textvariable=self.poiThreshold,width=17).grid(row=10, column=1)
+        tk.Label(self.window,text="POI Threshold (stdev):", font='Arial 10 bold', bg="white",width=23,anchor="e").grid(row=7, sticky='W')   
+        tk.Entry(self.window,textvariable=self.poiThreshold,width=17).grid(row=7, column=1)
+        tk.Button(self.window,text="Start Streaming",font='Arial 10 bold',width=14,command=self.startStreamCallback).grid(row=8, column=0,sticky="e")
+        tk.Button(self.window,text="Stop Streaming",font='Arial 10 bold',width=14,command=self.stopStreamCallback).grid(row=9, column=0,sticky="e")
+        tk.Button(self.window,text="Load POIs",font='Arial 10 bold',width=14,command=self.loadPOIsCallback).grid(row=8, column=1)
+        tk.Button(self.window,text="Save POIs",font='Arial 10 bold',width=14,command=self.savePOIsCallback).grid(row=9, column=1)
+        tk.Button(self.window,text="Add POIs",font='Arial 10 bold',width=14,command=self.addPOIsCallback).grid(row=8, column=2)
+        tk.Button(self.window,text="Remove POIs",font='Arial 10 bold',width=14,command=self.removePOIsCallback).grid(row=9, column=2)
+        tk.Button(self.window,text="Capture Image",font='Arial 10 bold',width=14,command=self.captureImgCallback).grid(row=10, column=1)
+        tk.Label(self.window,text="Acquire Baseline (sec):", font='Arial 10 bold', bg="white",width=23,anchor="e").grid(row=11, sticky='W')   
+        tk.Entry(self.window,textvariable=self.baselineDur,width=17).grid(row=11, column=1)
+        tk.Button(self.window,text="Start",font='Arial 10 bold',width=14,command=self.baselineCallback).grid(row=11, column=2)
 
     def startStreamCallback(self):
         if not self.streamStarted:
@@ -644,7 +646,7 @@ class CameraSettings:
         if not self.streamStarted:
             self.imgWidth = self.camList[0].get_width()
             self.imgHeight = self.camList[0].get_height()
-            self.camWindows = [0,0]
+            self.camWindows = [0 for _ in range(numCams)]
             for i in range(numCams):
                 self.camWindows[i] = tk.Toplevel(self.window)
                 self.camWindows[i].title("Camera"+str(i))
@@ -669,7 +671,7 @@ class CameraSettings:
         if self.streaming:
             npImg = np.zeros(shape = (self.imgHeight, self.imgWidth)) 
             img = xiapi.Image()
-            self.photoImg = [0,0]
+            self.photoImg = [0 for _ in range(numCams)]
             for i in range(numCams):
                 self.camList[i].get_image(img,timeout = 2000)
                 npImg = img.get_image_data_numpy()
@@ -740,6 +742,12 @@ class CameraSettings:
                     if np.sqrt((event.x-poi[0])**2+(event.y-poi[1])**2)>5:
                         tmp.append(poi)
                 self.addedPOIs[camid] = tmp
+
+    def captureImgCallback(self):
+    	if self.streaming:
+    		self.capture = True
+    	else: 
+    		tkMessageBox.showinfo("Warning", "Must be streaming to capture images.")
 
     def baselineCallback(self):
         if len(savedPOIs)==0:
