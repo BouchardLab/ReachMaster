@@ -1,2 +1,2 @@
-# rat_reaching_project
+# rat_reaching
 Control software for rat reaching rig, robot calibration, data preprcessing, analysis, etc.
