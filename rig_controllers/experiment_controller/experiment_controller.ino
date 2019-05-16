@@ -32,7 +32,7 @@ int inRewardWin = 0;               //1 if currently in the reward window
 int lickState = 0;                 //1 if IR beam is broken
 
 //lighting
-int totalPixels = 128 + 24;
+int totalPixels = 176;
 Adafruit_NeoPixel strip = Adafruit_NeoPixel(totalPixels, neoPin, NEO_RGBW + NEO_KHZ800);
 
 uint32_t pureWhite = strip.Color(0,0,0,100); //don't go over 200!!!!!!
@@ -211,6 +211,14 @@ void loop() {
             }
           }
           break;
+        case 't':
+          //trigger an image
+          if(!triggerOn){
+            digitalWrite(triggerPin,HIGH);
+            triggerInit = micros();
+            triggerOn = 1;
+          }
+          break; 
         case 'v':
           //PNS requested to change a variable
           Serial.println(newSerPNS);
@@ -233,7 +241,7 @@ void loop() {
           }else if(varName=="lightsOnDur"){
             lightsOnDur = Serial.parseInt();
           }
-          break;
+          break;                   
     }//end switch
 
     //check robot
@@ -317,7 +325,7 @@ void loop() {
 //      Serial.print(' ');  
 //      Serial.println(lickState);
         triggered = 0;
-    }else {
+    }else if(serPNS=='s') {
       //trigger images for baseline acquisition
       if(lightsOn && !triggerOn){
         serPNS = 'b';

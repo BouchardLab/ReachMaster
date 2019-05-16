@@ -52,6 +52,7 @@ expControlPath = '/dev/ttyACM0'
 robControlPath = '/dev/ttyACM1'
 serialBaud = 2000000
 controlTimeout = 5
+expController = []
 #experiment settings
 flushDur = 10000              #time to keep solenoid open during initial water flush
 solenoidOpenDur = 75          #time to keep solenoid open during single reward delivery
@@ -120,8 +121,8 @@ class ReachMaster:
         tk.Label(textvariable=self.paramFile, bg="white").grid(row=1, column=1)
         tk.Button(text="Browse", font='Arial 10 bold',width=14, command=self.pfBrowseCallback).grid(row=1, column=2)
         tk.Label(text="Experiment Controller:", font='Arial 10 bold', bg="white",width=22,anchor="e").grid(row=2, column=0)
-        self.expControllerMenu = apply(tk.OptionMenu, (self.window, self.expControlPath) + tuple(self.portList))
-        self.expControllerMenu.grid(row=2, column=1)
+        expControllerMenu = apply(tk.OptionMenu, (self.window, self.expControlPath) + tuple(self.portList))
+        expControllerMenu.grid(row=2, column=1)
         tk.Button(text="Connect", font='Arial 10 bold',width=14, command=self.expConnectCallback).grid(row=2, column=2)
         tk.Button(text="Disconnect", font='Arial 10 bold',width=14, command=self.expDisconnectCallback).grid(row=2, column=3)
         tk.Label(text="Robot Controller:", font='Arial 10 bold', bg="white",width=22,anchor="e").grid(row=3, column=0)
@@ -150,12 +151,13 @@ class ReachMaster:
 
     def expConnectCallback(self):
         global expControlPath
+        global expController
         expControlPath = self.expControlPath.get()
-        self.expController = serial.Serial(expControlPath,serialBaud,timeout=controlTimeout)
+        expController = serial.Serial(expControlPath,serialBaud,timeout=controlTimeout)
         time.sleep(2) #wait for controller to wake up
-        self.expController.flushInput()
-        self.expController.write("h")
-        response = self.expController.readline()
+        expController.flushInput()
+        expController.write("h")
+        response = expController.readline()
         if response:
             self.expControlOn = True
         else:
@@ -164,8 +166,8 @@ class ReachMaster:
     def expDisconnectCallback(self):
         if self.expControlOn:
             if not self.expActive:
-                self.expController.write("e")
-                self.expController.close()
+                expController.write("e")
+                expController.close()
             else:
                 tkMessageBox.showinfo("Warning", "Experiment is active! Not safe to disconnect.")
         else:
@@ -193,15 +195,18 @@ class ReachMaster:
 
     def camSetCallback(self):  
         if not self.expActive:
-            camSetRoot = tk.Toplevel(self.window)     
-            CameraSettings(camSetRoot)
+            if self.expControlOn:
+                camSetRoot = tk.Toplevel(self.window)     
+                CameraSettings(camSetRoot)
+            else:
+                tkMessageBox.showinfo("Warning", "Experiment controller not connected.")
         else:
             pass
 
     def expSetCallback(self):
         if self.expControlOn:
             expSetRoot = tk.Toplevel(self.window)     
-            ExperimentSettings(expSetRoot, self.expController)
+            ExperimentSettings(expSetRoot, expController)
         else:
             tkMessageBox.showinfo("Warning", "Experiment controller not connected.")
 
@@ -215,21 +220,21 @@ class ReachMaster:
     def movRobCallback(self):
         global lightsOn
         if self.expControlOn:
-            self.expController.write("m")
+            expController.write("m")
             lightsOn = 0
         else:
             tkMessageBox.showinfo("Warning", "Experiment controller not connected.")
 
     def ledCallback(self):
         if self.expControlOn:
-            self.expController.write("l")          
+            expController.write("l")          
         else:
             tkMessageBox.showinfo("Warning", "Experiment controller not connected.")
 
     def lightsCallback(self):
         global lightsOn
         if self.expControlOn:
-            self.expController.write("n")
+            expController.write("n")
             lightsOn = not lightsOn
             # if self.expActive and lightsOn:
             #     self.newline[2] = '1'
@@ -240,14 +245,14 @@ class ReachMaster:
 
     def waterCallback(self):
         if self.expControlOn:
-            self.expController.write("w")
+            expController.write("w")
         else:
             tkMessageBox.showinfo("Warning", "Experiment controller not connected.")
 
     def flushCallback(self):
         if self.expControlOn:
             if not self.expActive:
-                self.expController.write("f")
+                expController.write("f")
             else:
                 pass
         else:
@@ -286,11 +291,11 @@ class ReachMaster:
                         header = "time trial serPNS triggered inRewardWin zPOI"
                         self.outputfile.write(header + "\n")
                         self.writeControl = "b"         
-                        self.expController.write(self.writeControl)
-                        while not self.expController.in_waiting:
+                        expController.write(self.writeControl)
+                        while not expController.in_waiting:
                             pass
-                        self.newline = self.expController.readline().split()
-                        self.expController.flushInput()
+                        self.newline = expController.readline().split()
+                        expController.flushInput()
                         print('trials completed:')
                         print(self.newline[0])
                         self.expBegan = True
@@ -313,7 +318,7 @@ class ReachMaster:
     def pauseExpCallback(self):        
         if self.expActive:
             self.expActive = False
-            self.expController.write("p")
+            expController.write("p")
         else:
             tkMessageBox.showinfo("Warning", "No experiment to pause.")
 
@@ -321,8 +326,8 @@ class ReachMaster:
         if self.expActive:
             self.expActive = False
             self.expEnded = True
-            self.expController.write("e")
-            self.expController.close()
+            expController.write("e")
+            expController.close()
         else:
             tkMessageBox.showinfo("Warning", "No experiment to end.")
 
@@ -373,7 +378,7 @@ class ReachMaster:
                 baselinePOIs.append(np.zeros(shape = (len(savedPOIs[i]), numImgs)))
             print("Acquiring baseline...")
             for cnt in range(numImgs):
-                self.expController.write(self.writeControl)
+                expController.write(self.writeControl)
                 for i in range(numCams):
                     self.camList[i].get_image(self.img,timeout = 2000)
                     npImg = self.img.get_image_data_numpy()
@@ -406,11 +411,11 @@ class ReachMaster:
             lightsOn = 0
             for i in range(numCams):
                 zPOIs[i] = 0     
-        self.expController.write(self.writeControl) 
-        while not self.expController.in_waiting:
+        expController.write(self.writeControl) 
+        while not expController.in_waiting:
             pass 
-        self.newline = self.expController.readline() 
-        self.expController.flushInput()
+        self.newline = expController.readline() 
+        expController.flushInput()
         self.outputfile.write(now+" "+self.newline[0:-2:1]+" "+str(min(zPOIs))+"\n")
         self.newline = self.newline.split() 
         if self.newline[1] == 's' and min(zPOIs)>poiThreshold: 
@@ -441,8 +446,8 @@ class ReachMaster:
                             tkMessageBox.showinfo("Warning", "No image triggers detected.")
                 self.window.update()
             if self.expControlOn:
-                self.expController.write("e")
-                self.expController.close()
+                expController.write("e")
+                expController.close()
             if self.robControlOn:
                     self.robController.write("e")
                     self.robController.close()
@@ -454,8 +459,8 @@ class ReachMaster:
             answer = tkMessageBox.askyesnocancel("Question", "Save Workspace?")
             if answer == True:
                 if self.expControlOn:
-                    self.expController.write("e")
-                    self.expController.close()
+                    expController.write("e")
+                    expController.close()
                 if self.robControlOn:
                     self.robController.write("e")
                     self.robController.close()
@@ -466,8 +471,8 @@ class ReachMaster:
                 self.window.destroy()
             elif answer == False:
                 if self.expControlOn:
-                    self.expController.write("e")
-                    self.expController.close()
+                    expController.write("e")
+                    expController.close()
                 if self.robControlOn:
                     self.robController.write("e")
                     self.robController.close()
@@ -628,9 +633,11 @@ class CameraSettings:
             global offsetX
             global offsetY
             numCams = int(self.numCams.get())
-            fps = 30
+            fps = int(self.fps.get())
             exposure = int(self.exposure.get())
             gain = float(self.gain.get())   
+            trigger_source = self.trigger_source.get()
+            gpo_mode = self.gpo_mode.get()
             imgWidth = int(self.imgWidth.get())
             imgHeight = int(self.imgHeight.get())
             offsetX = int(self.offsetX.get())
@@ -652,23 +659,23 @@ class CameraSettings:
             cam = xiapi.Camera(dev_id = i)
             cam.open_device()
             cam.set_imgdataformat(imgdataformat)
-            cam.set_acq_timing_mode("XI_ACQ_TIMING_MODE_FRAME_RATE")
+            # cam.set_acq_timing_mode("XI_ACQ_TIMING_MODE_FRAME_RATE")
             cam.set_exposure(exposure)
             cam.set_gain(gain)
             cam.set_sensor_feature_value(sensor_feature_value)
             cam.set_gpi_selector(gpi_selector)
-            cam.set_gpi_mode("XI_GPI_OFF")
-            cam.set_trigger_source("XI_TRG_OFF")
+            cam.set_gpi_mode("XI_GPI_TRIGGER")
+            cam.set_trigger_source(trigger_source)
             cam.set_gpo_selector(gpo_selector)
             cam.set_gpo_mode(gpo_mode)
-            cam.set_framerate(fps)
+            # cam.set_framerate(fps)
             widthIncrement = cam.get_width_increment()
             heightIncrement = cam.get_height_increment()
             if (imgWidth%widthIncrement)!=0:
                 tkMessageBox.showinfo("Warning", "Image width not divisible by "+str(widthIncrement))
                 break
             elif (imgHeight%heightIncrement)!=0:
-                tkMessageBox.showinfo("Warning", "Image height not divisible by 2"+str(heightIncrement))
+                tkMessageBox.showinfo("Warning", "Image height not divisible by "+str(heightIncrement))
                 break
             elif (imgWidth+offsetX)>1280:
                 tkMessageBox.showinfo("Warning", "Image width + x offset > 1280") 
@@ -702,7 +709,7 @@ class CameraSettings:
                 self.camWindows[i].canvas = tk.Canvas(self.camWindows[i], width = imgWidth, height = imgHeight)
                 self.camWindows[i].canvas.grid(row=0,column= 0)            
             self.streamStarted = True
-        self.delay = 20
+        self.delay = int(np.round(1.0/float(fps)*1000.0))
         self.streaming = True
         self.refresh()
 
@@ -717,6 +724,7 @@ class CameraSettings:
 
     def refresh(self):
         if self.streaming:
+            expController.write("t")
             npImg = np.zeros(shape = (imgHeight, imgWidth)) 
             img = xiapi.Image()
             self.photoImg = [0 for _ in range(numCams)]
