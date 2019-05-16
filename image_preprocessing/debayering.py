@@ -2,9 +2,9 @@ import os
 import h5py 
 import cv2
 
-saved_dir = '/home/pns/Desktop/project/camera/camera/data/2019-04-10 15:35:21.821582/debayered/'
-path = '/home/pns/Desktop/project/camera/camera/data/2019-04-10 15:35:21.821582'
-trial_fn = 'trial: 5'
+saved_dir = '/home/pns/rat_reaching/scripts/calibration_images/debayered/'
+path = '/home/pns/rat_reaching/scripts/calibration_images'
+trial_fn = 'trial: 1'
 
 def fnConverter(camids, t):
 # def fnConverter(camids,frameNum, t):

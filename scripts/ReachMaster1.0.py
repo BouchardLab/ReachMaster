@@ -53,6 +53,7 @@ robControlPath = '/dev/ttyACM1'
 serialBaud = 2000000
 controlTimeout = 5
 expController = []
+robController = []
 #experiment settings
 flushDur = 10000              #time to keep solenoid open during initial water flush
 solenoidOpenDur = 75          #time to keep solenoid open during single reward delivery
@@ -175,12 +176,13 @@ class ReachMaster:
 
     def robConnectCallback(self):
         global robControlPath
+        global robController
         robControlPath = self.robControlPath.get()
-        self.robController = serial.Serial(robControlPath,serialBaud,timeout=controlTimeout)
+        robController = serial.Serial(robControlPath,serialBaud,timeout=controlTimeout)
         time.sleep(2) #wait for controller to wake up
-        self.robController.flushInput()
-        self.robController.write("h")
-        response = self.robController.readline()
+        robController.flushInput()
+        robController.write("h")
+        response = robController.readline()
         if response:
             self.robControlOn = True
         else:
@@ -188,8 +190,8 @@ class ReachMaster:
 
     def robDisconnectCallback(self):
         if self.robControlOn:
-            self.robController.write("e")
-            self.robController.close()
+            robController.write("e")
+            robController.close()
         else:
             tkMessageBox.showinfo("Warning", "Robot controller not connected.")
 
@@ -449,8 +451,8 @@ class ReachMaster:
                 expController.write("e")
                 expController.close()
             if self.robControlOn:
-                    self.robController.write("e")
-                    self.robController.close()
+                    robController.write("e")
+                    robController.close()
             if self.camerasLoaded:
                 self.unloadCameras()
                 self.imgBuffer = deque()
@@ -462,8 +464,8 @@ class ReachMaster:
                     expController.write("e")
                     expController.close()
                 if self.robControlOn:
-                    self.robController.write("e")
-                    self.robController.close()
+                    robController.write("e")
+                    robController.close()
                 if self.camerasLoaded:
                     self.unloadCameras()
                     self.imgBuffer = deque()
@@ -474,8 +476,8 @@ class ReachMaster:
                     expController.write("e")
                     expController.close()
                 if self.robControlOn:
-                    self.robController.write("e")
-                    self.robController.close()
+                    robController.write("e")
+                    robController.close()
                 if self.camerasLoaded:
                     self.unloadCameras()
                     self.imgBuffer = deque()
@@ -527,6 +529,7 @@ class CameraSettings:
         self.addedPOIs = [[] for _ in range(numCams)]
         self.savedPOIs = [[] for _ in range(numCams)] 
         self.capture = False
+        self.imgNum = [1]
         self.setup_UI()
 
     def onQuit(self):
@@ -690,6 +693,7 @@ class CameraSettings:
                 cam.set_offsetY(offsetY)
                 self.camList.append(cam)
                 self.camList[i].start_acquisition()   
+                self.imgBuffer = deque()
                 self.camsLoaded = True        
 
     def unloadCameras(self):
@@ -701,6 +705,10 @@ class CameraSettings:
 
     def startStream(self):
         if not self.streamStarted:
+            self.buffer_full = False 
+            self.calipath = dataDir + "/calibration_images/"
+            if not os.path.isdir(self.calipath):
+                os.makedirs(self.calipath)
             self.camWindows = [0 for _ in range(numCams)]
             for i in range(numCams):
                 self.camWindows[i] = tk.Toplevel(self.window)
@@ -725,12 +733,16 @@ class CameraSettings:
     def refresh(self):
         if self.streaming:
             expController.write("t")
+            now = str(int(round(time.time()*1000)))
             npImg = np.zeros(shape = (imgHeight, imgWidth)) 
             img = xiapi.Image()
             self.photoImg = [0 for _ in range(numCams)]
             for i in range(numCams):
                 self.camList[i].get_image(img,timeout = 2000)
                 npImg = img.get_image_data_numpy()
+                self.imgBuffer.append(imgTup.ImageTuple(i, now, npImg))
+                if len(self.imgBuffer)>numCams:
+                    self.imgBuffer.popleft()
                 self.photoImg[i] = PIL.ImageTk.PhotoImage(image = PIL.Image.fromarray(npImg))
                 self.camWindows[i].canvas.create_image(0,0, image = self.photoImg[i], anchor = tk.NW)
                 if self.drawSaved:
@@ -741,6 +753,11 @@ class CameraSettings:
                     self.camWindows[i].bind('<Button-1>',lambda event,camid=i:self.drawPOI(event,camid))
                     for poi in self.addedPOIs[i]:                        
                         self.camWindows[i].canvas.create_line(poi[0],poi[1],poi[0]+1,poi[1],width=1,fill='red')
+            if self.capture:
+                serBuf.serialize(self.imgBuffer,self.calipath,self.imgNum)
+                self.imgBuffer = deque()
+                self.capture = False
+                self.imgNum[0] += 1
             self.window.after(self.delay,self.refresh)
 
     def loadPOIsCallback(self):

@@ -7,7 +7,7 @@ import os
 def serialize(imageBuffer,path,newline):
 	#SERIALIZE WITH HDF5
 	#Create Unique Trial names
-	trial_fn = 'trial: '+newline[0]#+', '+newline[1] #str(datetime.datetime.now())#time.strftime("%Y%m%d-%H%M%S")
+	trial_fn = 'trial: '+ str(newline[0])#+', '+newline[1] #str(datetime.datetime.now())#time.strftime("%Y%m%d-%H%M%S")
 	#Checks to see if path directory exists
 	if not os.path.isdir(path):
 		os.makedirs(path)
