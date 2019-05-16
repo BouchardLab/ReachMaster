@@ -20,9 +20,9 @@ from collections import deque
 
 #declare global variables and set to defaults
 dataDir = os.getcwd()                       #directory to save data
-paramFile = 'None'                          #file with experiment parameters
+paramFile = 'None'                          #file with experiment Workspace
 #camera settings 
-numCams = 2
+numCams = 3
 imgdataformat = "XI_RAW8"                   #raw camera output format (note: use XI_RAW8 for full fps) 
 fps = 200
 exposure = 3000                             #exposure time (microseconds) (note: determines minimum trigger period) 
@@ -35,6 +35,10 @@ gpo_selector = "XI_GPO_PORT1"
 gpo_mode = "XI_GPO_EXPOSURE_ACTIVE"
 baselineDur = 5.0
 bufferDur = 0.5                            #duration (sec) to buffer images
+imgWidth = 512 
+imgHeight = 512
+offsetX = 384
+offsetY = 256
 reachTimeout = 4000
 savedPOIs = []
 poiMeans = []
@@ -96,17 +100,17 @@ class ReachMaster:
         self.main()
 
     def onQuit(self):
-        answer = tkMessageBox.askyesnocancel("Question", "Save parameters?")
+        answer = tkMessageBox.askyesnocancel("Question", "Save Workspace?")
         if answer == True:
-            self.saveParameters()
+            self.saveWorkspace()
             self.mainActive = False
         elif answer == False:
             self.mainActive = False
         else:
             pass
 
-    def saveParameters(self):
-        print("Parameters saved!")
+    def saveWorkspace(self):
+        print("Workspace saved!")
 
     def setup_UI(self):
         tk.Label(text="Data Directory:", font='Arial 10 bold', bg="white",width=22,anchor="e").grid(row=0, column=0)
@@ -142,7 +146,7 @@ class ReachMaster:
 
     def pfBrowseCallback(self):
         self.paramFile.set(tkFileDialog.askopenfilename())
-        #open file and read in parameters
+        #open file and read in Workspace
 
     def expConnectCallback(self):
         global expControlPath
@@ -337,10 +341,10 @@ class ReachMaster:
             cam.set_trigger_source(trigger_source)
             cam.set_gpo_selector(gpo_selector)
             cam.set_gpo_mode(gpo_mode)
-            cam.set_height(512)
-            cam.set_width(512)
-            cam.set_offsetX(384)
-            cam.set_offsetY(256)
+            cam.set_height(imgHeight)
+            cam.set_width(imgWidth)
+            cam.set_offsetX(offsetX)
+            cam.set_offsetY(offsetY)
             cam.enable_recent_frame()
             self.camList.append(cam)
             self.camList[i].start_acquisition()
@@ -397,7 +401,7 @@ class ReachMaster:
                 self.imgBuffer.append(imgTup.ImageTuple(i, now, npImg))
                 if len(self.imgBuffer)>numCams*bufferDur*fps and not self.reachDetected:
                     self.imgBuffer.popleft()
-                    self.imgBuffer.popleft()
+
         else:
             lightsOn = 0
             for i in range(numCams):
@@ -447,7 +451,7 @@ class ReachMaster:
                 self.imgBuffer = deque()
             self.window.destroy()
         except KeyboardInterrupt:
-            answer = tkMessageBox.askyesnocancel("Question", "Save parameters?")
+            answer = tkMessageBox.askyesnocancel("Question", "Save Workspace?")
             if answer == True:
                 if self.expControlOn:
                     self.expController.write("e")
@@ -458,7 +462,7 @@ class ReachMaster:
                 if self.camerasLoaded:
                     self.unloadCameras()
                     self.imgBuffer = deque()
-                self.saveParameters()
+                self.saveWorkspace()
                 self.window.destroy()
             elif answer == False:
                 if self.expControlOn:
@@ -496,11 +500,19 @@ class CameraSettings:
         self.gpo_mode = tk.StringVar()
         self.gpo_mode.set(gpo_mode)
         self.baselineDur = tk.StringVar()
-        self.baselineDur.set(baselineDur)
+        self.baselineDur.set(str(baselineDur))
         self.bufferDur = tk.StringVar()
-        self.bufferDur.set(bufferDur)
+        self.bufferDur.set(str(bufferDur))
+        self.imgWidth = tk.StringVar()
+        self.imgWidth.set(str(imgWidth))
+        self.imgHeight = tk.StringVar()
+        self.imgHeight.set(str(imgHeight))
+        self.offsetX = tk.StringVar()
+        self.offsetX.set(str(offsetX))
+        self.offsetY = tk.StringVar()
+        self.offsetY.set(str(offsetY))
         self.poiThreshold = tk.StringVar()
-        self.poiThreshold.set(poiThreshold)
+        self.poiThreshold.set(str(poiThreshold))
         self.camsLoaded = False
         self.streaming = False
         self.streamStarted = False
@@ -522,12 +534,20 @@ class CameraSettings:
         global trigger_source
         global gpo_mode
         global poiThreshold
+        global imgWidth
+        global imgHeight
+        global offsetX
+        global offsetY
         numCams = int(self.numCams.get())
         fps = int(self.fps.get())
         exposure = int(self.exposure.get())
         gain = float(self.gain.get()) 
         baselineDur = float(self.baselineDur.get())
         bufferDur = float(self.bufferDur.get())
+        imgWidth = int(self.imgWidth.get())
+        imgHeight = int(self.imgHeight.get())
+        offsetX = int(self.offsetX.get())
+        offsetY = int(self.offsetY.get())
         trigger_source = self.trigger_source.get()
         gpo_mode = self.gpo_mode.get()
         poiThreshold = float(self.poiThreshold.get())
@@ -576,18 +596,26 @@ class CameraSettings:
         self.gpoModeMenu.grid(row=5, column=1)
         tk.Label(self.window,text="Image Buffer (sec):", font='Arial 10 bold', bg="white",width=23,anchor="e").grid(row=6, sticky='W')   
         tk.Entry(self.window,textvariable=self.bufferDur,width=17).grid(row=6, column=1)
-        tk.Label(self.window,text="POI Threshold (stdev):", font='Arial 10 bold', bg="white",width=23,anchor="e").grid(row=7, sticky='W')   
-        tk.Entry(self.window,textvariable=self.poiThreshold,width=17).grid(row=7, column=1)
-        tk.Button(self.window,text="Start Streaming",font='Arial 10 bold',width=14,command=self.startStreamCallback).grid(row=8, column=0,sticky="e")
-        tk.Button(self.window,text="Stop Streaming",font='Arial 10 bold',width=14,command=self.stopStreamCallback).grid(row=9, column=0,sticky="e")
-        tk.Button(self.window,text="Load POIs",font='Arial 10 bold',width=14,command=self.loadPOIsCallback).grid(row=8, column=1)
-        tk.Button(self.window,text="Save POIs",font='Arial 10 bold',width=14,command=self.savePOIsCallback).grid(row=9, column=1)
-        tk.Button(self.window,text="Add POIs",font='Arial 10 bold',width=14,command=self.addPOIsCallback).grid(row=8, column=2)
-        tk.Button(self.window,text="Remove POIs",font='Arial 10 bold',width=14,command=self.removePOIsCallback).grid(row=9, column=2)
-        tk.Button(self.window,text="Capture Image",font='Arial 10 bold',width=14,command=self.captureImgCallback).grid(row=10, column=1)
-        tk.Label(self.window,text="Acquire Baseline (sec):", font='Arial 10 bold', bg="white",width=23,anchor="e").grid(row=11, sticky='W')   
-        tk.Entry(self.window,textvariable=self.baselineDur,width=17).grid(row=11, column=1)
-        tk.Button(self.window,text="Start",font='Arial 10 bold',width=14,command=self.baselineCallback).grid(row=11, column=2)
+        tk.Label(self.window,text="Image Width (pix):", font='Arial 10 bold', bg="white",width=23,anchor="e").grid(row=7, sticky='W')   
+        tk.Entry(self.window,textvariable=self.imgWidth,width=17).grid(row=7, column=1)
+        tk.Label(self.window,text="Image Height (pix):", font='Arial 10 bold', bg="white",width=23,anchor="e").grid(row=8, sticky='W')   
+        tk.Entry(self.window,textvariable=self.imgHeight,width=17).grid(row=8, column=1)
+        tk.Label(self.window,text="Image X Offest (pix):", font='Arial 10 bold', bg="white",width=23,anchor="e").grid(row=9, sticky='W')   
+        tk.Entry(self.window,textvariable=self.offsetX,width=17).grid(row=9, column=1)
+        tk.Label(self.window,text="Image Y Offset (pix):", font='Arial 10 bold', bg="white",width=23,anchor="e").grid(row=10, sticky='W')   
+        tk.Entry(self.window,textvariable=self.offsetY,width=17).grid(row=10, column=1)
+        tk.Button(self.window,text="Start Streaming",font='Arial 10 bold',width=14,command=self.startStreamCallback).grid(row=11, column=0,sticky="e")
+        tk.Button(self.window,text="Stop Streaming",font='Arial 10 bold',width=14,command=self.stopStreamCallback).grid(row=12, column=0,sticky="e")
+        tk.Button(self.window,text="Load POIs",font='Arial 10 bold',width=14,command=self.loadPOIsCallback).grid(row=11, column=1)
+        tk.Button(self.window,text="Save POIs",font='Arial 10 bold',width=14,command=self.savePOIsCallback).grid(row=12, column=1)
+        tk.Button(self.window,text="Add POIs",font='Arial 10 bold',width=14,command=self.addPOIsCallback).grid(row=11, column=2)
+        tk.Button(self.window,text="Remove POIs",font='Arial 10 bold',width=14,command=self.removePOIsCallback).grid(row=12, column=2)
+        tk.Button(self.window,text="Capture Image",font='Arial 10 bold',width=14,command=self.captureImgCallback).grid(row=13, column=1)
+        tk.Label(self.window,text="POI Threshold (stdev):", font='Arial 10 bold', bg="white",width=23,anchor="e").grid(row=14, sticky='W')   
+        tk.Entry(self.window,textvariable=self.poiThreshold,width=17).grid(row=14, column=1)
+        tk.Label(self.window,text="Acquire Baseline (sec):", font='Arial 10 bold', bg="white",width=23,anchor="e").grid(row=15, sticky='W')   
+        tk.Entry(self.window,textvariable=self.baselineDur,width=17).grid(row=15, column=1)
+        tk.Button(self.window,text="Start",font='Arial 10 bold',width=14,command=self.baselineCallback).grid(row=15, column=2)
 
     def startStreamCallback(self):
         if not self.streamStarted:
@@ -595,10 +623,18 @@ class CameraSettings:
             global fps
             global exposure
             global gain
+            global imgWidth
+            global imgHeight
+            global offsetX
+            global offsetY
             numCams = int(self.numCams.get())
             fps = 30
             exposure = int(self.exposure.get())
-            gain = float(self.gain.get())          
+            gain = float(self.gain.get())   
+            imgWidth = int(self.imgWidth.get())
+            imgHeight = int(self.imgHeight.get())
+            offsetX = int(self.offsetX.get())
+            offsetY = int(self.offsetY.get())  
             self.loadCameras() 
             self.startStream()
         elif not self.streaming:
@@ -626,14 +662,28 @@ class CameraSettings:
             cam.set_gpo_selector(gpo_selector)
             cam.set_gpo_mode(gpo_mode)
             cam.set_framerate(fps)
-            cam.set_region_selector(0)
-            cam.set_height(512)
-            cam.set_width(512)
-            cam.set_offsetX(384)
-            cam.set_offsetY(256)
-            self.camList.append(cam)
-            self.camList[i].start_acquisition()   
-        self.camsLoaded = True        
+            widthIncrement = cam.get_width_increment()
+            heightIncrement = cam.get_height_increment()
+            if (imgWidth%widthIncrement)!=0:
+                tkMessageBox.showinfo("Warning", "Image width not divisible by "+str(widthIncrement))
+                break
+            elif (imgHeight%heightIncrement)!=0:
+                tkMessageBox.showinfo("Warning", "Image height not divisible by 2"+str(heightIncrement))
+                break
+            elif (imgWidth+offsetX)>1280:
+                tkMessageBox.showinfo("Warning", "Image width + x offset > 1280") 
+                break
+            elif (imgHeight+offsetY)>1024:
+                tkMessageBox.showinfo("Warning", "Image height + y offset > 1024") 
+                break
+            else:
+                cam.set_height(imgHeight)
+                cam.set_width(imgWidth)
+                cam.set_offsetX(offsetX)
+                cam.set_offsetY(offsetY)
+                self.camList.append(cam)
+                self.camList[i].start_acquisition()   
+                self.camsLoaded = True        
 
     def unloadCameras(self):
         for i in range(numCams):
@@ -644,14 +694,12 @@ class CameraSettings:
 
     def startStream(self):
         if not self.streamStarted:
-            self.imgWidth = self.camList[0].get_width()
-            self.imgHeight = self.camList[0].get_height()
             self.camWindows = [0 for _ in range(numCams)]
             for i in range(numCams):
                 self.camWindows[i] = tk.Toplevel(self.window)
                 self.camWindows[i].title("Camera"+str(i))
                 self.camWindows[i].protocol("WM_DELETE_WINDOW", self.stopStream)
-                self.camWindows[i].canvas = tk.Canvas(self.camWindows[i], width = self.imgWidth, height = self.imgHeight)
+                self.camWindows[i].canvas = tk.Canvas(self.camWindows[i], width = imgWidth, height = imgHeight)
                 self.camWindows[i].canvas.grid(row=0,column= 0)            
             self.streamStarted = True
         self.delay = 20
@@ -669,7 +717,7 @@ class CameraSettings:
 
     def refresh(self):
         if self.streaming:
-            npImg = np.zeros(shape = (self.imgHeight, self.imgWidth)) 
+            npImg = np.zeros(shape = (imgHeight, imgWidth)) 
             img = xiapi.Image()
             self.photoImg = [0 for _ in range(numCams)]
             for i in range(numCams):
@@ -744,10 +792,10 @@ class CameraSettings:
                 self.addedPOIs[camid] = tmp
 
     def captureImgCallback(self):
-    	if self.streaming:
-    		self.capture = True
-    	else: 
-    		tkMessageBox.showinfo("Warning", "Must be streaming to capture images.")
+        if self.streaming:
+            self.capture = True
+        else: 
+            tkMessageBox.showinfo("Warning", "Must be streaming to capture images.")
 
     def baselineCallback(self):
         if len(savedPOIs)==0:
