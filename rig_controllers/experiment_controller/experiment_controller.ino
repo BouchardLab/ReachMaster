@@ -32,10 +32,10 @@ int inRewardWin = 0;               //1 if currently in the reward window
 int lickState = 0;                 //1 if IR beam is broken
 
 //lighting
-int totalPixels = 176;
+int totalPixels = 256;
 Adafruit_NeoPixel strip = Adafruit_NeoPixel(totalPixels, neoPin, NEO_RGBW + NEO_KHZ800);
 
-uint32_t pureWhite = strip.Color(0,0,0,100); //don't go over 200!!!!!!
+uint32_t pureWhite = strip.Color(0,0,0,100); //don't go over 150!!!!!!
 uint32_t pureOff = strip.Color(0,0,0,0);
 int lightsOffDur = 3000;            //minimum time (ms) to keep lights off in between trials
 int lightsOnDur = 5000;             //maximum time (ms) to keep tights on during a trial
@@ -49,6 +49,7 @@ char newSerPNS = '0';              //instantaneous serial command from PNS
 int handshake = 0;                 //1 if successful serial connection has been established
 int expActive = 0;                 //1 when main experiment is being executed
 int expEnded = 0;                  //1 if entire program should stop
+String varName;                    //variable name for serial read/write
 
 //timer variables
 int waitDur = 5000;                //time to wait in between various events
@@ -100,7 +101,7 @@ void setup() {
     if(Serial.available()){
       serPNS = Serial.read();
       if(serPNS == 'h'){
-        Serial.println(serPNS);
+        Serial.print(serPNS);
         handshake = 1;
         Serial.flush();
       }
@@ -219,12 +220,33 @@ void loop() {
             triggerOn = 1;
           }
           break; 
+        case 'g':
+          //PNS requested to get a variable
+          Serial.print(newSerPNS);
+          while (!Serial.available()){}
+          varName = Serial.readString();
+          if (varName=="flushDur"){ 
+            Serial.print(flushDur);
+          }else if(varName=="solenoidOpenDur"){
+            Serial.print(solenoidOpenDur);
+          }else if(varName=="solenoidBounceDur"){
+            Serial.print(solenoidBounceDur);
+          }else if(varName=="rewardWinDur"){
+            Serial.print(rewardWinDur);
+          }else if(varName=="maxRewards"){
+            Serial.print(maxRewards);
+          }else if(varName=="lightsOffDur"){
+            Serial.print(lightsOffDur);
+          }else if(varName=="lightsOnDur"){
+            Serial.print(lightsOnDur);
+          }
+          break;
         case 'v':
           //PNS requested to change a variable
-          Serial.println(newSerPNS);
+          Serial.print(newSerPNS);
           while (!Serial.available()){}
           String varName = Serial.readString();
-          Serial.println(newSerPNS);
+          Serial.print(newSerPNS);
           while (!Serial.available()){}
           if(varName=="flushDur"){            
             flushDur = Serial.parseInt();
@@ -241,7 +263,7 @@ void loop() {
           }else if(varName=="lightsOnDur"){
             lightsOnDur = Serial.parseInt();
           }
-          break;                   
+          break;                           
     }//end switch
 
     //check robot

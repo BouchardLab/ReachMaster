@@ -20,13 +20,13 @@ from collections import deque
 
 #declare global variables and set to defaults
 dataDir = os.getcwd()                       #directory to save data
-paramFile = 'None'                          #file with experiment Workspace
+paramFile = 'None'                          #file with exp Workspace
 #camera settings 
 numCams = 3
 imgdataformat = "XI_RAW8"                   #raw camera output format (note: use XI_RAW8 for full fps) 
 fps = 200
-exposure = 3000                             #exposure time (microseconds) (note: determines minimum trigger period) 
-gain = 0.0                                  #gain: sensitivity of camera 
+exposure = 2000                             #exposure time (microseconds) (note: determines minimum trigger period) 
+gain = 15.0                                  #gain: sensitivity of camera 
 sensor_feature_value = 1
 gpi_selector = "XI_GPI_PORT1" 
 gpi_mode =  "XI_GPI_TRIGGER"                
@@ -45,16 +45,16 @@ poiMeans = []
 poiStds = []
 obsPOIs = []
 zPOIs = []
-poiThreshold = 10
+poiThreshold = 5
 baselineAcquired = False
-#controller settings
+#expController settings
 expControlPath = '/dev/ttyACM0'
 robControlPath = '/dev/ttyACM1'
 serialBaud = 2000000
 controlTimeout = 5
 expController = []
 robController = []
-#experiment settings
+#exp settings
 flushDur = 10000              #time to keep solenoid open during initial water flush
 solenoidOpenDur = 75          #time to keep solenoid open during single reward delivery
 solenoidBounceDur = 500       #time between reward deliveries
@@ -76,8 +76,8 @@ class ReachMaster:
         self.mainActive = False
         self.dataDir = tk.StringVar()
         self.dataDir.set(dataDir) 
-        self.paramFile = tk.StringVar()
-        self.paramFile.set(paramFile)
+        self.workFile = tk.StringVar()
+        self.workFile.set(paramFile)
         self.portList = list(list_ports.comports())
         for i in range(len(self.portList)):
             self.portList[i] = self.portList[i].device
@@ -118,9 +118,9 @@ class ReachMaster:
         tk.Label(text="Data Directory:", font='Arial 10 bold', bg="white",width=22,anchor="e").grid(row=0, column=0)
         tk.Label(textvariable=self.dataDir, bg="white").grid(row=0, column=1)
         tk.Button(text="Browse", font='Arial 10 bold',width=14, command=self.ddBrowseCallback).grid(row=0, column=2)
-        tk.Label(text="Parameter File:", font='Arial 10 bold', bg="white",width=22,anchor="e").grid(row=1, column=0)
-        tk.Label(textvariable=self.paramFile, bg="white").grid(row=1, column=1)
-        tk.Button(text="Browse", font='Arial 10 bold',width=14, command=self.pfBrowseCallback).grid(row=1, column=2)
+        tk.Label(text="Workspace File:", font='Arial 10 bold', bg="white",width=22,anchor="e").grid(row=1, column=0)
+        tk.Label(textvariable=self.workFile, bg="white").grid(row=1, column=1)
+        tk.Button(text="Browse", font='Arial 10 bold',width=14, command=self.wfBrowseCallback).grid(row=1, column=2)
         tk.Label(text="Experiment Controller:", font='Arial 10 bold', bg="white",width=22,anchor="e").grid(row=2, column=0)
         expControllerMenu = apply(tk.OptionMenu, (self.window, self.expControlPath) + tuple(self.portList))
         expControllerMenu.grid(row=2, column=1)
@@ -139,14 +139,16 @@ class ReachMaster:
         tk.Button(text="Toggle Lights", font='Arial 10 bold',width=14, command=self.lightsCallback).grid(row=5, column=1)
         tk.Button(text="Deliver Water", font='Arial 10 bold',width=14, command=self.waterCallback).grid(row=6, column=1)
         tk.Button(text="Flush Water", font='Arial 10 bold',width=14, command=self.flushCallback).grid(row=7, column=1)
-        tk.Button(text="Begin Experiment", font='Arial 10 bold',width=14, command=self.beginExpCallback).grid(row=4, column=2)
-        tk.Button(text="Pause Experiment", font='Arial 10 bold',width=14, command=self.pauseExpCallback).grid(row=5, column=2)
-        tk.Button(text="End Experiment", font='Arial 10 bold',width=14, command=self.endExpCallback).grid(row=6, column=2)
+        tk.Button(text="Begin exp", font='Arial 10 bold',width=14, command=self.beginExpCallback).grid(row=4, column=2)
+        tk.Button(text="Pause exp", font='Arial 10 bold',width=14, command=self.pauseExpCallback).grid(row=5, column=2)
+        tk.Button(text="End exp", font='Arial 10 bold',width=14, command=self.endExpCallback).grid(row=6, column=2)
 
     def ddBrowseCallback(self):
+        global dataDir
         self.dataDir.set(tkFileDialog.askdirectory())
+        dataDir = self.dataDir.get()
 
-    def pfBrowseCallback(self):
+    def wfBrowseCallback(self):
         self.paramFile.set(tkFileDialog.askopenfilename())
         #open file and read in Workspace
 
@@ -155,11 +157,11 @@ class ReachMaster:
         global expController
         expControlPath = self.expControlPath.get()
         expController = serial.Serial(expControlPath,serialBaud,timeout=controlTimeout)
-        time.sleep(2) #wait for controller to wake up
+        time.sleep(2) #wait for expController to wake up
         expController.flushInput()
         expController.write("h")
-        response = expController.readline()
-        if response:
+        response = expController.read()
+        if response=="h":
             self.expControlOn = True
         else:
             tkMessageBox.showinfo("Warning", "Failed to connect.")
@@ -172,14 +174,14 @@ class ReachMaster:
             else:
                 tkMessageBox.showinfo("Warning", "Experiment is active! Not safe to disconnect.")
         else:
-            tkMessageBox.showinfo("Warning", "Experiment controller not connected.")
+            tkMessageBox.showinfo("Warning", "Experiment Controller not connected.")
 
     def robConnectCallback(self):
         global robControlPath
         global robController
         robControlPath = self.robControlPath.get()
         robController = serial.Serial(robControlPath,serialBaud,timeout=controlTimeout)
-        time.sleep(2) #wait for controller to wake up
+        time.sleep(2) #wait for expController to wake up
         robController.flushInput()
         robController.write("h")
         response = robController.readline()
@@ -193,7 +195,7 @@ class ReachMaster:
             robController.write("e")
             robController.close()
         else:
-            tkMessageBox.showinfo("Warning", "Robot controller not connected.")
+            tkMessageBox.showinfo("Warning", "Robot Controller not connected.")
 
     def camSetCallback(self):  
         if not self.expActive:
@@ -201,23 +203,23 @@ class ReachMaster:
                 camSetRoot = tk.Toplevel(self.window)     
                 CameraSettings(camSetRoot)
             else:
-                tkMessageBox.showinfo("Warning", "Experiment controller not connected.")
+                tkMessageBox.showinfo("Warning", "Experiment Controller not connected.")
         else:
             pass
 
     def expSetCallback(self):
         if self.expControlOn:
             expSetRoot = tk.Toplevel(self.window)     
-            ExperimentSettings(expSetRoot, expController)
+            ExperimentSettings(expSetRoot)
         else:
-            tkMessageBox.showinfo("Warning", "Experiment controller not connected.")
+            tkMessageBox.showinfo("Warning", "Experiment Controller not connected.")
 
     def robSetCallback(self):
         if self.robControlOn:
             robSetRoot = tk.Toplevel(self.window)     
-            RobotSettings(robSetRoot, robController)
+            RobotSettings(robSetRoot)
         else:
-            tkMessageBox.showinfo("Warning", "Robot controller not connected.")
+            tkMessageBox.showinfo("Warning", "Robot Controller not connected.")
 
     def movRobCallback(self):
         global lightsOn
@@ -225,13 +227,13 @@ class ReachMaster:
             expController.write("m")
             lightsOn = 0
         else:
-            tkMessageBox.showinfo("Warning", "Experiment controller not connected.")
+            tkMessageBox.showinfo("Warning", "Experiment Controller not connected.")
 
     def ledCallback(self):
         if self.expControlOn:
             expController.write("l")          
         else:
-            tkMessageBox.showinfo("Warning", "Experiment controller not connected.")
+            tkMessageBox.showinfo("Warning", "Experiment Controller not connected.")
 
     def lightsCallback(self):
         global lightsOn
@@ -243,13 +245,13 @@ class ReachMaster:
             # elif self.expActive:
             #     self.newline[2] = '0'
         else:
-            tkMessageBox.showinfo("Warning", "Experiment controller not connected.")
+            tkMessageBox.showinfo("Warning", "Experiment Controller not connected.")
 
     def waterCallback(self):
         if self.expControlOn:
             expController.write("w")
         else:
-            tkMessageBox.showinfo("Warning", "Experiment controller not connected.")
+            tkMessageBox.showinfo("Warning", "Experiment Controller not connected.")
 
     def flushCallback(self):
         if self.expControlOn:
@@ -258,7 +260,7 @@ class ReachMaster:
             else:
                 pass
         else:
-            tkMessageBox.showinfo("Warning", "Experiment controller not connected.")
+            tkMessageBox.showinfo("Warning", "Experiment Controller not connected.")
 
     def beginExpCallback(self):
         if self.expControlOn:
@@ -315,14 +317,14 @@ class ReachMaster:
             else:
                tkMessageBox.showinfo("Warning", "No POIs have been saved.") 
         else:
-            tkMessageBox.showinfo("Warning", "Experiment controller not connected.")
+            tkMessageBox.showinfo("Warning", "Experiment Controller not connected.")
 
     def pauseExpCallback(self):        
         if self.expActive:
             self.expActive = False
             expController.write("p")
         else:
-            tkMessageBox.showinfo("Warning", "No experiment to pause.")
+            tkMessageBox.showinfo("Warning", "No exp to pause.")
 
     def endExpCallback(self):
         if self.expActive:
@@ -331,7 +333,7 @@ class ReachMaster:
             expController.write("e")
             expController.close()
         else:
-            tkMessageBox.showinfo("Warning", "No experiment to end.")
+            tkMessageBox.showinfo("Warning", "No exp to end.")
 
     def loadCameras(self):              
         self.camList = []
@@ -380,6 +382,7 @@ class ReachMaster:
                 baselinePOIs.append(np.zeros(shape = (len(savedPOIs[i]), numImgs)))
             print("Acquiring baseline...")
             for cnt in range(numImgs):
+                time.sleep(0.005)
                 expController.write(self.writeControl)
                 for i in range(numCams):
                     self.camList[i].get_image(self.img,timeout = 2000)
@@ -390,7 +393,7 @@ class ReachMaster:
             poiStds = []
             for i in range(numCams):   
                 poiMeans.append(np.mean(baselinePOIs[i], axis = 1))             
-                poiStds.append(np.std(np.sum(np.square(baselinePOIs[i]-poiMeans[i].reshape(len(savedPOIs[i]),1)),axis=1)))
+                poiStds.append(np.std(np.sum(np.square(baselinePOIs[i]-poiMeans[i].reshape(len(savedPOIs[i]),1)),axis=0)))
             baselineAcquired = True
             print("Baseline acquired!")
 
@@ -451,8 +454,8 @@ class ReachMaster:
                 expController.write("e")
                 expController.close()
             if self.robControlOn:
-                    robController.write("e")
-                    robController.close()
+                    robexpController.write("e")
+                    robexpController.close()
             if self.camerasLoaded:
                 self.unloadCameras()
                 self.imgBuffer = deque()
@@ -464,8 +467,8 @@ class ReachMaster:
                     expController.write("e")
                     expController.close()
                 if self.robControlOn:
-                    robController.write("e")
-                    robController.close()
+                    robexpController.write("e")
+                    robexpController.close()
                 if self.camerasLoaded:
                     self.unloadCameras()
                     self.imgBuffer = deque()
@@ -476,8 +479,8 @@ class ReachMaster:
                     expController.write("e")
                     expController.close()
                 if self.robControlOn:
-                    robController.write("e")
-                    robController.close()
+                    robexpController.write("e")
+                    robexpController.close()
                 if self.camerasLoaded:
                     self.unloadCameras()
                     self.imgBuffer = deque()
@@ -864,12 +867,11 @@ class CameraSettings:
 
 class ExperimentSettings:
 
-    def __init__(self, window, controller):
+    def __init__(self, window):
         self.window = window
         self.window.title("Experiment Settings") 
         self.window.configure(bg="white")
-        self.window.protocol("WM_DELETE_WINDOW", self.onQuit)
-        self.controller = controller    
+        self.window.protocol("WM_DELETE_WINDOW", self.onQuit) 
         self.lightsOnDur = tk.StringVar()
         self.lightsOnDur.set(str(lightsOnDur))
         self.lightsOffDur = tk.StringVar()
@@ -904,83 +906,153 @@ class ExperimentSettings:
         self.window.destroy()
 
     def setup_UI(self):
-        tk.Label(self.window,text="Lights On (ms):", font='Arial 10 bold', bg="white",width=23,anchor="e").grid(row=0, column=0)   
-        tk.Entry(self.window,textvariable=self.lightsOnDur,width=17).grid(row=0, column=1)
-        tk.Button(self.window,text="Read",font='Arial 10 bold',width=14,command=self.lightsOnDurRead).grid(row=0, column=2)
-        tk.Button(self.window,text="Write",font='Arial 10 bold',width=14,command=self.lightsOnDurWrite).grid(row=0, column=3)
-        tk.Label(self.window,text="Lights Off (ms):", font='Arial 10 bold', bg="white",width=23,anchor="e").grid(row=1, column=0)   
-        tk.Entry(self.window,textvariable=self.lightsOffDur,width=17).grid(row=1, column=1)
-        tk.Button(self.window,text="Read",font='Arial 10 bold',width=14,command=self.lightsOffDurRead).grid(row=1, column=2)
-        tk.Button(self.window,text="Write",font='Arial 10 bold',width=14,command=self.lightsOffDurWrite).grid(row=1, column=3)
-        tk.Label(self.window,text="Reward Window (ms):", font='Arial 10 bold', bg="white",width=23,anchor="e").grid(row=2, column=0)   
-        tk.Entry(self.window,textvariable=self.rewardWinDur,width=17).grid(row=2, column=1)
-        tk.Button(self.window,text="Read",font='Arial 10 bold',width=14,command=self.rewardWinDurRead).grid(row=2, column=2)
-        tk.Button(self.window,text="Write",font='Arial 10 bold',width=14,command=self.rewardWinDurWrite).grid(row=2, column=3)
-        tk.Label(self.window,text="# Rewards/Trial:", font='Arial 10 bold', bg="white",width=23,anchor="e").grid(row=3, column=0)   
-        tk.Entry(self.window,textvariable=self.maxRewards,width=17).grid(row=3, column=1)
-        tk.Button(self.window,text="Read",font='Arial 10 bold',width=14,command=self.maxRewardsRead).grid(row=3, column=2)
-        tk.Button(self.window,text="Write",font='Arial 10 bold',width=14,command=self.maxRewardsWrite).grid(row=3, column=3)
-        tk.Label(self.window,text="Solenoid Open (ms):", font='Arial 10 bold', bg="white",width=23,anchor="e").grid(row=4, column=0)   
-        tk.Entry(self.window,textvariable=self.solenoidOpenDur,width=17).grid(row=4, column=1)
-        tk.Button(self.window,text="Read",font='Arial 10 bold',width=14,command=self.solenoidOpenDurRead).grid(row=4, column=2)
-        tk.Button(self.window,text="Write",font='Arial 10 bold',width=14,command=self.solenoidOpenDurWrite).grid(row=4, column=3)
-        tk.Label(self.window,text="Solenoid Bounce (ms):", font='Arial 10 bold', bg="white",width=23,anchor="e").grid(row=5, column=0)   
-        tk.Entry(self.window,textvariable=self.solenoidBounceDur,width=17).grid(row=5, column=1)
-        tk.Button(self.window,text="Read",font='Arial 10 bold',width=14,command=self.solenoidBounceDurRead).grid(row=5, column=2)
-        tk.Button(self.window,text="Write",font='Arial 10 bold',width=14,command=self.solenoidBounceDurWrite).grid(row=5, column=3)
-        tk.Label(self.window,text="Flush (ms):", font='Arial 10 bold', bg="white",width=23,anchor="e").grid(row=6, column=0)   
-        tk.Entry(self.window,textvariable=self.flushDur,width=17).grid(row=6, column=1)
-        tk.Button(self.window,text="Read",font='Arial 10 bold',width=14,command=self.flushDurRead).grid(row=6, column=2)
-        tk.Button(self.window,text="Write",font='Arial 10 bold',width=14,command=self.flushDurWrite).grid(row=6, column=3)
+        tk.Button(self.window,text="Read All",font='Arial 10 bold',width=14,command=self.readAllCallback).grid(row=0,column=2)
+        tk.Button(self.window,text="Write All",font='Arial 10 bold',width=14,command=self.writeAllCallback).grid(row=0,column=3)
+        tk.Label(self.window,text="Lights On (ms):", font='Arial 10 bold', bg="white",width=23,anchor="e").grid(row=1, column=0)   
+        tk.Entry(self.window,textvariable=self.lightsOnDur,width=17).grid(row=1, column=1)
+        tk.Button(self.window,text="Read",font='Arial 10 bold',width=14,command=self.lightsOnDurRead).grid(row=1, column=2)
+        tk.Button(self.window,text="Write",font='Arial 10 bold',width=14,command=self.lightsOnDurWrite).grid(row=1, column=3)
+        tk.Label(self.window,text="Lights Off (ms):", font='Arial 10 bold', bg="white",width=23,anchor="e").grid(row=2, column=0)   
+        tk.Entry(self.window,textvariable=self.lightsOffDur,width=17).grid(row=2, column=1)
+        tk.Button(self.window,text="Read",font='Arial 10 bold',width=14,command=self.lightsOffDurRead).grid(row=2, column=2)
+        tk.Button(self.window,text="Write",font='Arial 10 bold',width=14,command=self.lightsOffDurWrite).grid(row=2, column=3)
+        tk.Label(self.window,text="Reward Window (ms):", font='Arial 10 bold', bg="white",width=23,anchor="e").grid(row=3, column=0)   
+        tk.Entry(self.window,textvariable=self.rewardWinDur,width=17).grid(row=3, column=1)
+        tk.Button(self.window,text="Read",font='Arial 10 bold',width=14,command=self.rewardWinDurRead).grid(row=3, column=2)
+        tk.Button(self.window,text="Write",font='Arial 10 bold',width=14,command=self.rewardWinDurWrite).grid(row=3, column=3)
+        tk.Label(self.window,text="# Rewards/Trial:", font='Arial 10 bold', bg="white",width=23,anchor="e").grid(row=4, column=0)   
+        tk.Entry(self.window,textvariable=self.maxRewards,width=17).grid(row=4, column=1)
+        tk.Button(self.window,text="Read",font='Arial 10 bold',width=14,command=self.maxRewardsRead).grid(row=4, column=2)
+        tk.Button(self.window,text="Write",font='Arial 10 bold',width=14,command=self.maxRewardsWrite).grid(row=4, column=3)
+        tk.Label(self.window,text="Solenoid Open (ms):", font='Arial 10 bold', bg="white",width=23,anchor="e").grid(row=5, column=0)   
+        tk.Entry(self.window,textvariable=self.solenoidOpenDur,width=17).grid(row=5, column=1)
+        tk.Button(self.window,text="Read",font='Arial 10 bold',width=14,command=self.solenoidOpenDurRead).grid(row=5, column=2)
+        tk.Button(self.window,text="Write",font='Arial 10 bold',width=14,command=self.solenoidOpenDurWrite).grid(row=5, column=3)
+        tk.Label(self.window,text="Solenoid Bounce (ms):", font='Arial 10 bold', bg="white",width=23,anchor="e").grid(row=6, column=0)   
+        tk.Entry(self.window,textvariable=self.solenoidBounceDur,width=17).grid(row=6, column=1)
+        tk.Button(self.window,text="Read",font='Arial 10 bold',width=14,command=self.solenoidBounceDurRead).grid(row=6, column=2)
+        tk.Button(self.window,text="Write",font='Arial 10 bold',width=14,command=self.solenoidBounceDurWrite).grid(row=6, column=3)
+        tk.Label(self.window,text="Flush (ms):", font='Arial 10 bold', bg="white",width=23,anchor="e").grid(row=7, column=0)   
+        tk.Entry(self.window,textvariable=self.flushDur,width=17).grid(row=7, column=1)
+        tk.Button(self.window,text="Read",font='Arial 10 bold',width=14,command=self.flushDurRead).grid(row=7, column=2)
+        tk.Button(self.window,text="Write",font='Arial 10 bold',width=14,command=self.flushDurWrite).grid(row=7, column=3)
 
     def lightsOnDurRead(self):
-        self.controller.write("v")
+        expController.write("g")
+        if expController.read() == "g":
+            expController.write("lightsOnDur")
+            self.lightsOnDur.set(expController.readline())
 
     def lightsOnDurWrite(self):
-        self.controller.write("v")
+        expController.write("v")
+        if expController.read() == "v":
+            expController.write("lightsOnDur")
+            if expController.readline() == "v":
+                expController.write(self.lightsOnDur.get())
 
     def lightsOffDurRead(self):
-        self.controller.write("v")
+        expController.write("g")
+        if expController.read() == "g":
+            expController.write("lightsOffDur")
+            self.lightsOffDur.set(expController.readline())
 
     def lightsOffDurWrite(self):
-        self.controller.write("v")
+        expController.write("v")
+        if expController.read() == "v":
+            expController.write("lightsOffDur")
+            if expController.readline() == "v":
+                expController.write(self.lightsOffDur.get())
 
     def rewardWinDurRead(self):
-        self.controller.write("v")
+        expController.write("g")
+        if expController.read() == "g":
+            expController.write("rewardWinDur")
+            self.rewardWinDur.set(expController.readline())
 
     def rewardWinDurWrite(self):
-        self.controller.write("v")
+        expController.write("v")
+        if expController.read() == "v":
+            expController.write("rewardWinDur")
+            if expController.readline() == "v":
+                expController.write(self.rewardWinDur.get())
 
     def maxRewardsRead(self):
-        self.controller.write("v")
+        expController.write("g")
+        if expController.read() == "g":
+            expController.write("maxRewards")
+            self.maxRewards.set(expController.readline())
 
     def maxRewardsWrite(self):
-        self.controller.write("v")
+        expController.write("v")
+        if expController.read() == "v":
+            expController.write("maxRewards")
+            if expController.read() == "v":
+                expController.write(self.maxRewards.get())
 
     def solenoidOpenDurRead(self):
-        self.controller.write("v")
+        expController.write("g")
+        if expController.read() == "g":
+            expController.write("solenoidOpenDur")
+            self.solenoidOpenDur.set(expController.readline())
 
     def solenoidOpenDurWrite(self):
-        self.controller.write("v")
+        expController.write("v")
+        if expController.read() == "v":
+            expController.write("SolenoidOpenDur")
+            if expController.readline() == "v":
+                expController.write(self.solenoidOpenDur.get())
 
     def solenoidBounceDurRead(self):
-        self.controller.write("v")
+        expController.write("g")
+        if expController.read() == "g":
+            expController.write("solenoidBounceDur")
+            self.solenoidBounceDur.set(expController.readline())
 
     def solenoidBounceDurWrite(self):
-        self.controller.write("v")
+        expController.write("v")
+        if expController.read() == "v":
+            expController.write("solenoidBounceDur")
+            if expController.readline() == "v":
+                expController.write(self.solenoidBounceDur.get())
 
     def flushDurRead(self):
-        self.controller.write("v")
+        expController.write("g")
+        if expController.read() == "g":
+            expController.write("rewardWinDur")
+            self.flushDur.set(expController.readline())
 
     def flushDurWrite(self):
-        self.controller.write("v")
+        expController.write("v")
+        if expController.read() == "v":
+            expController.write("flushDur")
+            if expController.readline() == "v":
+                expController.write(self.flushDur.get())
+
+    def readAllCallback(self):
+        self.flushDurRead()
+        self.solenoidBounceDurRead()
+        self.solenoidOpenDurRead()
+        self.maxRewardsRead()
+        self.rewardWinDurRead()
+        self.lightsOffDurRead()
+        self.lightsOnDurRead()
+
+
+    def writeAllCallback(self):
+        self.flushDurWrite()
+        self.solenoidBounceDurWrite()
+        self.solenoidOpenDurWrite()
+        self.maxRewardsWrite()
+        self.rewardWinDurWrite()
+        self.lightsOffDurWrite()
+        self.lightsOnDurWrite()
 
 class RobotSettings:
 
-    def __init__(self, window, controller):
+    def __init__(self, window, expController):
         self.window = window
         self.window.title("Robot Settings") 
-        self.controller = controller    
+        expController = expController    
         self.setup_UI()
 
     def setup_UI(self):
