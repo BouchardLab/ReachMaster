@@ -454,8 +454,8 @@ class ReachMaster:
                 expController.write("e")
                 expController.close()
             if self.robControlOn:
-                    robexpController.write("e")
-                    robexpController.close()
+                    robController.write("e")
+                    robController.close()
             if self.camerasLoaded:
                 self.unloadCameras()
                 self.imgBuffer = deque()
@@ -467,8 +467,8 @@ class ReachMaster:
                     expController.write("e")
                     expController.close()
                 if self.robControlOn:
-                    robexpController.write("e")
-                    robexpController.close()
+                    robController.write("e")
+                    robController.close()
                 if self.camerasLoaded:
                     self.unloadCameras()
                     self.imgBuffer = deque()
@@ -479,8 +479,8 @@ class ReachMaster:
                     expController.write("e")
                     expController.close()
                 if self.robControlOn:
-                    robexpController.write("e")
-                    robexpController.close()
+                    robController.write("e")
+                    robController.close()
                 if self.camerasLoaded:
                     self.unloadCameras()
                     self.imgBuffer = deque()
@@ -1049,10 +1049,9 @@ class ExperimentSettings:
 
 class RobotSettings:
 
-    def __init__(self, window, expController):
+    def __init__(self, window):
         self.window = window
-        self.window.title("Robot Settings") 
-        expController = expController    
+        self.window.title("Robot Settings")   
         self.setup_UI()
 
     def setup_UI(self):
