@@ -17,6 +17,8 @@ import binascii
 import struct 
 import os 
 from collections import deque
+import subprocess as sp
+import skvideo.io
 
 #declare global variables and set to defaults
 dataDir = os.getcwd()                       #directory to save data
@@ -139,9 +141,9 @@ class ReachMaster:
         tk.Button(text="Toggle Lights", font='Arial 10 bold',width=14, command=self.lightsCallback).grid(row=5, column=1)
         tk.Button(text="Deliver Water", font='Arial 10 bold',width=14, command=self.waterCallback).grid(row=6, column=1)
         tk.Button(text="Flush Water", font='Arial 10 bold',width=14, command=self.flushCallback).grid(row=7, column=1)
-        tk.Button(text="Begin exp", font='Arial 10 bold',width=14, command=self.beginExpCallback).grid(row=4, column=2)
-        tk.Button(text="Pause exp", font='Arial 10 bold',width=14, command=self.pauseExpCallback).grid(row=5, column=2)
-        tk.Button(text="End exp", font='Arial 10 bold',width=14, command=self.endExpCallback).grid(row=6, column=2)
+        tk.Button(text="Begin Experiment", font='Arial 10 bold',width=14, command=self.beginExpCallback).grid(row=4, column=2)
+        tk.Button(text="Pause Experiment", font='Arial 10 bold',width=14, command=self.pauseExpCallback).grid(row=5, column=2)
+        tk.Button(text="End Experiment", font='Arial 10 bold',width=14, command=self.endExpCallback).grid(row=6, column=2)
 
     def ddBrowseCallback(self):
         global dataDir
@@ -408,7 +410,9 @@ class ReachMaster:
                 for j in range(len(savedPOIs[i])): 
                     obsPOIs[i][j] = npImg[savedPOIs[i][j][1],savedPOIs[i][j][0]]
                 zPOIs[i] = np.round(np.sum(np.square(obsPOIs[i]-poiMeans[i]))/(poiStds[i]+np.finfo(float).eps),decimals=1)
-                self.imgBuffer.append(imgTup.ImageTuple(i, now, npImg))
+                npImg = cv2.cvtColor(npImg,cv2.COLOR_BAYER_BG2BGR)
+                # self.imgBuffer.append(imgTup.ImageTuple(i, now, npImg))
+                self.imgBuffer.append(npImg)
                 if len(self.imgBuffer)>numCams*bufferDur*fps and not self.reachDetected:
                     self.imgBuffer.popleft()
 
@@ -428,7 +432,19 @@ class ReachMaster:
             self.reachInit = now     
             self.writeControl = 'r'
         elif self.newline[1] == 'e': 
-            serBuf.serialize(self.imgBuffer,self.camerapath,self.newline)
+            # serBuf.serialize(self.imgBuffer,self.camerapath,self.newline)
+            if not os.path.isdir(self.camerapath):
+                os.makedirs(self.camerapath)
+            trial_fn = 'trial: ' + str(self.newline[0]) + '.mp4' 
+            video = cv2.VideoWriter(os.path.join(self.camerapath, trial_fn), 0x21, 60, (numCams*imgWidth,imgHeight))
+            for i in range(len(self.imgBuffer)/numCams):  
+                frame = self.imgBuffer[(i+1)*numCams-numCams]
+                for f in range(numCams-1):
+                    frame = np.hstack((frame,self.imgBuffer[(i+1)*numCams-numCams+f+1]))  
+                video.write(frame)   
+            cv2.destroyAllWindows()
+            video.release()
+            print(len(self.imgBuffer))
             self.reachDetected = False
             self.writeControl = 's' 
             self.imgBuffer = deque() 
@@ -743,6 +759,7 @@ class CameraSettings:
             for i in range(numCams):
                 self.camList[i].get_image(img,timeout = 2000)
                 npImg = img.get_image_data_numpy()
+                npImg = cv2.cvtColor(npImg,cv2.COLOR_BAYER_BG2RGB)
                 self.imgBuffer.append(imgTup.ImageTuple(i, now, npImg))
                 if len(self.imgBuffer)>numCams:
                     self.imgBuffer.popleft()
