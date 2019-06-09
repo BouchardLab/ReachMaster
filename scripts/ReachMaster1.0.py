@@ -17,8 +17,6 @@ import binascii
 import struct 
 import os 
 from collections import deque
-import subprocess as sp
-import skvideo.io
 
 #declare global variables and set to defaults
 dataDir = os.getcwd()                       #directory to save data
@@ -37,17 +35,17 @@ gpo_selector = "XI_GPO_PORT1"
 gpo_mode = "XI_GPO_EXPOSURE_ACTIVE"
 baselineDur = 5.0
 bufferDur = 0.5                            #duration (sec) to buffer images
-imgWidth = 512 
-imgHeight = 512
-offsetX = 384
-offsetY = 256
+imgWidth = 608 #512 
+imgHeight = 608 #512
+offsetX = 336 #384
+offsetY = 208 #256
 reachTimeout = 4000
 savedPOIs = []
 poiMeans = []
 poiStds = []
 obsPOIs = []
 zPOIs = []
-poiThreshold = 5
+poiThreshold = 15
 baselineAcquired = False
 #expController settings
 expControlPath = '/dev/ttyACM0'
@@ -286,7 +284,7 @@ class ReachMaster:
                             zPOIs.append(0)
                         self.buffer_full = False 
                         self.sensorpath = dataDir + "/sensor_data/"
-                        self.camerapath = dataDir + "/camera/data/" + str(datetime.datetime.now())
+                        self.camerapath = dataDir + "/videos/" #+ str(datetime.datetime.now())
                         if not os.path.isdir(self.sensorpath):
                             os.makedirs(self.sensorpath)
                         if not os.path.isdir(self.camerapath):
@@ -410,7 +408,7 @@ class ReachMaster:
                 for j in range(len(savedPOIs[i])): 
                     obsPOIs[i][j] = npImg[savedPOIs[i][j][1],savedPOIs[i][j][0]]
                 zPOIs[i] = np.round(np.sum(np.square(obsPOIs[i]-poiMeans[i]))/(poiStds[i]+np.finfo(float).eps),decimals=1)
-                npImg = cv2.cvtColor(npImg,cv2.COLOR_BAYER_BG2BGR)
+                # npImg = cv2.cvtColor(npImg,cv2.COLOR_BAYER_BG2BGR)
                 # self.imgBuffer.append(imgTup.ImageTuple(i, now, npImg))
                 self.imgBuffer.append(npImg)
                 if len(self.imgBuffer)>numCams*bufferDur*fps and not self.reachDetected:
@@ -437,14 +435,13 @@ class ReachMaster:
                 os.makedirs(self.camerapath)
             trial_fn = 'trial: ' + str(self.newline[0]) + '.mp4' 
             video = cv2.VideoWriter(os.path.join(self.camerapath, trial_fn), 0x21, 60, (numCams*imgWidth,imgHeight))
-            for i in range(len(self.imgBuffer)/numCams):  
-                frame = self.imgBuffer[(i+1)*numCams-numCams]
+            for i in range(len(self.imgBuffer)/numCams):
+                frame = cv2.cvtColor(self.imgBuffer[(i+1)*numCams-numCams],cv2.COLOR_BAYER_BG2BGR)
                 for f in range(numCams-1):
-                    frame = np.hstack((frame,self.imgBuffer[(i+1)*numCams-numCams+f+1]))  
+                    frame = np.hstack((frame,cv2.cvtColor(self.imgBuffer[(i+1)*numCams-numCams+f+1],cv2.COLOR_BAYER_BG2BGR)))  
                 video.write(frame)   
             cv2.destroyAllWindows()
             video.release()
-            print(len(self.imgBuffer))
             self.reachDetected = False
             self.writeControl = 's' 
             self.imgBuffer = deque() 
@@ -725,9 +722,6 @@ class CameraSettings:
     def startStream(self):
         if not self.streamStarted:
             self.buffer_full = False 
-            self.calipath = dataDir + "/calibration_images/"
-            if not os.path.isdir(self.calipath):
-                os.makedirs(self.calipath)
             self.camWindows = [0 for _ in range(numCams)]
             for i in range(numCams):
                 self.camWindows[i] = tk.Toplevel(self.window)
@@ -774,6 +768,9 @@ class CameraSettings:
                     for poi in self.addedPOIs[i]:                        
                         self.camWindows[i].canvas.create_line(poi[0],poi[1],poi[0]+1,poi[1],width=1,fill='red')
             if self.capture:
+                self.calipath = dataDir + "/calibration_images/"
+                if not os.path.isdir(self.calipath):
+                    os.makedirs(self.calipath)
                 serBuf.serialize(self.imgBuffer,self.calipath,self.imgNum)
                 self.imgBuffer = deque()
                 self.capture = False

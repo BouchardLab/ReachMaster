@@ -3,8 +3,8 @@ import h5py
 import cv2
 # import ffmpeg
 
-saved_dir = '/home/pns/rat_reaching/scripts/camera/data/2019-05-31 14:35:32.448403/debayered/'
-path = '/home/pns/rat_reaching/scripts/camera/data/2019-05-31 14:35:32.448403'
+saved_dir = '/media/pns/0e3152c3-1f53-4c52-b611-400556966cd8/data/RM5/06062019/calibration_images/debayered/'
+path = '/media/pns/0e3152c3-1f53-4c52-b611-400556966cd8/data/RM5/06062019/calibration_images/'
 trial_fn = 'trial: 1'
 
 def fnConverter(camids, t):
@@ -24,6 +24,7 @@ def debayerSave(filename):
 	f = h5py.File(os.path.join(path, filename), 'r')
 	for key in f.keys():
 	    img = f[key].value
+	    print(img.shape)
 	    debayered = cv2.cvtColor(img,cv2.COLOR_BAYER_BG2BGR)
 	    convertedFn = fnConverter(str(key).split(",")[0],str(key).split(",")[1])
 	    # convertedFn = fnConverter(str(key).split(",")[0],str(key).split(",")[1],str(key).split(",")[2])
