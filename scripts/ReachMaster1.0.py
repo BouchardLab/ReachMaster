@@ -1,7 +1,6 @@
 import Tkinter as tk 
 import tkFileDialog
 import tkMessageBox
-import threading 
 import cv2
 import PIL.Image, PIL.ImageTk
 # import cam_func.camera_start_acq as csa
@@ -13,10 +12,9 @@ import datetime
 import numpy as np
 import serial
 from serial.tools import list_ports
-import binascii
-import struct 
 import os 
 from collections import deque
+from vidgear.gears import WriteGear
 
 #declare global variables and set to defaults
 dataDir = os.getcwd()                       #directory to save data
@@ -47,6 +45,13 @@ obsPOIs = []
 zPOIs = []
 poiThreshold = 15
 baselineAcquired = False
+vidMode = "TRIALS"
+output_params = {
+    "-vcodec":"libx264", 
+    "-crf": 28,
+    "-preset":"ultrafast", 
+    "-tune":"zerolatency",
+    "-output_dimensions": (numCams*imgWidth,imgHeight)}
 #expController settings
 expControlPath = '/dev/ttyACM0'
 robControlPath = '/dev/ttyACM1'
@@ -94,9 +99,7 @@ class ReachMaster:
         self.expControlOn = False
         self.robControlOn = False
         self.camerasLoaded = False
-        self.expBegan = False
         self.expActive = False      
-        self.expEnded = False    
         self.setup_UI()
         #run main program
         self.main()
@@ -139,9 +142,7 @@ class ReachMaster:
         tk.Button(text="Toggle Lights", font='Arial 10 bold',width=14, command=self.lightsCallback).grid(row=5, column=1)
         tk.Button(text="Deliver Water", font='Arial 10 bold',width=14, command=self.waterCallback).grid(row=6, column=1)
         tk.Button(text="Flush Water", font='Arial 10 bold',width=14, command=self.flushCallback).grid(row=7, column=1)
-        tk.Button(text="Begin Experiment", font='Arial 10 bold',width=14, command=self.beginExpCallback).grid(row=4, column=2)
-        tk.Button(text="Pause Experiment", font='Arial 10 bold',width=14, command=self.pauseExpCallback).grid(row=5, column=2)
-        tk.Button(text="End Experiment", font='Arial 10 bold',width=14, command=self.endExpCallback).grid(row=6, column=2)
+        tk.Button(text="Start Experiment", font='Arial 10 bold',width=14, command=self.startExpCallback).grid(row=5, column=2)
 
     def ddBrowseCallback(self):
         global dataDir
@@ -208,11 +209,14 @@ class ReachMaster:
             pass
 
     def expSetCallback(self):
-        if self.expControlOn:
-            expSetRoot = tk.Toplevel(self.window)     
-            ExperimentSettings(expSetRoot)
+        if not self.expActive:
+            if self.expControlOn:
+                expSetRoot = tk.Toplevel(self.window)     
+                ExperimentSettings(expSetRoot)
+            else:
+                tkMessageBox.showinfo("Warning", "Experiment Controller not connected.")
         else:
-            tkMessageBox.showinfo("Warning", "Experiment Controller not connected.")
+            pass
 
     def robSetCallback(self):
         if self.robControlOn:
@@ -225,7 +229,8 @@ class ReachMaster:
         global lightsOn
         if self.expControlOn:
             expController.write("m")
-            lightsOn = 0
+            if vidMode == "TRIALS":
+                lightsOn = 0
         else:
             tkMessageBox.showinfo("Warning", "Experiment Controller not connected.")
 
@@ -240,10 +245,6 @@ class ReachMaster:
         if self.expControlOn:
             expController.write("n")
             lightsOn = not lightsOn
-            # if self.expActive and lightsOn:
-            #     self.newline[2] = '1'
-            # elif self.expActive:
-            #     self.newline[2] = '0'
         else:
             tkMessageBox.showinfo("Warning", "Experiment Controller not connected.")
 
@@ -262,17 +263,16 @@ class ReachMaster:
         else:
             tkMessageBox.showinfo("Warning", "Experiment Controller not connected.")
 
-    def beginExpCallback(self):
+    def startExpCallback(self):
         if self.expControlOn:
             if len(savedPOIs)>0:
-                if not self.expBegan:
+                if not self.expActive:
                     try:
                         global lightsOn
                         self.loadCameras()
                         if not baselineAcquired:
                             if not lightsOn:
                                 self.lightsCallback()
-                                lightsOn = 1
                             self.writeControl = "s"
                             self.acquireBaseline()                       
                         global obsPOIs
@@ -284,12 +284,12 @@ class ReachMaster:
                             zPOIs.append(0)
                         self.buffer_full = False 
                         self.sensorpath = dataDir + "/sensor_data/"
-                        self.camerapath = dataDir + "/videos/" #+ str(datetime.datetime.now())
+                        self.camerapath = dataDir + "/videos/" 
                         if not os.path.isdir(self.sensorpath):
                             os.makedirs(self.sensorpath)
                         if not os.path.isdir(self.camerapath):
                             os.makedirs(self.camerapath)
-                        sensorfile = self.sensorpath + str(datetime.datetime.now());    
+                        sensorfile = self.sensorpath + str(datetime.datetime.now())    
                         self.outputfile = open(sensorfile, "w+")
                         # header = "time countTrials serPNS robotOutState lightsOn inRewardWin robotRZState solenoidOpen lickState zPOI"
                         header = "time trial serPNS triggered inRewardWin zPOI"
@@ -300,40 +300,27 @@ class ReachMaster:
                             pass
                         self.newline = expController.readline().split()
                         expController.flushInput()
+                        if vidMode == "CONTINUOUS":
+                            self.vid_fn = self.camerapath + str(datetime.datetime.now()) + '.mp4' 
+                            self.video = WriteGear(
+                                output_filename = self.vid_fn,
+                                compression_mode = True,
+                                logging=False,
+                                **output_params)
                         print('trials completed:')
                         print(self.newline[0])
-                        self.expBegan = True
                         self.expActive = True
                         self.reachDetected = False
                     except xiapi.Xi_error as err:
                         self.expActive = False
-                        self.expBegan = False
                         self.unloadCameras()
                         if err.status == 10:
                             tkMessageBox.showinfo("Warning", "No image triggers detected.")
                             print (err)
-                else:
-                    self.expActive = True
             else:
                tkMessageBox.showinfo("Warning", "No POIs have been saved.") 
         else:
             tkMessageBox.showinfo("Warning", "Experiment Controller not connected.")
-
-    def pauseExpCallback(self):        
-        if self.expActive:
-            self.expActive = False
-            expController.write("p")
-        else:
-            tkMessageBox.showinfo("Warning", "No exp to pause.")
-
-    def endExpCallback(self):
-        if self.expActive:
-            self.expActive = False
-            self.expEnded = True
-            expController.write("e")
-            expController.close()
-        else:
-            tkMessageBox.showinfo("Warning", "No exp to end.")
 
     def loadCameras(self):              
         self.camList = []
@@ -397,7 +384,7 @@ class ReachMaster:
             baselineAcquired = True
             print("Baseline acquired!")
 
-    def runExperiment(self):
+    def runConintuous(self):
         global lightsOn  
         now = str(int(round(time.time()*1000)))   
         if self.newline[2]=='1': 
@@ -408,12 +395,49 @@ class ReachMaster:
                 for j in range(len(savedPOIs[i])): 
                     obsPOIs[i][j] = npImg[savedPOIs[i][j][1],savedPOIs[i][j][0]]
                 zPOIs[i] = np.round(np.sum(np.square(obsPOIs[i]-poiMeans[i]))/(poiStds[i]+np.finfo(float).eps),decimals=1)
-                # npImg = cv2.cvtColor(npImg,cv2.COLOR_BAYER_BG2BGR)
-                # self.imgBuffer.append(imgTup.ImageTuple(i, now, npImg))
+                if i == 0:
+                    frame = npImg
+                else:
+                    frame = np.hstack((frame,npImg))
+            # expController.write(self.writeControl) 
+            self.video.write(frame)
+        else:
+            lightsOn = 0
+            print(lightsOn)
+            for i in range(numCams):
+                zPOIs[i] = 0     
+        expController.write(self.writeControl) 
+        while not expController.in_waiting:
+            pass 
+        self.newline = expController.readline() 
+        expController.flushInput()
+        self.outputfile.write(now+" "+self.newline[0:-2:1]+" "+str(min(zPOIs))+"\n")
+        self.newline = self.newline.split() 
+        if self.newline[1] == 's' and min(zPOIs)>poiThreshold: 
+            self.reachDetected = True  
+            self.reachInit = now     
+            self.writeControl = 'r'
+        elif self.newline[1] == 'e': 
+            self.reachDetected = False
+            self.writeControl = 's' 
+            print(self.newline[0])
+        elif self.reachDetected and (int(now)-int(self.reachInit))>reachTimeout and self.newline[3]=='0':
+            self.movRobCallback()
+
+    def runTrials(self):
+        global lightsOn  
+        now = str(int(round(time.time()*1000)))   
+        if self.newline[2]=='1': 
+            lightsOn = 1
+            for i in range(numCams):
+                self.camList[i].get_image(self.img, timeout = 2000)                  
+                npImg = self.img.get_image_data_numpy()
+                for j in range(len(savedPOIs[i])): 
+                    obsPOIs[i][j] = npImg[savedPOIs[i][j][1],savedPOIs[i][j][0]]
+                zPOIs[i] = np.round(np.sum(np.square(obsPOIs[i]-poiMeans[i]))/(poiStds[i]+np.finfo(float).eps),decimals=1)
                 self.imgBuffer.append(npImg)
                 if len(self.imgBuffer)>numCams*bufferDur*fps and not self.reachDetected:
                     self.imgBuffer.popleft()
-
         else:
             lightsOn = 0
             for i in range(numCams):
@@ -433,15 +457,16 @@ class ReachMaster:
             # serBuf.serialize(self.imgBuffer,self.camerapath,self.newline)
             if not os.path.isdir(self.camerapath):
                 os.makedirs(self.camerapath)
-            trial_fn = 'trial: ' + str(self.newline[0]) + '.mp4' 
-            video = cv2.VideoWriter(os.path.join(self.camerapath, trial_fn), 0x21, 60, (numCams*imgWidth,imgHeight))
+            trial_fn = self.camerapath + 'trial: ' + str(self.newline[0]) + '.mp4' 
+            self.video = WriteGear(output_filename = trial_fn,compression_mode = True,logging=False,**output_params)
             for i in range(len(self.imgBuffer)/numCams):
-                frame = cv2.cvtColor(self.imgBuffer[(i+1)*numCams-numCams],cv2.COLOR_BAYER_BG2BGR)
+                # frame = cv2.cvtColor(self.imgBuffer[(i+1)*numCams-numCams],cv2.COLOR_BAYER_BG2BGR)
+                frame = self.imgBuffer[(i+1)*numCams-numCams]
                 for f in range(numCams-1):
-                    frame = np.hstack((frame,cv2.cvtColor(self.imgBuffer[(i+1)*numCams-numCams+f+1],cv2.COLOR_BAYER_BG2BGR)))  
-                video.write(frame)   
-            cv2.destroyAllWindows()
-            video.release()
+                    # frame = np.hstack((frame,cv2.cvtColor(self.imgBuffer[(i+1)*numCams-numCams+f+1],cv2.COLOR_BAYER_BG2BGR))) 
+                    frame = np.hstack((frame,self.imgBuffer[(i+1)*numCams-numCams+f+1])) 
+                self.video.write(frame)   
+            self.video.close()
             self.reachDetected = False
             self.writeControl = 's' 
             self.imgBuffer = deque() 
@@ -453,12 +478,14 @@ class ReachMaster:
         self.mainActive = True
         try:
             while self.mainActive:        
-                if self.expActive and not self.expEnded:
+                if self.expActive:
                     try:
-                        self.runExperiment()
+                        if vidMode == "CONTINUOUS":
+                            self.runConintuous()
+                        elif vidMode == "TRIALS":
+                            self.runTrials()
                     except xiapi.Xi_error as err:
                         self.expActive = False
-                        self.expBegan = False
                         self.unloadCameras()
                         if err.status == 10:
                             tkMessageBox.showinfo("Warning", "No image triggers detected.")
@@ -469,6 +496,8 @@ class ReachMaster:
             if self.robControlOn:
                     robController.write("e")
                     robController.close()
+            if vidMode == "CONTINUOUS":
+                self.video.close()
             if self.camerasLoaded:
                 self.unloadCameras()
                 self.imgBuffer = deque()
@@ -482,6 +511,8 @@ class ReachMaster:
                 if self.robControlOn:
                     robController.write("e")
                     robController.close()
+                if vidMode == "CONTINUOUS":
+                    self.video.close()
                 if self.camerasLoaded:
                     self.unloadCameras()
                     self.imgBuffer = deque()
@@ -494,6 +525,8 @@ class ReachMaster:
                 if self.robControlOn:
                     robController.write("e")
                     robController.close()
+                if vidMode == "CONTINUOUS":
+                    self.video.close()
                 if self.camerasLoaded:
                     self.unloadCameras()
                     self.imgBuffer = deque()
@@ -546,6 +579,8 @@ class CameraSettings:
         self.savedPOIs = [[] for _ in range(numCams)] 
         self.capture = False
         self.imgNum = [1]
+        self.vidMode = tk.StringVar()
+        self.vidMode.set(vidMode)
         self.setup_UI()
 
     def onQuit(self):
@@ -562,6 +597,8 @@ class CameraSettings:
         global imgHeight
         global offsetX
         global offsetY
+        global output_params
+        global vidMode
         numCams = int(self.numCams.get())
         fps = int(self.fps.get())
         exposure = int(self.exposure.get())
@@ -575,6 +612,13 @@ class CameraSettings:
         trigger_source = self.trigger_source.get()
         gpo_mode = self.gpo_mode.get()
         poiThreshold = float(self.poiThreshold.get())
+        output_params["-output_dimensions"] = (numCams*imgWidth,imgHeight)
+        vidMode = self.vidMode.get()
+        if vidMode == "CONTINUOUS":
+            output_params["-crf"] = 28
+            self.contModeWrite()
+        elif vidMode == "TRIALS":
+            output_params["-crf"] = 23
         if self.streaming:
             self.stopStream()
         self.window.destroy()
@@ -637,9 +681,12 @@ class CameraSettings:
         tk.Button(self.window,text="Capture Image",font='Arial 10 bold',width=14,command=self.captureImgCallback).grid(row=13, column=1)
         tk.Label(self.window,text="POI Threshold (stdev):", font='Arial 10 bold', bg="white",width=23,anchor="e").grid(row=14, sticky='W')   
         tk.Entry(self.window,textvariable=self.poiThreshold,width=17).grid(row=14, column=1)
-        tk.Label(self.window,text="Acquire Baseline (sec):", font='Arial 10 bold', bg="white",width=23,anchor="e").grid(row=15, sticky='W')   
-        tk.Entry(self.window,textvariable=self.baselineDur,width=17).grid(row=15, column=1)
-        tk.Button(self.window,text="Start",font='Arial 10 bold',width=14,command=self.baselineCallback).grid(row=15, column=2)
+        tk.Label(self.window,text="Video Mode:", font='Arial 10 bold', bg="white",width=23,anchor="e").grid(row=15, sticky='W')   
+        self.vidModeMenu = tk.OptionMenu(self.window,self.vidMode,
+            "CONTINUOUS",
+            "TRIALS")
+        self.vidModeMenu.configure(width=12,anchor="w")
+        self.vidModeMenu.grid(row=15, column=1)
 
     def startStreamCallback(self):
         if not self.streamStarted:
@@ -839,45 +886,13 @@ class CameraSettings:
         else: 
             tkMessageBox.showinfo("Warning", "Must be streaming to capture images.")
 
-    def baselineCallback(self):
-        if len(savedPOIs)==0:
-            tkMessageBox.showinfo("Warning", "No saved POIs.")
-        else:
-            if self.streaming:
-                self.stopStream()
-            global numCams
-            global fps
-            global exposure
-            global gain
-            global poiMeans
-            global poiStds
-            global baselineAcquired
-            numCams = int(self.numCams.get())
-            fps = int(self.fps.get())
-            exposure = int(self.exposure.get())
-            gain = float(self.gain.get())         
-            self.loadCameras()
-            cnt = 0 
-            numImgs = int(np.round(float(baselineDur)*float(fps),decimals=0)) 
-            img = xiapi.Image()
-            baselinePOIs = []
-            for i in range(numCams):
-                baselinePOIs.append(np.zeros(shape = (len(savedPOIs[i]), numImgs)))
-            print("Acquiring baseline...")
-            for cnt in range(numImgs):
-                for i in range(numCams):
-                    self.camList[i].get_image(img,timeout = 20000)
-                    npImg = img.get_image_data_numpy()
-                    for j in range(len(savedPOIs[i])): 
-                        baselinePOIs[i][j,cnt] = npImg[savedPOIs[i][j][1],savedPOIs[i][j][0]]
-            poiMeans = []
-            poiStds = []
-            for i in range(numCams):   
-                poiMeans.append(np.mean(baselinePOIs[i], axis = 1))             
-                poiStds.append(np.std(np.sum(np.square(baselinePOIs[i]-poiMeans[i].reshape(len(savedPOIs[i]),1)),axis=1)))
-            baselineAcquired = True
-            self.unloadCameras()
-            print("Baseline acquired!")
+    def contModeWrite(self):
+        expController.write("v")
+        if expController.read() == "v":
+            expController.write("contMode")
+            if expController.readline() == "v":
+                expController.write("1")
+
 
 class ExperimentSettings:
 
@@ -910,6 +925,7 @@ class ExperimentSettings:
         global solenoidOpenDur
         global solenoidBounceDur
         global flushDur
+        global output_params
         lightsOnDur = int(self.lightsOnDur.get())
         lightsOffDur = int(self.lightsOffDur.get())
         rewardWinDur = int(self.rewardWinDur.get())

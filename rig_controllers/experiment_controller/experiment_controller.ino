@@ -34,7 +34,6 @@ int lickState = 0;                 //1 if IR beam is broken
 //lighting
 int totalPixels = 256;
 Adafruit_NeoPixel strip = Adafruit_NeoPixel(totalPixels, neoPin, NEO_RGBW + NEO_KHZ800);
-
 uint32_t pureWhite = strip.Color(0,0,0,100); //don't go over 150!!!!!!
 uint32_t pureOff = strip.Color(0,0,0,0);
 int lightsOffDur = 3000;            //minimum time (ms) to keep lights off in between trials
@@ -50,6 +49,7 @@ int handshake = 0;                 //1 if successful serial connection has been 
 int expActive = 0;                 //1 when main experiment is being executed
 int expEnded = 0;                  //1 if entire program should stop
 String varName;                    //variable name for serial read/write
+int contMode = 0;
 
 //timer variables
 int waitDur = 5000;                //time to wait in between various events
@@ -196,13 +196,15 @@ void loop() {
           break;
         case 'm':
           //turn lights off and tell robot to move to next position
-          if(robotOutState==0){            
-            setAllPixels(totalPixels, pureOff);
-            digitalWrite(lightsPin,LOW);
-            lightsInit = millis();
-            lightsOn = 0;    
-            inRewardWin = 0;
-            delay(moveDelay); //keeps lights off for some amount of time before telling the robot to move
+          if(robotOutState==0){
+            lightsInit = millis(); 
+            if(!contMode){           
+              setAllPixels(totalPixels, pureOff);
+              digitalWrite(lightsPin,LOW);
+              lightsOn = 0;
+              delay(moveDelay); //keeps lights off for some amount of time before telling the robot to move
+            }               
+            inRewardWin = 0;            
             digitalWrite(robotOutPin,HIGH);
             robotOutState = 1;
             robotChanged = 0;
@@ -262,19 +264,21 @@ void loop() {
             lightsOffDur = Serial.parseInt();
           }else if(varName=="lightsOnDur"){
             lightsOnDur = Serial.parseInt();
+          }else if(varName=="contMode"){
+            contMode = Serial.parseInt();
           }
           break;                           
     }//end switch
 
-    //check robot
-    robotMovState = digitalRead(robotMovPin);
     //execute main experiment?
     if (expActive==1){     
-  
+
+      //check robot
+      robotMovState = digitalRead(robotMovPin);
       //should lighting change?
       if(lightsOn==0 && (millis()-lightsInit)>lightsOffDur && robotMovState==0 && serPNS=='s'){
         //lights are off, robot is in position, lights off timer is up, and image buffer has been saved
-        //turn lights on, and tell ECU to trigger images
+        //turn lights on and stop telling robot to move
         setAllPixels(totalPixels, pureWhite);
         digitalWrite(lightsPin,HIGH);
         lightsInit = millis();
@@ -284,27 +288,39 @@ void loop() {
       } else if(inRewardWin==1 && (millis()-rewardWinInit)>=rewardWinDur){
         //reward window just ended
         //turn lights off and tell robot to move to next position
-        setAllPixels(totalPixels, pureOff);
-        digitalWrite(lightsPin,LOW);
         lightsInit = millis();
-        lightsOn = 0;    
+        if(!contMode){
+          setAllPixels(totalPixels, pureOff);
+          digitalWrite(lightsPin,LOW);
+          lightsOn = 0; 
+          delay(moveDelay); //keeps lights off for some amount of time before telling the robot to move
+        }   
         inRewardWin = 0;
-        delay(moveDelay); //keeps lights off for some amount of time before telling the robot to move
         digitalWrite(robotOutPin,HIGH);
         robotOutState = 1;
         robotChanged = 0;
         trialCount++;
         numRewards = 0;
         serPNS = 'e';
+      } else if(contMode && robotMovState==0 && (millis()-lightsInit)>lightsOffDur){
+        //operating in CONTINUOUS MODE and lights off (e.g., intertrial interval) timer is up,
+        //stop telling robot to move
+        digitalWrite(robotOutPin,LOW);
+        robotOutState = 0;
       }
 
       //trigger images
-      if(lightsOn && !triggerOn && !inRewardWin){
+      if(!contMode && lightsOn && !triggerOn && !inRewardWin){
         digitalWrite(triggerPin,HIGH);
         triggerInit = micros();
         triggerOn = 1;
         triggered = 1;
-      } else if(lightsOn && !triggerOn && inRewardWin && (millis()-rewardWinInit)<=rwBuffDur){
+      } else if(!contMode && lightsOn && !triggerOn && inRewardWin && (millis()-rewardWinInit)<=rwBuffDur){
+        digitalWrite(triggerPin,HIGH);
+        triggerInit = micros();
+        triggerOn = 1;
+        triggered = 1;
+      } else if(contMode && lightsOn && !triggerOn) {
         digitalWrite(triggerPin,HIGH);
         triggerInit = micros();
         triggerOn = 1;

@@ -37,7 +37,7 @@ int xPosIdx;
 int yPosIdx;
 int xDurIdx;
 int yDurIdx;
-float tol = 1023.0 / 50.0 / 2;
+float tol = 1023.0 / 50.0;
 float period = 125.0 * 1000.0;
 bool xOn;
 bool yOn;
