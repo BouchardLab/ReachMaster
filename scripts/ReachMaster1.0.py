@@ -387,39 +387,31 @@ class ReachMaster:
     def runConintuous(self):
         global lightsOn  
         now = str(int(round(time.time()*1000)))   
-        if self.newline[2]=='1': 
-            lightsOn = 1
-            for i in range(numCams):
-                self.camList[i].get_image(self.img, timeout = 2000)                  
-                npImg = self.img.get_image_data_numpy()
-                for j in range(len(savedPOIs[i])): 
-                    obsPOIs[i][j] = npImg[savedPOIs[i][j][1],savedPOIs[i][j][0]]
-                zPOIs[i] = np.round(np.sum(np.square(obsPOIs[i]-poiMeans[i]))/(poiStds[i]+np.finfo(float).eps),decimals=1)
-                if i == 0:
-                    frame = npImg
-                else:
-                    frame = np.hstack((frame,npImg))
-            # expController.write(self.writeControl) 
-            self.video.write(frame)
-        else:
-            lightsOn = 0
-            print(lightsOn)
-            for i in range(numCams):
-                zPOIs[i] = 0     
+        for i in range(numCams):
+            self.camList[i].get_image(self.img, timeout = 2000)                  
+            npImg = self.img.get_image_data_numpy()
+            for j in range(len(savedPOIs[i])): 
+                obsPOIs[i][j] = npImg[savedPOIs[i][j][1],savedPOIs[i][j][0]]
+            zPOIs[i] = np.round(np.sum(np.square(obsPOIs[i]-poiMeans[i]))/(poiStds[i]+np.finfo(float).eps),decimals=1)
+            if i == 0:
+                frame = npImg
+            else:
+                frame = np.hstack((frame,npImg))
         expController.write(self.writeControl) 
+        self.video.write(frame)
         while not expController.in_waiting:
             pass 
         self.newline = expController.readline() 
         expController.flushInput()
         self.outputfile.write(now+" "+self.newline[0:-2:1]+" "+str(min(zPOIs))+"\n")
         self.newline = self.newline.split() 
-        if self.newline[1] == 's' and min(zPOIs)>poiThreshold: 
+        if self.newline[1] == 'r' and min(zPOIs)>poiThreshold: 
             self.reachDetected = True  
             self.reachInit = now     
             self.writeControl = 'r'
         elif self.newline[1] == 'e': 
             self.reachDetected = False
-            self.writeControl = 's' 
+            self.writeControl = 's'   
             print(self.newline[0])
         elif self.reachDetected and (int(now)-int(self.reachInit))>reachTimeout and self.newline[3]=='0':
             self.movRobCallback()
