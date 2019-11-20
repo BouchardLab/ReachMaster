@@ -32,9 +32,9 @@ int inRewardWin = 0;               //1 if currently in the reward window
 int lickState = 0;                 //1 if IR beam is broken
 
 //lighting
-int totalPixels = 256;
+int totalPixels = 384;
 Adafruit_NeoPixel strip = Adafruit_NeoPixel(totalPixels, neoPin, NEO_RGBW + NEO_KHZ800);
-uint32_t pureWhite = strip.Color(0,0,0,100); //don't go over 150!!!!!!
+uint32_t pureWhite = strip.Color(0,0,0,85); //don't go over 150!!!!!!
 uint32_t pureOff = strip.Color(0,0,0,0);
 int lightsOffDur = 3000;            //minimum time (ms) to keep lights off in between trials
 int lightsOnDur = 5000;             //maximum time (ms) to keep tights on during a trial
@@ -52,17 +52,18 @@ String varName;                    //variable name for serial read/write
 int contMode = 0;
 
 //timer variables
-int waitDur = 5000;                //time to wait in between various events
-int moveDelay = 500;               //time to wait after turning lights off before telling robot to move
+int waitDur = 5000;                //time (ms) to wait in between various events
+int moveDelay = 500;               //time (ms) to wait after turning lights off before telling robot to move
 int triggerPer = 5000;             //image trigger period in microseconds
 int triggerDur = 1000;             //image trigger duration in microseconds
 int triggerOn = 0;                 //1 if the trigger pin is HIGH
 int triggered = 0;                 //1 if an image was triggered on the loop
-int rwBuffDur = 500;              //time (ms) into reward window that images should continue being triggered
+int rwBuffDur = 500;               //time (ms) into reward window that images should continue being triggered
+int reachDelay = 100;              //time (ms) after lights turn rats must wait before reaching
 unsigned long solenoidInit;        //time since most recent solenoid opening
 unsigned long lightsInit;          //time since lights turned on
-unsigned long triggerInit = 0;         //time since most recent image trigger
-unsigned long rewardWinInit = 0;       //time since reward window started
+unsigned long triggerInit = 0;     //time since most recent image trigger
+unsigned long rewardWinInit = 0;   //time since reward window started
 unsigned long reachInit = 0;       //time since reach was most recently detected
 
 //counters
@@ -162,6 +163,10 @@ void loop() {
           //PNS detected a reach
           reachInit = millis();//start reach timer 
           serPNS = newSerPNS;
+          if(!contMode && (reachInit-lightsInit)<reachDelay){
+            //rat reached too soon, move to next trial
+            inRewardWin = 1;
+          }
           break;
         case 's':
           //PNS saved image buffer to disk   
@@ -226,46 +231,50 @@ void loop() {
           //PNS requested to get a variable
           Serial.print(newSerPNS);
           while (!Serial.available()){}
-          varName = Serial.readString();
+          varName = Serial.readStringUntil('\n');
           if (varName=="flushDur"){ 
-            Serial.print(flushDur);
+            Serial.println(flushDur);
           }else if(varName=="solenoidOpenDur"){
-            Serial.print(solenoidOpenDur);
+            Serial.println(solenoidOpenDur);
           }else if(varName=="solenoidBounceDur"){
-            Serial.print(solenoidBounceDur);
+            Serial.println(solenoidBounceDur);
           }else if(varName=="rewardWinDur"){
-            Serial.print(rewardWinDur);
+            Serial.println(rewardWinDur);
           }else if(varName=="maxRewards"){
-            Serial.print(maxRewards);
+            Serial.println(maxRewards);
           }else if(varName=="lightsOffDur"){
-            Serial.print(lightsOffDur);
+            Serial.println(lightsOffDur);
           }else if(varName=="lightsOnDur"){
-            Serial.print(lightsOnDur);
+            Serial.println(lightsOnDur);
+          }else if(varName=="reachDelay"){
+            Serial.println(reachDelay);
           }
           break;
         case 'v':
           //PNS requested to change a variable
           Serial.print(newSerPNS);
           while (!Serial.available()){}
-          String varName = Serial.readString();
+          varName = Serial.readStringUntil('\n');
           Serial.print(newSerPNS);
           while (!Serial.available()){}
           if(varName=="flushDur"){            
-            flushDur = Serial.parseInt();
+            flushDur = Serial.readStringUntil('\n').toInt();
           }else if(varName=="solenoidOpenDur"){
-            solenoidOpenDur = Serial.parseInt();
+            solenoidOpenDur = Serial.readStringUntil('\n').toInt();
           }else if(varName=="solenoidBounceDur"){
-            solenoidBounceDur = Serial.parseInt();
+            solenoidBounceDur = Serial.readStringUntil('\n').toInt();
           }else if(varName=="rewardWinDur"){
-            rewardWinDur = Serial.parseInt();
+            rewardWinDur = Serial.readStringUntil('\n').toInt();
           }else if(varName=="maxRewards"){
-            maxRewards = Serial.parseInt();
+            maxRewards = Serial.readStringUntil('\n').toInt();
           }else if(varName=="lightsOffDur"){
-            lightsOffDur = Serial.parseInt();
+            lightsOffDur = Serial.readStringUntil('\n').toInt();
           }else if(varName=="lightsOnDur"){
-            lightsOnDur = Serial.parseInt();
+            lightsOnDur = Serial.readStringUntil('\n').toInt();
           }else if(varName=="contMode"){
-            contMode = Serial.parseInt();
+            contMode = Serial.readStringUntil('\n').toInt();
+          }else if(varName=="reachDelay"){
+            reachDelay = Serial.readStringUntil('\n').toInt();
           }
           break;                           
     }//end switch
@@ -302,7 +311,7 @@ void loop() {
         trialCount++;
         numRewards = 0;
         serPNS = 'e';
-      } else if(contMode && robotMovState==0 && (millis()-lightsInit)>lightsOffDur){
+      } else if(contMode && robotMovState==0 && robotOutState==1 && (millis()-lightsInit)>lightsOffDur){
         //operating in CONTINUOUS MODE and lights off (e.g., intertrial interval) timer is up,
         //stop telling robot to move
         digitalWrite(robotOutPin,LOW);
@@ -350,12 +359,12 @@ void loop() {
       Serial.print(trialCount); 
       Serial.print(' ');   
       Serial.print(serPNS);  
-//      Serial.print(' ');     
-//      Serial.print(robotOutState); 
+      Serial.print(' ');     
+      Serial.print(robotOutState); 
       Serial.print(' ');  
       Serial.print(triggered); 
       Serial.print(' ');  
-      Serial.println(inRewardWin); 
+      Serial.println(robotRZState); 
 //      Serial.print(' ');  
 //      Serial.println(robotRZState); 
 //      Serial.print(' ');  
