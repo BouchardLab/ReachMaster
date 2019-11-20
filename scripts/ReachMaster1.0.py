@@ -42,7 +42,7 @@ def _byteify(data, ignore_dicts = False):
     # if it's anything else, return it in its original form
     return data
 
-workspace = json_load_byteified(open('defaultWorkspace.txt'))
+workspace = json_load_byteified(open('workspaces/defaultWorkspace.txt'))
 output_params = workspace['CameraSettings']['output_params']
 
 class ReachMaster:
