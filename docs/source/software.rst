@@ -19,29 +19,37 @@ Position Control
 ^^^^^^^^^^^^^^^^
 how to do
 
-ReachMaster User Interface
+Graphical User Interface
 --------------------------
 the big enchilada
 
-ReachMaster Home
-^^^^^^^^^^^^^^^^
+Master
+^^^^^^
 picture
 
-Workspaces
-^^^^^^^^^^
-workspace writer script
+**Workspaces**
+   workspace writer script
 
-Data Directories
-^^^^^^^^^^^^^^^^
-select
+**Data Directories**
+   ho to select
 
-Experiment Controller
-^^^^^^^^^^^^^^^^^^^^^
-how to connect
+**Experiment Controller**
+   how to connect
 
-Robot Controller
-^^^^^^^^^^^^^^^^
-how to connect
+**Robot Controller**
+   how to connect
+
+**Move Robot**
+   what is does
+
+**Deliver Water**
+   what is does
+
+**Flush Water**
+   what is does
+
+**Start Experiment**
+   what to expect
 
 Experiment Settings
 ^^^^^^^^^^^^^^^^^^^
@@ -51,20 +59,6 @@ Robot Settings
 ^^^^^^^^^^^^^^
 picture and discuss
 
-Move Robot
-^^^^^^^^^^
-what is does
-
-Deliver Water
-^^^^^^^^^^^^^
-what is does
-
-Flush Water
-^^^^^^^^^^^
-what is does
-
-Start Experiment
-^^^^^^^^^^^^^^^^
-what to expect
-
-
+Camera Settings
+^^^^^^^^^^^^^^^
+picture and discuss

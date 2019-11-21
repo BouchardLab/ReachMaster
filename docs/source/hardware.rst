@@ -4,15 +4,13 @@ Here you will find a detailed list of parts, build instructions, and discussion 
 
 Enclosure
 ---------
-picture
+.. image:: /art/rat_enclosure_new.png
 
-Freely Moving
-^^^^^^^^^^^^^
-picture
+**Freely Moving**
+   picture
 
-Confined
-^^^^^^^^
-picture
+**Confined**
+   picture
 
 Robot
 -----
@@ -53,7 +51,7 @@ Lighting
 --------
 picture
 
-3d Printed Parts
+3D Printed Parts
 ^^^^^^^^^^^^^^^^
 
 Reward Delivery
@@ -62,6 +60,10 @@ picture
 
 Lick Detection
 --------------
+picture
+
+Computers
+---------
 picture
 
 Build Instructions

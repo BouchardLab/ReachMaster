@@ -18,11 +18,12 @@
 # -- Project information -----------------------------------------------------
 
 project = 'ReachMaster'
-copyright = '2019, Brian Gereke'
+copyright = 'The Regents of the University of California, through Lawrence Berkeley National Laboratory'
 author = 'Brian Gereke'
 
 # The full version, including alpha/beta/rc tags
-release = '1.0'
+version = '1.0'
+release = 'alpha'
 
 
 # -- General configuration ---------------------------------------------------
