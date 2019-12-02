@@ -1,2 +1,2 @@
-# rat_reaching
-Control software for rat reaching rig, robot calibration, data preprcessing, analysis, etc.
+# ReachMaster
+A pneumatically-actuated robotic system for complex rodent reaching tasks
