@@ -1,9 +1,9 @@
 {
     "ReachMaster": {
         "expControlPath": "/dev/ttyACM0", 
-        "workspaceFile": "Default", 
         "robControlPath": "/dev/ttyACM1", 
-        "dataDir": "/home/pns/rat_reaching/scripts", 
+        "cfgFile": "Default", 
+        "dataDir": "/home/pns/rat_reaching/software/reachmaster/config", 
         "controlTimeout": 5, 
         "serialBaud": 2000000
     }, 
