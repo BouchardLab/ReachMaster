@@ -1,11 +1,7 @@
 from .. import config
 import Tkinter as tk 
-import tkFileDialog
 import tkMessageBox
-import numpy as np
 import serial
-import os 
-import json
 
 class ExperimentSettings(tk.Toplevel):
 
@@ -49,24 +45,23 @@ class ExperimentSettings(tk.Toplevel):
         self.expDisconnect()
         self.destroy()
 
-    def expConnect(self):
-        global expController        
-        expController = serial.Serial(self.cfg['ReachMaster']['expControlPath'],
-            self.cfg['ReachMaster']['serialBaud'],
-            timeout=self.cfg['ReachMaster']['controlTimeout'])
+    def exp_connect(self):     
+        self.exp_controller = serial.Serial(self.cfg['ReachMaster']['exp_control_path'],
+            self.cfg['ReachMaster']['serial_baud'],
+            timeout=self.cfg['ReachMaster']['control_timeout'])
         # time.sleep(2) #wait for controller to wake up
-        expController.flushInput()
-        expController.write("h")
-        response = expController.read()
+        self.exp_controller.flushInput()
+        self.exp_controller.write("h")
+        response = self.exp_controller.read()
         if response=="h":
-            self.expControlOn = True
+            self.exp_control_on = True
         else:
             tkMessageBox.showinfo("Warning", "Failed to connect.")
 
-    def expDisconnect(self):
-        if self.expControlOn:
-            expController.write("e")
-            expController.close()
+    def exp_disconnect(self):
+        if self.exp_control_on:
+            self.exp_controller.write("e")
+            self.exp_controller.close()
         else:
             pass
 
@@ -107,108 +102,108 @@ class ExperimentSettings(tk.Toplevel):
         tk.Button(self,text="Write",font='Arial 10 bold',width=14,command=self.reachDelayWrite).grid(row=8, column=3)
 
     def lightsOnDurRead(self):
-        expController.write("g")
-        if expController.read() == "g":
-            expController.write("lightsOnDur\n")
-            self.lightsOnDur.set(expController.readline()[:-2])
+        self.exp_controller.write("g")
+        if self.exp_controller.read() == "g":
+            self.exp_controller.write("lightsOnDur\n")
+            self.lightsOnDur.set(self.exp_controller.readline()[:-2])
 
     def lightsOnDurWrite(self):
-        expController.write("v")
-        if expController.read() == "v":
-            expController.write("lightsOnDur\n")
-            if expController.read() == "v":
-                expController.write(self.lightsOnDur.get()+"\n")
+        self.exp_controller.write("v")
+        if self.exp_controller.read() == "v":
+            self.exp_controller.write("lightsOnDur\n")
+            if self.exp_controller.read() == "v":
+                self.exp_controller.write(self.lightsOnDur.get()+"\n")
 
     def lightsOffDurRead(self):
-        expController.write("g")
-        if expController.read() == "g":
-            expController.write("lightsOffDur\n")
-            self.lightsOffDur.set(expController.readline()[:-2])
+        self.exp_controller.write("g")
+        if self.exp_controller.read() == "g":
+            self.exp_controller.write("lightsOffDur\n")
+            self.lightsOffDur.set(self.exp_controller.readline()[:-2])
 
     def lightsOffDurWrite(self):
-        expController.write("v")
-        if expController.read() == "v":
-            expController.write("lightsOffDur\n")
-            if expController.read() == "v":
-                expController.write(self.lightsOffDur.get()+"\n")
+        self.exp_controller.write("v")
+        if self.exp_controller.read() == "v":
+            self.exp_controller.write("lightsOffDur\n")
+            if self.exp_controller.read() == "v":
+                self.exp_controller.write(self.lightsOffDur.get()+"\n")
 
     def rewardWinDurRead(self):
-        expController.write("g")
-        if expController.read() == "g":
-            expController.write("rewardWinDur\n")
-            self.rewardWinDur.set(expController.readline()[:-2])
+        self.exp_controller.write("g")
+        if self.exp_controller.read() == "g":
+            self.exp_controller.write("rewardWinDur\n")
+            self.rewardWinDur.set(self.exp_controller.readline()[:-2])
 
     def rewardWinDurWrite(self):
-        expController.write("v")
-        if expController.read() == "v":
-            expController.write("rewardWinDur\n")
-            if expController.read() == "v":
-                expController.write(self.rewardWinDur.get()+"\n")
+        self.exp_controller.write("v")
+        if self.exp_controller.read() == "v":
+            self.exp_controller.write("rewardWinDur\n")
+            if self.exp_controller.read() == "v":
+                self.exp_controller.write(self.rewardWinDur.get()+"\n")
 
     def maxRewardsRead(self):
-        expController.write("g")
-        if expController.read() == "g":
-            expController.write("maxRewards\n")
-            self.maxRewards.set(expController.readline()[:-2])
+        self.exp_controller.write("g")
+        if self.exp_controller.read() == "g":
+            self.exp_controller.write("maxRewards\n")
+            self.maxRewards.set(self.exp_controller.readline()[:-2])
 
     def maxRewardsWrite(self):
-        expController.write("v")
-        if expController.read() == "v":
-            expController.write("maxRewards\n")
-            if expController.read() == "v":
-                expController.write(self.maxRewards.get()+"\n")
+        self.exp_controller.write("v")
+        if self.exp_controller.read() == "v":
+            self.exp_controller.write("maxRewards\n")
+            if self.exp_controller.read() == "v":
+                self.exp_controller.write(self.maxRewards.get()+"\n")
 
     def solenoidOpenDurRead(self):
-        expController.write("g")
-        if expController.read() == "g":
-            expController.write("solenoidOpenDur\n")
-            self.solenoidOpenDur.set(expController.readline()[:-2])
+        self.exp_controller.write("g")
+        if self.exp_controller.read() == "g":
+            self.exp_controller.write("solenoidOpenDur\n")
+            self.solenoidOpenDur.set(self.exp_controller.readline()[:-2])
 
     def solenoidOpenDurWrite(self):
-        expController.write("v")
-        if expController.read() == "v":
-            expController.write("SolenoidOpenDur\n")
-            if expController.read() == "v":
-                expController.write(self.solenoidOpenDur.get()+"\n")
+        self.exp_controller.write("v")
+        if self.exp_controller.read() == "v":
+            self.exp_controller.write("SolenoidOpenDur\n")
+            if self.exp_controller.read() == "v":
+                self.exp_controller.write(self.solenoidOpenDur.get()+"\n")
 
     def solenoidBounceDurRead(self):
-        expController.write("g")
-        if expController.read() == "g":
-            expController.write("solenoidBounceDur\n")
-            self.solenoidBounceDur.set(expController.readline()[:-2])
+        self.exp_controller.write("g")
+        if self.exp_controller.read() == "g":
+            self.exp_controller.write("solenoidBounceDur\n")
+            self.solenoidBounceDur.set(self.exp_controller.readline()[:-2])
 
     def solenoidBounceDurWrite(self):
-        expController.write("v")
-        if expController.read() == "v":
-            expController.write("solenoidBounceDur\n")
-            if expController.read() == "v":
-                expController.write(self.solenoidBounceDur.get()+"\n")
+        self.exp_controller.write("v")
+        if self.exp_controller.read() == "v":
+            self.exp_controller.write("solenoidBounceDur\n")
+            if self.exp_controller.read() == "v":
+                self.exp_controller.write(self.solenoidBounceDur.get()+"\n")
 
     def flushDurRead(self):
-        expController.write("g")
-        if expController.read() == "g":
-            expController.write("rewardWinDur\n")
-            self.flushDur.set(expController.readline()[:-2])
+        self.exp_controller.write("g")
+        if self.exp_controller.read() == "g":
+            self.exp_controller.write("rewardWinDur\n")
+            self.flushDur.set(self.exp_controller.readline()[:-2])
 
     def flushDurWrite(self):
-        expController.write("v")
-        if expController.read() == "v":
-            expController.write("flushDur\n")
-            if expController.read() == "v":
-                expController.write(self.flushDur.get()+"\n")
+        self.exp_controller.write("v")
+        if self.exp_controller.read() == "v":
+            self.exp_controller.write("flushDur\n")
+            if self.exp_controller.read() == "v":
+                self.exp_controller.write(self.flushDur.get()+"\n")
 
     def reachDelayRead(self):
-        expController.write("g")
-        if expController.read() == "g":
-            expController.write("reachDelay\n")
-            self.reachDelay.set(expController.readline()[:-2])
+        self.exp_controller.write("g")
+        if self.exp_controller.read() == "g":
+            self.exp_controller.write("reachDelay\n")
+            self.reachDelay.set(self.exp_controller.readline()[:-2])
 
     def reachDelayWrite(self):
-        expController.write("v")
-        if expController.read() == "v":
-            expController.write("reachDelay\n")
-            if expController.read() == "v":
-                expController.write(self.reachDelay.get()+"\n")
+        self.exp_controller.write("v")
+        if self.exp_controller.read() == "v":
+            self.exp_controller.write("reachDelay\n")
+            if self.exp_controller.read() == "v":
+                self.exp_controller.write(self.reachDelay.get()+"\n")
 
     def readAllCallback(self):
         self.flushDurRead()

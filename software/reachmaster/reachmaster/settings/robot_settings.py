@@ -4,8 +4,6 @@ import tkFileDialog
 import tkMessageBox
 import numpy as np
 import serial
-import os 
-import json
 
 class RobotSettings(tk.Toplevel):
 
@@ -91,7 +89,7 @@ class RobotSettings(tk.Toplevel):
         self.x =  self.cfg["RobotSettings"]["xCommandPos"]
         self.y =  self.cfg["RobotSettings"]["yCommandPos"]
         self.z =  self.cfg["RobotSettings"]["zCommandPos"]
-        self.robConnect()
+        self.rob_connect()
         self.setup_UI()
 
     def onQuit(self):
@@ -140,27 +138,25 @@ class RobotSettings(tk.Toplevel):
         self.cfg["RobotSettings"]["thetayCommandPos"] = self.thetay
         self.cfg["RobotSettings"]["thetazCommandPos"] = self.thetaz        
         config.save_tmp(self.cfg)
-        self.robDisconnect()
+        self.rob_disconnect()
         self.destroy()
 
-    def robConnect(self):
-        global robController
-        robController = serial.Serial(self.cfg['ReachMaster']['robControlPath'],
-            self.cfg['ReachMaster']['serialBaud'],
-            timeout=self.cfg['ReachMaster']['controlTimeout'])
-        # time.sleep(2) #wait for controller to wake up
-        robController.flushInput()
-        robController.write("h")
-        response = robController.read()
+    def rob_connect(self):
+        self.rob_controller = serial.Serial(self.cfg['ReachMaster']['rob_control_path'],
+            self.cfg['ReachMaster']['serial_baud'],
+            timeout=self.cfg['ReachMaster']['control_timeout'])
+        self.rob_controller.flushInput()
+        self.rob_controller.write("h")
+        response = self.rob_controller.read()
         if response == "h":
-            self.robControlOn = True
+            self.rob_connected = True
         else:
             tkMessageBox.showinfo("Warning", "Failed to connect.")
 
-    def robDisconnect(self):
-        if self.robControlOn:
-            robController.write("e")
-            robController.close()
+    def rob_disconnect(self):
+        if self.rob_connected:
+            self.rob_controller.write("e")
+            self.rob_controller.close()
         else:
             tkMessageBox.showinfo("Warning", "Robot Controller not connected.")
 
@@ -271,213 +267,213 @@ class RobotSettings(tk.Toplevel):
         tk.Entry(self,textvariable=self.z0,width=17).grid(row=15, column=5)
 
     def alphaRead(self):
-        robController.write("g")
-        if robController.read() == "g":
-            robController.write("alpha\n")
-            self.alpha.set(robController.readline()[:-2])
+        self.rob_controller.write("g")
+        if self.rob_controller.read() == "g":
+            self.rob_controller.write("alpha\n")
+            self.alpha.set(self.rob_controller.readline()[:-2])
 
     def alphaWrite(self):
-        robController.write("v")
-        if robController.read() == "v":
-            robController.write("alpha\n")
-            if robController.read() == "v":
-                robController.write(self.alpha.get()+"\n")
+        self.rob_controller.write("v")
+        if self.rob_controller.read() == "v":
+            self.rob_controller.write("alpha\n")
+            if self.rob_controller.read() == "v":
+                self.rob_controller.write(self.alpha.get()+"\n")
 
     def tolRead(self):
-        robController.write("g")
-        if robController.read() == "g":
-            robController.write("tol\n")
-            self.tol.set(robController.readline()[:-2])
+        self.rob_controller.write("g")
+        if self.rob_controller.read() == "g":
+            self.rob_controller.write("tol\n")
+            self.tol.set(self.rob_controller.readline()[:-2])
 
     def tolWrite(self):
-        robController.write("v")
-        if robController.read() == "v":
-            robController.write("tol\n")
-            if robController.read() == "v":
-                robController.write(self.tol.get()+"\n")
+        self.rob_controller.write("v")
+        if self.rob_controller.read() == "v":
+            self.rob_controller.write("tol\n")
+            if self.rob_controller.read() == "v":
+                self.rob_controller.write(self.tol.get()+"\n")
 
     def periodRead(self):
-        robController.write("g")
-        if robController.read() == "g":
-            robController.write("period\n")
-            self.period.set(robController.readline()[:-2])
+        self.rob_controller.write("g")
+        if self.rob_controller.read() == "g":
+            self.rob_controller.write("period\n")
+            self.period.set(self.rob_controller.readline()[:-2])
 
     def periodWrite(self):
-        robController.write("v")
-        if robController.read() == "v":
-            robController.write("period\n")
-            if robController.read() == "v":
-                robController.write(self.period.get()+"\n")
+        self.rob_controller.write("v")
+        if self.rob_controller.read() == "v":
+            self.rob_controller.write("period\n")
+            if self.rob_controller.read() == "v":
+                self.rob_controller.write(self.period.get()+"\n")
 
     def offDurRead(self):
-        robController.write("g")
-        if robController.read() == "g":
-            robController.write("offDur\n")
-            self.offDur.set(robController.readline()[:-2])
+        self.rob_controller.write("g")
+        if self.rob_controller.read() == "g":
+            self.rob_controller.write("offDur\n")
+            self.offDur.set(self.rob_controller.readline()[:-2])
 
     def offDurWrite(self):
-        robController.write("v")
-        if robController.read() == "v":
-            robController.write("offDur\n")
-            if robController.read() == "v":
-                robController.write(self.offDur.get()+"\n")
+        self.rob_controller.write("v")
+        if self.rob_controller.read() == "v":
+            self.rob_controller.write("offDur\n")
+            if self.rob_controller.read() == "v":
+                self.rob_controller.write(self.offDur.get()+"\n")
 
     def numTolRead(self):
-        robController.write("g")
-        if robController.read() == "g":
-            robController.write("numTol\n")
-            self.numTol.set(robController.readline()[:-2])
+        self.rob_controller.write("g")
+        if self.rob_controller.read() == "g":
+            self.rob_controller.write("numTol\n")
+            self.numTol.set(self.rob_controller.readline()[:-2])
 
     def numTolWrite(self):
-        robController.write("v")
-        if robController.read() == "v":
-            robController.write("numTol\n")
-            if robController.read() == "v":
-                robController.write(self.numTol.get()+"\n")
+        self.rob_controller.write("v")
+        if self.rob_controller.read() == "v":
+            self.rob_controller.write("numTol\n")
+            if self.rob_controller.read() == "v":
+                self.rob_controller.write(self.numTol.get()+"\n")
 
     def xPushWtRead(self):
-        robController.write("g")
-        if robController.read() == "g":
-            robController.write("xPushWt\n")
-            self.xPushWt.set(robController.readline()[:-2])
+        self.rob_controller.write("g")
+        if self.rob_controller.read() == "g":
+            self.rob_controller.write("xPushWt\n")
+            self.xPushWt.set(self.rob_controller.readline()[:-2])
 
     def xPushWtWrite(self):
-        robController.write("v")
-        if robController.read() == "v":
-            robController.write("xPushWt\n")
-            if robController.read() == "v":
-                robController.write(self.xPushWt.get()+"\n")
+        self.rob_controller.write("v")
+        if self.rob_controller.read() == "v":
+            self.rob_controller.write("xPushWt\n")
+            if self.rob_controller.read() == "v":
+                self.rob_controller.write(self.xPushWt.get()+"\n")
 
     def xPullWtRead(self):
-        robController.write("g")
-        if robController.read() == "g":
-            robController.write("xPullWt\n")
-            self.xPullWt.set(robController.readline()[:-2])
+        self.rob_controller.write("g")
+        if self.rob_controller.read() == "g":
+            self.rob_controller.write("xPullWt\n")
+            self.xPullWt.set(self.rob_controller.readline()[:-2])
 
     def xPullWtWrite(self):
-        robController.write("v")
-        if robController.read() == "v":
-            robController.write("xPullWt\n")
-            if robController.read() == "v":
-                robController.write(self.xPullWt.get()+"\n")
+        self.rob_controller.write("v")
+        if self.rob_controller.read() == "v":
+            self.rob_controller.write("xPullWt\n")
+            if self.rob_controller.read() == "v":
+                self.rob_controller.write(self.xPullWt.get()+"\n")
 
 
     def yPushWtRead(self):
-        robController.write("g")
-        if robController.read() == "g":
-            robController.write("yPushWt\n")
-            self.yPushWt.set(robController.readline()[:-2])
+        self.rob_controller.write("g")
+        if self.rob_controller.read() == "g":
+            self.rob_controller.write("yPushWt\n")
+            self.yPushWt.set(self.rob_controller.readline()[:-2])
 
     def yPushWtWrite(self):
-        robController.write("v")
-        if robController.read() == "v":
-            robController.write("yPushWt\n")
-            if robController.read() == "v":
-                robController.write(self.yPushWt.get()+"\n")
+        self.rob_controller.write("v")
+        if self.rob_controller.read() == "v":
+            self.rob_controller.write("yPushWt\n")
+            if self.rob_controller.read() == "v":
+                self.rob_controller.write(self.yPushWt.get()+"\n")
 
     def yPullWtRead(self):
-        robController.write("g")
-        if robController.read() == "g":
-            robController.write("yPullWt\n")
-            self.yPullWt.set(robController.readline()[:-2])
+        self.rob_controller.write("g")
+        if self.rob_controller.read() == "g":
+            self.rob_controller.write("yPullWt\n")
+            self.yPullWt.set(self.rob_controller.readline()[:-2])
 
     def yPullWtWrite(self):
-        robController.write("v")
-        if robController.read() == "v":
-            robController.write("yPullWt\n")
-            if robController.read() == "v":
-                robController.write(self.yPullWt.get()+"\n")
+        self.rob_controller.write("v")
+        if self.rob_controller.read() == "v":
+            self.rob_controller.write("yPullWt\n")
+            if self.rob_controller.read() == "v":
+                self.rob_controller.write(self.yPullWt.get()+"\n")
 
     def zPushWtRead(self):
-        robController.write("g")
-        if robController.read() == "g":
-            robController.write("zPushWt\n")
-            self.zPushWt.set(robController.readline()[:-2])
+        self.rob_controller.write("g")
+        if self.rob_controller.read() == "g":
+            self.rob_controller.write("zPushWt\n")
+            self.zPushWt.set(self.rob_controller.readline()[:-2])
 
     def zPushWtWrite(self):
-        robController.write("v")
-        if robController.read() == "v":
-            robController.write("zPushWt\n")
-            if robController.read() == "v":
-                robController.write(self.zPushWt.get()+"\n")
+        self.rob_controller.write("v")
+        if self.rob_controller.read() == "v":
+            self.rob_controller.write("zPushWt\n")
+            if self.rob_controller.read() == "v":
+                self.rob_controller.write(self.zPushWt.get()+"\n")
 
     def zPullWtRead(self):
-        robController.write("g")
-        if robController.read() == "g":
-            robController.write("zPullWt\n")
-            self.zPullWt.set(robController.readline()[:-2])
+        self.rob_controller.write("g")
+        if self.rob_controller.read() == "g":
+            self.rob_controller.write("zPullWt\n")
+            self.zPullWt.set(self.rob_controller.readline()[:-2])
 
     def zPullWtWrite(self):
-        robController.write("v")
-        if robController.read() == "v":
-            robController.write("zPullWt\n")
-            if robController.read() == "v":
-                robController.write(self.zPullWt.get()+"\n")
+        self.rob_controller.write("v")
+        if self.rob_controller.read() == "v":
+            self.rob_controller.write("zPullWt\n")
+            if self.rob_controller.read() == "v":
+                self.rob_controller.write(self.zPullWt.get()+"\n")
 
     def RZxRead(self):
-        robController.write("g")
-        if robController.read() == "g":
-            robController.write("RZx\n")
-            self.RZx.set(robController.readline()[:-2])
+        self.rob_controller.write("g")
+        if self.rob_controller.read() == "g":
+            self.rob_controller.write("RZx\n")
+            self.RZx.set(self.rob_controller.readline()[:-2])
 
     def RZxWrite(self):
-        robController.write("v")
-        if robController.read() == "v":
-            robController.write("RZx\n")
-            if robController.read() == "v":
-                robController.write(self.RZx.get()+"\n")
+        self.rob_controller.write("v")
+        if self.rob_controller.read() == "v":
+            self.rob_controller.write("RZx\n")
+            if self.rob_controller.read() == "v":
+                self.rob_controller.write(self.RZx.get()+"\n")
 
     def RZy_lowRead(self):
-        robController.write("g")
-        if robController.read() == "g":
-            robController.write("RZy_low\n")
-            self.RZy_low.set(robController.readline()[:-2])
+        self.rob_controller.write("g")
+        if self.rob_controller.read() == "g":
+            self.rob_controller.write("RZy_low\n")
+            self.RZy_low.set(self.rob_controller.readline()[:-2])
 
     def RZy_lowWrite(self):
-        robController.write("v")
-        if robController.read() == "v":
-            robController.write("RZy_low\n")
-            if robController.read() == "v":
-                robController.write(self.RZy_low.get()+"\n")
+        self.rob_controller.write("v")
+        if self.rob_controller.read() == "v":
+            self.rob_controller.write("RZy_low\n")
+            if self.rob_controller.read() == "v":
+                self.rob_controller.write(self.RZy_low.get()+"\n")
 
     def RZy_highRead(self):
-        robController.write("g")
-        if robController.read() == "g":
-            robController.write("RZy_high\n")
-            self.RZy_high.set(robController.readline()[:-2])
+        self.rob_controller.write("g")
+        if self.rob_controller.read() == "g":
+            self.rob_controller.write("RZy_high\n")
+            self.RZy_high.set(self.rob_controller.readline()[:-2])
 
     def RZy_highWrite(self):
-        robController.write("v")
-        if robController.read() == "v":
-            robController.write("RZy_high\n")
-            if robController.read() == "v":
-                robController.write(self.RZy_high.get()+"\n")
+        self.rob_controller.write("v")
+        if self.rob_controller.read() == "v":
+            self.rob_controller.write("RZy_high\n")
+            if self.rob_controller.read() == "v":
+                self.rob_controller.write(self.RZy_high.get()+"\n")
 
     def RZz_lowRead(self):
-        robController.write("g")
-        if robController.read() == "g":
-            robController.write("RZz_low\n")
-            self.RZz_low.set(robController.readline()[:-2])
+        self.rob_controller.write("g")
+        if self.rob_controller.read() == "g":
+            self.rob_controller.write("RZz_low\n")
+            self.RZz_low.set(self.rob_controller.readline()[:-2])
 
     def RZz_lowWrite(self):
-        robController.write("v")
-        if robController.read() == "v":
-            robController.write("RZz_low\n")
-            if robController.read() == "v":
-                robController.write(self.RZz_low.get()+"\n")
+        self.rob_controller.write("v")
+        if self.rob_controller.read() == "v":
+            self.rob_controller.write("RZz_low\n")
+            if self.rob_controller.read() == "v":
+                self.rob_controller.write(self.RZz_low.get()+"\n")
 
     def RZz_highRead(self):
-        robController.write("g")
-        if robController.read() == "g":
-            robController.write("RZz_high\n")
-            self.RZz_high.set(robController.readline()[:-2])
+        self.rob_controller.write("g")
+        if self.rob_controller.read() == "g":
+            self.rob_controller.write("RZz_high\n")
+            self.RZz_high.set(self.rob_controller.readline()[:-2])
 
     def RZz_highWrite(self):
-        robController.write("v")
-        if robController.read() == "v":
-            robController.write("RZz_high\n")
-            if robController.read() == "v":
-                robController.write(self.RZz_high.get()+"\n")
+        self.rob_controller.write("v")
+        if self.rob_controller.read() == "v":
+            self.rob_controller.write("RZz_high\n")
+            if self.rob_controller.read() == "v":
+                self.rob_controller.write(self.RZz_high.get()+"\n")
 
     def readAllCallback(self):
         self.alphaRead()
@@ -541,75 +537,75 @@ class RobotSettings(tk.Toplevel):
         self.yPullDur = self.yPullDur[1:-1]+' '
         self.zPushDur = self.zPushDur[1:-1]+' '
         self.zPullDur = self.zPullDur[1:-1]+' '
-        robController.write("c")
-        if robController.read() == "c":
-            robController.write("pos\n")
-            if robController.read() == "c":
-                robController.write(self.pos)
-        if robController.read() == "c":
+        self.rob_controller.write("c")
+        if self.rob_controller.read() == "c":
+            self.rob_controller.write("pos\n")
+            if self.rob_controller.read() == "c":
+                self.rob_controller.write(self.pos)
+        if self.rob_controller.read() == "c":
             print('pos loaded')
         else:
             tkMessageBox.showinfo("Warning", "Failed to load pos.")
-        robController.write("c")
-        if robController.read() == "c":
-            robController.write("dis\n")
-            if robController.read() == "c":
-                robController.write(self.dis)
-                if robController.read() == "c":
+        self.rob_controller.write("c")
+        if self.rob_controller.read() == "c":
+            self.rob_controller.write("dis\n")
+            if self.rob_controller.read() == "c":
+                self.rob_controller.write(self.dis)
+                if self.rob_controller.read() == "c":
                     print('dis loaded')
                 else:
                     tkMessageBox.showinfo("Warning", "Failed to load dis.")
-        robController.write("c")
-        if robController.read() == "c":
-            robController.write("xPushDur\n")
-            if robController.read() == "c":
-                robController.write(self.xPushDur)
-                if robController.read() == "c":
+        self.rob_controller.write("c")
+        if self.rob_controller.read() == "c":
+            self.rob_controller.write("xPushDur\n")
+            if self.rob_controller.read() == "c":
+                self.rob_controller.write(self.xPushDur)
+                if self.rob_controller.read() == "c":
                     print('xPushDur loaded')
                 else:
                     tkMessageBox.showinfo("Warning", "Failed to load xPushDur.")
-        robController.write("c")
-        if robController.read() == "c":
-            robController.write("xPullDur\n")
-            if robController.read() == "c":
-                robController.write(self.xPullDur)
-                if robController.read() == "c":
+        self.rob_controller.write("c")
+        if self.rob_controller.read() == "c":
+            self.rob_controller.write("xPullDur\n")
+            if self.rob_controller.read() == "c":
+                self.rob_controller.write(self.xPullDur)
+                if self.rob_controller.read() == "c":
                     print('xPullDur loaded')
                 else:
                     tkMessageBox.showinfo("Warning", "Failed to load xPullDur.")
-        robController.write("c")
-        if robController.read() == "c":
-            robController.write("yPushDur\n")
-            if robController.read() == "c":
-                robController.write(self.yPushDur)
-                if robController.read() == "c":
+        self.rob_controller.write("c")
+        if self.rob_controller.read() == "c":
+            self.rob_controller.write("yPushDur\n")
+            if self.rob_controller.read() == "c":
+                self.rob_controller.write(self.yPushDur)
+                if self.rob_controller.read() == "c":
                     print('yPushDur loaded')
                 else:
                     tkMessageBox.showinfo("Warning", "Failed to load yPushDur.")
-        robController.write("c")
-        if robController.read() == "c":
-            robController.write("yPullDur\n")
-            if robController.read() == "c":
-                robController.write(self.yPullDur)
-                if robController.read() == "c":
+        self.rob_controller.write("c")
+        if self.rob_controller.read() == "c":
+            self.rob_controller.write("yPullDur\n")
+            if self.rob_controller.read() == "c":
+                self.rob_controller.write(self.yPullDur)
+                if self.rob_controller.read() == "c":
                     print('yPullDur loaded')
                 else:
                     tkMessageBox.showinfo("Warning", "Failed to load yPullDur.")
-        robController.write("c")
-        if robController.read() == "c":
-            robController.write("zPushDur\n")
-            if robController.read() == "c":
-                robController.write(self.zPushDur)
-                if robController.read() == "c":
+        self.rob_controller.write("c")
+        if self.rob_controller.read() == "c":
+            self.rob_controller.write("zPushDur\n")
+            if self.rob_controller.read() == "c":
+                self.rob_controller.write(self.zPushDur)
+                if self.rob_controller.read() == "c":
                     print('zPushDur loaded')
                 else:
                     tkMessageBox.showinfo("Warning", "Failed to load zPushDur.")
-        robController.write("c")
-        if robController.read() == "c":
-            robController.write("zPullDur\n")
-            if robController.read() == "c":
-                robController.write(self.zPullDur)
-                if robController.read() == "c":
+        self.rob_controller.write("c")
+        if self.rob_controller.read() == "c":
+            self.rob_controller.write("zPullDur\n")
+            if self.rob_controller.read() == "c":
+                self.rob_controller.write(self.zPullDur)
+                if self.rob_controller.read() == "c":
                     print('zPullDur loaded')
                 else:
                     tkMessageBox.showinfo("Warning", "Failed to load zPullDur.")                  
@@ -676,30 +672,30 @@ class RobotSettings(tk.Toplevel):
         self.r = self.r[1:-1]+' '
         self.thetay = self.thetay[1:-1]+' '
         self.thetaz = self.thetaz[1:-1]+' '
-        robController.write("p")
-        if robController.read() == "p":
-            robController.write("xCommandPos\n")
-            if robController.read() == "p":
-                robController.write(self.x)
-        if robController.read() == "p":
+        self.rob_controller.write("p")
+        if self.rob_controller.read() == "p":
+            self.rob_controller.write("xCommandPos\n")
+            if self.rob_controller.read() == "p":
+                self.rob_controller.write(self.x)
+        if self.rob_controller.read() == "p":
             print('x commands loaded')
         else:
             tkMessageBox.showinfo("Warning", "Failed to load x commands.")
-        robController.write("p")
-        if robController.read() == "p":
-            robController.write("yCommandPos\n")
-            if robController.read() == "p":
-                robController.write(self.y)
-        if robController.read() == "p":
+        self.rob_controller.write("p")
+        if self.rob_controller.read() == "p":
+            self.rob_controller.write("yCommandPos\n")
+            if self.rob_controller.read() == "p":
+                self.rob_controller.write(self.y)
+        if self.rob_controller.read() == "p":
             print('y commands loaded')
         else:
             tkMessageBox.showinfo("Warning", "Failed to load y commands.")
-        robController.write("p")
-        if robController.read() == "p":
-            robController.write("zCommandPos\n")
-            if robController.read() == "p":
-                robController.write(self.z)
-        if robController.read() == "p":
+        self.rob_controller.write("p")
+        if self.rob_controller.read() == "p":
+            self.rob_controller.write("zCommandPos\n")
+            if self.rob_controller.read() == "p":
+                self.rob_controller.write(self.z)
+        if self.rob_controller.read() == "p":
             print('z commands loaded')
         else:
             tkMessageBox.showinfo("Warning", "Failed to load z commands.") 
