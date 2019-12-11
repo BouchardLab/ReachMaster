@@ -2,14 +2,14 @@ from ximea import xiapi
 
 def open_cameras(cfg):              
     cams = []
-    for i in range(cfg['CameraSettings']['numCams']):
+    for i in range(cfg['CameraSettings']['num_cams']):
         print('loading camera %s ...' %(i))
         cams.append(xiapi.Camera(dev_id = i))
         cams[i].open_device()     
     return cams
 
 def set_cameras(cams,cfg):
-    for i in length(cams):
+    for i in range(cfg['CameraSettings']['num_cams']):
         print('Setting camera %d ...' %i)
         cams[i].set_imgdataformat(cfg['CameraSettings']['imgdataformat'])
         cams[i].set_exposure(cfg['CameraSettings']['exposure'])
@@ -19,18 +19,33 @@ def set_cameras(cams,cfg):
         cams[i].set_gpi_mode(cfg['CameraSettings']['gpi_mode'])
         cams[i].set_trigger_source(cfg['CameraSettings']['trigger_source'])
         cams[i].set_gpo_selector(cfg['CameraSettings']['gpo_selector'])
-        cams[i].set_gpo_mode(cfg['CameraSettings']['gpo_mode'])
+        cams[i].set_gpo_mode(cfg['CameraSettings']['gpo_mode'])        
         if cfg['CameraSettings']['downsampling'] == "XI_DWN_2x2":
             cams[i].set_downsampling(cfg['CameraSettings']['downsampling'])
         else:
-            cams[i].set_height(cfg['CameraSettings']['imgHeight'])
-            cams[i].set_width(cfg['CameraSettings']['imgWidth'])
-            cams[i].set_offsetX(cfg['CameraSettings']['offsetX'])
-            cams[i].set_offsetY(cfg['CameraSettings']['offsetY'])
+            widthIncrement = cams[i].get_width_increment()
+            heightIncrement = cams[i].get_height_increment()
+            if (cfg['CameraSettings']['img_width']%widthIncrement)!=0:
+                raise Exception("Image width not divisible by "+str(widthIncrement))
+                return
+            elif (cfg['CameraSettings']['img_height']%heightIncrement)!=0:
+                raise Exception("Image height not divisible by "+str(heightIncrement))
+                return
+            elif (cfg['CameraSettings']['img_width']+cfg['CameraSettings']['offset_x'])>1280:
+                raise Exception("Image width + x offset > 1280") 
+                return
+            elif (cfg['CameraSettings']['img_height']+cfg['CameraSettings']['offset_y'])>1024:
+                raise Exception("Image height + y offset > 1024") 
+                return
+            else:
+                cams[i].set_height(cfg['CameraSettings']['img_height'])
+                cams[i].set_width(cfg['CameraSettings']['img_width'])
+                cams[i].set_offsetX(cfg['CameraSettings']['offset_x'])
+                cams[i].set_offsetY(cfg['CameraSettings']['offset_y'])
         cams[i].enable_recent_frame()
 
 def start_cameras(cams):
-    for i in length(cams):
+    for i in range(len(cams)):
         print('Starting camera %d ...' %i)
         cams[i].start_acquisition()
 
@@ -40,7 +55,7 @@ def start_interface(cfg):
     try:
         start_cameras(cams)     
     except xiapi.Xi_error as err:
-        self.expActive = False
+        expActive = False
         camint.stop_interface()
         if err.status == 10:
             raise Exception("No image triggers detected.")
@@ -49,7 +64,7 @@ def start_interface(cfg):
     return cams
 
 def stop_interface(cams):
-    for i in length(cams):
+    for i in range(len(cams)):
         print('stopping camera %d ...' %i)
         cams[i].stop_acquisition()
         cams[i].close_device()

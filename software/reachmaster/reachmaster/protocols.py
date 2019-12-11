@@ -12,6 +12,10 @@ import os
 from collections import deque
 from vidgear.gears import WriteGear
 
+def list_protocols():
+    protocol_list = list(["TRIALS","CONTINUOUS"])
+    return protocol_list
+
 class Protocols(tk.Toplevel):
 
     def __init__(self, parent):
@@ -49,9 +53,9 @@ class Protocols(tk.Toplevel):
             self.rob_controller = robint.start_interface(self.cfg)
             self.rob_connected = True
             if self.cfg['RobotSettings']['calibration_file'] != 'None':
-                robint.load_calibration_all(self.rob_controller, self.cfg)
+                robint.load_config_calibration(self.rob_controller, self.cfg)
             if self.cfg['RobotSettings']['command_type'] != 'None':
-                self.cfg = robint.load_commands_all(self.rob_controller, self.cfg)
+                self.cfg = robint.load_config_commands(self.rob_controller, self.cfg)
             self.cams = camint.start_interface(self.cfg)
             self.cams_connected = True
             self.img = camint.init_image()
@@ -88,8 +92,9 @@ class Protocols(tk.Toplevel):
         robint.stop_interface(self.rob_controller)
         self.destroy()
 
-    def init_protocol(self):
+    def init_protocol(self):        
         if self.cfg['Protocol'] == "CONTINUOUS":
+            expint.set_protocol(self.exp_controller, "contMode")
             self.vid_fn = self.video_data_path + str(datetime.datetime.now()) + '.mp4' 
             self.video = WriteGear(
                 output_filename = self.vid_fn,
@@ -224,7 +229,7 @@ class Protocols(tk.Toplevel):
             print(self.newline[0])
         elif self.reach_detected and (int(now)-int(self.reach_init))>\
         self.cfg['ExperimentSettings']['reach_timeout'] and self.newline[4]=='0':
-            self.movRobCallback()
+            self.move_rob_callback()
 
     def run(self):
         if self.protocol is 'TRIALS':

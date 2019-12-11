@@ -9,7 +9,6 @@ import Tkinter as tk
 import tkFileDialog
 import tkMessageBox
 import time
-from serial.tools import list_ports
 
 class ReachMaster:
 
@@ -25,9 +24,7 @@ class ReachMaster:
         self.data_dir.set(self.cfg['ReachMaster']['data_dir']) 
         self.cfg_file = tk.StringVar()
         self.cfg_file.set(self.cfg['ReachMaster']['cfg_file'])
-        self.port_list = list(list_ports.comports())
-        for i in range(len(self.port_list)):
-            self.port_list[i] = self.port_list[i].device
+        self.port_list = expint.get_ports()
         self.exp_control_path = tk.StringVar()
         self.rob_control_path = tk.StringVar()
         if self.cfg['ReachMaster']['exp_control_path'] in self.port_list:
@@ -37,7 +34,10 @@ class ReachMaster:
         if self.cfg['ReachMaster']['rob_control_path'] in self.port_list:
             self.rob_control_path.set(self.cfg['ReachMaster']['rob_control_path']) 
         else:
-            self.rob_control_path.set(self.port_list[0])
+            self.rob_control_path.set(self.port_list[0])        
+        self.protocol_list = protocols.list_protocols()
+        self.protocol = tk.StringVar()
+        self.protocol.set(self.protocol_list[0])
         self.running = False  
         self.exp_connected = False
         self.rob_connected = False 
@@ -64,7 +64,7 @@ class ReachMaster:
         self.running = False       
         self.window.destroy()
 
-    def _configure_window(self):
+    def configure_window(self):
         tk.Label(text="Data Directory:", font='Arial 10 bold', bg="white",width=22,anchor="e").grid(row=0, column=0)
         tk.Label(textvariable=self.data_dir, bg="white").grid(row=0, column=1)
         tk.Button(text="Browse", font='Arial 10 bold',width=14, command=self.ddbrowse_callback).grid(row=0, column=2)
@@ -72,13 +72,13 @@ class ReachMaster:
         tk.Label(textvariable=self.cfg_file, bg="white").grid(row=1, column=1)
         tk.Button(text="Browse", font='Arial 10 bold',width=14, command=self.cfbrowse_callback).grid(row=1, column=2)
         tk.Label(text="Experiment Controller:", font='Arial 10 bold', bg="white",width=22,anchor="e").grid(row=2, column=0)
-        self.exp_controllerMenu = apply(tk.OptionMenu, (self.window, self.exp_control_path) + tuple(self.port_list))
-        self.exp_controllerMenu.grid(row=2, column=1)
+        self.exp_controller_menu = apply(tk.OptionMenu, (self.window, self.exp_control_path) + tuple(self.port_list))
+        self.exp_controller_menu.grid(row=2, column=1)
         tk.Button(text="Connect", font='Arial 10 bold',width=14, command=self.exp_connect_callback).grid(row=2, column=2)
         tk.Button(text="Disconnect", font='Arial 10 bold',width=14, command=self.exp_disconnect_callback).grid(row=2, column=3)
         tk.Label(text="Robot Controller:", font='Arial 10 bold', bg="white",width=22,anchor="e").grid(row=3, column=0)
-        self.rob_controllerMenu = apply(tk.OptionMenu, (self.window, self.rob_control_path) + tuple(self.port_list))
-        self.rob_controllerMenu.grid(row=3, column=1)
+        self.rob_controller_menu = apply(tk.OptionMenu, (self.window, self.rob_control_path) + tuple(self.port_list))
+        self.rob_controller_menu.grid(row=3, column=1)
         tk.Button(text="Connect", font='Arial 10 bold',width=14, command=self.rob_connect_callback).grid(row=3, column=2)
         tk.Button(text="Disconnect", font='Arial 10 bold',width=14, command=self.rob_disconnect_callback).grid(row=3, column=3)
         tk.Button(text="Camera Settings", font='Arial 10 bold',width=16, command=self.cam_settings_callback).grid(row=4, sticky='W')
@@ -89,23 +89,29 @@ class ReachMaster:
         tk.Button(text="Toggle Lights", font='Arial 10 bold',width=14, command=self.toggle_lights_callback).grid(row=5, column=1)
         tk.Button(text="Deliver Water", font='Arial 10 bold',width=14, command=self.deliver_water_callback).grid(row=6, column=1)
         tk.Button(text="Flush Water", font='Arial 10 bold',width=14, command=self.flush_water_callback).grid(row=7, column=1)
-        tk.Button(text="Run Protocol", font='Arial 10 bold',width=14, command=self.run_protocol_callback).grid(row=5, column=2)
+        self.protocol_menu = apply(tk.OptionMenu, (self.window, self.protocol) + tuple(self.protocol_list))
+        self.protocol_menu.grid(row=5, column=2)
+        tk.Button(text="Run Protocol", font='Arial 10 bold',width=14, command=self.run_protocol_callback).grid(row=5, column=3)
 
     def ddbrowse_callback(self):
         self.data_dir.set(tkFileDialog.askdirectory())
         self.cfg['ReachMaster']['data_dir'] = self.data_dir.get()
+        config.save_tmp(self.cfg)
 
     def cfbrowse_callback(self):
         self.cfg_file.set(tkFileDialog.askopenfilename())
         self.cfg = config.json_load_byteified(open(self.cfg_file.get()))
         self.cfg['ReachMaster']['cfg_file'] = self.cfg_file.get()
+        self.cfg['ReachMaster']['data_dir'] = self.data_dir.get()
         config.save_tmp(self.cfg)
-        self.output_params = self.cfg['CameraSettings']['self.output_params']
 
     def exp_connect_callback(self):
         try:
             self.exp_controller = expint.start_interface(self.cfg)
             self.exp_connected = True
+            self.cfg = config.json_load_byteified(open('./temp/tmp_config.txt'))
+            self.cfg['ReachMaster']['exp_control_path'] = self.exp_control_path.get()
+            config.save_tmp(self.cfg)
         except Exception as err:
             tkMessageBox.showinfo("Warning", err)
 
@@ -117,6 +123,9 @@ class ReachMaster:
         try:
             self.rob_controller = robint.start_interface(self.cfg)
             self.rob_connected = True
+            self.cfg = config.json_load_byteified(open('./temp/tmp_config.txt'))
+            self.cfg['ReachMaster']['rob_control_path'] = self.rob_control_path.get()
+            config.save_tmp(self.cfg)
         except Exception as err:
             tkMessageBox.showinfo("Warning", err)
 
@@ -180,10 +189,13 @@ class ReachMaster:
 
     def run_protocol_callback(self):  
         if self.exp_connected and self.rob_connected:
+            self.cfg = config.json_load_byteified(open('./temp/tmp_config.txt'))
+            self.cfg['ReachMaster']['Protocol'] = self.protocol.get()
+            config.save_tmp(self.cfg)
             expint.stop_interface(self.exp_controller)
             robint.stop_interface(self.rob_controller)
             time.sleep(2)
-            self.protocol = protocols.Protocols(self.window)
+            self.child = protocols.Protocols(self.window)
             self.protocol_running = True
         elif not self.exp_connected:
             tkMessageBox.showinfo("Warning", "Experiment controller not connected.")
@@ -196,7 +208,7 @@ class ReachMaster:
             while self.running:        
                 if self.protocol_running:
                     try:
-                        self.protocol.run()
+                        self.child.run()
                     except Exception as err:
                         self.protocol_running = False
                         if err.status == 10:
