@@ -25,7 +25,7 @@ def get_ports():
         port_list[i] = port_list[i].device
     return port_list
 
-def load_calibration_var(robot, varname, value):
+def load_calibration_variable(robot, varname, value):
     robot.write("c")
     if robot.read() == "c":
         robot.write(varname + "\n")
@@ -38,32 +38,32 @@ def load_calibration_var(robot, varname, value):
 
 def load_config_calibration(robot, cfg):
     try:
-        load_calibration_var(robot,'dis',cfg['RobotSettings']['dis'])
-        load_calibration_var(robot,'pos',cfg['RobotSettings']['pos'])
-        load_calibration_var(robot,'x_push_dur',cfg['RobotSettings']['x_push_dur'])
-        load_calibration_var(robot,'x_pull_dur',cfg['RobotSettings']['x_pull_dur'])
-        load_calibration_var(robot,'y_push_dur',cfg['RobotSettings']['y_push_dur'])
-        load_calibration_var(robot,'y_pull_dur',cfg['RobotSettings']['y_pull_dur'])
-        load_calibration_var(robot,'z_push_dur',cfg['RobotSettings']['z_push_dur'])
-        load_calibration_var(robot,'z_pull_dur',cfg['RobotSettings']['z_pull_dur'])
+        load_calibration_variable(robot,'dis',cfg['RobotSettings']['dis'])
+        load_calibration_variable(robot,'pos',cfg['RobotSettings']['pos'])
+        load_calibration_variable(robot,'x_push_dur',cfg['RobotSettings']['x_push_dur'])
+        load_calibration_variable(robot,'x_pull_dur',cfg['RobotSettings']['x_pull_dur'])
+        load_calibration_variable(robot,'y_push_dur',cfg['RobotSettings']['y_push_dur'])
+        load_calibration_variable(robot,'y_pull_dur',cfg['RobotSettings']['y_pull_dur'])
+        load_calibration_variable(robot,'z_push_dur',cfg['RobotSettings']['z_push_dur'])
+        load_calibration_variable(robot,'z_pull_dur',cfg['RobotSettings']['z_pull_dur'])
     except Exception as varname:
         raise Exception(varname) 
 
-def load_commands_var(robot, varname, value):  
+def load_command_variable(robot, varname, value):  
     robot.write("p")
     if robot.read() == "p":
         robot.write(varname + "\n")
         if robot.read() == "p":
             robot.write(value)
     if robot.read() == "p":
-        print(varname + ' commands loaded')
+        print(varname + ' loaded')
     else:
         raise Exception(varname)     
 
 def load_config_commands(robot, cfg):
     #extract robot settings
-    Ly = cfg['RobotSettings']['Ly']
-    Lz = cfg['RobotSettings']['Lz']
+    ygimbal_to_joint = cfg['RobotSettings']['ygimbal_to_joint']
+    zgimbal_to_joint = cfg['RobotSettings']['zgimbal_to_joint']
     xgimbal_xoffset = cfg['RobotSettings']['xgimbal_xoffset']
     ygimbal_yoffset = cfg['RobotSettings']['ygimbal_yoffset']
     zgimbal_zoffset = cfg['RobotSettings']['zgimbal_zoffset']
@@ -101,10 +101,10 @@ def load_config_commands(robot, cfg):
         (r*np.sin(theta_y)*np.cos(theta_z))**2)/np.sqrt((xgimbal_xoffset-r*np.cos(theta_y)*\
             np.cos(theta_z))**2+(r*np.sin(theta_y)*np.cos(theta_z))**2))
     gammaz = -np.arcsin(r*np.sin(theta_z)/Ax)
-    Ay = np.sqrt((Ly-Ly*np.cos(gammay)*np.cos(gammaz))**2+\
-        (ygimbal_yoffset-Ly*np.sin(gammay)*np.cos(gammaz))**2+(Ly*np.sin(gammaz))**2)
-    Az = np.sqrt((Lz-Lz*np.cos(gammay)*np.cos(gammaz))**2+\
-        (Lz*np.sin(gammay)*np.cos(gammaz))**2+(zgimbal_zoffset-Lz*np.sin(gammaz))**2)
+    Ay = np.sqrt((ygimbal_to_joint-ygimbal_to_joint*np.cos(gammay)*np.cos(gammaz))**2+\
+        (ygimbal_yoffset-ygimbal_to_joint*np.sin(gammay)*np.cos(gammaz))**2+(ygimbal_to_joint*np.sin(gammaz))**2)
+    Az = np.sqrt((zgimbal_to_joint-zgimbal_to_joint*np.cos(gammay)*np.cos(gammaz))**2+\
+        (zgimbal_to_joint*np.sin(gammay)*np.cos(gammaz))**2+(zgimbal_zoffset-zgimbal_to_joint*np.sin(gammaz))**2)
     Ax = np.round((Ax-xgimbal_xoffset)/50*1024+x_origin,decimals=1)
     Ay = np.round((Ay-ygimbal_yoffset)/50*1024+y_origin,decimals=1)
     Az = np.round((Az-zgimbal_zoffset)/50*1024+z_origin,decimals=1)
@@ -123,9 +123,9 @@ def load_config_commands(robot, cfg):
     theta_z = theta_z[1:-1]+' '    
     #load commands to robot
     try:
-        load_commands_var(robot, 'x_command_pos', x)
-        load_commands_var(robot, 'y_command_pos', y)
-        load_commands_var(robot, 'z_command_pos', z)
+        load_command_variable(robot, 'x_command_pos', x)
+        load_command_variable(robot, 'y_command_pos', y)
+        load_command_variable(robot, 'z_command_pos', z)
     except Exception as varname:
         raise Exception("Failed to load: " + varname)
     #record to config and return changes
@@ -137,15 +137,36 @@ def load_config_commands(robot, cfg):
     cfg['RobotSettings']['theta_z'] = theta_z
     return cfg
 
-def var_read(rob_controller, varname):
+def variable_read(rob_controller, varname):
     rob_controller.write("g")
     if rob_controller.read() == "g":
         rob_controller.write(varname+"\n")
         return rob_controller.readline()[:-2]
 
-def var_write(rob_controller, varname, value):
+def variable_write(rob_controller, varname, value):
     rob_controller.write("v")
     if rob_controller.read() == "v":
         rob_controller.write(varname+"\n")
         if rob_controller.read() == "v":
             rob_controller.write(value+"\n")
+
+def set_rob_controller(rob_controller, cfg):
+    variable_write(rob_controller, 'alpha', str(cfg['RobotSettings']['alpha']))
+    variable_write(rob_controller, 'tol', str(cfg['RobotSettings']['tol']))
+    variable_write(rob_controller, 'period', str(cfg['RobotSettings']['period']))
+    variable_write(rob_controller, 'off_dur', str(cfg['RobotSettings']['off_dur']))
+    variable_write(rob_controller, 'num_tol', str(cfg['RobotSettings']['num_tol']))
+    variable_write(rob_controller, 'x_push_wt', str(cfg['RobotSettings']['x_push_wt']))
+    variable_write(rob_controller, 'x_pull_wt', str(cfg['RobotSettings']['x_pull_wt']))
+    variable_write(rob_controller, 'y_push_wt', str(cfg['RobotSettings']['y_push_wt']))
+    variable_write(rob_controller, 'y_pull_wt', str(cfg['RobotSettings']['y_pull_wt']))
+    variable_write(rob_controller, 'z_push_wt', str(cfg['RobotSettings']['z_push_wt']))
+    variable_write(rob_controller, 'z_pull_wt', str(cfg['RobotSettings']['z_pull_wt']))
+    variable_write(rob_controller, 'rew_zone_x', str(cfg['RobotSettings']['rew_zone_x']))
+    variable_write(rob_controller, 'rew_zone_y_min', str(cfg['RobotSettings']['rew_zone_y_min']))
+    variable_write(rob_controller, 'rew_zone_y_max', str(cfg['RobotSettings']['rew_zone_y_max']))
+    variable_write(rob_controller, 'rew_zone_z_min', str(cfg['RobotSettings']['rew_zone_z_min']))
+    variable_write(rob_controller, 'rew_zone_z_max', str(cfg['RobotSettings']['rew_zone_z_max']))
+    load_config_calibration(rob_controller, cfg)
+    cfg = load_config_commands(rob_controller, cfg)    
+    return cfg

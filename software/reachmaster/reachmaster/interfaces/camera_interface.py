@@ -49,6 +49,12 @@ def start_cameras(cams):
         print('Starting camera %d ...' %i)
         cams[i].start_acquisition()
 
+def stop_interface(cams):
+    for i in range(len(cams)):
+        print('stopping camera %d ...' %i)
+        cams[i].stop_acquisition()
+        cams[i].close_device()
+
 def start_interface(cfg):
     cams = open_cameras(cfg)
     set_cameras(cams,cfg)
@@ -63,20 +69,12 @@ def start_interface(cfg):
         raise Exception(err)    
     return cams
 
-def stop_interface(cams):
-    for i in range(len(cams)):
-        print('stopping camera %d ...' %i)
-        cams[i].stop_acquisition()
-        cams[i].close_device()
-
 def init_image():
     img = xiapi.Image()
     return img
 
 def get_npimage(cam,img):
     cam.get_image(img, timeout = 2000)                  
-    npImg = img.get_image_data_numpy()
-    return npImg
-
-
+    npimg = img.get_image_data_numpy()
+    return npimg
 

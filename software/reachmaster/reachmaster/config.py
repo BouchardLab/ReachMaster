@@ -93,7 +93,9 @@ def default_cfg():
                                    'rew_zone_z_min':481,
                                    'rew_zone_z_max':581
                                    },
-              'Protocol':'TRIALS'
+              'Protocol':     {
+                                   'type':'TRIALS'
+                                   }
              }
 
     cfg['CameraSettings']['output_params'] = {

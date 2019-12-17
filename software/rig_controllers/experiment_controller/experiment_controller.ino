@@ -20,12 +20,12 @@ int robotMovState = 0;             //0 if robot is in position, 1 if moving
 int robotChanged = 0;              //1 if robot started moving (solves issues from robot not responding fast enough)
 
 //reward delivery parameters
-int flushDur = 30000;              //time to keep solenoid open during initial water flush
-int solenoidOpenDur = 75;          //time to keep solenoid open during single reward delivery
-int solenoidBounceDur = 500;       //time between reward deliveries
-int rewardWinDur = 3000;           //duration for which rewards could be delivered
+int flush_dur = 30000;              //time to keep solenoid open during initial water flush
+int solenoid_open_dur = 75;          //time to keep solenoid open during single reward delivery
+int solenoid_bounce_dur = 500;       //time between reward deliveries
+int reward_win_dur = 3000;           //duration for which rewards could be delivered
 int numRewards = 0;                //number of rewards that have been delivered in the current trial
-int maxRewards = 3;                //maximum number of rewards that should be delivered in a trial
+int max_rewards = 3;                //maximum number of rewards that should be delivered in a trial
 int solenoidOpen = 0;              //1 if reward is currently being delivered
 int solenoidBounce = 0;            //1 if reward has been delivered within the bounce period
 int inRewardWin = 0;               //1 if currently in the reward window
@@ -36,8 +36,8 @@ int totalPixels = 384;
 Adafruit_NeoPixel strip = Adafruit_NeoPixel(totalPixels, neoPin, NEO_RGBW + NEO_KHZ800);
 uint32_t pureWhite = strip.Color(0,0,0,85); //don't go over 150!!!!!!
 uint32_t pureOff = strip.Color(0,0,0,0);
-int lightsOffDur = 3000;            //minimum time (ms) to keep lights off in between trials
-int lightsOnDur = 5000;             //maximum time (ms) to keep tights on during a trial
+int lights_off_dur = 3000;            //minimum time (ms) to keep lights off in between trials
+int lights_on_dur = 5000;             //maximum time (ms) to keep tights on during a trial
 int lightsOn = 0;                   //1 if lights are on
 int ledOn = 0;                      //1 if led is on
 
@@ -49,6 +49,7 @@ int handshake = 0;                 //1 if successful serial connection has been 
 int expActive = 0;                 //1 when main experiment is being executed
 int expEnded = 0;                  //1 if entire program should stop
 String varName;                    //variable name for serial read/write
+String protocol = "TRIALS";
 int contMode = 0;
 
 //timer variables
@@ -184,7 +185,7 @@ void loop() {
           //flush water
           delay(waitDur);
           digitalWrite(solenoidPin,HIGH);
-          delay(flushDur);
+          delay(flush_dur);
           digitalWrite(solenoidPin,LOW);
           serPNS = '0';
           delay(waitDur);
@@ -232,20 +233,20 @@ void loop() {
           Serial.print(newSerPNS);
           while (!Serial.available()){}
           varName = Serial.readStringUntil('\n');
-          if (varName=="flushDur"){ 
-            Serial.println(flushDur);
-          }else if(varName=="solenoidOpenDur"){
-            Serial.println(solenoidOpenDur);
-          }else if(varName=="solenoidBounceDur"){
-            Serial.println(solenoidBounceDur);
-          }else if(varName=="rewardWinDur"){
-            Serial.println(rewardWinDur);
-          }else if(varName=="maxRewards"){
-            Serial.println(maxRewards);
-          }else if(varName=="lightsOffDur"){
-            Serial.println(lightsOffDur);
-          }else if(varName=="lightsOnDur"){
-            Serial.println(lightsOnDur);
+          if (varName=="flush_dur"){ 
+            Serial.println(flush_dur);
+          }else if(varName=="solenoid_open_dur"){
+            Serial.println(solenoid_open_dur);
+          }else if(varName=="solenoid_bounce_dur"){
+            Serial.println(solenoid_bounce_dur);
+          }else if(varName=="reward_win_dur"){
+            Serial.println(reward_win_dur);
+          }else if(varName=="max_rewards"){
+            Serial.println(max_rewards);
+          }else if(varName=="lights_off_dur"){
+            Serial.println(lights_off_dur);
+          }else if(varName=="lights_on_dur"){
+            Serial.println(lights_on_dur);
           }else if(varName=="reachDelay"){
             Serial.println(reachDelay);
           }
@@ -257,22 +258,27 @@ void loop() {
           varName = Serial.readStringUntil('\n');
           Serial.print(newSerPNS);
           while (!Serial.available()){}
-          if(varName=="flushDur"){            
-            flushDur = Serial.readStringUntil('\n').toInt();
-          }else if(varName=="solenoidOpenDur"){
-            solenoidOpenDur = Serial.readStringUntil('\n').toInt();
-          }else if(varName=="solenoidBounceDur"){
-            solenoidBounceDur = Serial.readStringUntil('\n').toInt();
-          }else if(varName=="rewardWinDur"){
-            rewardWinDur = Serial.readStringUntil('\n').toInt();
-          }else if(varName=="maxRewards"){
-            maxRewards = Serial.readStringUntil('\n').toInt();
-          }else if(varName=="lightsOffDur"){
-            lightsOffDur = Serial.readStringUntil('\n').toInt();
-          }else if(varName=="lightsOnDur"){
-            lightsOnDur = Serial.readStringUntil('\n').toInt();
-          }else if(varName=="contMode"){
-            contMode = Serial.readStringUntil('\n').toInt();
+          if(varName=="flush_dur"){            
+            flush_dur = Serial.readStringUntil('\n').toInt();
+          }else if(varName=="solenoid_open_dur"){
+            solenoid_open_dur = Serial.readStringUntil('\n').toInt();
+          }else if(varName=="solenoid_bounce_dur"){
+            solenoid_bounce_dur = Serial.readStringUntil('\n').toInt();
+          }else if(varName=="reward_win_dur"){
+            reward_win_dur = Serial.readStringUntil('\n').toInt();
+          }else if(varName=="max_rewards"){
+            max_rewards = Serial.readStringUntil('\n').toInt();
+          }else if(varName=="lights_off_dur"){
+            lights_off_dur = Serial.readStringUntil('\n').toInt();
+          }else if(varName=="lights_on_dur"){
+            lights_on_dur = Serial.readStringUntil('\n').toInt();
+          }else if(varName=="protocol"){
+            protocol = Serial.readStringUntil('\n');
+            if(protocol=="CONTINUOUS"){
+              contMode = 1;
+            }else if(protocol=="TRIALS"){
+              contMode = 0;
+            }
           }else if(varName=="reachDelay"){
             reachDelay = Serial.readStringUntil('\n').toInt();
           }
@@ -285,7 +291,7 @@ void loop() {
       //check robot
       robotMovState = digitalRead(robotMovPin);
       //should lighting change?
-      if(lightsOn==0 && (millis()-lightsInit)>lightsOffDur && robotMovState==0 && serPNS=='s'){
+      if(lightsOn==0 && (millis()-lightsInit)>lights_off_dur && robotMovState==0 && serPNS=='s'){
         //lights are off, robot is in position, lights off timer is up, and image buffer has been saved
         //turn lights on and stop telling robot to move
         setAllPixels(totalPixels, pureWhite);
@@ -294,7 +300,7 @@ void loop() {
         lightsOn = 1;
         digitalWrite(robotOutPin,LOW);
         robotOutState = 0;
-      } else if(inRewardWin==1 && (millis()-rewardWinInit)>=rewardWinDur){
+      } else if(inRewardWin==1 && (millis()-rewardWinInit)>=reward_win_dur){
         //reward window just ended
         //turn lights off and tell robot to move to next position
         lightsInit = millis();
@@ -311,7 +317,7 @@ void loop() {
         trialCount++;
         numRewards = 0;
         serPNS = 'e';
-      } else if(contMode && robotMovState==0 && robotOutState==1 && (millis()-lightsInit)>lightsOffDur){
+      } else if(contMode && robotMovState==0 && robotOutState==1 && (millis()-lightsInit)>lights_off_dur){
         //operating in CONTINUOUS MODE and lights off (e.g., intertrial interval) timer is up,
         //stop telling robot to move
         digitalWrite(robotOutPin,LOW);
@@ -345,7 +351,7 @@ void loop() {
     
       //decide if solenoid should be opened
       lickState = digitalRead(lickPin);
-      if(inRewardWin==1 && robotRZState==HIGH && lickState==HIGH && solenoidOpen==0 && solenoidBounce==0 && numRewards<maxRewards){   
+      if(inRewardWin==1 && robotRZState==HIGH && lickState==HIGH && solenoidOpen==0 && solenoidBounce==0 && numRewards<max_rewards){   
         //reward window is active, robot is positioned in reward zone, lick is detected, and solenoid is ready
         //open solenoid
         digitalWrite(solenoidPin,HIGH);
@@ -388,12 +394,12 @@ void loop() {
     triggerOn = 0;
   }
   //should solenoid be closed?
-  if(solenoidOpen==1 && (millis()-solenoidInit)>=solenoidOpenDur){
+  if(solenoidOpen==1 && (millis()-solenoidInit)>=solenoid_open_dur){
     digitalWrite(solenoidPin,LOW);
     solenoidInit = millis();
     solenoidOpen = 0;
     solenoidBounce = 1;    
-  } else if(solenoidBounce==1 && (millis()-solenoidInit)>=solenoidBounceDur){
+  } else if(solenoidBounce==1 && (millis()-solenoidInit)>=solenoid_bounce_dur){
     solenoidBounce = 0;
   } 
   if(expActive==0){

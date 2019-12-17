@@ -17,12 +17,14 @@ from vidgear.gears import WriteGear
 class CameraSettings(tk.Toplevel):
 
     def __init__(self, parent):
+        #create window
     	tk.Toplevel.__init__(self, parent)
     	self.transient(parent) 
     	self.grab_set()
         self.title("Camera Settings")
         self.configure(bg="white")
         self.protocol("WM_DELETE_WINDOW", self.on_quit) 
+        #initialize tk variables from config
         self.cfg = config.json_load_byteified(open('./temp/tmp_config.txt'))
         self.output_params = self.cfg['CameraSettings']['output_params'] 
         self.exp_controller = expint.start_interface(self.cfg)
@@ -56,7 +58,8 @@ class CameraSettings(tk.Toplevel):
         self.downsampling = tk.StringVar()
         self.downsampling.set(str(self.cfg['CameraSettings']['downsampling']))
         self.poi_threshold = tk.StringVar()
-        self.poi_threshold.set(str(self.cfg['CameraSettings']['poi_threshold']))        
+        self.poi_threshold.set(str(self.cfg['CameraSettings']['poi_threshold']))   
+        #initialize housekeeping variables     
         self.cams_loaded = False
         self.streaming = False
         self.cams_connected = False
@@ -68,7 +71,8 @@ class CameraSettings(tk.Toplevel):
         self.capture = False
         self.record = False
         self.img_num = [1]
-        self.exp_control_on = False        
+        self.exp_control_on = False  
+        #configure window      
         self.configure_window()
 
     def on_quit(self):

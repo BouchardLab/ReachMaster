@@ -5,12 +5,14 @@ import tkMessageBox
 class ExperimentSettings(tk.Toplevel):
 
     def __init__(self, parent):
+        #create window
         tk.Toplevel.__init__(self, parent)
         self.transient(parent) 
         self.grab_set()
         self.title("Experiment Settings") 
         self.configure(bg="white")
         self.protocol("WM_DELETE_WINDOW", self.on_quit) 
+        #initialize tk variables from config
         self.cfg = config.json_load_byteified(open('./temp/tmp_config.txt'))
         self.lights_on_dur = tk.StringVar()
         self.lights_on_dur.set(str(self.cfg['ExperimentSettings']['lights_on_dur']))
@@ -28,6 +30,7 @@ class ExperimentSettings(tk.Toplevel):
         self.flush_dur.set(str(self.cfg['ExperimentSettings']['flush_dur']))
         self.reach_delay = tk.StringVar()
         self.reach_delay.set(str(self.cfg['ExperimentSettings']['reach_delay']))
+        #configure window
         self.configure_window()
 
     def on_quit(self):

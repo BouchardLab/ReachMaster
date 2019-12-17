@@ -1,3 +1,28 @@
+"""This root application for ReachMaster.
+
+This module implements the root application window for ReachMaster. The
+window provides functionality for selecting a data output directory, a
+configuration file, connecting to the experiment and robot controllers, 
+accessing the settings windows, basic rig control, as well as selecting 
+and running protocols.
+
+Examples:
+    From command line::
+
+        $ python application.py
+
+    From python::
+
+        import reachmaster.application
+        rm = application.ReachMaster()
+        rm.run()
+
+Todo:
+    * Create executable
+    * You have to also use ``sphinx.ext.todo`` extension
+
+"""
+
 import config
 import settings.camera_settings as camset
 import settings.experiment_settings as expset
@@ -106,32 +131,36 @@ class ReachMaster:
         config.save_tmp(self.cfg)
 
     def exp_connect_callback(self):
-        try:
-            self.exp_controller = expint.start_interface(self.cfg)
-            self.exp_connected = True
-            self.cfg = config.json_load_byteified(open('./temp/tmp_config.txt'))
-            self.cfg['ReachMaster']['exp_control_path'] = self.exp_control_path.get()
-            config.save_tmp(self.cfg)
-        except Exception as err:
-            tkMessageBox.showinfo("Warning", err)
+        if not self.exp_connected:
+            try:
+                self.cfg = config.json_load_byteified(open('./temp/tmp_config.txt'))
+                self.cfg['ReachMaster']['exp_control_path'] = self.exp_control_path.get()
+                self.exp_controller = expint.start_interface(self.cfg)
+                self.exp_connected = True                
+                config.save_tmp(self.cfg)
+            except Exception as err:
+                tkMessageBox.showinfo("Warning", err)
 
     def exp_disconnect_callback(self):
-        expint.stop_interface(self.exp_controller)
-        self.exp_connected = False
+        if self.exp_connected:
+            expint.stop_interface(self.exp_controller)
+            self.exp_connected = False
 
     def rob_connect_callback(self):
-        try:
-            self.rob_controller = robint.start_interface(self.cfg)
-            self.rob_connected = True
-            self.cfg = config.json_load_byteified(open('./temp/tmp_config.txt'))
-            self.cfg['ReachMaster']['rob_control_path'] = self.rob_control_path.get()
-            config.save_tmp(self.cfg)
-        except Exception as err:
-            tkMessageBox.showinfo("Warning", err)
+        if not self.rob_connected:
+            try:
+                self.cfg = config.json_load_byteified(open('./temp/tmp_config.txt'))
+                self.cfg['ReachMaster']['rob_control_path'] = self.rob_control_path.get()
+                self.rob_controller = robint.start_interface(self.cfg)
+                self.rob_connected = True
+                config.save_tmp(self.cfg)
+            except Exception as err:
+                tkMessageBox.showinfo("Warning", err)
 
     def rob_disconnect_callback(self):
-        robint.stop_interface(self.rob_controller)
-        self.rob_connected = False
+        if self.rob_connected:
+            robint.stop_interface(self.rob_controller)
+            self.rob_connected = False
 
     def cam_settings_callback(self):  
         if self.exp_connected:
@@ -142,20 +171,10 @@ class ReachMaster:
             tkMessageBox.showinfo("Warning", "Experiment Controller not connected.")
 
     def exp_settings_callback(self):
-        if self.exp_connected:
-            self.exp_disconnect_callback()
-            time.sleep(2)   
-            self.child = expset.ExperimentSettings(self.window)
-        else:
-            tkMessageBox.showinfo("Warning", "Experiment Controller not connected.")
+        self.child = expset.ExperimentSettings(self.window)
 
-    def rob_settings_callback(self):
-        if self.rob_connected:
-            self.rob_disconnect_callback()
-            time.sleep(2)   
-            self.child = robset.RobotSettings(self.window)
-        else:
-            tkMessageBox.showinfo("Warning", "Robot controller not connected.")
+    def rob_settings_callback(self):   
+        self.child = robset.RobotSettings(self.window)
 
     def move_rob_callback(self):
         if self.exp_connected:
@@ -190,10 +209,12 @@ class ReachMaster:
     def run_protocol_callback(self):  
         if self.exp_connected and self.rob_connected:
             self.cfg = config.json_load_byteified(open('./temp/tmp_config.txt'))
-            self.cfg['ReachMaster']['Protocol'] = self.protocol.get()
+            self.cfg['Protocol']['type'] = self.protocol.get()
             config.save_tmp(self.cfg)
             expint.stop_interface(self.exp_controller)
+            self.exp_connected = False
             robint.stop_interface(self.rob_controller)
+            self.rob_connected = False
             time.sleep(2)
             self.child = protocols.Protocols(self.window)
             self.protocol_running = True
@@ -211,8 +232,7 @@ class ReachMaster:
                         self.child.run()
                     except Exception as err:
                         self.protocol_running = False
-                        if err.status == 10:
-                            tkMessageBox.showinfo("Warning", err)
+                        print(err)
                 self.window.update()
         except KeyboardInterrupt:
             self.on_quit()
