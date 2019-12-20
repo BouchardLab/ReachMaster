@@ -1,0 +1,385 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>reachmaster.settings.experiment_settings &mdash; ReachMaster alpha documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../../_static/language_data.js"></script>
+    
+    <script type="text/javascript" src="../../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../../index.html" class="icon icon-home"> ReachMaster
+          
+
+          
+            
+            <img src="../../../_static/splinter.png" class="logo" alt="Logo"/>
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.0.0
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../overview.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../hardware/hardware.html">Hardware</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../software/software.html">Software</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">ReachMaster</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../../index.html">Module code</a> &raquo;</li>
+        
+      <li>reachmaster.settings.experiment_settings</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for reachmaster.settings.experiment_settings</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;The experiment settings window is opened as a child of the </span>
+<span class="sd">ReachMaster root application. It allows the user to set any</span>
+<span class="sd">experiment parameters located on the experiment microcontroller</span>
+<span class="sd">(e.g., number/size of rewards, trial delays, etc.).</span>
+
+
+<span class="sd">Todo:</span>
+<span class="sd">    * Move protocol type options here?</span>
+<span class="sd">    * Automate unit tests</span>
+<span class="sd">    * Python 3 compatibility</span>
+<span class="sd">    * PEP 8</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">from</span> <span class="nn">..</span> <span class="k">import</span> <span class="n">config</span>
+<span class="kn">import</span> <span class="nn">Tkinter</span> <span class="k">as</span> <span class="nn">tk</span> 
+<span class="kn">import</span> <span class="nn">tkMessageBox</span>
+
+<div class="viewcode-block" id="ExperimentSettings"><a class="viewcode-back" href="../../../software/reach_master/reach_master.html#reachmaster.settings.experiment_settings.ExperimentSettings">[docs]</a><span class="k">class</span> <span class="nc">ExperimentSettings</span><span class="p">(</span><span class="n">tk</span><span class="o">.</span><span class="n">Toplevel</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;The primary class for the camera settings window.  </span>
+
+<span class="sd">    Attributes</span>
+<span class="sd">    ----------</span>
+<span class="sd">    cfg : dict</span>
+<span class="sd">        The current configuration settings for the application</span>
+<span class="sd">    lights_on_dur : instance</span>
+<span class="sd">        Tkinter StringVar that captures the user-selected duration</span>
+<span class="sd">        (ms) lights should remain on during a trial when `protocol </span>
+<span class="sd">        type` is &#39;TRIALS&#39;. If a reach is not detected in under this </span>
+<span class="sd">        duration, the lights will turn off until the next trial is</span>
+<span class="sd">        intitiated.</span>
+<span class="sd">    lights_off_dur : instance</span>
+<span class="sd">        Tkinter StringVar that captures the user-selected duration</span>
+<span class="sd">        (ms) lights should remain off between trials when `prtocol </span>
+<span class="sd">        type` is &#39;TRIALS&#39;.</span>
+<span class="sd">    reward_win_dur : instance</span>
+<span class="sd">        Tkinter StringVar that captures the user-selected duration</span>
+<span class="sd">        (ms) for which rewards rewards are delivered once the </span>
+<span class="sd">        handle is successfully pulled into the reward zone.</span>
+<span class="sd">    max_rewards : instance</span>
+<span class="sd">        Tkinter StringVar that captures the user-selected maximum </span>
+<span class="sd">        number of rewards (int) delivered for a successful reach.</span>
+<span class="sd">    solenoid_open_dur : instance</span>
+<span class="sd">        Tkinter StringVar that captures the user-selected solenoid </span>
+<span class="sd">        open duration (ms) which sets the individual reward size.</span>
+<span class="sd">        Solenoid calibration must be performed to get the mapping </span>
+<span class="sd">        from duration (ms) to volulme (mL).</span>
+<span class="sd">    solenoid_bounce_dur : instance</span>
+<span class="sd">        Tkinter StringVar that captures the user-selected minimum</span>
+<span class="sd">        duration (ms) the solenoid should remain closed between</span>
+<span class="sd">        reward deliveries. Note the redundancy with `reward_win_dur`</span>
+<span class="sd">        and `max_rewards`.</span>
+<span class="sd">    flush_dur : instance</span>
+<span class="sd">        Tkinter StringVar that captures the user-selected duration</span>
+<span class="sd">        (ms) the solenoid should remain open while flushing the </span>
+<span class="sd">        lines.</span>
+<span class="sd">    reach_delay : instance</span>
+<span class="sd">        Tkinter StringVar that captures the user-selected minimum</span>
+<span class="sd">        duration animals are required to wait before attempting a</span>
+<span class="sd">        reach after a trial is initiated when `protocol type` is </span>
+<span class="sd">        &#39;TRIALS&#39;. Once the lights turn on, if a reach is attempted </span>
+<span class="sd">        before the end of the delay, the trial is haulted and the </span>
+<span class="sd">        lights are turned off. This enforces a timeout period to </span>
+<span class="sd">        discourage animals from performing reaches between trials.    </span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parent</span><span class="p">):</span>
+        <span class="n">tk</span><span class="o">.</span><span class="n">Toplevel</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parent</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">transient</span><span class="p">(</span><span class="n">parent</span><span class="p">)</span> 
+        <span class="bp">self</span><span class="o">.</span><span class="n">grab_set</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s2">&quot;Experiment Settings&quot;</span><span class="p">)</span> 
+        <span class="bp">self</span><span class="o">.</span><span class="n">configure</span><span class="p">(</span><span class="n">bg</span><span class="o">=</span><span class="s2">&quot;white&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">protocol</span><span class="p">(</span><span class="s2">&quot;WM_DELETE_WINDOW&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">on_quit</span><span class="p">)</span> 
+        <span class="bp">self</span><span class="o">.</span><span class="n">cfg</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">load_config</span><span class="p">(</span><span class="nb">open</span><span class="p">(</span><span class="s1">&#39;./temp/tmp_config.txt&#39;</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">lights_on_dur</span> <span class="o">=</span> <span class="n">tk</span><span class="o">.</span><span class="n">StringVar</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">lights_on_dur</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cfg</span><span class="p">[</span><span class="s1">&#39;ExperimentSettings&#39;</span><span class="p">][</span><span class="s1">&#39;lights_on_dur&#39;</span><span class="p">]))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">lights_off_dur</span> <span class="o">=</span> <span class="n">tk</span><span class="o">.</span><span class="n">StringVar</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">lights_off_dur</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cfg</span><span class="p">[</span><span class="s1">&#39;ExperimentSettings&#39;</span><span class="p">][</span><span class="s1">&#39;lights_off_dur&#39;</span><span class="p">]))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">reward_win_dur</span> <span class="o">=</span> <span class="n">tk</span><span class="o">.</span><span class="n">StringVar</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">reward_win_dur</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cfg</span><span class="p">[</span><span class="s1">&#39;ExperimentSettings&#39;</span><span class="p">][</span><span class="s1">&#39;reward_win_dur&#39;</span><span class="p">]))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">max_rewards</span> <span class="o">=</span> <span class="n">tk</span><span class="o">.</span><span class="n">StringVar</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">max_rewards</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cfg</span><span class="p">[</span><span class="s1">&#39;ExperimentSettings&#39;</span><span class="p">][</span><span class="s1">&#39;max_rewards&#39;</span><span class="p">]))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">solenoid_open_dur</span> <span class="o">=</span> <span class="n">tk</span><span class="o">.</span><span class="n">StringVar</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">solenoid_open_dur</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cfg</span><span class="p">[</span><span class="s1">&#39;ExperimentSettings&#39;</span><span class="p">][</span><span class="s1">&#39;solenoid_open_dur&#39;</span><span class="p">]))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">solenoid_bounce_dur</span> <span class="o">=</span> <span class="n">tk</span><span class="o">.</span><span class="n">StringVar</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">solenoid_bounce_dur</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cfg</span><span class="p">[</span><span class="s1">&#39;ExperimentSettings&#39;</span><span class="p">][</span><span class="s1">&#39;solenoid_bounce_dur&#39;</span><span class="p">]))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">flush_dur</span> <span class="o">=</span> <span class="n">tk</span><span class="o">.</span><span class="n">StringVar</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">flush_dur</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cfg</span><span class="p">[</span><span class="s1">&#39;ExperimentSettings&#39;</span><span class="p">][</span><span class="s1">&#39;flush_dur&#39;</span><span class="p">]))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">reach_delay</span> <span class="o">=</span> <span class="n">tk</span><span class="o">.</span><span class="n">StringVar</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">reach_delay</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cfg</span><span class="p">[</span><span class="s1">&#39;ExperimentSettings&#39;</span><span class="p">][</span><span class="s1">&#39;reach_delay&#39;</span><span class="p">]))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_configure_window</span><span class="p">()</span>
+
+<div class="viewcode-block" id="ExperimentSettings.on_quit"><a class="viewcode-back" href="../../../software/reach_master/reach_master.html#reachmaster.settings.experiment_settings.ExperimentSettings.on_quit">[docs]</a>    <span class="k">def</span> <span class="nf">on_quit</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Called prior to destruction of the experiment settings window.</span>
+
+<span class="sd">        Prior to destruction, the configuration file must be updated</span>
+<span class="sd">        to reflect the change in settings. </span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cfg</span><span class="p">[</span><span class="s1">&#39;ExperimentSettings&#39;</span><span class="p">][</span><span class="s1">&#39;lights_on_dur&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">lights_on_dur</span><span class="o">.</span><span class="n">get</span><span class="p">())</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cfg</span><span class="p">[</span><span class="s1">&#39;ExperimentSettings&#39;</span><span class="p">][</span><span class="s1">&#39;lights_off_dur&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">lights_off_dur</span><span class="o">.</span><span class="n">get</span><span class="p">())</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cfg</span><span class="p">[</span><span class="s1">&#39;ExperimentSettings&#39;</span><span class="p">][</span><span class="s1">&#39;reward_win_dur&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">reward_win_dur</span><span class="o">.</span><span class="n">get</span><span class="p">())</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cfg</span><span class="p">[</span><span class="s1">&#39;ExperimentSettings&#39;</span><span class="p">][</span><span class="s1">&#39;max_rewards&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">max_rewards</span><span class="o">.</span><span class="n">get</span><span class="p">())</span> 
+        <span class="bp">self</span><span class="o">.</span><span class="n">cfg</span><span class="p">[</span><span class="s1">&#39;ExperimentSettings&#39;</span><span class="p">][</span><span class="s1">&#39;solenoid_open_dur&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">solenoid_open_dur</span><span class="o">.</span><span class="n">get</span><span class="p">())</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cfg</span><span class="p">[</span><span class="s1">&#39;ExperimentSettings&#39;</span><span class="p">][</span><span class="s1">&#39;solenoid_bounce_dur&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">solenoid_bounce_dur</span><span class="o">.</span><span class="n">get</span><span class="p">())</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cfg</span><span class="p">[</span><span class="s1">&#39;ExperimentSettings&#39;</span><span class="p">][</span><span class="s1">&#39;flush_dur&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">flush_dur</span><span class="o">.</span><span class="n">get</span><span class="p">())</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cfg</span><span class="p">[</span><span class="s1">&#39;ExperimentSettings&#39;</span><span class="p">][</span><span class="s1">&#39;reach_delay&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">reach_delay</span><span class="o">.</span><span class="n">get</span><span class="p">())</span>
+        <span class="n">config</span><span class="o">.</span><span class="n">save_tmp</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cfg</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">destroy</span><span class="p">()</span></div>
+
+    <span class="k">def</span> <span class="nf">_configure_window</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">tk</span><span class="o">.</span><span class="n">Label</span><span class="p">(</span>
+            <span class="bp">self</span><span class="p">,</span>
+            <span class="n">text</span> <span class="o">=</span> <span class="s2">&quot;Lights On (ms):&quot;</span><span class="p">,</span> 
+            <span class="n">font</span> <span class="o">=</span> <span class="s1">&#39;Arial 10 bold&#39;</span><span class="p">,</span> 
+            <span class="n">bg</span> <span class="o">=</span> <span class="s2">&quot;white&quot;</span><span class="p">,</span>
+            <span class="n">width</span> <span class="o">=</span> <span class="mi">23</span><span class="p">,</span>
+            <span class="n">anchor</span> <span class="o">=</span> <span class="s2">&quot;e&quot;</span>
+            <span class="p">)</span><span class="o">.</span><span class="n">grid</span><span class="p">(</span><span class="n">row</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">column</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>   
+        <span class="n">tk</span><span class="o">.</span><span class="n">Entry</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">textvariable</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">lights_on_dur</span><span class="p">,</span> <span class="n">width</span> <span class="o">=</span> <span class="mi">17</span><span class="p">)</span><span class="o">.</span><span class="n">grid</span><span class="p">(</span><span class="n">row</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span> <span class="n">column</span> <span class="o">=</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="n">tk</span><span class="o">.</span><span class="n">Label</span><span class="p">(</span>
+            <span class="bp">self</span><span class="p">,</span>
+            <span class="n">text</span> <span class="o">=</span> <span class="s2">&quot;Lights Off (ms):&quot;</span><span class="p">,</span> 
+            <span class="n">font</span> <span class="o">=</span> <span class="s1">&#39;Arial 10 bold&#39;</span><span class="p">,</span> 
+            <span class="n">bg</span> <span class="o">=</span> <span class="s2">&quot;white&quot;</span><span class="p">,</span>
+            <span class="n">width</span> <span class="o">=</span> <span class="mi">23</span><span class="p">,</span>
+            <span class="n">anchor</span> <span class="o">=</span> <span class="s2">&quot;e&quot;</span>
+            <span class="p">)</span><span class="o">.</span><span class="n">grid</span><span class="p">(</span><span class="n">row</span> <span class="o">=</span> <span class="mi">2</span><span class="p">,</span> <span class="n">column</span> <span class="o">=</span> <span class="mi">0</span><span class="p">)</span>   
+        <span class="n">tk</span><span class="o">.</span><span class="n">Entry</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">textvariable</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">lights_off_dur</span><span class="p">,</span> <span class="n">width</span> <span class="o">=</span> <span class="mi">17</span><span class="p">)</span><span class="o">.</span><span class="n">grid</span><span class="p">(</span><span class="n">row</span> <span class="o">=</span> <span class="mi">2</span><span class="p">,</span> <span class="n">column</span> <span class="o">=</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="n">tk</span><span class="o">.</span><span class="n">Label</span><span class="p">(</span>
+            <span class="bp">self</span><span class="p">,</span>
+            <span class="n">text</span> <span class="o">=</span> <span class="s2">&quot;Reward Window (ms):&quot;</span><span class="p">,</span> 
+            <span class="n">font</span> <span class="o">=</span> <span class="s1">&#39;Arial 10 bold&#39;</span><span class="p">,</span> 
+            <span class="n">bg</span> <span class="o">=</span> <span class="s2">&quot;white&quot;</span><span class="p">,</span>
+            <span class="n">width</span> <span class="o">=</span> <span class="mi">23</span><span class="p">,</span>
+            <span class="n">anchor</span> <span class="o">=</span> <span class="s2">&quot;e&quot;</span>
+            <span class="p">)</span><span class="o">.</span><span class="n">grid</span><span class="p">(</span><span class="n">row</span> <span class="o">=</span> <span class="mi">3</span><span class="p">,</span> <span class="n">column</span> <span class="o">=</span> <span class="mi">0</span><span class="p">)</span>   
+        <span class="n">tk</span><span class="o">.</span><span class="n">Entry</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">textvariable</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">reward_win_dur</span><span class="p">,</span> <span class="n">width</span> <span class="o">=</span> <span class="mi">17</span><span class="p">)</span><span class="o">.</span><span class="n">grid</span><span class="p">(</span><span class="n">row</span> <span class="o">=</span> <span class="mi">3</span><span class="p">,</span> <span class="n">column</span> <span class="o">=</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="n">tk</span><span class="o">.</span><span class="n">Label</span><span class="p">(</span>
+            <span class="bp">self</span><span class="p">,</span>
+            <span class="n">text</span> <span class="o">=</span> <span class="s2">&quot;# Rewards/Trial:&quot;</span><span class="p">,</span> 
+            <span class="n">font</span> <span class="o">=</span> <span class="s1">&#39;Arial 10 bold&#39;</span><span class="p">,</span> 
+            <span class="n">bg</span> <span class="o">=</span> <span class="s2">&quot;white&quot;</span><span class="p">,</span>
+            <span class="n">width</span> <span class="o">=</span> <span class="mi">23</span><span class="p">,</span>
+            <span class="n">anchor</span> <span class="o">=</span> <span class="s2">&quot;e&quot;</span>
+            <span class="p">)</span><span class="o">.</span><span class="n">grid</span><span class="p">(</span><span class="n">row</span> <span class="o">=</span> <span class="mi">4</span><span class="p">,</span> <span class="n">column</span> <span class="o">=</span> <span class="mi">0</span><span class="p">)</span>   
+        <span class="n">tk</span><span class="o">.</span><span class="n">Entry</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">textvariable</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_rewards</span><span class="p">,</span> <span class="n">width</span> <span class="o">=</span> <span class="mi">17</span><span class="p">)</span><span class="o">.</span><span class="n">grid</span><span class="p">(</span><span class="n">row</span> <span class="o">=</span> <span class="mi">4</span><span class="p">,</span> <span class="n">column</span> <span class="o">=</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="n">tk</span><span class="o">.</span><span class="n">Label</span><span class="p">(</span>
+            <span class="bp">self</span><span class="p">,</span>
+            <span class="n">text</span> <span class="o">=</span> <span class="s2">&quot;Solenoid Open (ms):&quot;</span><span class="p">,</span> 
+            <span class="n">font</span> <span class="o">=</span> <span class="s1">&#39;Arial 10 bold&#39;</span><span class="p">,</span> 
+            <span class="n">bg</span> <span class="o">=</span> <span class="s2">&quot;white&quot;</span><span class="p">,</span>
+            <span class="n">width</span> <span class="o">=</span> <span class="mi">23</span><span class="p">,</span>
+            <span class="n">anchor</span> <span class="o">=</span> <span class="s2">&quot;e&quot;</span>
+            <span class="p">)</span><span class="o">.</span><span class="n">grid</span><span class="p">(</span><span class="n">row</span> <span class="o">=</span> <span class="mi">5</span><span class="p">,</span> <span class="n">column</span> <span class="o">=</span> <span class="mi">0</span><span class="p">)</span>   
+        <span class="n">tk</span><span class="o">.</span><span class="n">Entry</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">textvariable</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">solenoid_open_dur</span><span class="p">,</span> <span class="n">width</span> <span class="o">=</span> <span class="mi">17</span><span class="p">)</span><span class="o">.</span><span class="n">grid</span><span class="p">(</span><span class="n">row</span> <span class="o">=</span> <span class="mi">5</span><span class="p">,</span> <span class="n">column</span> <span class="o">=</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="n">tk</span><span class="o">.</span><span class="n">Label</span><span class="p">(</span>
+            <span class="bp">self</span><span class="p">,</span>
+            <span class="n">text</span> <span class="o">=</span> <span class="s2">&quot;Solenoid Bounce (ms):&quot;</span><span class="p">,</span> 
+            <span class="n">font</span> <span class="o">=</span> <span class="s1">&#39;Arial 10 bold&#39;</span><span class="p">,</span> 
+            <span class="n">bg</span> <span class="o">=</span> <span class="s2">&quot;white&quot;</span><span class="p">,</span>
+            <span class="n">width</span> <span class="o">=</span> <span class="mi">23</span><span class="p">,</span>
+            <span class="n">anchor</span> <span class="o">=</span> <span class="s2">&quot;e&quot;</span>
+            <span class="p">)</span><span class="o">.</span><span class="n">grid</span><span class="p">(</span><span class="n">row</span> <span class="o">=</span> <span class="mi">6</span><span class="p">,</span> <span class="n">column</span> <span class="o">=</span> <span class="mi">0</span><span class="p">)</span>   
+        <span class="n">tk</span><span class="o">.</span><span class="n">Entry</span><span class="p">(</span>
+            <span class="bp">self</span><span class="p">,</span>
+            <span class="n">textvariable</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">solenoid_bounce_dur</span><span class="p">,</span>
+            <span class="n">width</span> <span class="o">=</span> <span class="mi">17</span>
+            <span class="p">)</span><span class="o">.</span><span class="n">grid</span><span class="p">(</span><span class="n">row</span> <span class="o">=</span> <span class="mi">6</span><span class="p">,</span> <span class="n">column</span> <span class="o">=</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="n">tk</span><span class="o">.</span><span class="n">Label</span><span class="p">(</span>
+            <span class="bp">self</span><span class="p">,</span>
+            <span class="n">text</span> <span class="o">=</span> <span class="s2">&quot;Flush (ms):&quot;</span><span class="p">,</span> 
+            <span class="n">font</span> <span class="o">=</span> <span class="s1">&#39;Arial 10 bold&#39;</span><span class="p">,</span> 
+            <span class="n">bg</span> <span class="o">=</span> <span class="s2">&quot;white&quot;</span><span class="p">,</span>
+            <span class="n">width</span> <span class="o">=</span> <span class="mi">23</span><span class="p">,</span>
+            <span class="n">anchor</span> <span class="o">=</span> <span class="s2">&quot;e&quot;</span>
+            <span class="p">)</span><span class="o">.</span><span class="n">grid</span><span class="p">(</span><span class="n">row</span> <span class="o">=</span> <span class="mi">7</span><span class="p">,</span> <span class="n">column</span> <span class="o">=</span> <span class="mi">0</span><span class="p">)</span>   
+        <span class="n">tk</span><span class="o">.</span><span class="n">Entry</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">textvariable</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">flush_dur</span><span class="p">,</span> <span class="n">width</span> <span class="o">=</span> <span class="mi">17</span><span class="p">)</span><span class="o">.</span><span class="n">grid</span><span class="p">(</span><span class="n">row</span> <span class="o">=</span> <span class="mi">7</span><span class="p">,</span> <span class="n">column</span> <span class="o">=</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="n">tk</span><span class="o">.</span><span class="n">Label</span><span class="p">(</span>
+            <span class="bp">self</span><span class="p">,</span>
+            <span class="n">text</span> <span class="o">=</span> <span class="s2">&quot;Reach Delay (ms):&quot;</span><span class="p">,</span> 
+            <span class="n">font</span> <span class="o">=</span> <span class="s1">&#39;Arial 10 bold&#39;</span><span class="p">,</span> 
+            <span class="n">bg</span> <span class="o">=</span> <span class="s2">&quot;white&quot;</span><span class="p">,</span>
+            <span class="n">width</span> <span class="o">=</span> <span class="mi">23</span><span class="p">,</span>
+            <span class="n">anchor</span> <span class="o">=</span> <span class="s2">&quot;e&quot;</span>
+            <span class="p">)</span><span class="o">.</span><span class="n">grid</span><span class="p">(</span><span class="n">row</span> <span class="o">=</span> <span class="mi">8</span><span class="p">,</span> <span class="n">column</span> <span class="o">=</span> <span class="mi">0</span><span class="p">)</span>   
+        <span class="n">tk</span><span class="o">.</span><span class="n">Entry</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">textvariable</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">reach_delay</span><span class="p">,</span> <span class="n">width</span> <span class="o">=</span> <span class="mi">17</span><span class="p">)</span><span class="o">.</span><span class="n">grid</span><span class="p">(</span><span class="n">row</span> <span class="o">=</span> <span class="mi">8</span><span class="p">,</span> <span class="n">column</span> <span class="o">=</span> <span class="mi">1</span><span class="p">)</span></div>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright The Regents of the University of California, through Lawrence Berkeley National Laboratory
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

@@ -1,0 +1,1734 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>ReachMaster &mdash; ReachMaster alpha documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../_static/language_data.js"></script>
+    
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="Image Preprocessing" href="../image_preprocessing/image_preprocessing.html" />
+    <link rel="prev" title="Software" href="../software.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../index.html" class="icon icon-home"> ReachMaster
+          
+
+          
+            
+            <img src="../../_static/splinter.png" class="logo" alt="Logo"/>
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.0.0
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../overview.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../hardware/hardware.html">Hardware</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../software.html">Software</a><ul class="current">
+<li class="toctree-l2 current"><a class="current reference internal" href="#">ReachMaster</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#root-application-window">Root Application Window</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#camera-settings">Camera Settings</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#experiment-settings">Experiment Settings</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#robot-settings">Robot Settings</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#module-reachmaster.interfaces.camera_interface">Camera Interface</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#module-reachmaster.interfaces.experiment_interface">Experiment Interface</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#module-reachmaster.interfaces.robot_interface">Robot Interface</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#protocols">Protocols</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#module-reachmaster.config">Configuration Files</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../image_preprocessing/image_preprocessing.html">Image Preprocessing</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../rig_controllers/rig_controllers.html">Rig Controllers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../robot_calibration/robot_calibration.html">Robot Calibration</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../archived/archived.html">Archived</a></li>
+</ul>
+</li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">ReachMaster</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../software.html">Software</a> &raquo;</li>
+        
+      <li>ReachMaster</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="../../_sources/software/reach_master/reach_master.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="module-reach_master">
+<span id="reachmaster"></span><h1>ReachMaster<a class="headerlink" href="#module-reach_master" title="Permalink to this headline">¶</a></h1>
+<p>The primary graphical user interface used to
+control and run experiments.</p>
+<p class="rubric">Example</p>
+<p>From command line:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ python reach_master.py
+</pre></div>
+</div>
+<div class="admonition-todo admonition" id="index-0">
+<p class="first admonition-title">Todo</p>
+<ul class="last simple">
+<li>Create executable</li>
+</ul>
+</div>
+<div class="section" id="root-application-window">
+<h2>Root Application Window<a class="headerlink" href="#root-application-window" title="Permalink to this headline">¶</a></h2>
+<img alt="../../_images/root_application.png" class="align-center" src="../../_images/root_application.png" />
+<span class="target" id="module-reachmaster.application"></span><p>The root application window provides functionality for selecting a
+data output directory, a configuration file, connecting to the
+experiment and robot controllers, accessing the settings windows,
+basic rig control, as well as selecting and running protocols.</p>
+<p class="rubric">Examples</p>
+<p>From command line:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ python application.py
+</pre></div>
+</div>
+<p>From python:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">reachmaster.application</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">rm</span> <span class="o">=</span> <span class="n">application</span><span class="o">.</span><span class="n">ReachMaster</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">rm</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
+</pre></div>
+</div>
+<div class="admonition-todo admonition" id="index-1">
+<p class="first admonition-title">Todo</p>
+<ul class="last simple">
+<li>Automated unit tests</li>
+<li>Python 3 compatibility</li>
+<li>PEP 8</li>
+</ul>
+</div>
+<dl class="class">
+<dt id="reachmaster.application.ReachMaster">
+<em class="property">class </em><code class="descclassname">reachmaster.application.</code><code class="descname">ReachMaster</code><a class="reference internal" href="../../_modules/reachmaster/application.html#ReachMaster"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#reachmaster.application.ReachMaster" title="Permalink to this definition">¶</a></dt>
+<dd><p>The primary class for the root ReachMaster application.</p>
+<p>Configures and provides callback methods for the root application
+window. The <cite>run()</cite> method detects events during normal operation
+and the <cite>on_quit()</cite> method is called prior to application
+destruction.</p>
+<dl class="attribute">
+<dt id="reachmaster.application.ReachMaster.window">
+<code class="descname">window</code><a class="headerlink" href="#reachmaster.application.ReachMaster.window" title="Permalink to this definition">¶</a></dt>
+<dd><p>Tkinter object that constructs the root application window.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">instance</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="reachmaster.application.ReachMaster.config">
+<code class="descname">config</code><a class="headerlink" href="#reachmaster.application.ReachMaster.config" title="Permalink to this definition">¶</a></dt>
+<dd><p>The current configuration settings for the application.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">dict</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="reachmaster.application.ReachMaster.data_dir">
+<code class="descname">data_dir</code><a class="headerlink" href="#reachmaster.application.ReachMaster.data_dir" title="Permalink to this definition">¶</a></dt>
+<dd><p>Tkinter StringVar that captures the user-selected data
+output directory.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">instance</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="reachmaster.application.ReachMaster.config_file">
+<code class="descname">config_file</code><a class="headerlink" href="#reachmaster.application.ReachMaster.config_file" title="Permalink to this definition">¶</a></dt>
+<dd><p>Tkinter StringVar that captures the user-selected
+configuration file.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">instance</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="reachmaster.application.ReachMaster.port_list">
+<code class="descname">port_list</code><a class="headerlink" href="#reachmaster.application.ReachMaster.port_list" title="Permalink to this definition">¶</a></dt>
+<dd><p>List of serial port names with connected devices.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">list(str)</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="reachmaster.application.ReachMaster.exp_control_port">
+<code class="descname">exp_control_port</code><a class="headerlink" href="#reachmaster.application.ReachMaster.exp_control_port" title="Permalink to this definition">¶</a></dt>
+<dd><p>Tkinter StringVar that captures the user-selected port from
+the port list for the experiment microcontroller.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">instance</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="reachmaster.application.ReachMaster.rob_control_port">
+<code class="descname">rob_control_port</code><a class="headerlink" href="#reachmaster.application.ReachMaster.rob_control_port" title="Permalink to this definition">¶</a></dt>
+<dd><p>Tkinter StringVar that captures the user-selected port from
+the port list for the robot microcontroller.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">insstance</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="reachmaster.application.ReachMaster.protocol_list">
+<code class="descname">protocol_list</code><a class="headerlink" href="#reachmaster.application.ReachMaster.protocol_list" title="Permalink to this definition">¶</a></dt>
+<dd><p>List of protocol options.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">list(str)</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="reachmaster.application.ReachMaster.protocol">
+<code class="descname">protocol</code><a class="headerlink" href="#reachmaster.application.ReachMaster.protocol" title="Permalink to this definition">¶</a></dt>
+<dd><p>Tkinter StringVar that captures the user-selected protocol.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">instance</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="reachmaster.application.ReachMaster.running">
+<code class="descname">running</code><a class="headerlink" href="#reachmaster.application.ReachMaster.running" title="Permalink to this definition">¶</a></dt>
+<dd><p>True if the root application window has not been destroyed.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">bool</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="reachmaster.application.ReachMaster.exp_connected">
+<code class="descname">exp_connected</code><a class="headerlink" href="#reachmaster.application.ReachMaster.exp_connected" title="Permalink to this definition">¶</a></dt>
+<dd><p>True if interface to the experiment microcontroller is active.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">bool</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="reachmaster.application.ReachMaster.rob_connected">
+<code class="descname">rob_connected</code><a class="headerlink" href="#reachmaster.application.ReachMaster.rob_connected" title="Permalink to this definition">¶</a></dt>
+<dd><p>True if interface to the robot microcontroller is active.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">bool</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="reachmaster.application.ReachMaster.protocol_running">
+<code class="descname">protocol_running</code><a class="headerlink" href="#reachmaster.application.ReachMaster.protocol_running" title="Permalink to this definition">¶</a></dt>
+<dd><p>True while an experiment protocol is being executed.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">bool</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="reachmaster.application.ReachMaster.child">
+<code class="descname">child</code><a class="headerlink" href="#reachmaster.application.ReachMaster.child" title="Permalink to this definition">¶</a></dt>
+<dd><p>Tkinter Toplevel object that constructs child window selected
+by the user from the root application window. Defaults to None
+when child window is closed.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">NoneType or instance</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="reachmaster.application.ReachMaster.cam_settings_callback">
+<code class="descname">cam_settings_callback</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/reachmaster/application.html#ReachMaster.cam_settings_callback"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#reachmaster.application.ReachMaster.cam_settings_callback" title="Permalink to this definition">¶</a></dt>
+<dd><p>Opens the camera settings window.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="reachmaster.application.ReachMaster.config_file_browse_callback">
+<code class="descname">config_file_browse_callback</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/reachmaster/application.html#ReachMaster.config_file_browse_callback"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#reachmaster.application.ReachMaster.config_file_browse_callback" title="Permalink to this definition">¶</a></dt>
+<dd><p>Allows user to load a previously saved configuration file.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="reachmaster.application.ReachMaster.data_dir_browse_callback">
+<code class="descname">data_dir_browse_callback</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/reachmaster/application.html#ReachMaster.data_dir_browse_callback"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#reachmaster.application.ReachMaster.data_dir_browse_callback" title="Permalink to this definition">¶</a></dt>
+<dd><p>Allows user to set the data output directory.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="reachmaster.application.ReachMaster.deliver_water_callback">
+<code class="descname">deliver_water_callback</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/reachmaster/application.html#ReachMaster.deliver_water_callback"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#reachmaster.application.ReachMaster.deliver_water_callback" title="Permalink to this definition">¶</a></dt>
+<dd><p>Opens the reward solenoid for the reward duration set
+in experiment settings.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="reachmaster.application.ReachMaster.exp_connect_callback">
+<code class="descname">exp_connect_callback</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/reachmaster/application.html#ReachMaster.exp_connect_callback"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#reachmaster.application.ReachMaster.exp_connect_callback" title="Permalink to this definition">¶</a></dt>
+<dd><p>Connects to the experiment microcontroller located at the
+user selected port.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="reachmaster.application.ReachMaster.exp_disconnect_callback">
+<code class="descname">exp_disconnect_callback</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/reachmaster/application.html#ReachMaster.exp_disconnect_callback"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#reachmaster.application.ReachMaster.exp_disconnect_callback" title="Permalink to this definition">¶</a></dt>
+<dd><p>Disconncects from the experiment microcontroller.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="reachmaster.application.ReachMaster.exp_settings_callback">
+<code class="descname">exp_settings_callback</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/reachmaster/application.html#ReachMaster.exp_settings_callback"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#reachmaster.application.ReachMaster.exp_settings_callback" title="Permalink to this definition">¶</a></dt>
+<dd><p>Opens the experiment settings window.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="reachmaster.application.ReachMaster.flush_water_callback">
+<code class="descname">flush_water_callback</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/reachmaster/application.html#ReachMaster.flush_water_callback"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#reachmaster.application.ReachMaster.flush_water_callback" title="Permalink to this definition">¶</a></dt>
+<dd><p>Opens the reward solenoid for the flush duration set in
+experiment settings.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="reachmaster.application.ReachMaster.move_rob_callback">
+<code class="descname">move_rob_callback</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/reachmaster/application.html#ReachMaster.move_rob_callback"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#reachmaster.application.ReachMaster.move_rob_callback" title="Permalink to this definition">¶</a></dt>
+<dd><p>Commands the robot to move to the next position in
+its currently loaded command sequence.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="reachmaster.application.ReachMaster.on_quit">
+<code class="descname">on_quit</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/reachmaster/application.html#ReachMaster.on_quit"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#reachmaster.application.ReachMaster.on_quit" title="Permalink to this definition">¶</a></dt>
+<dd><p>Called prior to destruction of the ReachMaster application.</p>
+<p>Prevents destruction if any child windows are open. Asks user
+to save the configuration file to the data directory. Stops
+all active interfaces.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="reachmaster.application.ReachMaster.rob_connect_callback">
+<code class="descname">rob_connect_callback</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/reachmaster/application.html#ReachMaster.rob_connect_callback"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#reachmaster.application.ReachMaster.rob_connect_callback" title="Permalink to this definition">¶</a></dt>
+<dd><p>Connects to the robot microcontroller located at the user
+selected port.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="reachmaster.application.ReachMaster.rob_disconnect_callback">
+<code class="descname">rob_disconnect_callback</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/reachmaster/application.html#ReachMaster.rob_disconnect_callback"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#reachmaster.application.ReachMaster.rob_disconnect_callback" title="Permalink to this definition">¶</a></dt>
+<dd><p>Disconncects from the robot microcontroller.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="reachmaster.application.ReachMaster.rob_settings_callback">
+<code class="descname">rob_settings_callback</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/reachmaster/application.html#ReachMaster.rob_settings_callback"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#reachmaster.application.ReachMaster.rob_settings_callback" title="Permalink to this definition">¶</a></dt>
+<dd><p>Opens the robot settings window.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="reachmaster.application.ReachMaster.run">
+<code class="descname">run</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/reachmaster/application.html#ReachMaster.run"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#reachmaster.application.ReachMaster.run" title="Permalink to this definition">¶</a></dt>
+<dd><p>The application main loop.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="reachmaster.application.ReachMaster.run_protocol_callback">
+<code class="descname">run_protocol_callback</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/reachmaster/application.html#ReachMaster.run_protocol_callback"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#reachmaster.application.ReachMaster.run_protocol_callback" title="Permalink to this definition">¶</a></dt>
+<dd><p>Initiates the user-selected experimental protocol.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="reachmaster.application.ReachMaster.toggle_led_callback">
+<code class="descname">toggle_led_callback</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/reachmaster/application.html#ReachMaster.toggle_led_callback"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#reachmaster.application.ReachMaster.toggle_led_callback" title="Permalink to this definition">¶</a></dt>
+<dd><p>Toggles the LED located on the robot handle.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="reachmaster.application.ReachMaster.toggle_lights_callback">
+<code class="descname">toggle_lights_callback</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/reachmaster/application.html#ReachMaster.toggle_lights_callback"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#reachmaster.application.ReachMaster.toggle_lights_callback" title="Permalink to this definition">¶</a></dt>
+<dd><p>Toggles the neopixel lights.</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="camera-settings">
+<h2>Camera Settings<a class="headerlink" href="#camera-settings" title="Permalink to this headline">¶</a></h2>
+<img alt="../../_images/camera_settings.png" class="align-center" src="../../_images/camera_settings.png" />
+<span class="target" id="module-reachmaster.settings.camera_settings"></span><p>The camera settings window is opened as a child of the
+ReachMaster root application. It provides functionality for
+specifying the number of cameras, setting their intrinsic
+parameters (e.g., exposure, gain, triggers, etc.), and data
+output parameters (e.g., cropping, pixel resolution, etc.). It
+provides functions to capture images and record videos which can
+be useful for post-hoc camera calibration. It also provides
+functions for adding, removing and saving pixels-of-interest
+which are used by the experiment protocols for reach detection.</p>
+<div class="admonition-todo admonition" id="index-2">
+<p class="first admonition-title">Todo</p>
+<ul class="last simple">
+<li>GPU-accelerated video encoding</li>
+<li>Currently can’t trigger images with lights on</li>
+<li>Remove fps setting?</li>
+<li>Automate unit tests</li>
+<li>Python 3 compatibility</li>
+<li>PEP 8</li>
+</ul>
+</div>
+<dl class="class">
+<dt id="reachmaster.settings.camera_settings.CameraSettings">
+<em class="property">class </em><code class="descclassname">reachmaster.settings.camera_settings.</code><code class="descname">CameraSettings</code><span class="sig-paren">(</span><em>parent</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/reachmaster/settings/camera_settings.html#CameraSettings"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#reachmaster.settings.camera_settings.CameraSettings" title="Permalink to this definition">¶</a></dt>
+<dd><p>The primary class for the camera settings window.</p>
+<p>Configures and provides window callback methods. Also provides
+methods to stream/record video and capture images that can be
+used for post hoc analyses (e.g., camera calibration). The
+<cite>on_quit()</cite> method is called prior to application destruction.</p>
+<dl class="attribute">
+<dt id="reachmaster.settings.camera_settings.CameraSettings.cfg">
+<code class="descname">cfg</code><a class="headerlink" href="#reachmaster.settings.camera_settings.CameraSettings.cfg" title="Permalink to this definition">¶</a></dt>
+<dd><p>The current configuration settings for the application</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">dict</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="reachmaster.settings.camera_settings.CameraSettings.output_params">
+<code class="descname">output_params</code><a class="headerlink" href="#reachmaster.settings.camera_settings.CameraSettings.output_params" title="Permalink to this definition">¶</a></dt>
+<dd><p>Video output parameters for WriteGear</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">dict</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="reachmaster.settings.camera_settings.CameraSettings.exp_controller">
+<code class="descname">exp_controller</code><a class="headerlink" href="#reachmaster.settings.camera_settings.CameraSettings.exp_controller" title="Permalink to this definition">¶</a></dt>
+<dd><p>Serial interface to the experiment microcontroller</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">instance</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="reachmaster.settings.camera_settings.CameraSettings.exp_connected">
+<code class="descname">exp_connected</code><a class="headerlink" href="#reachmaster.settings.camera_settings.CameraSettings.exp_connected" title="Permalink to this definition">¶</a></dt>
+<dd><p>True if the experiment interface is active</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">bool</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="reachmaster.settings.camera_settings.CameraSettings.num_cams">
+<code class="descname">num_cams</code><a class="headerlink" href="#reachmaster.settings.camera_settings.CameraSettings.num_cams" title="Permalink to this definition">¶</a></dt>
+<dd><p>Tkinter StringVar that captures the user-selected number
+of cameras</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">instance</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="reachmaster.settings.camera_settings.CameraSettings.fps">
+<code class="descname">fps</code><a class="headerlink" href="#reachmaster.settings.camera_settings.CameraSettings.fps" title="Permalink to this definition">¶</a></dt>
+<dd><p>Tkinter StringVar that captures the user-selected frames
+per second</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">instance</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="reachmaster.settings.camera_settings.CameraSettings.exposure">
+<code class="descname">exposure</code><a class="headerlink" href="#reachmaster.settings.camera_settings.CameraSettings.exposure" title="Permalink to this definition">¶</a></dt>
+<dd><p>Tkinter StringVar that captures the user-selected camera
+exposure</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">instance</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="reachmaster.settings.camera_settings.CameraSettings.gain">
+<code class="descname">gain</code><a class="headerlink" href="#reachmaster.settings.camera_settings.CameraSettings.gain" title="Permalink to this definition">¶</a></dt>
+<dd><p>Tkinter StringVar that captures the user-selected camera
+gain.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">instance</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="reachmaster.settings.camera_settings.CameraSettings.gpi_mode">
+<code class="descname">gpi_mode</code><a class="headerlink" href="#reachmaster.settings.camera_settings.CameraSettings.gpi_mode" title="Permalink to this definition">¶</a></dt>
+<dd><p>Tkinter StringVar that captures the camera input mode.
+Currently, this is selected by the configuration file and
+not the user as it is assumed all camera interfaces will
+trigger images with the same method.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">instance</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="reachmaster.settings.camera_settings.CameraSettings.trigger_source">
+<code class="descname">trigger_source</code><a class="headerlink" href="#reachmaster.settings.camera_settings.CameraSettings.trigger_source" title="Permalink to this definition">¶</a></dt>
+<dd><p>Tkinter StringVar that captures the user-selected camera
+trigger source. Defers to the configuration file. Do not
+change unless you know what you are doing.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">instance</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="reachmaster.settings.camera_settings.CameraSettings.gpo_mode">
+<code class="descname">gpo_mode</code><a class="headerlink" href="#reachmaster.settings.camera_settings.CameraSettings.gpo_mode" title="Permalink to this definition">¶</a></dt>
+<dd><p>Tkinter StringVar that captures the user-selected camera
+sync output mode.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">instance</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="reachmaster.settings.camera_settings.CameraSettings.buffer_dur">
+<code class="descname">buffer_dur</code><a class="headerlink" href="#reachmaster.settings.camera_settings.CameraSettings.buffer_dur" title="Permalink to this definition">¶</a></dt>
+<dd><p>Tkinter StringVar that captures the user-selected duration
+that should be used by protocols for buffering images in
+RAM when real-time encoding is not used.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">instance</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="reachmaster.settings.camera_settings.CameraSettings.img_width">
+<code class="descname">img_width</code><a class="headerlink" href="#reachmaster.settings.camera_settings.CameraSettings.img_width" title="Permalink to this definition">¶</a></dt>
+<dd><p>Tkinter StringVar that captures the user-selected image
+width in pixels. Must be less than your camera’s maximum
+allowable image width and divisible by it’s width increment
+value. See your camera’s manual for details.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">instance</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="reachmaster.settings.camera_settings.CameraSettings.img_height">
+<code class="descname">img_height</code><a class="headerlink" href="#reachmaster.settings.camera_settings.CameraSettings.img_height" title="Permalink to this definition">¶</a></dt>
+<dd><p>Tkinter StringVar that captures the user-selected image
+height in pixels. Must be less than your camera’s maximum
+allowable image width and divisible by it’s width increment
+value. See your camera’s manual for details.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">instance</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="reachmaster.settings.camera_settings.CameraSettings.offset_x">
+<code class="descname">offset_x</code><a class="headerlink" href="#reachmaster.settings.camera_settings.CameraSettings.offset_x" title="Permalink to this definition">¶</a></dt>
+<dd><p>Tkinter StringVar that captures the user-selected image
+horizontal offset in pixels. Must be less than your camera’s
+maximum allowable image width minus the selected img_width.
+See your camera’s manual for details.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">instance</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="reachmaster.settings.camera_settings.CameraSettings.offset_y">
+<code class="descname">offset_y</code><a class="headerlink" href="#reachmaster.settings.camera_settings.CameraSettings.offset_y" title="Permalink to this definition">¶</a></dt>
+<dd><p>Tkinter StringVar that captures the user-selected image
+vertical offset in pixels. Must be less than your camera’s
+maximum allowable image width minus the selected img_height.
+See your camera’s manual for details.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">instance</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="reachmaster.settings.camera_settings.CameraSettings.downsampling">
+<code class="descname">downsampling</code><a class="headerlink" href="#reachmaster.settings.camera_settings.CameraSettings.downsampling" title="Permalink to this definition">¶</a></dt>
+<dd><p>Tkinter StringVar that captures the user-selected image
+downsampling. Can be ‘XI_1x1’ (full resolution) or ‘XI_2x2’
+(1/4 resolution). The latter can only be used when no cropping
+or offsets are applied.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">instance</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="reachmaster.settings.camera_settings.CameraSettings.poi_threshold">
+<code class="descname">poi_threshold</code><a class="headerlink" href="#reachmaster.settings.camera_settings.CameraSettings.poi_threshold" title="Permalink to this definition">¶</a></dt>
+<dd><p>Tkinter StringVar that captures the user-selected
+pixel-of-interest (poi) threshold (standard deviations) used
+for reach detection.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">instance</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="reachmaster.settings.camera_settings.CameraSettings.streaming">
+<code class="descname">streaming</code><a class="headerlink" href="#reachmaster.settings.camera_settings.CameraSettings.streaming" title="Permalink to this definition">¶</a></dt>
+<dd><p>True if camera interface is acquiring and displaying images.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">bool</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="reachmaster.settings.camera_settings.CameraSettings.cams_connected">
+<code class="descname">cams_connected</code><a class="headerlink" href="#reachmaster.settings.camera_settings.CameraSettings.cams_connected" title="Permalink to this definition">¶</a></dt>
+<dd><p>True if camera interface is active.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">bool</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="reachmaster.settings.camera_settings.CameraSettings.draw_saved">
+<code class="descname">draw_saved</code><a class="headerlink" href="#reachmaster.settings.camera_settings.CameraSettings.draw_saved" title="Permalink to this definition">¶</a></dt>
+<dd><p>True if saved poi’s should be displayed while streaming.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">bool</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="reachmaster.settings.camera_settings.CameraSettings.add_pois">
+<code class="descname">add_pois</code><a class="headerlink" href="#reachmaster.settings.camera_settings.CameraSettings.add_pois" title="Permalink to this definition">¶</a></dt>
+<dd><p>True if clicking on images should add new poi’s during
+streaming.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">bool</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="reachmaster.settings.camera_settings.CameraSettings.remove_pois">
+<code class="descname">remove_pois</code><a class="headerlink" href="#reachmaster.settings.camera_settings.CameraSettings.remove_pois" title="Permalink to this definition">¶</a></dt>
+<dd><p>True if clicking on images should remove added or saved poi’s
+during streaming.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">bool</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="reachmaster.settings.camera_settings.CameraSettings.added_pois">
+<code class="descname">added_pois</code><a class="headerlink" href="#reachmaster.settings.camera_settings.CameraSettings.added_pois" title="Permalink to this definition">¶</a></dt>
+<dd><p>A nested list of added poi coordinates for each camera.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">list</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="reachmaster.settings.camera_settings.CameraSettings.saved_pois">
+<code class="descname">saved_pois</code><a class="headerlink" href="#reachmaster.settings.camera_settings.CameraSettings.saved_pois" title="Permalink to this definition">¶</a></dt>
+<dd><p>A nested list of saved poi coordinates for each camera.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">list</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="reachmaster.settings.camera_settings.CameraSettings.capture">
+<code class="descname">capture</code><a class="headerlink" href="#reachmaster.settings.camera_settings.CameraSettings.capture" title="Permalink to this definition">¶</a></dt>
+<dd><p>True if image should be saved to png while streaming.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">bool</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="reachmaster.settings.camera_settings.CameraSettings.record">
+<code class="descname">record</code><a class="headerlink" href="#reachmaster.settings.camera_settings.CameraSettings.record" title="Permalink to this definition">¶</a></dt>
+<dd><p>True while recording video.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">bool</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="reachmaster.settings.camera_settings.CameraSettings.img_num">
+<code class="descname">img_num</code><a class="headerlink" href="#reachmaster.settings.camera_settings.CameraSettings.img_num" title="Permalink to this definition">¶</a></dt>
+<dd><p>Counts captured images</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">int</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="reachmaster.settings.camera_settings.CameraSettings.add_pois_callback">
+<code class="descname">add_pois_callback</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/reachmaster/settings/camera_settings.html#CameraSettings.add_pois_callback"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#reachmaster.settings.camera_settings.CameraSettings.add_pois_callback" title="Permalink to this definition">¶</a></dt>
+<dd><p>Allows the user to add new pixels-of-interest by clicking
+the desired pixel using the cursor. Unsaved added pixels are
+displayed in red.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="reachmaster.settings.camera_settings.CameraSettings.capture_image_callback">
+<code class="descname">capture_image_callback</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/reachmaster/settings/camera_settings.html#CameraSettings.capture_image_callback"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#reachmaster.settings.camera_settings.CameraSettings.capture_image_callback" title="Permalink to this definition">¶</a></dt>
+<dd><p>Allows the user to capture an image while streaming. The image
+is saved to the <cite>calibration images</cite> folder in the data output
+directory.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="reachmaster.settings.camera_settings.CameraSettings.load_pois_callback">
+<code class="descname">load_pois_callback</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/reachmaster/settings/camera_settings.html#CameraSettings.load_pois_callback"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#reachmaster.settings.camera_settings.CameraSettings.load_pois_callback" title="Permalink to this definition">¶</a></dt>
+<dd><p>Loads previously saved pixels-of-interest and displays them
+over the streaming images in green.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="reachmaster.settings.camera_settings.CameraSettings.on_quit">
+<code class="descname">on_quit</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/reachmaster/settings/camera_settings.html#CameraSettings.on_quit"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#reachmaster.settings.camera_settings.CameraSettings.on_quit" title="Permalink to this definition">¶</a></dt>
+<dd><p>Called prior to destruction of the camera settings window.</p>
+<p>Prior to destruction, the configuration file must be updated
+to reflect the change in settings, and any active interfaces
+must be closed.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="reachmaster.settings.camera_settings.CameraSettings.remove_pois_callback">
+<code class="descname">remove_pois_callback</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/reachmaster/settings/camera_settings.html#CameraSettings.remove_pois_callback"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#reachmaster.settings.camera_settings.CameraSettings.remove_pois_callback" title="Permalink to this definition">¶</a></dt>
+<dd><p>Allows the user to removed either saved or unsaved
+pixels-of-interest. However, the user must save all added
+pixels in order for the changes to be reflected in the
+configuration file.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="reachmaster.settings.camera_settings.CameraSettings.save_pois_callback">
+<code class="descname">save_pois_callback</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/reachmaster/settings/camera_settings.html#CameraSettings.save_pois_callback"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#reachmaster.settings.camera_settings.CameraSettings.save_pois_callback" title="Permalink to this definition">¶</a></dt>
+<dd><p>Saves all added and/or removed pixel-of-interest to the
+configuration file.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="reachmaster.settings.camera_settings.CameraSettings.start_rec_callback">
+<code class="descname">start_rec_callback</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/reachmaster/settings/camera_settings.html#CameraSettings.start_rec_callback"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#reachmaster.settings.camera_settings.CameraSettings.start_rec_callback" title="Permalink to this definition">¶</a></dt>
+<dd><p>Allows the user to record a video which is saved to the <cite>calibration
+videos</cite> folder of the data output directory.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="reachmaster.settings.camera_settings.CameraSettings.start_stream_callback">
+<code class="descname">start_stream_callback</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/reachmaster/settings/camera_settings.html#CameraSettings.start_stream_callback"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#reachmaster.settings.camera_settings.CameraSettings.start_stream_callback" title="Permalink to this definition">¶</a></dt>
+<dd><p>Begins triggering and displaying camera images to the screen.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="reachmaster.settings.camera_settings.CameraSettings.stop_rec_callback">
+<code class="descname">stop_rec_callback</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/reachmaster/settings/camera_settings.html#CameraSettings.stop_rec_callback"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#reachmaster.settings.camera_settings.CameraSettings.stop_rec_callback" title="Permalink to this definition">¶</a></dt>
+<dd><p>Stops a video recording.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="reachmaster.settings.camera_settings.CameraSettings.stop_stream_callback">
+<code class="descname">stop_stream_callback</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/reachmaster/settings/camera_settings.html#CameraSettings.stop_stream_callback"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#reachmaster.settings.camera_settings.CameraSettings.stop_stream_callback" title="Permalink to this definition">¶</a></dt>
+<dd><p>Stops triggering and displaying new images.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="reachmaster.settings.camera_settings.CameraSettings.toggle_lights_callback">
+<code class="descname">toggle_lights_callback</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/reachmaster/settings/camera_settings.html#CameraSettings.toggle_lights_callback"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#reachmaster.settings.camera_settings.CameraSettings.toggle_lights_callback" title="Permalink to this definition">¶</a></dt>
+<dd><p>Allows the user to toggle the neopixel lights while streaming or
+recording a video.</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="experiment-settings">
+<h2>Experiment Settings<a class="headerlink" href="#experiment-settings" title="Permalink to this headline">¶</a></h2>
+<img alt="../../_images/experiment_settings.png" class="align-center" src="../../_images/experiment_settings.png" />
+<span class="target" id="module-reachmaster.settings.experiment_settings"></span><p>The experiment settings window is opened as a child of the
+ReachMaster root application. It allows the user to set any
+experiment parameters located on the experiment microcontroller
+(e.g., number/size of rewards, trial delays, etc.).</p>
+<div class="admonition-todo admonition" id="index-3">
+<p class="first admonition-title">Todo</p>
+<ul class="last simple">
+<li>Move protocol type options here?</li>
+<li>Automate unit tests</li>
+<li>Python 3 compatibility</li>
+<li>PEP 8</li>
+</ul>
+</div>
+<dl class="class">
+<dt id="reachmaster.settings.experiment_settings.ExperimentSettings">
+<em class="property">class </em><code class="descclassname">reachmaster.settings.experiment_settings.</code><code class="descname">ExperimentSettings</code><span class="sig-paren">(</span><em>parent</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/reachmaster/settings/experiment_settings.html#ExperimentSettings"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#reachmaster.settings.experiment_settings.ExperimentSettings" title="Permalink to this definition">¶</a></dt>
+<dd><p>The primary class for the camera settings window.</p>
+<dl class="attribute">
+<dt id="reachmaster.settings.experiment_settings.ExperimentSettings.cfg">
+<code class="descname">cfg</code><a class="headerlink" href="#reachmaster.settings.experiment_settings.ExperimentSettings.cfg" title="Permalink to this definition">¶</a></dt>
+<dd><p>The current configuration settings for the application</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">dict</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="reachmaster.settings.experiment_settings.ExperimentSettings.lights_on_dur">
+<code class="descname">lights_on_dur</code><a class="headerlink" href="#reachmaster.settings.experiment_settings.ExperimentSettings.lights_on_dur" title="Permalink to this definition">¶</a></dt>
+<dd><p>Tkinter StringVar that captures the user-selected duration
+(ms) lights should remain on during a trial when <cite>protocol
+type</cite> is ‘TRIALS’. If a reach is not detected in under this
+duration, the lights will turn off until the next trial is
+intitiated.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">instance</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="reachmaster.settings.experiment_settings.ExperimentSettings.lights_off_dur">
+<code class="descname">lights_off_dur</code><a class="headerlink" href="#reachmaster.settings.experiment_settings.ExperimentSettings.lights_off_dur" title="Permalink to this definition">¶</a></dt>
+<dd><p>Tkinter StringVar that captures the user-selected duration
+(ms) lights should remain off between trials when <cite>prtocol
+type</cite> is ‘TRIALS’.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">instance</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="reachmaster.settings.experiment_settings.ExperimentSettings.reward_win_dur">
+<code class="descname">reward_win_dur</code><a class="headerlink" href="#reachmaster.settings.experiment_settings.ExperimentSettings.reward_win_dur" title="Permalink to this definition">¶</a></dt>
+<dd><p>Tkinter StringVar that captures the user-selected duration
+(ms) for which rewards rewards are delivered once the
+handle is successfully pulled into the reward zone.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">instance</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="reachmaster.settings.experiment_settings.ExperimentSettings.max_rewards">
+<code class="descname">max_rewards</code><a class="headerlink" href="#reachmaster.settings.experiment_settings.ExperimentSettings.max_rewards" title="Permalink to this definition">¶</a></dt>
+<dd><p>Tkinter StringVar that captures the user-selected maximum
+number of rewards (int) delivered for a successful reach.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">instance</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="reachmaster.settings.experiment_settings.ExperimentSettings.solenoid_open_dur">
+<code class="descname">solenoid_open_dur</code><a class="headerlink" href="#reachmaster.settings.experiment_settings.ExperimentSettings.solenoid_open_dur" title="Permalink to this definition">¶</a></dt>
+<dd><p>Tkinter StringVar that captures the user-selected solenoid
+open duration (ms) which sets the individual reward size.
+Solenoid calibration must be performed to get the mapping
+from duration (ms) to volulme (mL).</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">instance</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="reachmaster.settings.experiment_settings.ExperimentSettings.solenoid_bounce_dur">
+<code class="descname">solenoid_bounce_dur</code><a class="headerlink" href="#reachmaster.settings.experiment_settings.ExperimentSettings.solenoid_bounce_dur" title="Permalink to this definition">¶</a></dt>
+<dd><p>Tkinter StringVar that captures the user-selected minimum
+duration (ms) the solenoid should remain closed between
+reward deliveries. Note the redundancy with <cite>reward_win_dur</cite>
+and <cite>max_rewards</cite>.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">instance</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="reachmaster.settings.experiment_settings.ExperimentSettings.flush_dur">
+<code class="descname">flush_dur</code><a class="headerlink" href="#reachmaster.settings.experiment_settings.ExperimentSettings.flush_dur" title="Permalink to this definition">¶</a></dt>
+<dd><p>Tkinter StringVar that captures the user-selected duration
+(ms) the solenoid should remain open while flushing the
+lines.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">instance</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="reachmaster.settings.experiment_settings.ExperimentSettings.reach_delay">
+<code class="descname">reach_delay</code><a class="headerlink" href="#reachmaster.settings.experiment_settings.ExperimentSettings.reach_delay" title="Permalink to this definition">¶</a></dt>
+<dd><p>Tkinter StringVar that captures the user-selected minimum
+duration animals are required to wait before attempting a
+reach after a trial is initiated when <cite>protocol type</cite> is
+‘TRIALS’. Once the lights turn on, if a reach is attempted
+before the end of the delay, the trial is haulted and the
+lights are turned off. This enforces a timeout period to
+discourage animals from performing reaches between trials.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">instance</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="reachmaster.settings.experiment_settings.ExperimentSettings.on_quit">
+<code class="descname">on_quit</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/reachmaster/settings/experiment_settings.html#ExperimentSettings.on_quit"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#reachmaster.settings.experiment_settings.ExperimentSettings.on_quit" title="Permalink to this definition">¶</a></dt>
+<dd><p>Called prior to destruction of the experiment settings window.</p>
+<p>Prior to destruction, the configuration file must be updated
+to reflect the change in settings.</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="robot-settings">
+<h2>Robot Settings<a class="headerlink" href="#robot-settings" title="Permalink to this headline">¶</a></h2>
+<img alt="../../_images/robot_settings.png" class="align-center" src="../../_images/robot_settings.png" />
+<span class="target" id="module-reachmaster.settings.robot_settings"></span><p>The robot settings window is opened as a child of the
+ReachMaster root application. It allows the user to set any
+parameters located on the robot microcontroller (e.g.,
+position smoothing, valve periods etc.), or having to do
+with the robot kinematics. It provides options for the user
+to select previously generated calibration and position
+command files. Soon it will allow users to run a robot
+calibration from within the ReachMaster application.</p>
+<div class="admonition-todo admonition" id="index-4">
+<p class="first admonition-title">Todo</p>
+<ul class="last simple">
+<li>Add labels to specify the microcontroller/kinematics parameters</li>
+<li>Run calibration callback</li>
+<li>Re-add load calibration callback?</li>
+<li>Automate unit tests</li>
+<li>Python 3 compatibility</li>
+<li>PEP 8</li>
+</ul>
+</div>
+<dl class="class">
+<dt id="reachmaster.settings.robot_settings.RobotSettings">
+<em class="property">class </em><code class="descclassname">reachmaster.settings.robot_settings.</code><code class="descname">RobotSettings</code><span class="sig-paren">(</span><em>parent</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/reachmaster/settings/robot_settings.html#RobotSettings"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#reachmaster.settings.robot_settings.RobotSettings" title="Permalink to this definition">¶</a></dt>
+<dd><p>The primary class for the robot settings window.</p>
+<p>Configures and provides window callback methods. Also provides
+methods to . The
+<cite>on_quit()</cite> method is called prior to application destruction.</p>
+<dl class="attribute">
+<dt id="reachmaster.settings.robot_settings.RobotSettings.cfg">
+<code class="descname">cfg</code><a class="headerlink" href="#reachmaster.settings.robot_settings.RobotSettings.cfg" title="Permalink to this definition">¶</a></dt>
+<dd><p>The current configuration settings for the application</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">dict</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="reachmaster.settings.robot_settings.RobotSettings.pos_smoothing">
+<code class="descname">pos_smoothing</code><a class="headerlink" href="#reachmaster.settings.robot_settings.RobotSettings.pos_smoothing" title="Permalink to this definition">¶</a></dt>
+<dd><p>Tkinter StringVar that captures the user-selected position
+smoothing parameter (0-1, 0 less smoothing).</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">instance</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="reachmaster.settings.robot_settings.RobotSettings.tol">
+<code class="descname">tol</code><a class="headerlink" href="#reachmaster.settings.robot_settings.RobotSettings.tol" title="Permalink to this definition">¶</a></dt>
+<dd><p>Tkinter StringVar that captures the user-selected tolerance
+(bits) for accepting robot convergence to the command
+position. (i.e., the L2-norm of the potentiometer readings
+must be less than tol).</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">instance</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="reachmaster.settings.robot_settings.RobotSettings.period">
+<code class="descname">period</code><a class="headerlink" href="#reachmaster.settings.robot_settings.RobotSettings.period" title="Permalink to this definition">¶</a></dt>
+<dd><p>Tkinter StringVar that captures the user-selected valve
+period (us). Equivalent to pulse width modulation (PWM)
+period.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">instance</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="reachmaster.settings.robot_settings.RobotSettings.off_dur">
+<code class="descname">off_dur</code><a class="headerlink" href="#reachmaster.settings.robot_settings.RobotSettings.off_dur" title="Permalink to this definition">¶</a></dt>
+<dd><p>Tkinter StringVar that captures the user-selected minimum
+off duration (ms) that is enforced between convergence
+times. Once the robot converges to a command position, it
+will not move to a new command position for this duration.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">instance</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="reachmaster.settings.robot_settings.RobotSettings.num_tol">
+<code class="descname">num_tol</code><a class="headerlink" href="#reachmaster.settings.robot_settings.RobotSettings.num_tol" title="Permalink to this definition">¶</a></dt>
+<dd><p>Tkinter StringVar that captures the user-selected number of
+consecutive periods the robot must be within convergence in
+order to be considered “in position”.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">instance</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt>
+<code class="descname">(x/y/z)_(push/pull)_wt</code></dt>
+<dd><p>Tkinter StringVar that captures the user-selected weighting
+coefficient placed on the <cite>x/y/z</cite> actuator in the
+<cite>push/pull</cite> direction. Acts as a gain on the calibration
+coefficients. Typically defaults to 1 for a good
+calibration, but gives the user an option to make quick
+manual adjustments without runnning an entirely new
+calibration. Not used very often in practice.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">instance</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="reachmaster.settings.robot_settings.RobotSettings.rew_zone_x">
+<code class="descname">rew_zone_x</code><a class="headerlink" href="#reachmaster.settings.robot_settings.RobotSettings.rew_zone_x" title="Permalink to this definition">¶</a></dt>
+<dd><p>Tkinter StringVar that captures the user-selected minimum
+<cite>x</cite> position (bits) the handle must cross in order to enter
+the reward zone.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">instance</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="reachmaster.settings.robot_settings.RobotSettings.rew_zone_">
+<code class="descname">rew_zone_</code><span class="sig-paren">(</span><em>y/z)_(min/max</em><span class="sig-paren">)</span><a class="headerlink" href="#reachmaster.settings.robot_settings.RobotSettings.rew_zone_" title="Permalink to this definition">¶</a></dt>
+<dd><p>Tkinter StringVar that captures the user-selected min/max
+<cite>x/z</cite> positions (bits) the handle must be within in order to
+be located in the reward zone. Conditions must be satisfied
+on all actuators simultaneously.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">instance</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="reachmaster.settings.robot_settings.RobotSettings.calibration_file">
+<code class="descname">calibration_file</code><a class="headerlink" href="#reachmaster.settings.robot_settings.RobotSettings.calibration_file" title="Permalink to this definition">¶</a></dt>
+<dd><p>Tkinter StringVar that captures the user-selected robot
+calibration file.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">instance</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="reachmaster.settings.robot_settings.RobotSettings.command_file">
+<code class="descname">command_file</code><a class="headerlink" href="#reachmaster.settings.robot_settings.RobotSettings.command_file" title="Permalink to this definition">¶</a></dt>
+<dd><p>Tkinter StringVar that captures the user-selected position
+command file.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">instance</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="reachmaster.settings.robot_settings.RobotSettings.command_source">
+<code class="descname">command_source</code><a class="headerlink" href="#reachmaster.settings.robot_settings.RobotSettings.command_source" title="Permalink to this definition">¶</a></dt>
+<dd><p>Tkinter StringVar that captures the user-selected option
+determining how commands are generated. Can be
+‘read_from_file’, ‘sample_from_file’, or ‘parametric_sample’.
+‘read_from_file’ takes the commands directly from the command
+file. ‘sample_from_file’ generates a sequence of commands by
+sampling from the command file with replacement.
+‘parametric_sample’ does not use the command file. Rather, it
+samples commands uniformly from the <cite>reach volume</cite> determined
+by user-selected inverse kinematics parameters.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">instance</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt>
+<code class="descname">(y/z)gimbal_to_joint</code></dt>
+<dd><p>Tkinter StringVar that captures the user-measured
+center-to-center distance (mm) from an y/z gimbal to its
+respective spherical joint (link to hardware page).</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">instance</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt>
+<code class="descname">(x/y/z)gimbal_(x/y/z)offset</code></dt>
+<dd><p>Tkinter StringVar that captures the user-measured offset (mm)
+of the (x/y/z) gimbal from the origin in the (x/y/z)
+direction.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">instance</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt>
+<code class="descname">(x/y/z)_origin</code></dt>
+<dd><p>Tkinter StringVar that captures the user-measured (x/y/z)
+position (bits) of the origin.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">instance</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="reachmaster.settings.robot_settings.RobotSettings.reach_dist_">
+<code class="descname">reach_dist_</code><span class="sig-paren">(</span><em>min/max</em><span class="sig-paren">)</span><a class="headerlink" href="#reachmaster.settings.robot_settings.RobotSettings.reach_dist_" title="Permalink to this definition">¶</a></dt>
+<dd><p>Tkinter StringVar that captures the user-specified (min/max)
+reach distance of the <cite>reach volume</cite>.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">instance</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="reachmaster.settings.robot_settings.RobotSettings.calibration_browse_callback">
+<code class="descname">calibration_browse_callback</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/reachmaster/settings/robot_settings.html#RobotSettings.calibration_browse_callback"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#reachmaster.settings.robot_settings.RobotSettings.calibration_browse_callback" title="Permalink to this definition">¶</a></dt>
+<dd><p>Allows the user to select a calibration file to be loaded to the
+robot microcontroller.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="reachmaster.settings.robot_settings.RobotSettings.command_browse_callback">
+<code class="descname">command_browse_callback</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/reachmaster/settings/robot_settings.html#RobotSettings.command_browse_callback"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#reachmaster.settings.robot_settings.RobotSettings.command_browse_callback" title="Permalink to this definition">¶</a></dt>
+<dd><p>Allows the user to select a position command file to be loaded
+to the robot microcontroller.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="reachmaster.settings.robot_settings.RobotSettings.on_quit">
+<code class="descname">on_quit</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/reachmaster/settings/robot_settings.html#RobotSettings.on_quit"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#reachmaster.settings.robot_settings.RobotSettings.on_quit" title="Permalink to this definition">¶</a></dt>
+<dd><p>Called prior to destruction of the robot settings window.</p>
+<p>Prior to destruction, the configuration file must be updated
+to reflect the change in settings.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="reachmaster.settings.robot_settings.RobotSettings.run_calibration_callback">
+<code class="descname">run_calibration_callback</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/reachmaster/settings/robot_settings.html#RobotSettings.run_calibration_callback"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#reachmaster.settings.robot_settings.RobotSettings.run_calibration_callback" title="Permalink to this definition">¶</a></dt>
+<dd><p>Not yet implented. Should load the robot calibration script to
+the robot microcontroller along with any relevant arguments, and
+run the calibration.</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-reachmaster.interfaces.camera_interface">
+<span id="camera-interface"></span><h2>Camera Interface<a class="headerlink" href="#module-reachmaster.interfaces.camera_interface" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="module-reachmaster.interfaces.experiment_interface">
+<span id="experiment-interface"></span><h2>Experiment Interface<a class="headerlink" href="#module-reachmaster.interfaces.experiment_interface" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="module-reachmaster.interfaces.robot_interface">
+<span id="robot-interface"></span><h2>Robot Interface<a class="headerlink" href="#module-reachmaster.interfaces.robot_interface" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="protocols">
+<h2>Protocols<a class="headerlink" href="#protocols" title="Permalink to this headline">¶</a></h2>
+<img alt="../../_images/protocol_window.png" class="align-center" src="../../_images/protocol_window.png" />
+<span class="target" id="module-reachmaster.protocols"></span></div>
+<div class="section" id="module-reachmaster.config">
+<span id="configuration-files"></span><h2>Configuration Files<a class="headerlink" href="#module-reachmaster.config" title="Permalink to this headline">¶</a></h2>
+<p>Configurations files are json files that store all the settings
+used in a ReachMaster session. Functions are provided to
+generate default configuration files, as well as to save and
+load previous configurations. This encourages persistence of
+settings across experiments.</p>
+<dl class="function">
+<dt id="reachmaster.config.default_config">
+<code class="descclassname">reachmaster.config.</code><code class="descname">default_config</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/reachmaster/config.html#default_config"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#reachmaster.config.default_config" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generate a configuration populated with sensible defaults.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">A default configuration.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">dict</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="reachmaster.config.save_config">
+<code class="descclassname">reachmaster.config.</code><code class="descname">save_config</code><span class="sig-paren">(</span><em>config</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/reachmaster/config.html#save_config"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#reachmaster.config.save_config" title="Permalink to this definition">¶</a></dt>
+<dd><p>Save a configuration file.</p>
+<p>This is typically called upon closing application if the
+user responds yes to the save prompt. The configuration is
+given the current datetime as a name and saved to a json
+in the config folder of the user-selected data output
+directory.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>config</strong> (<em>dict</em>) – The currently loaded configuration.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="reachmaster.config.load_config">
+<code class="descclassname">reachmaster.config.</code><code class="descname">load_config</code><span class="sig-paren">(</span><em>file_handle</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/reachmaster/config.html#load_config"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#reachmaster.config.load_config" title="Permalink to this definition">¶</a></dt>
+<dd><p>Load a configuration file.</p>
+<p>File typically selected by user from the configuration
+browser in the root ReachMaster application window.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>file_handle</strong> (<em>file</em>) – An open, previously saved json configuration file.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">A default configuration.</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">dict</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="reachmaster.config.save_tmp">
+<code class="descclassname">reachmaster.config.</code><code class="descname">save_tmp</code><span class="sig-paren">(</span><em>config</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/reachmaster/config.html#save_tmp"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#reachmaster.config.save_tmp" title="Permalink to this definition">¶</a></dt>
+<dd><p>Save the configuration to a temp file.</p>
+<p>The global state of ReachMaster is tracked with a temp
+file. Whenever a child window of the main application is
+created or destroyed, the temp file is updated to reflect
+whatever changes in settings may have occurred. If the
+user forgets to save the configuration file at the end of
+a session, the temp file can be used as a backup. It is
+saved to the temp folder in the ReachMaster root directory.
+<strong>Warning: temp file is reset to defaults as a new session
+is started!</strong></p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>config</strong> (<em>dict</em>) – The currently loaded configuration.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="../image_preprocessing/image_preprocessing.html" class="btn btn-neutral float-right" title="Image Preprocessing" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="../software.html" class="btn btn-neutral float-left" title="Software" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright The Regents of the University of California, through Lawrence Berkeley National Laboratory
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>
