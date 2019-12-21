@@ -44,7 +44,7 @@ class CameraSettings(tk.Toplevel):
 
     Attributes
     ----------
-    cfg : dict
+    config : dict
         The current configuration settings for the application
     output_params : dict
         Video output parameters for WriteGear
@@ -143,46 +143,46 @@ class CameraSettings(tk.Toplevel):
         self.configure(bg="white")
         self.protocol("WM_DELETE_WINDOW", self.on_quit) 
         #initialize tk variables from config
-        self.cfg = config.load_config(open('./temp/tmp_config.txt'))
-        self.output_params = self.cfg['CameraSettings']['output_params']        
-        self.exp_controller = expint.start_interface(self.cfg)
+        self.config = config.load_config(open('./temp/tmp_config.txt'))
+        self.output_params = self.config['CameraSettings']['output_params']        
+        self.exp_controller = expint.start_interface(self.config)
         self.exp_connected = True       
         self.num_cams = tk.StringVar()
-        self.num_cams.set(str(self.cfg['CameraSettings']['num_cams']))
+        self.num_cams.set(str(self.config['CameraSettings']['num_cams']))
         self.fps = tk.StringVar()
-        self.fps.set(str(self.cfg['CameraSettings']['fps']))
+        self.fps.set(str(self.config['CameraSettings']['fps']))
         self.exposure = tk.StringVar()
-        self.exposure.set(str(self.cfg['CameraSettings']['exposure']))
+        self.exposure.set(str(self.config['CameraSettings']['exposure']))
         self.gain = tk.StringVar()
-        self.gain.set(str(self.cfg['CameraSettings']['gain']))   
+        self.gain.set(str(self.config['CameraSettings']['gain']))   
         self.gpi_mode = tk.StringVar()
-        self.gpi_mode.set(self.cfg['CameraSettings']['gpi_mode'])
+        self.gpi_mode.set(self.config['CameraSettings']['gpi_mode'])
         self.trigger_source = tk.StringVar()
-        self.trigger_source.set(self.cfg['CameraSettings']['trigger_source'])
+        self.trigger_source.set(self.config['CameraSettings']['trigger_source'])
         self.gpo_mode = tk.StringVar()
-        self.gpo_mode.set(self.cfg['CameraSettings']['gpo_mode'])
+        self.gpo_mode.set(self.config['CameraSettings']['gpo_mode'])
         self.buffer_dur = tk.StringVar()
-        self.buffer_dur.set(str(self.cfg['ExperimentSettings']['buffer_dur']))
+        self.buffer_dur.set(str(self.config['ExperimentSettings']['buffer_dur']))
         self.img_width = tk.StringVar()
-        self.img_width.set(str(self.cfg['CameraSettings']['img_width']))
+        self.img_width.set(str(self.config['CameraSettings']['img_width']))
         self.img_height = tk.StringVar()
-        self.img_height.set(str(self.cfg['CameraSettings']['img_height']))
+        self.img_height.set(str(self.config['CameraSettings']['img_height']))
         self.offset_x = tk.StringVar()
-        self.offset_x.set(str(self.cfg['CameraSettings']['offset_x']))
+        self.offset_x.set(str(self.config['CameraSettings']['offset_x']))
         self.offset_y = tk.StringVar()
-        self.offset_y.set(str(self.cfg['CameraSettings']['offset_y']))
+        self.offset_y.set(str(self.config['CameraSettings']['offset_y']))
         self.downsampling = tk.StringVar()
-        self.downsampling.set(str(self.cfg['CameraSettings']['downsampling']))
+        self.downsampling.set(str(self.config['CameraSettings']['downsampling']))
         self.poi_threshold = tk.StringVar()
-        self.poi_threshold.set(str(self.cfg['CameraSettings']['poi_threshold']))   
+        self.poi_threshold.set(str(self.config['CameraSettings']['poi_threshold']))   
         #initialize housekeeping variables     
         self.streaming = False
         self.cams_connected = False
         self.draw_saved = False
         self.add_pois = False
         self.remove_pois = False
-        self.added_pois = [[] for _ in range(self.cfg['CameraSettings']['num_cams'])]
-        self.saved_pois = [[] for _ in range(self.cfg['CameraSettings']['num_cams'])] 
+        self.added_pois = [[] for _ in range(self.config['CameraSettings']['num_cams'])]
+        self.saved_pois = [[] for _ in range(self.config['CameraSettings']['num_cams'])] 
         self.capture = False
         self.record = False
         self.img_num = [1]
@@ -197,21 +197,21 @@ class CameraSettings(tk.Toplevel):
         must be closed. 
 
         """
-        self.cfg['CameraSettings']['num_cams'] = int(self.num_cams.get())
-        self.cfg['CameraSettings']['fps'] = int(self.fps.get())
-        self.cfg['CameraSettings']['exposure'] = int(self.exposure.get())
-        self.cfg['CameraSettings']['gain'] = float(self.gain.get()) 
-        self.cfg['CameraSettings']['img_width'] = int(self.img_width.get())
-        self.cfg['CameraSettings']['img_height'] = int(self.img_height.get())
-        self.cfg['CameraSettings']['offset_x'] = int(self.offset_x.get())
-        self.cfg['CameraSettings']['offset_y'] = int(self.offset_y.get())
-        self.cfg['CameraSettings']['downsampling'] = self.downsampling.get()
-        self.cfg['CameraSettings']['trigger_source'] = self.trigger_source.get()
-        self.cfg['CameraSettings']['gpo_mode'] = self.gpo_mode.get()
-        self.cfg['CameraSettings']['poi_threshold'] = float(self.poi_threshold.get())
-        self.cfg['CameraSettings']['self.output_params'] = (self.cfg['CameraSettings']['num_cams']*
-            self.cfg['CameraSettings']['img_width'],self.cfg['CameraSettings']['img_height'])
-        config.save_tmp(self.cfg)
+        self.config['CameraSettings']['num_cams'] = int(self.num_cams.get())
+        self.config['CameraSettings']['fps'] = int(self.fps.get())
+        self.config['CameraSettings']['exposure'] = int(self.exposure.get())
+        self.config['CameraSettings']['gain'] = float(self.gain.get()) 
+        self.config['CameraSettings']['img_width'] = int(self.img_width.get())
+        self.config['CameraSettings']['img_height'] = int(self.img_height.get())
+        self.config['CameraSettings']['offset_x'] = int(self.offset_x.get())
+        self.config['CameraSettings']['offset_y'] = int(self.offset_y.get())
+        self.config['CameraSettings']['downsampling'] = self.downsampling.get()
+        self.config['CameraSettings']['trigger_source'] = self.trigger_source.get()
+        self.config['CameraSettings']['gpo_mode'] = self.gpo_mode.get()
+        self.config['CameraSettings']['poi_threshold'] = float(self.poi_threshold.get())
+        self.config['CameraSettings']['self.output_params'] = (self.config['CameraSettings']['num_cams']*
+            self.config['CameraSettings']['img_width'],self.config['CameraSettings']['img_height'])
+        config.save_tmp(self.config)
         if self.streaming:
             self._on_stream_quit()
         expint.stop_interface(self.exp_controller)
@@ -446,18 +446,18 @@ class CameraSettings(tk.Toplevel):
     def start_stream_callback(self):
         """Begins triggering and displaying camera images to the screen."""
         if not self.cams_connected:
-            self.cfg['CameraSettings']['num_cams'] = int(self.num_cams.get())
-            self.cfg['CameraSettings']['fps'] = int(self.fps.get())
-            self.cfg['CameraSettings']['exposure'] = int(self.exposure.get())
-            self.cfg['CameraSettings']['gain'] = float(self.gain.get())   
-            self.cfg['CameraSettings']['trigger_source'] = self.trigger_source.get()
-            self.cfg['CameraSettings']['gpo_mode'] = self.gpo_mode.get()
-            self.cfg['CameraSettings']['img_width'] = int(self.img_width.get())
-            self.cfg['CameraSettings']['img_height'] = int(self.img_height.get())
-            self.cfg['CameraSettings']['offset_x'] = int(self.offset_x.get())
-            self.cfg['CameraSettings']['offset_y'] = int(self.offset_y.get())  
-            self.cfg['CameraSettings']['downsampling'] = self.downsampling.get()
-            self.cams = camint.start_interface(self.cfg)
+            self.config['CameraSettings']['num_cams'] = int(self.num_cams.get())
+            self.config['CameraSettings']['fps'] = int(self.fps.get())
+            self.config['CameraSettings']['exposure'] = int(self.exposure.get())
+            self.config['CameraSettings']['gain'] = float(self.gain.get())   
+            self.config['CameraSettings']['trigger_source'] = self.trigger_source.get()
+            self.config['CameraSettings']['gpo_mode'] = self.gpo_mode.get()
+            self.config['CameraSettings']['img_width'] = int(self.img_width.get())
+            self.config['CameraSettings']['img_height'] = int(self.img_height.get())
+            self.config['CameraSettings']['offset_x'] = int(self.offset_x.get())
+            self.config['CameraSettings']['offset_y'] = int(self.offset_y.get())  
+            self.config['CameraSettings']['downsampling'] = self.downsampling.get()
+            self.cams = camint.start_interface(self.config)
             self.cams_connected = True 
             self.img = camint.init_image()                                     
         if not self.streaming:
@@ -474,8 +474,8 @@ class CameraSettings(tk.Toplevel):
         """Loads previously saved pixels-of-interest and displays them
         over the streaming images in green."""
         if self.streaming:
-            if len(self.cfg['CameraSettings']['saved_pois'])>0:
-                self.saved_pois = self.cfg['CameraSettings']['saved_pois']
+            if len(self.config['CameraSettings']['saved_pois'])>0:
+                self.saved_pois = self.config['CameraSettings']['saved_pois']
                 self.draw_saved = True
             else:
                 tkMessageBox.showinfo("Warning", "No saved POIs.")
@@ -509,10 +509,10 @@ class CameraSettings(tk.Toplevel):
     def save_pois_callback(self):
         """Saves all added and/or removed pixel-of-interest to the 
         configuration file."""
-        for i in range(self.cfg['CameraSettings']['num_cams']):
+        for i in range(self.config['CameraSettings']['num_cams']):
             self.saved_pois[i] += self.added_pois[i] 
-        self.cfg['CameraSettings']['saved_pois'] = self.saved_pois 
-        self.added_pois = [[] for _ in range(self.cfg['CameraSettings']['num_cams'])]
+        self.config['CameraSettings']['saved_pois'] = self.saved_pois 
+        self.added_pois = [[] for _ in range(self.config['CameraSettings']['num_cams'])]
 
     def capture_image_callback(self):
         """Allows the user to capture an image while streaming. The image
@@ -527,23 +527,23 @@ class CameraSettings(tk.Toplevel):
         """Allows the user to record a video which is saved to the `calibration
         videos` folder of the data output directory."""
         if not self.streaming:
-            self.cfg['CameraSettings']['num_cams'] = int(self.num_cams.get())
-            self.cfg['CameraSettings']['fps'] = int(self.fps.get())
-            self.cfg['CameraSettings']['exposure'] = int(self.exposure.get())
-            self.cfg['CameraSettings']['gain'] = float(self.gain.get())   
-            self.cfg['CameraSettings']['trigger_source'] = self.trigger_source.get()
-            self.cfg['CameraSettings']['gpo_mode'] = self.gpo_mode.get()
-            self.cfg['CameraSettings']['img_width'] = int(self.img_width.get())
-            self.cfg['CameraSettings']['img_height'] = int(self.img_height.get())
-            self.cfg['CameraSettings']['offset_x'] = int(self.offset_x.get())
-            self.cfg['CameraSettings']['offset_y'] = int(self.offset_y.get())
-            self.output_params = (self.cfg['CameraSettings']['num_cams']*
-            self.cfg['CameraSettings']['img_width'],self.cfg['CameraSettings']['img_height']) 
-            self.cfg['CameraSettings']['output_params'] = self.output_params            
-            self.cams = camint.start_interface(self.cfg)
+            self.config['CameraSettings']['num_cams'] = int(self.num_cams.get())
+            self.config['CameraSettings']['fps'] = int(self.fps.get())
+            self.config['CameraSettings']['exposure'] = int(self.exposure.get())
+            self.config['CameraSettings']['gain'] = float(self.gain.get())   
+            self.config['CameraSettings']['trigger_source'] = self.trigger_source.get()
+            self.config['CameraSettings']['gpo_mode'] = self.gpo_mode.get()
+            self.config['CameraSettings']['img_width'] = int(self.img_width.get())
+            self.config['CameraSettings']['img_height'] = int(self.img_height.get())
+            self.config['CameraSettings']['offset_x'] = int(self.offset_x.get())
+            self.config['CameraSettings']['offset_y'] = int(self.offset_y.get())
+            self.output_params = (self.config['CameraSettings']['num_cams']*
+            self.config['CameraSettings']['img_width'],self.config['CameraSettings']['img_height']) 
+            self.config['CameraSettings']['output_params'] = self.output_params            
+            self.cams = camint.start_interface(self.config)
             self.cams_connected = True
             self.img = camint.init_image()
-            self.calibration_path = self.cfg['ReachMaster']['data_dir'] + "/calibration_videos/"
+            self.calibration_path = self.config['ReachMaster']['data_dir'] + "/calibration_videos/"
             if not os.path.isdir(self.calibration_path):
                 os.makedirs(self.calibration_path)
             self.vid_fn = self.calibration_path + str(datetime.datetime.now()) + '.mp4'             
@@ -552,7 +552,7 @@ class CameraSettings(tk.Toplevel):
                 compression_mode = True,
                 logging=False,
                 **self.output_params)
-            self.delay = int(np.round(1.0/float(self.cfg['CameraSettings']['fps'])*1000.0))
+            self.delay = int(np.round(1.0/float(self.config['CameraSettings']['fps'])*1000.0))
             self.record = True
             self._rec()
         else: 
@@ -579,23 +579,23 @@ class CameraSettings(tk.Toplevel):
         self.streaming = False          
         self.poi_active = False  
         self.draw_saved = False    
-        for i in range(self.cfg['CameraSettings']['num_cams']):
+        for i in range(self.config['CameraSettings']['num_cams']):
             self.cam_windows[i].destroy()
         camint.stop_interface(self.cams)
         self.cams_connected = False
 
     def _start_stream(self):
-        self.cam_windows = [0 for _ in range(self.cfg['CameraSettings']['num_cams'])]
-        for i in range(self.cfg['CameraSettings']['num_cams']):
+        self.cam_windows = [0 for _ in range(self.config['CameraSettings']['num_cams'])]
+        for i in range(self.config['CameraSettings']['num_cams']):
             self.cam_windows[i] = tk.Toplevel(self)
             self.cam_windows[i].title("Camera"+str(i))
             self.cam_windows[i].protocol("WM_DELETE_WINDOW", self._on_stream_quit)
             self.cam_windows[i].canvas = tk.Canvas(self.cam_windows[i], 
-                width = self.cfg['CameraSettings']['img_width'], 
-                height = self.cfg['CameraSettings']['img_height'])
+                width = self.config['CameraSettings']['img_width'], 
+                height = self.config['CameraSettings']['img_height'])
             self.cam_windows[i].canvas.grid(row=0,column= 0)            
-        self.delay = int(np.round(1.0/float(self.cfg['CameraSettings']['fps'])*1000.0))
-        self.photo_img = [0 for _ in range(self.cfg['CameraSettings']['num_cams'])]
+        self.delay = int(np.round(1.0/float(self.config['CameraSettings']['fps'])*1000.0))
+        self.photo_img = [0 for _ in range(self.config['CameraSettings']['num_cams'])]
         self.streaming = True
         self._refresh()
 
@@ -603,30 +603,38 @@ class CameraSettings(tk.Toplevel):
         if self.streaming:
             expint.trigger_image(self.exp_controller)
             now = str(int(round(time.time()*1000)))            
-            for i in range(self.cfg['CameraSettings']['num_cams']):
+            for i in range(self.config['CameraSettings']['num_cams']):
                 #display image
                 npimg = camint.get_npimage(self.cams[i],self.img)
                 npimg = cv2.cvtColor(npimg,cv2.COLOR_BAYER_BG2RGB)
                 self.photo_img[i] = PIL.ImageTk.PhotoImage(image = PIL.Image.fromarray(npimg))
-                self.cam_windows[i].canvas.create_image(0,0, image = self.photo_img[i], anchor = tk.NW)                
+                self.cam_windows[i].canvas.create_image(
+                    0, 0, image = self.photo_img[i], anchor = tk.NW
+                    )                
                 #draw saved pixels (green)
                 if self.draw_saved:
                     for poi in self.saved_pois[i]:                         
-                        self.cam_windows[i].canvas.create_line(poi[0],poi[1],poi[0]+1,poi[1],width=1,fill='green')
+                        self.cam_windows[i].canvas.create_line(
+                            poi[0], poi[1], poi[0] + 1, poi[1], width = 1, fill = 'green'
+                            )
                 #draw currently addded pixels (red)
                 for poi in self.added_pois[i]:                        
-                    self.cam_windows[i].canvas.create_line(poi[0],poi[1],poi[0]+1,poi[1],width=1,fill='red')
+                    self.cam_windows[i].canvas.create_line(
+                        poi[0], poi[1], poi[0] + 1, poi[1], width = 1, fill = 'red'
+                        )
                 #draw cursor for adding/removing pois
                 if self.add_pois or self.remove_pois:
                     self._draw_cursor(i)
-                    self.cam_windows[i].bind('<Button-1>',lambda event,camid=i:self._draw_poi(event,camid))
+                    self.cam_windows[i].bind(
+                        '<Button-1>', lambda event, camid = i:self._draw_poi(event,camid)
+                        )
                 #prepare frame for possible capture
                 if i == 0:
                     frame = npimg
                 else:
                     frame = np.hstack((frame,npimg))
             if self.capture:
-                self.calibration_path = self.cfg['ReachMaster']['data_dir'] + "/calibration_images/"
+                self.calibration_path = self.config['ReachMaster']['data_dir'] + "/calibration_images/"
                 if not os.path.isdir(self.calibration_path):
                     os.makedirs(self.calibration_path)
                 fn = "image" + str(self.img_num[0])
@@ -659,7 +667,7 @@ class CameraSettings(tk.Toplevel):
         if self.record:
             expint.trigger_image(self.exp_controller)
             now = str(int(round(time.time()*1000)))          
-            for i in range(self.cfg['CameraSettings']['num_cams']):
+            for i in range(self.config['CameraSettings']['num_cams']):
                 npimg = camint.get_npimage(self.cams[i],self.img)
                 # npimg = cv2.cvtColor(npimg,cv2.COLOR_BAYER_BG2RGB)
                 if i == 0:

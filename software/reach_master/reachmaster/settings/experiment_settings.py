@@ -21,7 +21,7 @@ class ExperimentSettings(tk.Toplevel):
 
     Attributes
     ----------
-    cfg : dict
+    config : dict
         The current configuration settings for the application
     lights_on_dur : instance
         Tkinter StringVar that captures the user-selected duration
@@ -72,23 +72,23 @@ class ExperimentSettings(tk.Toplevel):
         self.title("Experiment Settings") 
         self.configure(bg="white")
         self.protocol("WM_DELETE_WINDOW", self.on_quit) 
-        self.cfg = config.load_config(open('./temp/tmp_config.txt'))
+        self.config = config.load_config(open('./temp/tmp_config.txt'))
         self.lights_on_dur = tk.StringVar()
-        self.lights_on_dur.set(str(self.cfg['ExperimentSettings']['lights_on_dur']))
+        self.lights_on_dur.set(str(self.config['ExperimentSettings']['lights_on_dur']))
         self.lights_off_dur = tk.StringVar()
-        self.lights_off_dur.set(str(self.cfg['ExperimentSettings']['lights_off_dur']))
+        self.lights_off_dur.set(str(self.config['ExperimentSettings']['lights_off_dur']))
         self.reward_win_dur = tk.StringVar()
-        self.reward_win_dur.set(str(self.cfg['ExperimentSettings']['reward_win_dur']))
+        self.reward_win_dur.set(str(self.config['ExperimentSettings']['reward_win_dur']))
         self.max_rewards = tk.StringVar()
-        self.max_rewards.set(str(self.cfg['ExperimentSettings']['max_rewards']))
+        self.max_rewards.set(str(self.config['ExperimentSettings']['max_rewards']))
         self.solenoid_open_dur = tk.StringVar()
-        self.solenoid_open_dur.set(str(self.cfg['ExperimentSettings']['solenoid_open_dur']))
+        self.solenoid_open_dur.set(str(self.config['ExperimentSettings']['solenoid_open_dur']))
         self.solenoid_bounce_dur = tk.StringVar()
-        self.solenoid_bounce_dur.set(str(self.cfg['ExperimentSettings']['solenoid_bounce_dur']))
+        self.solenoid_bounce_dur.set(str(self.config['ExperimentSettings']['solenoid_bounce_dur']))
         self.flush_dur = tk.StringVar()
-        self.flush_dur.set(str(self.cfg['ExperimentSettings']['flush_dur']))
+        self.flush_dur.set(str(self.config['ExperimentSettings']['flush_dur']))
         self.reach_delay = tk.StringVar()
-        self.reach_delay.set(str(self.cfg['ExperimentSettings']['reach_delay']))
+        self.reach_delay.set(str(self.config['ExperimentSettings']['reach_delay']))
         self._configure_window()
 
     def on_quit(self):
@@ -98,15 +98,15 @@ class ExperimentSettings(tk.Toplevel):
         to reflect the change in settings. 
 
         """
-        self.cfg['ExperimentSettings']['lights_on_dur'] = int(self.lights_on_dur.get())
-        self.cfg['ExperimentSettings']['lights_off_dur'] = int(self.lights_off_dur.get())
-        self.cfg['ExperimentSettings']['reward_win_dur'] = int(self.reward_win_dur.get())
-        self.cfg['ExperimentSettings']['max_rewards'] = int(self.max_rewards.get()) 
-        self.cfg['ExperimentSettings']['solenoid_open_dur'] = int(self.solenoid_open_dur.get())
-        self.cfg['ExperimentSettings']['solenoid_bounce_dur'] = int(self.solenoid_bounce_dur.get())
-        self.cfg['ExperimentSettings']['flush_dur'] = int(self.flush_dur.get())
-        self.cfg['ExperimentSettings']['reach_delay'] = int(self.reach_delay.get())
-        config.save_tmp(self.cfg)
+        self.config['ExperimentSettings']['lights_on_dur'] = int(self.lights_on_dur.get())
+        self.config['ExperimentSettings']['lights_off_dur'] = int(self.lights_off_dur.get())
+        self.config['ExperimentSettings']['reward_win_dur'] = int(self.reward_win_dur.get())
+        self.config['ExperimentSettings']['max_rewards'] = int(self.max_rewards.get()) 
+        self.config['ExperimentSettings']['solenoid_open_dur'] = int(self.solenoid_open_dur.get())
+        self.config['ExperimentSettings']['solenoid_bounce_dur'] = int(self.solenoid_bounce_dur.get())
+        self.config['ExperimentSettings']['flush_dur'] = int(self.flush_dur.get())
+        self.config['ExperimentSettings']['reach_delay'] = int(self.reach_delay.get())
+        config.save_tmp(self.config)
         self.destroy()
 
     def _configure_window(self):

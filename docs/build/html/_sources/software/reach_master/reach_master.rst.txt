@@ -31,6 +31,13 @@ Robot Settings
 .. automodule:: reachmaster.settings.robot_settings
 	:members: RobotSettings
 
+Protocols
+---------------------------------------
+.. image:: /art/protocol_window.png
+	:align: center
+.. automodule:: reachmaster.protocols
+	:members: Protocols
+
 Camera Interface 
 ---------------------------------------
 .. automodule:: reachmaster.interfaces.camera_interface
@@ -45,13 +52,6 @@ Robot Interface
 ---------------------------------------
 .. automodule:: reachmaster.interfaces.robot_interface
 	:members: 
-
-Protocols
----------------------------------------
-.. image:: /art/protocol_window.png
-	:align: center
-.. automodule:: reachmaster.protocols
-	:members: Protocols
 
 Configuration Files
 ---------------------------------------

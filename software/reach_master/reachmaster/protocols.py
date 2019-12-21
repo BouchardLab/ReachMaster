@@ -1,3 +1,18 @@
+"""The protocol window is opened as a child of the 
+ReachMaster root application whenever a protocol is run. It 
+provides basic functionality for interacting with the rig 
+while an experiment is runnings (e.g., manual reward delivery,
+toggle lights, etc.).
+
+Todo:
+    * Keep adding new protocol types
+    * GPU-accelerated video encoding
+    * Automate unit tests
+    * Python 3 compatibility
+    * PEP 8
+
+"""
+
 import config
 import interfaces.camera_interface as camint
 import interfaces.robot_interface as robint
@@ -15,10 +30,64 @@ import serial
 from ximea import xiapi
 
 def list_protocols():
+    """Generate a list of the available protocol types. Currently 
+    limited to 'TRIALS' and 'CONTINUOUS'."""
     protocol_list = list(["TRIALS","CONTINUOUS"])
     return protocol_list
 
 class Protocols(tk.Toplevel):
+    """The primary class for the protocol window.
+
+    Configures and provides window callback methods. Also provides 
+    special `run` methods that implement each of the protocol types. 
+    Protocol types also has special `on_quit()` methods that are 
+    called prior to application destruction.   
+
+    Attributes
+    ----------
+    config : dict
+        The current configuration settings for the application.
+    output_params : dict
+        Video encoding parameters for WriteGear.
+    exp_connected : bool
+        True when experiment controller interface is activated.
+    rob_connected : bool
+        True when robot controller interface is activated.
+    cams_connected : bool
+        True when camera interface is activated.
+    video_open : bool
+        True when a file is open for video encoding.
+    poi_means : list
+        A list of the mean value of each pixel-of-interest for 
+        each camera as measured from the baseline acquisition
+        period. Used for reach detection.
+    poi_stds : list
+        A list of standard deviations for each pixel-of-interest 
+        for each camera as measured from the baseline acquisition
+        period. Used for reach detection.
+    poi_obs : list
+        A list of all pixel-of-interest values from the most 
+        recently captured group of images. Used for reach detection.
+    poi_zscores : list
+        A list of all pixel-of-interest zscores relative to baseline
+        for the most recently captured group of images. Used for 
+        reach detection.
+    lights_on : bool
+        True if neopixel lights are on.
+    buffer_full : bool
+        True if video buffer is full when `protocol type` is 'TRIALS'
+    reach_detected : bool
+        True when poi_zscores from all cameras are above the 
+        user-specified threshold.  
+    control_message : char
+        Character message that is sent to the experiment controller
+        according to the communication protocol.
+    exp_response : char
+        Character received in response to the control_message from 
+        the experiment controller interpreted according to the 
+        communication protocol. 
+
+    """
 
     def __init__(self, parent):
         #create window
@@ -37,8 +106,8 @@ class Protocols(tk.Toplevel):
         self.video_open = False       
         self.poi_means = []
         self.poi_stds = []
-        self.obs_pois = []
-        self.zscored_pois = []  
+        self.poi_obs = []
+        self.poi_zscores = []  
         self.lights_on = False          
         self.buffer_full = False 
         self.reach_detected = False
@@ -84,7 +153,7 @@ class Protocols(tk.Toplevel):
         self.destroy()
 
     def special_protocol_init(self):        
-        if self.config['Protocol']['type'] == "CONTINUOUS":
+        if self.config['Protocol']['type'] == 'CONTINUOUS':
             self.vid_fn = self.video_data_path + str(datetime.datetime.now()) + '.mp4' 
             self.video = WriteGear(
                 output_filename = self.vid_fn,
@@ -92,6 +161,8 @@ class Protocols(tk.Toplevel):
                 logging=False,
                 **self.output_params)
             self.video_open = True
+        elif self.config['Protocol']['type'] == 'TRIALS':
+            self.img_buffer = deque()
 
     def special_protocol_quit(self):        
         if self.video_open:
@@ -114,11 +185,24 @@ class Protocols(tk.Toplevel):
         #make sure lights are on
         if not self.lights_on:
             self.toggle_lights_callback()
-        num_imgs = (int(np.round(float(self.config['ExperimentSettings']['baseline_dur'])*
-            float(self.config['CameraSettings']['fps']),decimals=0)))
+        num_imgs = (
+            int(
+                np.round(
+                    float(
+                        self.config['ExperimentSettings']['baseline_dur']
+                        ) * 
+                    float(
+                        self.config['CameraSettings']['fps']
+                        ), 
+                    decimals = 0
+                    )
+                )
+            )
         baseline_pois = []
         for i in range(self.config['CameraSettings']['num_cams']):
-            baseline_pois.append(np.zeros(shape = (len(self.config['CameraSettings']['saved_pois'][i]), num_imgs)))
+            baseline_pois.append(
+                np.zeros(shape = (len(self.config['CameraSettings']['saved_pois'][i]), num_imgs))
+                )
         #get baseline images and extract sample pois for each camera
         for cnt in range(num_imgs):
             self.exp_controller.write("t")
@@ -127,15 +211,29 @@ class Protocols(tk.Toplevel):
                 self.cams[i].get_image(self.img, timeout = 2000)                  
                 npimg = self.img.get_image_data_numpy()
                 for j in range(len(self.config['CameraSettings']['saved_pois'][i])): 
-                    baseline_pois[i][j,cnt] = npimg[self.config['CameraSettings']['saved_pois'][i][j][1],
-                        self.config['CameraSettings']['saved_pois'][i][j][0]]
+                    baseline_pois[i][j,cnt] = npimg[
+                    self.config['CameraSettings']['saved_pois'][i][j][1],
+                    self.config['CameraSettings']['saved_pois'][i][j][0]
+                    ]
         #compute poi stats for each camera
         for i in range(self.config['CameraSettings']['num_cams']):   
             self.poi_means.append(np.mean(baseline_pois[i], axis = 1))             
-            self.poi_stds.append(np.std(np.sum(np.square(baseline_pois[i]-
-                self.poi_means[i].reshape(len(self.config['CameraSettings']['saved_pois'][i]),1)),axis=0)))
-            self.obs_pois.append(np.zeros(len(self.config['CameraSettings']['saved_pois'][i])))
-            self.zscored_pois.append(0)
+            self.poi_stds.append(
+                np.std(
+                    np.sum(
+                        np.square(
+                    baseline_pois[i] - 
+                    self.poi_means[i].reshape(
+                        len(
+                            self.config['CameraSettings']['saved_pois'][i]), 1
+                        )
+                    )
+                        ,axis=0
+                        )
+                    )
+                )
+            self.poi_obs.append(np.zeros(len(self.config['CameraSettings']['saved_pois'][i])))
+            self.poi_zscores.append(0)
         print("Baseline acquired!")
 
     def _configure_window(self):
@@ -190,9 +288,16 @@ class Protocols(tk.Toplevel):
             for i in range(self.config['CameraSettings']['num_cams']):
                 npimg = camint.get_npimage(self.cams[i],self.img)
                 for j in range(len(self.config['CameraSettings']['saved_pois'][i])): 
-                    self.obs_pois[i][j] = npimg[self.config['CameraSettings']['saved_pois'][i][j][1],
-                        self.config['CameraSettings']['saved_pois'][i][j][0]]
-                self.zscored_pois[i] = np.round(np.sum(np.square(self.obs_pois[i]-self.poi_means[i]))/(self.poi_stds[i]+np.finfo(float).eps),decimals=1)
+                    self.poi_obs[i][j] = npimg[
+                    self.config['CameraSettings']['saved_pois'][i][j][1],
+                    self.config['CameraSettings']['saved_pois'][i][j][0]
+                    ]
+                self.poi_zscores[i] = np.round(
+                    np.sum(
+                        np.square(
+                            self.poi_obs[i] - self.poi_means[i]
+                            )
+                        ) / (self.poi_stds[i] + np.finfo(float).eps), decimals = 1)
                 if i == 0:
                     frame = npimg
                 else:
@@ -200,14 +305,20 @@ class Protocols(tk.Toplevel):
         else:
             self.lights_on = 0
             for i in range(self.config['CameraSettings']['num_cams']):
-                self.zscored_pois[i] = 0
-        expint.write_message(self.exp_controller,self.control_message) 
-        if self.exp_response[3]=='1':
+                self.poi_zscores[i] = 0
+        expint.write_message(self.exp_controller, self.control_message) 
+        if self.exp_response[3] == '1':
             self.video.write(frame)
         self.exp_response = expint.read_message(self.exp_controller) 
-        self.outputfile.write(now+" "+self.exp_response[0:-2:1]+" "+str(min(self.zscored_pois))+"\n")
+        self.outputfile.write(
+            now + " " + self.exp_response[0:-2:1] + " " + str(min(self.poi_zscores)) + "\n"
+            )
         self.exp_response = self.exp_response.split() 
-        if self.exp_response[1] == 's' and self.exp_response[2] == '0' and min(self.zscored_pois)>self.config['CameraSettings']['poi_threshold']: 
+        if (
+            self.exp_response[1] == 's' and 
+            self.exp_response[2] == '0' and 
+            min(self.poi_zscores) > self.config['CameraSettings']['poi_threshold']
+            ): 
             self.reach_detected = True  
             self.reach_init = now     
             self.control_message = 'r'
@@ -215,33 +326,53 @@ class Protocols(tk.Toplevel):
             self.reach_detected = False
             self.control_message = 's'   
             print(self.exp_response[0])
-        elif self.reach_detected and\
-         (int(now)-int(self.reach_init))>self.config['ExperimentSettings']['reach_timeout'] and self.exp_response[4]=='0':
+        elif (
+            self.reach_detected and 
+            (int(now) - int(self.reach_init)) > 
+            self.config['ExperimentSettings']['reach_timeout'] and 
+            self.exp_response[4] == '0'
+            ):
             self.move_robot_callback()
 
     def run_trials(self): 
         now = str(int(round(time.time()*1000)))   
-        if self.exp_response[3]=='1': 
+        if self.exp_response[3] == '1': 
             self.lights_on = 1
             for i in range(self.config['CameraSettings']['num_cams']):
                 npimg = camint.get_npimage(self.cams[i],self.img)
                 for j in range(len(self.config['CameraSettings']['saved_pois'][i])): 
-                    self.obs_pois[i][j] = npimg[self.config['CameraSettings']['saved_pois'][i][j][1],
+                    self.poi_obs[i][j] = npimg[self.config['CameraSettings']['saved_pois'][i][j][1],
                         self.config['CameraSettings']['saved_pois'][i][j][0]]
-                self.zscored_pois[i] = np.round(np.sum(np.square(self.obs_pois[i]-self.poi_means[i]))/(self.poi_stds[i]+np.finfo(float).eps),decimals=1)
+                self.poi_zscores[i] = np.round(
+                    np.sum(
+                        np.square(
+                            self.poi_obs[i] - self.poi_means[i]
+                            )
+                        ) / (self.poi_stds[i] + np.finfo(float).eps), decimals=1)
                 self.img_buffer.append(npimg)
-                if len(self.img_buffer)>self.config['CameraSettings']['num_cams']*\
-                self.config['ExperimentSettings']['buffer_dur']*self.config['CameraSettings']['fps'] and not self.reach_detected:
+                if (
+                    len(self.img_buffer) > 
+                    self.config['CameraSettings']['num_cams'] * 
+                    self.config['ExperimentSettings']['buffer_dur'] * 
+                    self.config['CameraSettings']['fps'] and not 
+                    self.reach_detected
+                    ):
                     self.img_buffer.popleft()
         else:
             self.lights_on = 0
             for i in range(self.config['CameraSettings']['num_cams']):
-                self.zscored_pois[i] = 0     
-        expint.write_message(self.exp_controller,self.control_message)  
+                self.poi_zscores[i] = 0     
+        expint.write_message(self.exp_controller, self.control_message)  
         self.exp_response = expint.read_message(self.exp_controller) 
-        self.outputfile.write(now+" "+self.exp_response[0:-2:1]+" "+str(min(self.zscored_pois))+"\n")
+        self.outputfile.write(
+            now + " " + self.exp_response[0:-2:1] + " " + str(min(self.poi_zscores)) + "\n"
+            )
         self.exp_response = self.exp_response.split() 
-        if self.exp_response[1] == 's' and self.exp_response[2] == '0' and min(self.zscored_pois)>self.config['CameraSettings']['poi_threshold']: 
+        if (
+            self.exp_response[1] == 's' and 
+            self.exp_response[2] == '0' and 
+            min(self.poi_zscores) > self.config['CameraSettings']['poi_threshold']
+            ): 
             self.reach_detected = True  
             self.reach_init = now     
             self.control_message = 'r'
@@ -249,20 +380,42 @@ class Protocols(tk.Toplevel):
             if not os.path.isdir(self.video_data_path):
                 os.makedirs(self.video_data_path)
             trial_fn = self.video_data_path + 'trial: ' + str(self.exp_response[0]) + '.mp4' 
-            self.video = WriteGear(output_filename = trial_fn,compression_mode = True,logging=False,**self.output_params)
-            for i in range(len(self.img_buffer)/self.config['CameraSettings']['num_cams']):
-                frame = self.img_buffer[(i+1)*self.config['CameraSettings']['num_cams']-self.config['CameraSettings']['num_cams']]
-                for f in range(self.config['CameraSettings']['num_cams']-1):
-                    frame = np.hstack((frame,self.img_buffer[(i+1)*\
-                        self.config['CameraSettings']['num_cams']-self.config['CameraSettings']['num_cams']+f+1])) 
+            self.video = WriteGear(
+                output_filename = trial_fn,
+                compression_mode = True,
+                logging = False, 
+                **self.output_params
+                )
+            for i in range(
+                len(self.img_buffer) / self.config['CameraSettings']['num_cams']
+                ):
+                frame = (
+                    self.img_buffer[
+                    (i + 1) * self.config['CameraSettings']['num_cams'] - 
+                    self.config['CameraSettings']['num_cams']
+                    ]
+                    )
+                for f in range(self.config['CameraSettings']['num_cams'] - 1):
+                    frame = (
+                        np.hstack((
+                            frame, self.img_buffer[(i + 1) * 
+                            self.config['CameraSettings']['num_cams'] - 
+                            self.config['CameraSettings']['num_cams'] + f + 1]
+                            )
+                        )
+                        )
                 self.video.write(frame)   
             self.video.close()
             self.reach_detected = False
             self.control_message = 's' 
             self.img_buffer = deque() 
             print(self.exp_response[0])
-        elif self.reach_detected and (int(now)-int(self.reach_init))>\
-        self.config['ExperimentSettings']['reach_timeout'] and self.exp_response[4]=='0':
+        elif (
+            self.reach_detected and 
+            (int(now) - int(self.reach_init)) > 
+            self.config['ExperimentSettings']['reach_timeout'] and 
+            self.exp_response[4] == '0'
+            ):
             self.move_robot_callback()
 
     def run(self):
