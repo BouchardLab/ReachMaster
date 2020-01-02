@@ -1,0 +1,17 @@
+Tkinter
+tkFileDialog
+tkMessageBox
+time
+numpy
+json
+datetime
+cv2
+PIL.Image
+PIL.ImageTk
+ximea
+serial
+collections
+vidgear
+sphinx-gallery
+sphinx_rtd_theme
+unittest2

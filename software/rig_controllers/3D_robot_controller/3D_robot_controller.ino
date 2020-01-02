@@ -4,7 +4,6 @@
 
 //define pins
 const int xPushPin = 22;
-
 const int xPullPin = 23;
 const int zPushPin = 21;
 const int zPullPin = 20;

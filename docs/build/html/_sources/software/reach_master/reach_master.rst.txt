@@ -1,4 +1,4 @@
-ReachMaster
+ReachMaster User Interface
 =======================================
 
 .. automodule:: reach_master

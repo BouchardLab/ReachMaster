@@ -232,7 +232,7 @@
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="software/reach_master/reach_master.html#reachmaster.settings.robot_settings.RobotSettings.command_file">command_file (reachmaster.settings.robot_settings.RobotSettings attribute)</a>
 </li>
-      <li><a href="software/reach_master/reach_master.html#reachmaster.settings.robot_settings.RobotSettings.command_source">command_source (reachmaster.settings.robot_settings.RobotSettings attribute)</a>
+      <li><a href="software/reach_master/reach_master.html#reachmaster.settings.robot_settings.RobotSettings.command_type">command_type (reachmaster.settings.robot_settings.RobotSettings attribute)</a>
 </li>
       <li><a href="software/reach_master/reach_master.html#reachmaster.application.ReachMaster.config">config (reachmaster.application.ReachMaster attribute)</a>
 
@@ -264,10 +264,16 @@
 </li>
       <li><a href="software/reach_master/reach_master.html#reachmaster.config.default_config">default_config() (in module reachmaster.config)</a>
 </li>
+      <li><a href="software/reach_master/reach_master.html#reachmaster.interfaces.experiment_interface.deliver_water">deliver_water() (in module reachmaster.interfaces.experiment_interface)</a>
+</li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="software/reach_master/reach_master.html#reachmaster.application.ReachMaster.deliver_water_callback">deliver_water_callback() (reachmaster.application.ReachMaster method)</a>
+
+      <ul>
+        <li><a href="software/reach_master/reach_master.html#reachmaster.protocols.Protocols.deliver_water_callback">(reachmaster.protocols.Protocols method)</a>
 </li>
+      </ul></li>
       <li><a href="software/reach_master/reach_master.html#reachmaster.settings.camera_settings.CameraSettings.downsampling">downsampling (reachmaster.settings.camera_settings.CameraSettings attribute)</a>
 </li>
       <li><a href="software/reach_master/reach_master.html#reachmaster.settings.camera_settings.CameraSettings.draw_saved">draw_saved (reachmaster.settings.camera_settings.CameraSettings attribute)</a>
@@ -312,6 +318,8 @@
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="software/reach_master/reach_master.html#reachmaster.settings.experiment_settings.ExperimentSettings.flush_dur">flush_dur (reachmaster.settings.experiment_settings.ExperimentSettings attribute)</a>
 </li>
+      <li><a href="software/reach_master/reach_master.html#reachmaster.interfaces.experiment_interface.flush_water">flush_water() (in module reachmaster.interfaces.experiment_interface)</a>
+</li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="software/reach_master/reach_master.html#reachmaster.application.ReachMaster.flush_water_callback">flush_water_callback() (reachmaster.application.ReachMaster method)</a>
@@ -326,6 +334,14 @@
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="software/reach_master/reach_master.html#reachmaster.settings.camera_settings.CameraSettings.gain">gain (reachmaster.settings.camera_settings.CameraSettings attribute)</a>
 </li>
+      <li><a href="software/reach_master/reach_master.html#reachmaster.interfaces.camera_interface.get_npimage">get_npimage() (in module reachmaster.interfaces.camera_interface)</a>
+</li>
+      <li><a href="software/reach_master/reach_master.html#reachmaster.interfaces.experiment_interface.get_ports">get_ports() (in module reachmaster.interfaces.experiment_interface)</a>
+
+      <ul>
+        <li><a href="software/reach_master/reach_master.html#reachmaster.interfaces.robot_interface.get_ports">(in module reachmaster.interfaces.robot_interface)</a>
+</li>
+      </ul></li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="software/reach_master/reach_master.html#reachmaster.settings.camera_settings.CameraSettings.gpi_mode">gpi_mode (reachmaster.settings.camera_settings.CameraSettings attribute)</a>
@@ -340,11 +356,13 @@
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="software/reach_master/reach_master.html#reachmaster.settings.camera_settings.CameraSettings.img_height">img_height (reachmaster.settings.camera_settings.CameraSettings attribute)</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="software/reach_master/reach_master.html#reachmaster.settings.camera_settings.CameraSettings.img_num">img_num (reachmaster.settings.camera_settings.CameraSettings attribute)</a>
 </li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="software/reach_master/reach_master.html#reachmaster.settings.camera_settings.CameraSettings.img_width">img_width (reachmaster.settings.camera_settings.CameraSettings attribute)</a>
+</li>
+      <li><a href="software/reach_master/reach_master.html#reachmaster.interfaces.camera_interface.init_image">init_image() (in module reachmaster.interfaces.camera_interface)</a>
 </li>
   </ul></td>
 </tr></table>
@@ -356,11 +374,15 @@
 </li>
       <li><a href="software/reach_master/reach_master.html#reachmaster.protocols.Protocols.lights_on">lights_on (reachmaster.protocols.Protocols attribute)</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="software/reach_master/reach_master.html#reachmaster.settings.experiment_settings.ExperimentSettings.lights_on_dur">lights_on_dur (reachmaster.settings.experiment_settings.ExperimentSettings attribute)</a>
 </li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="software/reach_master/reach_master.html#reachmaster.config.load_config">load_config() (in module reachmaster.config)</a>
+</li>
+      <li><a href="software/reach_master/reach_master.html#reachmaster.interfaces.robot_interface.load_config_calibration">load_config_calibration() (in module reachmaster.interfaces.robot_interface)</a>
+</li>
+      <li><a href="software/reach_master/reach_master.html#reachmaster.interfaces.robot_interface.load_config_commands">load_config_commands() (in module reachmaster.interfaces.robot_interface)</a>
 </li>
       <li><a href="software/reach_master/reach_master.html#reachmaster.settings.camera_settings.CameraSettings.load_pois_callback">load_pois_callback() (reachmaster.settings.camera_settings.CameraSettings method)</a>
 </li>
@@ -372,9 +394,13 @@
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="software/reach_master/reach_master.html#reachmaster.settings.experiment_settings.ExperimentSettings.max_rewards">max_rewards (reachmaster.settings.experiment_settings.ExperimentSettings attribute)</a>
 </li>
+      <li><a href="software/reach_master/reach_master.html#reachmaster.application.ReachMaster.move_rob_callback">move_rob_callback() (reachmaster.application.ReachMaster method)</a>
+</li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="software/reach_master/reach_master.html#reachmaster.application.ReachMaster.move_rob_callback">move_rob_callback() (reachmaster.application.ReachMaster method)</a>
+      <li><a href="software/reach_master/reach_master.html#reachmaster.interfaces.experiment_interface.move_robot">move_robot() (in module reachmaster.interfaces.experiment_interface)</a>
+</li>
+      <li><a href="software/reach_master/reach_master.html#reachmaster.protocols.Protocols.move_robot_callback">move_robot_callback() (reachmaster.protocols.Protocols method)</a>
 </li>
   </ul></td>
 </tr></table>
@@ -403,6 +429,8 @@
       <li><a href="software/reach_master/reach_master.html#reachmaster.application.ReachMaster.on_quit">on_quit() (reachmaster.application.ReachMaster method)</a>
 
       <ul>
+        <li><a href="software/reach_master/reach_master.html#reachmaster.protocols.Protocols.on_quit">(reachmaster.protocols.Protocols method)</a>
+</li>
         <li><a href="software/reach_master/reach_master.html#reachmaster.settings.camera_settings.CameraSettings.on_quit">(reachmaster.settings.camera_settings.CameraSettings method)</a>
 </li>
         <li><a href="software/reach_master/reach_master.html#reachmaster.settings.experiment_settings.ExperimentSettings.on_quit">(reachmaster.settings.experiment_settings.ExperimentSettings method)</a>
@@ -486,12 +514,14 @@
 </li>
       <li><a href="software/reach_master/reach_master.html#module-reachmaster.settings.robot_settings">reachmaster.settings.robot_settings (module)</a>
 </li>
+      <li><a href="software/reach_master/reach_master.html#reachmaster.interfaces.experiment_interface.read_response">read_response() (in module reachmaster.interfaces.experiment_interface)</a>
+</li>
       <li><a href="software/reach_master/reach_master.html#reachmaster.settings.camera_settings.CameraSettings.record">record (reachmaster.settings.camera_settings.CameraSettings attribute)</a>
+</li>
+      <li><a href="software/reach_master/reach_master.html#reachmaster.settings.camera_settings.CameraSettings.remove_pois">remove_pois (reachmaster.settings.camera_settings.CameraSettings attribute)</a>
 </li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="software/reach_master/reach_master.html#reachmaster.settings.camera_settings.CameraSettings.remove_pois">remove_pois (reachmaster.settings.camera_settings.CameraSettings attribute)</a>
-</li>
       <li><a href="software/reach_master/reach_master.html#reachmaster.settings.camera_settings.CameraSettings.remove_pois_callback">remove_pois_callback() (reachmaster.settings.camera_settings.CameraSettings method)</a>
 </li>
       <li><a href="software/reach_master/reach_master.html#reachmaster.settings.robot_settings.RobotSettings.rew_zone_">rew_zone_ (reachmaster.settings.robot_settings.RobotSettings attribute)</a>
@@ -517,10 +547,18 @@
       <li><a href="software/reach_master/reach_master.html#reachmaster.settings.robot_settings.RobotSettings">RobotSettings (class in reachmaster.settings.robot_settings)</a>
 </li>
       <li><a href="software/reach_master/reach_master.html#reachmaster.application.ReachMaster.run">run() (reachmaster.application.ReachMaster method)</a>
+
+      <ul>
+        <li><a href="software/reach_master/reach_master.html#reachmaster.protocols.Protocols.run">(reachmaster.protocols.Protocols method)</a>
 </li>
+      </ul></li>
       <li><a href="software/reach_master/reach_master.html#reachmaster.settings.robot_settings.RobotSettings.run_calibration_callback">run_calibration_callback() (reachmaster.settings.robot_settings.RobotSettings method)</a>
 </li>
+      <li><a href="software/reach_master/reach_master.html#reachmaster.protocols.Protocols.run_continuous">run_continuous() (reachmaster.protocols.Protocols method)</a>
+</li>
       <li><a href="software/reach_master/reach_master.html#reachmaster.application.ReachMaster.run_protocol_callback">run_protocol_callback() (reachmaster.application.ReachMaster method)</a>
+</li>
+      <li><a href="software/reach_master/reach_master.html#reachmaster.protocols.Protocols.run_trials">run_trials() (reachmaster.protocols.Protocols method)</a>
 </li>
       <li><a href="software/reach_master/reach_master.html#reachmaster.application.ReachMaster.running">running (reachmaster.application.ReachMaster attribute)</a>
 </li>
@@ -538,16 +576,38 @@
 </li>
       <li><a href="software/reach_master/reach_master.html#reachmaster.settings.camera_settings.CameraSettings.saved_pois">saved_pois (reachmaster.settings.camera_settings.CameraSettings attribute)</a>
 </li>
+      <li><a href="software/reach_master/reach_master.html#reachmaster.interfaces.experiment_interface.set_exp_controller">set_exp_controller() (in module reachmaster.interfaces.experiment_interface)</a>
+</li>
+      <li><a href="software/reach_master/reach_master.html#reachmaster.interfaces.robot_interface.set_rob_controller">set_rob_controller() (in module reachmaster.interfaces.robot_interface)</a>
+</li>
       <li><a href="software/reach_master/reach_master.html#reachmaster.settings.experiment_settings.ExperimentSettings.solenoid_bounce_dur">solenoid_bounce_dur (reachmaster.settings.experiment_settings.ExperimentSettings attribute)</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="software/reach_master/reach_master.html#reachmaster.settings.experiment_settings.ExperimentSettings.solenoid_open_dur">solenoid_open_dur (reachmaster.settings.experiment_settings.ExperimentSettings attribute)</a>
 </li>
+      <li><a href="software/reach_master/reach_master.html#reachmaster.interfaces.experiment_interface.start_experiment">start_experiment() (in module reachmaster.interfaces.experiment_interface)</a>
+</li>
+      <li><a href="software/reach_master/reach_master.html#reachmaster.interfaces.camera_interface.start_interface">start_interface() (in module reachmaster.interfaces.camera_interface)</a>
+
+      <ul>
+        <li><a href="software/reach_master/reach_master.html#reachmaster.interfaces.experiment_interface.start_interface">(in module reachmaster.interfaces.experiment_interface)</a>
+</li>
+        <li><a href="software/reach_master/reach_master.html#reachmaster.interfaces.robot_interface.start_interface">(in module reachmaster.interfaces.robot_interface)</a>
+</li>
+      </ul></li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="software/reach_master/reach_master.html#reachmaster.settings.camera_settings.CameraSettings.start_rec_callback">start_rec_callback() (reachmaster.settings.camera_settings.CameraSettings method)</a>
 </li>
       <li><a href="software/reach_master/reach_master.html#reachmaster.settings.camera_settings.CameraSettings.start_stream_callback">start_stream_callback() (reachmaster.settings.camera_settings.CameraSettings method)</a>
 </li>
+      <li><a href="software/reach_master/reach_master.html#reachmaster.interfaces.camera_interface.stop_interface">stop_interface() (in module reachmaster.interfaces.camera_interface)</a>
+
+      <ul>
+        <li><a href="software/reach_master/reach_master.html#reachmaster.interfaces.experiment_interface.stop_interface">(in module reachmaster.interfaces.experiment_interface)</a>
+</li>
+        <li><a href="software/reach_master/reach_master.html#reachmaster.interfaces.robot_interface.stop_interface">(in module reachmaster.interfaces.robot_interface)</a>
+</li>
+      </ul></li>
       <li><a href="software/reach_master/reach_master.html#reachmaster.settings.camera_settings.CameraSettings.stop_rec_callback">stop_rec_callback() (reachmaster.settings.camera_settings.CameraSettings method)</a>
 </li>
       <li><a href="software/reach_master/reach_master.html#reachmaster.settings.camera_settings.CameraSettings.stop_stream_callback">stop_stream_callback() (reachmaster.settings.camera_settings.CameraSettings method)</a>
@@ -560,17 +620,29 @@
 <h2 id="T">T</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="software/reach_master/reach_master.html#reachmaster.interfaces.experiment_interface.toggle_led">toggle_led() (in module reachmaster.interfaces.experiment_interface)</a>
+</li>
       <li><a href="software/reach_master/reach_master.html#reachmaster.application.ReachMaster.toggle_led_callback">toggle_led_callback() (reachmaster.application.ReachMaster method)</a>
+
+      <ul>
+        <li><a href="software/reach_master/reach_master.html#reachmaster.protocols.Protocols.toggle_led_callback">(reachmaster.protocols.Protocols method)</a>
+</li>
+      </ul></li>
+      <li><a href="software/reach_master/reach_master.html#reachmaster.interfaces.experiment_interface.toggle_lights">toggle_lights() (in module reachmaster.interfaces.experiment_interface)</a>
 </li>
       <li><a href="software/reach_master/reach_master.html#reachmaster.application.ReachMaster.toggle_lights_callback">toggle_lights_callback() (reachmaster.application.ReachMaster method)</a>
 
       <ul>
+        <li><a href="software/reach_master/reach_master.html#reachmaster.protocols.Protocols.toggle_lights_callback">(reachmaster.protocols.Protocols method)</a>
+</li>
         <li><a href="software/reach_master/reach_master.html#reachmaster.settings.camera_settings.CameraSettings.toggle_lights_callback">(reachmaster.settings.camera_settings.CameraSettings method)</a>
 </li>
       </ul></li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="software/reach_master/reach_master.html#reachmaster.settings.robot_settings.RobotSettings.tol">tol (reachmaster.settings.robot_settings.RobotSettings attribute)</a>
+</li>
+      <li><a href="software/reach_master/reach_master.html#reachmaster.interfaces.experiment_interface.trigger_image">trigger_image() (in module reachmaster.interfaces.experiment_interface)</a>
 </li>
       <li><a href="software/reach_master/reach_master.html#reachmaster.settings.camera_settings.CameraSettings.trigger_source">trigger_source (reachmaster.settings.camera_settings.CameraSettings attribute)</a>
 </li>
@@ -589,6 +661,10 @@
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="software/reach_master/reach_master.html#reachmaster.application.ReachMaster.window">window (reachmaster.application.ReachMaster attribute)</a>
+</li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="software/reach_master/reach_master.html#reachmaster.interfaces.experiment_interface.write_message">write_message() (in module reachmaster.interfaces.experiment_interface)</a>
 </li>
   </ul></td>
 </tr></table>

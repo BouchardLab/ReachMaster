@@ -156,10 +156,11 @@
 <span></span><span class="sd">&quot;&quot;&quot;The protocol window is opened as a child of the </span>
 <span class="sd">ReachMaster root application whenever a protocol is run. It </span>
 <span class="sd">provides basic functionality for interacting with the rig </span>
-<span class="sd">while an experiment is runnings (e.g., manual reward delivery,</span>
-<span class="sd">toggle lights, etc.).</span>
+<span class="sd">while an experiment is running (e.g., for manual reward </span>
+<span class="sd">delivery, toggling lights, etc.).</span>
 
 <span class="sd">Todo:</span>
+<span class="sd">    * Can&#39;t trigger images with lights on</span>
 <span class="sd">    * Keep adding new protocol types</span>
 <span class="sd">    * GPU-accelerated video encoding</span>
 <span class="sd">    * Automate unit tests</span>
@@ -285,57 +286,42 @@
             <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;loading robot settings...&quot;</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">config</span> <span class="o">=</span> <span class="n">robint</span><span class="o">.</span><span class="n">set_rob_controller</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">rob_controller</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">)</span>            
             <span class="bp">self</span><span class="o">.</span><span class="n">img</span> <span class="o">=</span> <span class="n">camint</span><span class="o">.</span><span class="n">init_image</span><span class="p">()</span> 
-            <span class="bp">self</span><span class="o">.</span><span class="n">acquire_baseline</span><span class="p">()</span>           
+            <span class="bp">self</span><span class="o">.</span><span class="n">_acquire_baseline</span><span class="p">()</span>           
         <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">err</span><span class="p">:</span>
             <span class="nb">print</span><span class="p">(</span><span class="n">err</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">on_quit</span><span class="p">()</span>                    
-        <span class="bp">self</span><span class="o">.</span><span class="n">init_data_output</span><span class="p">()</span>        
-        <span class="bp">self</span><span class="o">.</span><span class="n">special_protocol_init</span><span class="p">()</span> 
+        <span class="bp">self</span><span class="o">.</span><span class="n">_init_data_output</span><span class="p">()</span>        
+        <span class="bp">self</span><span class="o">.</span><span class="n">_init_special_protocol</span><span class="p">()</span> 
         <span class="bp">self</span><span class="o">.</span><span class="n">_configure_window</span><span class="p">()</span> 
         <span class="bp">self</span><span class="o">.</span><span class="n">control_message</span> <span class="o">=</span> <span class="s1">&#39;b&#39;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">exp_response</span> <span class="o">=</span> <span class="n">expint</span><span class="o">.</span><span class="n">start_experiment</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">exp_controller</span><span class="p">)</span>                             
 
-    <span class="k">def</span> <span class="nf">on_quit</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="c1">#stop interfaces</span>
+<div class="viewcode-block" id="Protocols.on_quit"><a class="viewcode-back" href="../../software/reach_master/reach_master.html#reachmaster.protocols.Protocols.on_quit">[docs]</a>    <span class="k">def</span> <span class="nf">on_quit</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Called prior to destruction protocol window.</span>
+
+<span class="sd">        Prior to destruction, all interfaces must be stopped and </span>
+<span class="sd">        protocol-specific cleanup needs to take place. </span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">exp_connected</span><span class="p">:</span>
             <span class="n">expint</span><span class="o">.</span><span class="n">stop_interface</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">exp_controller</span><span class="p">)</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">rob_connected</span><span class="p">:</span>
             <span class="n">robint</span><span class="o">.</span><span class="n">stop_interface</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">rob_controller</span><span class="p">)</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">cams_connected</span><span class="p">:</span>
             <span class="n">camint</span><span class="o">.</span><span class="n">stop_interface</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cams</span><span class="p">)</span>
-        <span class="c1">#stop protocol-specific stuff</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">special_protocol_quit</span><span class="p">()</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">destroy</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_special_protocol_quit</span><span class="p">()</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">destroy</span><span class="p">()</span>
+        <span class="k">except</span><span class="p">:</span>
+            <span class="k">pass</span></div>
 
-    <span class="k">def</span> <span class="nf">special_protocol_init</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>        
+    <span class="k">def</span> <span class="nf">_special_protocol_quit</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span> 
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;Protocol&#39;</span><span class="p">][</span><span class="s1">&#39;type&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;CONTINUOUS&#39;</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">vid_fn</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">video_data_path</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">())</span> <span class="o">+</span> <span class="s1">&#39;.mp4&#39;</span> 
-            <span class="bp">self</span><span class="o">.</span><span class="n">video</span> <span class="o">=</span> <span class="n">WriteGear</span><span class="p">(</span>
-                <span class="n">output_filename</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vid_fn</span><span class="p">,</span>
-                <span class="n">compression_mode</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
-                <span class="n">logging</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
-                <span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">output_params</span><span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">video_open</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">video</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
         <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;Protocol&#39;</span><span class="p">][</span><span class="s1">&#39;type&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;TRIALS&#39;</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">img_buffer</span> <span class="o">=</span> <span class="n">deque</span><span class="p">()</span>
 
-    <span class="k">def</span> <span class="nf">special_protocol_quit</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>        
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">video_open</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">video</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
-
-    <span class="k">def</span> <span class="nf">init_data_output</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">controller_data_path</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;ReachMaster&#39;</span><span class="p">][</span><span class="s1">&#39;data_dir&#39;</span><span class="p">]</span> <span class="o">+</span> <span class="s2">&quot;/controller_data/&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">video_data_path</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;ReachMaster&#39;</span><span class="p">][</span><span class="s1">&#39;data_dir&#39;</span><span class="p">]</span> <span class="o">+</span> <span class="s2">&quot;/videos/&quot;</span> 
-        <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">controller_data_path</span><span class="p">):</span>
-            <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">controller_data_path</span><span class="p">)</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">video_data_path</span><span class="p">):</span>
-            <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">video_data_path</span><span class="p">)</span>
-        <span class="n">controller_data_file</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">controller_data_path</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">())</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">outputfile</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">controller_data_file</span><span class="p">,</span> <span class="s2">&quot;w+&quot;</span><span class="p">)</span>
-        <span class="n">header</span> <span class="o">=</span> <span class="s2">&quot;time trial exp_response rob_moving image_triggered in_reward_window z_poi&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">outputfile</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">header</span> <span class="o">+</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
-
-    <span class="k">def</span> <span class="nf">acquire_baseline</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">_acquire_baseline</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Acquiring baseline...&quot;</span><span class="p">)</span>
         <span class="c1">#make sure lights are on</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">lights_on</span><span class="p">:</span>
@@ -391,6 +377,30 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">poi_zscores</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
         <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Baseline acquired!&quot;</span><span class="p">)</span>
 
+    <span class="k">def</span> <span class="nf">_init_special_protocol</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>        
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;Protocol&#39;</span><span class="p">][</span><span class="s1">&#39;type&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;CONTINUOUS&#39;</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">vid_fn</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">video_data_path</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">())</span> <span class="o">+</span> <span class="s1">&#39;.mp4&#39;</span> 
+            <span class="bp">self</span><span class="o">.</span><span class="n">video</span> <span class="o">=</span> <span class="n">WriteGear</span><span class="p">(</span>
+                <span class="n">output_filename</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vid_fn</span><span class="p">,</span>
+                <span class="n">compression_mode</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+                <span class="n">logging</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                <span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">output_params</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">video_open</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;Protocol&#39;</span><span class="p">][</span><span class="s1">&#39;type&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;TRIALS&#39;</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">img_buffer</span> <span class="o">=</span> <span class="n">deque</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">_init_data_output</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">controller_data_path</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;ReachMaster&#39;</span><span class="p">][</span><span class="s1">&#39;data_dir&#39;</span><span class="p">]</span> <span class="o">+</span> <span class="s2">&quot;/controller_data/&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">video_data_path</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;ReachMaster&#39;</span><span class="p">][</span><span class="s1">&#39;data_dir&#39;</span><span class="p">]</span> <span class="o">+</span> <span class="s2">&quot;/videos/&quot;</span> 
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">controller_data_path</span><span class="p">):</span>
+            <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">controller_data_path</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">video_data_path</span><span class="p">):</span>
+            <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">video_data_path</span><span class="p">)</span>
+        <span class="n">controller_data_file</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">controller_data_path</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">())</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">outputfile</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">controller_data_file</span><span class="p">,</span> <span class="s2">&quot;w+&quot;</span><span class="p">)</span>
+        <span class="n">header</span> <span class="o">=</span> <span class="s2">&quot;time trial exp_response rob_moving image_triggered in_reward_window z_poi&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">outputfile</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">header</span> <span class="o">+</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+
     <span class="k">def</span> <span class="nf">_configure_window</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="n">tk</span><span class="o">.</span><span class="n">Button</span><span class="p">(</span>
             <span class="bp">self</span><span class="p">,</span> 
@@ -421,22 +431,48 @@
             <span class="n">command</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">deliver_water_callback</span>
             <span class="p">)</span><span class="o">.</span><span class="n">grid</span><span class="p">(</span><span class="n">row</span> <span class="o">=</span> <span class="mi">3</span><span class="p">,</span> <span class="n">sticky</span> <span class="o">=</span> <span class="s1">&#39;W&#39;</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">move_robot_callback</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="c1">#Callbacks ------------------------------------------------------------------</span>
+
+<div class="viewcode-block" id="Protocols.move_robot_callback"><a class="viewcode-back" href="../../software/reach_master/reach_master.html#reachmaster.protocols.Protocols.move_robot_callback">[docs]</a>    <span class="k">def</span> <span class="nf">move_robot_callback</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Commands the robot to move to the next position in</span>
+<span class="sd">        its currently loaded command sequence.&quot;&quot;&quot;</span>
         <span class="n">expint</span><span class="o">.</span><span class="n">move_robot</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">exp_controller</span><span class="p">)</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;Protocol&#39;</span><span class="p">][</span><span class="s1">&#39;type&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;TRIALS&#39;</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">lights_on</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">lights_on</span> <span class="o">=</span> <span class="mi">0</span></div>
 
-    <span class="k">def</span> <span class="nf">toggle_led_callback</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="n">expint</span><span class="o">.</span><span class="n">toggle_led</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">exp_controller</span><span class="p">)</span>
+<div class="viewcode-block" id="Protocols.toggle_led_callback"><a class="viewcode-back" href="../../software/reach_master/reach_master.html#reachmaster.protocols.Protocols.toggle_led_callback">[docs]</a>    <span class="k">def</span> <span class="nf">toggle_led_callback</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Toggles the LED located on the robot handle.&quot;&quot;&quot;</span>
+        <span class="n">expint</span><span class="o">.</span><span class="n">toggle_led</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">exp_controller</span><span class="p">)</span></div>
 
-    <span class="k">def</span> <span class="nf">toggle_lights_callback</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="Protocols.toggle_lights_callback"><a class="viewcode-back" href="../../software/reach_master/reach_master.html#reachmaster.protocols.Protocols.toggle_lights_callback">[docs]</a>    <span class="k">def</span> <span class="nf">toggle_lights_callback</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Toggles the neopixel lights.&quot;&quot;&quot;</span>
         <span class="n">expint</span><span class="o">.</span><span class="n">toggle_lights</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">exp_controller</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">lights_on</span> <span class="o">=</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">lights_on</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">lights_on</span> <span class="o">=</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">lights_on</span></div>
 
-    <span class="k">def</span> <span class="nf">deliver_water_callback</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="n">expint</span><span class="o">.</span><span class="n">deliver_water</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">exp_controller</span><span class="p">)</span>
+<div class="viewcode-block" id="Protocols.deliver_water_callback"><a class="viewcode-back" href="../../software/reach_master/reach_master.html#reachmaster.protocols.Protocols.deliver_water_callback">[docs]</a>    <span class="k">def</span> <span class="nf">deliver_water_callback</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Opens the reward solenoid for the reward duration set </span>
+<span class="sd">        in experiment settings.&quot;&quot;&quot;</span>
+        <span class="n">expint</span><span class="o">.</span><span class="n">deliver_water</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">exp_controller</span><span class="p">)</span></div>
 
-    <span class="k">def</span> <span class="nf">run_continuous</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="c1">#Protocol types ---------------------------------------------------------------</span>
+
+<div class="viewcode-block" id="Protocols.run_continuous"><a class="viewcode-back" href="../../software/reach_master/reach_master.html#reachmaster.protocols.Protocols.run_continuous">[docs]</a>    <span class="k">def</span> <span class="nf">run_continuous</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Operations performed for a single iteration of protocol type CONTINOUS.</span>
+
+<span class="sd">        If an image is triggered by the experiment controller, reach detection is</span>
+<span class="sd">        performed on the images, the images are concatenated, and encoded to mp4</span>
+<span class="sd">        continuously, even during intertrial intervals, in real-time. Consequently,</span>
+<span class="sd">        for this protocol type, the lights remain on during the intertrial interval. </span>
+<span class="sd">        Messages are sent to the experiment controller to signal important events </span>
+<span class="sd">        such as reach detections, beginnings/ends of trials, and to initiate robot </span>
+<span class="sd">        movement. Responses are read from the experiment controller and saved to </span>
+<span class="sd">        the data output file.   </span>
+
+<span class="sd">        Todo:</span>
+<span class="sd">            * Functionalize code chunks so logic is clearer and custom protocol types are easier to implement. </span>
+<span class="sd">            * Absorb communication codes into experiment interface module</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">now</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="nb">round</span><span class="p">(</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span><span class="o">*</span><span class="mi">1000</span><span class="p">)))</span>  
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">exp_response</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span><span class="o">==</span><span class="s1">&#39;1&#39;</span><span class="p">:</span> 
             <span class="bp">self</span><span class="o">.</span><span class="n">lights_on</span> <span class="o">=</span> <span class="mi">1</span> 
@@ -464,7 +500,7 @@
         <span class="n">expint</span><span class="o">.</span><span class="n">write_message</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">exp_controller</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">control_message</span><span class="p">)</span> 
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">exp_response</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;1&#39;</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">video</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">frame</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">exp_response</span> <span class="o">=</span> <span class="n">expint</span><span class="o">.</span><span class="n">read_message</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">exp_controller</span><span class="p">)</span> 
+        <span class="bp">self</span><span class="o">.</span><span class="n">exp_response</span> <span class="o">=</span> <span class="n">expint</span><span class="o">.</span><span class="n">read_response</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">exp_controller</span><span class="p">)</span> 
         <span class="bp">self</span><span class="o">.</span><span class="n">outputfile</span><span class="o">.</span><span class="n">write</span><span class="p">(</span>
             <span class="n">now</span> <span class="o">+</span> <span class="s2">&quot; &quot;</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">exp_response</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="o">-</span><span class="mi">2</span><span class="p">:</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="s2">&quot; &quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="nb">min</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">poi_zscores</span><span class="p">))</span> <span class="o">+</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span>
             <span class="p">)</span>
@@ -487,9 +523,25 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;ExperimentSettings&#39;</span><span class="p">][</span><span class="s1">&#39;reach_timeout&#39;</span><span class="p">]</span> <span class="ow">and</span> 
             <span class="bp">self</span><span class="o">.</span><span class="n">exp_response</span><span class="p">[</span><span class="mi">4</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;0&#39;</span>
             <span class="p">):</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">move_robot_callback</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">move_robot_callback</span><span class="p">()</span></div>
 
-    <span class="k">def</span> <span class="nf">run_trials</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span> 
+<div class="viewcode-block" id="Protocols.run_trials"><a class="viewcode-back" href="../../software/reach_master/reach_master.html#reachmaster.protocols.Protocols.run_trials">[docs]</a>    <span class="k">def</span> <span class="nf">run_trials</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span> 
+        <span class="sd">&quot;&quot;&quot;Operations performed for a single iteration of protocol type TRIALS.</span>
+
+<span class="sd">        If an image is triggered by the experiment controller, reach detection is</span>
+<span class="sd">        performed on the images, the images are added/removed to an online buffer, </span>
+<span class="sd">        and encoded to mp4 during the intertrial intertval. For this protocol </span>
+<span class="sd">        type, the lights are turned off during the intertrial interval. Messages </span>
+<span class="sd">        are sent to the experiment controller to signal important events such as </span>
+<span class="sd">        reach detections, beginnings/ends of trials, and to initiate robot </span>
+<span class="sd">        movement. Responses are read from the experiment controller and saved to </span>
+<span class="sd">        the data output file.    </span>
+
+<span class="sd">        Todo:</span>
+<span class="sd">            * Functionalize code chunks so logic is clearer and custom protocol types are easier to implement.</span>
+<span class="sd">            * Absorb communication codes into experiment interface module</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">now</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="nb">round</span><span class="p">(</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span><span class="o">*</span><span class="mi">1000</span><span class="p">)))</span>   
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">exp_response</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;1&#39;</span><span class="p">:</span> 
             <span class="bp">self</span><span class="o">.</span><span class="n">lights_on</span> <span class="o">=</span> <span class="mi">1</span>
@@ -518,7 +570,7 @@
             <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;CameraSettings&#39;</span><span class="p">][</span><span class="s1">&#39;num_cams&#39;</span><span class="p">]):</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">poi_zscores</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>     
         <span class="n">expint</span><span class="o">.</span><span class="n">write_message</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">exp_controller</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">control_message</span><span class="p">)</span>  
-        <span class="bp">self</span><span class="o">.</span><span class="n">exp_response</span> <span class="o">=</span> <span class="n">expint</span><span class="o">.</span><span class="n">read_message</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">exp_controller</span><span class="p">)</span> 
+        <span class="bp">self</span><span class="o">.</span><span class="n">exp_response</span> <span class="o">=</span> <span class="n">expint</span><span class="o">.</span><span class="n">read_response</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">exp_controller</span><span class="p">)</span> 
         <span class="bp">self</span><span class="o">.</span><span class="n">outputfile</span><span class="o">.</span><span class="n">write</span><span class="p">(</span>
             <span class="n">now</span> <span class="o">+</span> <span class="s2">&quot; &quot;</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">exp_response</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="o">-</span><span class="mi">2</span><span class="p">:</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="s2">&quot; &quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="nb">min</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">poi_zscores</span><span class="p">))</span> <span class="o">+</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span>
             <span class="p">)</span>
@@ -571,16 +623,26 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;ExperimentSettings&#39;</span><span class="p">][</span><span class="s1">&#39;reach_timeout&#39;</span><span class="p">]</span> <span class="ow">and</span> 
             <span class="bp">self</span><span class="o">.</span><span class="n">exp_response</span><span class="p">[</span><span class="mi">4</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;0&#39;</span>
             <span class="p">):</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">move_robot_callback</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">move_robot_callback</span><span class="p">()</span></div>
 
-    <span class="k">def</span> <span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="Protocols.run"><a class="viewcode-back" href="../../software/reach_master/reach_master.html#reachmaster.protocols.Protocols.run">[docs]</a>    <span class="k">def</span> <span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Execute a single iteration of the selected protocol type.</span>
+<span class="sd">        </span>
+<span class="sd">        The currently supported protocol types are TRIALS and </span>
+<span class="sd">        CONTINUOUS. In order to add a custom type, developers must </span>
+<span class="sd">        write a `run_newtype()` method and add it to the call </span>
+<span class="sd">        search here. The run methods for each protocol type are </span>
+<span class="sd">        where all the vital real-time operations are executed.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1">#As number of types increase, consider converting to switch</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;Protocol&#39;</span><span class="p">][</span><span class="s1">&#39;type&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;CONTINUOUS&#39;</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">run_continuous</span><span class="p">()</span>
         <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;Protocol&#39;</span><span class="p">][</span><span class="s1">&#39;type&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;TRIALS&#39;</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">run_trials</span><span class="p">()</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Invalid protocol!&quot;</span><span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">on_quit</span><span class="p">()</span></div>
+            <span class="bp">self</span><span class="o">.</span><span class="n">on_quit</span><span class="p">()</span></div></div>
         
 </pre></div>
 

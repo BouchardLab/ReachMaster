@@ -4,7 +4,6 @@
         "data_dir": "/home/pns/ReachMaster/software/reach_master", 
         "exp_control_path": "/dev/ttyACM0", 
         "serial_baud": 2000000, 
-        "rob_control_port": "/dev/ttyACM1", 
         "control_timeout": 5, 
         "exp_control_port": "/dev/ttyACM0", 
         "cfg_file": "Default", 
@@ -89,7 +88,7 @@
         "lights_off_dur": 3000
     }, 
     "Protocol": {
-        "type": "TRIALS"
+        "type": "CONTINUOUS"
     }, 
     "RobotSettings": {
         "x_command_pos": "None", 

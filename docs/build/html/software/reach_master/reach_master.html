@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>ReachMaster &mdash; ReachMaster alpha documentation</title>
+  <title>ReachMaster User Interface &mdash; ReachMaster alpha documentation</title>
   
 
   
@@ -92,7 +92,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../../overview.html">Overview</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../hardware/hardware.html">Hardware</a></li>
 <li class="toctree-l1 current"><a class="reference internal" href="../software.html">Software</a><ul class="current">
-<li class="toctree-l2 current"><a class="current reference internal" href="#">ReachMaster</a><ul>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">ReachMaster User Interface</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#root-application-window">Root Application Window</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#camera-settings">Camera Settings</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#experiment-settings">Experiment Settings</a></li>
@@ -157,7 +157,7 @@
         
           <li><a href="../software.html">Software</a> &raquo;</li>
         
-      <li>ReachMaster</li>
+      <li>ReachMaster User Interface</li>
     
     
       <li class="wy-breadcrumbs-aside">
@@ -177,7 +177,7 @@
            <div itemprop="articleBody">
             
   <div class="section" id="module-reach_master">
-<span id="reachmaster"></span><h1>ReachMaster<a class="headerlink" href="#module-reach_master" title="Permalink to this headline">¶</a></h1>
+<span id="reachmaster-user-interface"></span><h1>ReachMaster User Interface<a class="headerlink" href="#module-reach_master" title="Permalink to this headline">¶</a></h1>
 <p>The primary graphical user interface used to
 control and run experiments.</p>
 <p class="rubric">Example</p>
@@ -1465,8 +1465,8 @@ command file.</p>
 </dd></dl>
 
 <dl class="attribute">
-<dt id="reachmaster.settings.robot_settings.RobotSettings.command_source">
-<code class="descname">command_source</code><a class="headerlink" href="#reachmaster.settings.robot_settings.RobotSettings.command_source" title="Permalink to this definition">¶</a></dt>
+<dt id="reachmaster.settings.robot_settings.RobotSettings.command_type">
+<code class="descname">command_type</code><a class="headerlink" href="#reachmaster.settings.robot_settings.RobotSettings.command_type" title="Permalink to this definition">¶</a></dt>
 <dd><p>Tkinter StringVar that captures the user-selected option
 determining how commands are generated. Can be
 ‘read_from_file’, ‘sample_from_file’, or ‘parametric_sample’.
@@ -1602,11 +1602,12 @@ run the calibration.</p>
 <span class="target" id="module-reachmaster.protocols"></span><p>The protocol window is opened as a child of the
 ReachMaster root application whenever a protocol is run. It
 provides basic functionality for interacting with the rig
-while an experiment is runnings (e.g., manual reward delivery,
-toggle lights, etc.).</p>
+while an experiment is running (e.g., for manual reward
+delivery, toggling lights, etc.).</p>
 <div class="admonition-todo admonition" id="index-5">
 <p class="first admonition-title">Todo</p>
 <ul class="last simple">
+<li>Can’t trigger images with lights on</li>
 <li>Keep adding new protocol types</li>
 <li>GPU-accelerated video encoding</li>
 <li>Automate unit tests</li>
@@ -1843,20 +1844,587 @@ communication protocol.</p>
 </table>
 </dd></dl>
 
+<dl class="method">
+<dt id="reachmaster.protocols.Protocols.deliver_water_callback">
+<code class="descname">deliver_water_callback</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/reachmaster/protocols.html#Protocols.deliver_water_callback"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#reachmaster.protocols.Protocols.deliver_water_callback" title="Permalink to this definition">¶</a></dt>
+<dd><p>Opens the reward solenoid for the reward duration set
+in experiment settings.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="reachmaster.protocols.Protocols.move_robot_callback">
+<code class="descname">move_robot_callback</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/reachmaster/protocols.html#Protocols.move_robot_callback"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#reachmaster.protocols.Protocols.move_robot_callback" title="Permalink to this definition">¶</a></dt>
+<dd><p>Commands the robot to move to the next position in
+its currently loaded command sequence.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="reachmaster.protocols.Protocols.on_quit">
+<code class="descname">on_quit</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/reachmaster/protocols.html#Protocols.on_quit"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#reachmaster.protocols.Protocols.on_quit" title="Permalink to this definition">¶</a></dt>
+<dd><p>Called prior to destruction protocol window.</p>
+<p>Prior to destruction, all interfaces must be stopped and
+protocol-specific cleanup needs to take place.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="reachmaster.protocols.Protocols.run">
+<code class="descname">run</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/reachmaster/protocols.html#Protocols.run"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#reachmaster.protocols.Protocols.run" title="Permalink to this definition">¶</a></dt>
+<dd><p>Execute a single iteration of the selected protocol type.</p>
+<p>The currently supported protocol types are TRIALS and
+CONTINUOUS. In order to add a custom type, developers must
+write a <cite>run_newtype()</cite> method and add it to the call
+search here. The run methods for each protocol type are
+where all the vital real-time operations are executed.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="reachmaster.protocols.Protocols.run_continuous">
+<code class="descname">run_continuous</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/reachmaster/protocols.html#Protocols.run_continuous"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#reachmaster.protocols.Protocols.run_continuous" title="Permalink to this definition">¶</a></dt>
+<dd><p>Operations performed for a single iteration of protocol type CONTINOUS.</p>
+<p>If an image is triggered by the experiment controller, reach detection is
+performed on the images, the images are concatenated, and encoded to mp4
+continuously, even during intertrial intervals, in real-time. Consequently,
+for this protocol type, the lights remain on during the intertrial interval.
+Messages are sent to the experiment controller to signal important events
+such as reach detections, beginnings/ends of trials, and to initiate robot
+movement. Responses are read from the experiment controller and saved to
+the data output file.</p>
+<div class="admonition-todo admonition" id="index-6">
+<p class="first admonition-title">Todo</p>
+<ul class="last simple">
+<li>Functionalize code chunks so logic is clearer and custom protocol types are easier to implement.</li>
+<li>Absorb communication codes into experiment interface module</li>
+</ul>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="reachmaster.protocols.Protocols.run_trials">
+<code class="descname">run_trials</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/reachmaster/protocols.html#Protocols.run_trials"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#reachmaster.protocols.Protocols.run_trials" title="Permalink to this definition">¶</a></dt>
+<dd><p>Operations performed for a single iteration of protocol type TRIALS.</p>
+<p>If an image is triggered by the experiment controller, reach detection is
+performed on the images, the images are added/removed to an online buffer,
+and encoded to mp4 during the intertrial intertval. For this protocol
+type, the lights are turned off during the intertrial interval. Messages
+are sent to the experiment controller to signal important events such as
+reach detections, beginnings/ends of trials, and to initiate robot
+movement. Responses are read from the experiment controller and saved to
+the data output file.</p>
+<div class="admonition-todo admonition" id="index-7">
+<p class="first admonition-title">Todo</p>
+<ul class="last simple">
+<li>Functionalize code chunks so logic is clearer and custom protocol types are easier to implement.</li>
+<li>Absorb communication codes into experiment interface module</li>
+</ul>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="reachmaster.protocols.Protocols.toggle_led_callback">
+<code class="descname">toggle_led_callback</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/reachmaster/protocols.html#Protocols.toggle_led_callback"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#reachmaster.protocols.Protocols.toggle_led_callback" title="Permalink to this definition">¶</a></dt>
+<dd><p>Toggles the LED located on the robot handle.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="reachmaster.protocols.Protocols.toggle_lights_callback">
+<code class="descname">toggle_lights_callback</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/reachmaster/protocols.html#Protocols.toggle_lights_callback"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#reachmaster.protocols.Protocols.toggle_lights_callback" title="Permalink to this definition">¶</a></dt>
+<dd><p>Toggles the neopixel lights.</p>
+</dd></dl>
+
 </dd></dl>
 
 </div>
 <div class="section" id="module-reachmaster.interfaces.camera_interface">
 <span id="camera-interface"></span><h2>Camera Interface<a class="headerlink" href="#module-reachmaster.interfaces.camera_interface" title="Permalink to this headline">¶</a></h2>
+<p>This module provides a set of functions for interfacing
+with multiple Ximea machine vision USB3.0 cameras via the
+Ximea API. It provides functions start/stop the cameras
+using the user-selected settings, and to get images from
+the cameras.</p>
+<div class="admonition-todo admonition" id="index-8">
+<p class="first admonition-title">Todo</p>
+<ul class="last simple">
+<li>Object orient</li>
+<li>GPU-accelerated video encoding</li>
+<li>Automate unit tests</li>
+<li>Python 3 compatibility</li>
+<li>PEP 8</li>
+</ul>
+</div>
+<dl class="function">
+<dt id="reachmaster.interfaces.camera_interface.get_npimage">
+<code class="descclassname">reachmaster.interfaces.camera_interface.</code><code class="descname">get_npimage</code><span class="sig-paren">(</span><em>cam</em>, <em>img</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/reachmaster/interfaces/camera_interface.html#get_npimage"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#reachmaster.interfaces.camera_interface.get_npimage" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get the most recent image from a camera as a numpy
+array.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>cam</strong> (<em>ximea.xiapi.Camera</em>) – A ximea api Camera object.</li>
+<li><strong>img</strong> (<em>ximea.xiapi.Image</em>) – A ximea api Image container object</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>npimg</strong> – The most recently acquired image from the camera
+as a numpy array.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">numpy.ndarray</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="reachmaster.interfaces.camera_interface.init_image">
+<code class="descclassname">reachmaster.interfaces.camera_interface.</code><code class="descname">init_image</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/reachmaster/interfaces/camera_interface.html#init_image"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#reachmaster.interfaces.camera_interface.init_image" title="Permalink to this definition">¶</a></dt>
+<dd><p>Initialize a ximea container object to store images.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><strong>img</strong> – A ximea api Image container object</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">ximea.xiapi.Image</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="reachmaster.interfaces.camera_interface.start_interface">
+<code class="descclassname">reachmaster.interfaces.camera_interface.</code><code class="descname">start_interface</code><span class="sig-paren">(</span><em>config</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/reachmaster/interfaces/camera_interface.html#start_interface"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#reachmaster.interfaces.camera_interface.start_interface" title="Permalink to this definition">¶</a></dt>
+<dd><p>Open all cameras, loads user-selected settings, and
+starts image acquisition.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>config</strong> (<em>dict</em>) – The currently loaded configuration file.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><strong>cams</strong> – A list of ximea api Camera objects.</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">list</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="reachmaster.interfaces.camera_interface.stop_interface">
+<code class="descclassname">reachmaster.interfaces.camera_interface.</code><code class="descname">stop_interface</code><span class="sig-paren">(</span><em>cams</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/reachmaster/interfaces/camera_interface.html#stop_interface"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#reachmaster.interfaces.camera_interface.stop_interface" title="Permalink to this definition">¶</a></dt>
+<dd><p>Stop image acquisition and close all cameras.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>cams</strong> (<em>list</em>) – A list of ximea api Camera objects.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
 </div>
 <div class="section" id="module-reachmaster.interfaces.experiment_interface">
 <span id="experiment-interface"></span><h2>Experiment Interface<a class="headerlink" href="#module-reachmaster.interfaces.experiment_interface" title="Permalink to this headline">¶</a></h2>
+<p>This module provides a set of functions for interfacing
+with the experiment microcontroller. It provides functions
+to recognize and establish serial connections to the
+controller, read/write settings, exectute common callbacks,
+and read/write custom messages.</p>
+<div class="admonition-todo admonition" id="index-9">
+<p class="first admonition-title">Todo</p>
+<ul class="last simple">
+<li>Object orient</li>
+<li>Automate unit tests</li>
+<li>Python 3 compatibility</li>
+<li>PEP 8</li>
+</ul>
+</div>
+<dl class="function">
+<dt id="reachmaster.interfaces.experiment_interface.deliver_water">
+<code class="descclassname">reachmaster.interfaces.experiment_interface.</code><code class="descname">deliver_water</code><span class="sig-paren">(</span><em>exp_controller</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/reachmaster/interfaces/experiment_interface.html#deliver_water"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#reachmaster.interfaces.experiment_interface.deliver_water" title="Permalink to this definition">¶</a></dt>
+<dd><p>Send a message to experiment controller to open the
+reward solenoid for the user-selected duration.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>exp_controller</strong> (<em>serial.serialposix.Serial</em>) – The serial interface to the experiment controller.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="reachmaster.interfaces.experiment_interface.flush_water">
+<code class="descclassname">reachmaster.interfaces.experiment_interface.</code><code class="descname">flush_water</code><span class="sig-paren">(</span><em>exp_controller</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/reachmaster/interfaces/experiment_interface.html#flush_water"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#reachmaster.interfaces.experiment_interface.flush_water" title="Permalink to this definition">¶</a></dt>
+<dd><p>Send a message to experiment controller to opens the
+reward solenoid for the flush user-selected flush
+duration.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>exp_controller</strong> (<em>serial.serialposix.Serial</em>) – The serial interface to the experiment controller.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="reachmaster.interfaces.experiment_interface.get_ports">
+<code class="descclassname">reachmaster.interfaces.experiment_interface.</code><code class="descname">get_ports</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/reachmaster/interfaces/experiment_interface.html#get_ports"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#reachmaster.interfaces.experiment_interface.get_ports" title="Permalink to this definition">¶</a></dt>
+<dd><p>List all serial port with connected devices.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><strong>port_list</strong> – Names of all the serial ports with connected devices.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">list(str)</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="reachmaster.interfaces.experiment_interface.move_robot">
+<code class="descclassname">reachmaster.interfaces.experiment_interface.</code><code class="descname">move_robot</code><span class="sig-paren">(</span><em>exp_controller</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/reachmaster/interfaces/experiment_interface.html#move_robot"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#reachmaster.interfaces.experiment_interface.move_robot" title="Permalink to this definition">¶</a></dt>
+<dd><p>Send a message to experiment controller to command the
+robot to move to the next position in its command
+sequence.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>exp_controller</strong> (<em>serial.serialposix.Serial</em>) – The serial interface to the experiment controller.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="reachmaster.interfaces.experiment_interface.read_response">
+<code class="descclassname">reachmaster.interfaces.experiment_interface.</code><code class="descname">read_response</code><span class="sig-paren">(</span><em>exp_controller</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/reachmaster/interfaces/experiment_interface.html#read_response"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#reachmaster.interfaces.experiment_interface.read_response" title="Permalink to this definition">¶</a></dt>
+<dd><p>Read a line of data from the experiment controller
+in response to the most recently written message.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>exp_controller</strong> (<em>serial.serialposix.Serial</em>) – The serial interface to the experiment controller.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><strong>response</strong> – The line of data received from the experiment
+controller in response to the most recently
+written message.</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">str</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="reachmaster.interfaces.experiment_interface.set_exp_controller">
+<code class="descclassname">reachmaster.interfaces.experiment_interface.</code><code class="descname">set_exp_controller</code><span class="sig-paren">(</span><em>exp_controller</em>, <em>config</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/reachmaster/interfaces/experiment_interface.html#set_exp_controller"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#reachmaster.interfaces.experiment_interface.set_exp_controller" title="Permalink to this definition">¶</a></dt>
+<dd><p>Load the experiment settings to the experiment controller.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>exp_controller</strong> (<em>serial.serialposix.Serial</em>) – The serial interface to the experiment controller.</li>
+<li><strong>config</strong> (<em>dict</em>) – The currently loaded configuration file.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="reachmaster.interfaces.experiment_interface.start_experiment">
+<code class="descclassname">reachmaster.interfaces.experiment_interface.</code><code class="descname">start_experiment</code><span class="sig-paren">(</span><em>exp_controller</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/reachmaster/interfaces/experiment_interface.html#start_experiment"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#reachmaster.interfaces.experiment_interface.start_experiment" title="Permalink to this definition">¶</a></dt>
+<dd><p>Send a message to experiment controller to begin
+executing an experiment protocol.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>exp_controller</strong> (<em>serial.serialposix.Serial</em>) – The serial interface to the experiment controller.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><strong>response</strong> – The first line of data received from the
+experiment controller verifying that the protocol
+has been initiated.</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">str</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="reachmaster.interfaces.experiment_interface.start_interface">
+<code class="descclassname">reachmaster.interfaces.experiment_interface.</code><code class="descname">start_interface</code><span class="sig-paren">(</span><em>config</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/reachmaster/interfaces/experiment_interface.html#start_interface"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#reachmaster.interfaces.experiment_interface.start_interface" title="Permalink to this definition">¶</a></dt>
+<dd><p>Establish a serial connection with the experiment
+controller.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>config</strong> (<em>dict</em>) – The currently loaded configuration file.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><strong>exp_controller</strong> – The serial interface to the experiment controller.</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">serial.serialposix.Serial</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="reachmaster.interfaces.experiment_interface.stop_interface">
+<code class="descclassname">reachmaster.interfaces.experiment_interface.</code><code class="descname">stop_interface</code><span class="sig-paren">(</span><em>exp_controller</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/reachmaster/interfaces/experiment_interface.html#stop_interface"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#reachmaster.interfaces.experiment_interface.stop_interface" title="Permalink to this definition">¶</a></dt>
+<dd><p>Perform a soft reboot of the experiment controller
+and close the serial connection.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>exp_controller</strong> (<em>serial.serialposix.Serial</em>) – The serial interface to the experiment controller.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="reachmaster.interfaces.experiment_interface.toggle_led">
+<code class="descclassname">reachmaster.interfaces.experiment_interface.</code><code class="descname">toggle_led</code><span class="sig-paren">(</span><em>exp_controller</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/reachmaster/interfaces/experiment_interface.html#toggle_led"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#reachmaster.interfaces.experiment_interface.toggle_led" title="Permalink to this definition">¶</a></dt>
+<dd><p>Send a message to experiment controller to toggle the
+LED located on the robot handle.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>exp_controller</strong> (<em>serial.serialposix.Serial</em>) – The serial interface to the experiment controller.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="reachmaster.interfaces.experiment_interface.toggle_lights">
+<code class="descclassname">reachmaster.interfaces.experiment_interface.</code><code class="descname">toggle_lights</code><span class="sig-paren">(</span><em>exp_controller</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/reachmaster/interfaces/experiment_interface.html#toggle_lights"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#reachmaster.interfaces.experiment_interface.toggle_lights" title="Permalink to this definition">¶</a></dt>
+<dd><p>Send a message to experiment controller to toggle the
+neopixel lights.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>exp_controller</strong> (<em>serial.serialposix.Serial</em>) – The serial interface to the experiment controller.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="reachmaster.interfaces.experiment_interface.trigger_image">
+<code class="descclassname">reachmaster.interfaces.experiment_interface.</code><code class="descname">trigger_image</code><span class="sig-paren">(</span><em>exp_controller</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/reachmaster/interfaces/experiment_interface.html#trigger_image"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#reachmaster.interfaces.experiment_interface.trigger_image" title="Permalink to this definition">¶</a></dt>
+<dd><p>Send a message to experiment controller to trigger the
+cameras to capture an image.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>exp_controller</strong> (<em>serial.serialposix.Serial</em>) – The serial interface to the experiment controller.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="reachmaster.interfaces.experiment_interface.write_message">
+<code class="descclassname">reachmaster.interfaces.experiment_interface.</code><code class="descname">write_message</code><span class="sig-paren">(</span><em>exp_controller</em>, <em>message</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/reachmaster/interfaces/experiment_interface.html#write_message"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#reachmaster.interfaces.experiment_interface.write_message" title="Permalink to this definition">¶</a></dt>
+<dd><p>Read a line of data from the experiment controller
+in response to the most recently written message.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>exp_controller</strong> (<em>serial.serialposix.Serial</em>) – The serial interface to the experiment controller.</li>
+<li><strong>message</strong> (<em>str</em>) – A string that is recognizeable by the experiment
+controller.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
 </div>
 <div class="section" id="module-reachmaster.interfaces.robot_interface">
 <span id="robot-interface"></span><h2>Robot Interface<a class="headerlink" href="#module-reachmaster.interfaces.robot_interface" title="Permalink to this headline">¶</a></h2>
+<p>Module that provides a set of functions for interfacing
+with the robot microcontroller. It provides functions to
+recognize and establish serial connections to the
+controller, read/write settings, calibration and command
+files.</p>
+<div class="admonition-todo admonition" id="index-10">
+<p class="first admonition-title">Todo</p>
+<ul class="last simple">
+<li>Object orient</li>
+<li>Automate unit tests</li>
+<li>Python 3 compatibility</li>
+<li>PEP 8</li>
+</ul>
+</div>
+<dl class="function">
+<dt id="reachmaster.interfaces.robot_interface.get_ports">
+<code class="descclassname">reachmaster.interfaces.robot_interface.</code><code class="descname">get_ports</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/reachmaster/interfaces/robot_interface.html#get_ports"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#reachmaster.interfaces.robot_interface.get_ports" title="Permalink to this definition">¶</a></dt>
+<dd><p>List all serial port with connected devices.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><strong>port_list</strong> – Names of all the serial ports with connected devices.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">list(str)</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="reachmaster.interfaces.robot_interface.load_config_calibration">
+<code class="descclassname">reachmaster.interfaces.robot_interface.</code><code class="descname">load_config_calibration</code><span class="sig-paren">(</span><em>rob_controller</em>, <em>config</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/reachmaster/interfaces/robot_interface.html#load_config_calibration"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#reachmaster.interfaces.robot_interface.load_config_calibration" title="Permalink to this definition">¶</a></dt>
+<dd><p>Load the calibration parameters to the robot controller.</p>
+<p>Uses the calibration file selected in the configuration
+file.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>rob_controller</strong> (<em>serial.serialposix.Serial</em>) – The serial interface to the robot controller.</li>
+<li><strong>config</strong> (<em>dict</em>) – The currently loaded configuration file.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="reachmaster.interfaces.robot_interface.load_config_commands">
+<code class="descclassname">reachmaster.interfaces.robot_interface.</code><code class="descname">load_config_commands</code><span class="sig-paren">(</span><em>rob_controller</em>, <em>config</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/reachmaster/interfaces/robot_interface.html#load_config_commands"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#reachmaster.interfaces.robot_interface.load_config_commands" title="Permalink to this definition">¶</a></dt>
+<dd><p>Load the position commands to the robot controller.</p>
+<p>Uses the method determined by the command type
+selected in the configuration file. Currently, the
+options are <cite>read_from_file</cite>, <cite>sample_from_file</cite>, or
+<cite>parametric_sample</cite>. <cite>read_from_file</cite> takes the
+commands directly from the command file.
+<cite>sample_from_file</cite> generates a sequence of commands by
+sampling rows from the command file with replacement.
+For both of these options, the command file is assumed
+to have three columns ordered as <cite>reach distance</cite>,
+<cite>azimuth’, `elevation</cite>. <cite>parametric_sample</cite> does not
+use the command file. Rather, it samples commands
+uniformly from the <cite>reach volume</cite> determined by the
+user-selected inverse kinematics parameters.</p>
+<div class="admonition-todo admonition" id="index-11">
+<p class="first admonition-title">Todo</p>
+<ul class="last simple">
+<li>Further functionalize for increased clarity.</li>
+</ul>
+</div>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>rob_controller</strong> (<em>serial.serialposix.Serial</em>) – The serial interface to the robot controller.</li>
+<li><strong>config</strong> (<em>dict</em>) – The currently loaded configuration file.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>config</strong> – The configuration file possibly updated to include
+the command values that were loaded.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">dict</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="reachmaster.interfaces.robot_interface.set_rob_controller">
+<code class="descclassname">reachmaster.interfaces.robot_interface.</code><code class="descname">set_rob_controller</code><span class="sig-paren">(</span><em>rob_controller</em>, <em>config</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/reachmaster/interfaces/robot_interface.html#set_rob_controller"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#reachmaster.interfaces.robot_interface.set_rob_controller" title="Permalink to this definition">¶</a></dt>
+<dd><p>Load all the robot settings to the robot controller.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>rob_controller</strong> (<em>serial.serialposix.Serial</em>) – The serial interface to the robot controller.</li>
+<li><strong>config</strong> (<em>dict</em>) – The currently loaded configuration file.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>config</strong> – The configuration file possibly updated to include
+the command values that were loaded.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">dict</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="reachmaster.interfaces.robot_interface.start_interface">
+<code class="descclassname">reachmaster.interfaces.robot_interface.</code><code class="descname">start_interface</code><span class="sig-paren">(</span><em>config</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/reachmaster/interfaces/robot_interface.html#start_interface"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#reachmaster.interfaces.robot_interface.start_interface" title="Permalink to this definition">¶</a></dt>
+<dd><p>Establish a serial connection with the robot
+controller.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>config</strong> (<em>dict</em>) – The currently loaded configuration file.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><strong>rob_controller</strong> – The serial interface to the robot controller.</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">serial.serialposix.Serial</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="reachmaster.interfaces.robot_interface.stop_interface">
+<code class="descclassname">reachmaster.interfaces.robot_interface.</code><code class="descname">stop_interface</code><span class="sig-paren">(</span><em>rob_controller</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/reachmaster/interfaces/robot_interface.html#stop_interface"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#reachmaster.interfaces.robot_interface.stop_interface" title="Permalink to this definition">¶</a></dt>
+<dd><p>Perform a soft reboot of the robot controller
+and close the serial connection.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>rob_controller</strong> (<em>serial.serialposix.Serial</em>) – The serial interface to the robot controller.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
 </div>
 <div class="section" id="module-reachmaster.config">
 <span id="configuration-files"></span><h2>Configuration Files<a class="headerlink" href="#module-reachmaster.config" title="Permalink to this headline">¶</a></h2>
+<p>Module for working with configuration files.</p>
 <p>Configurations files are json files that store all the settings
 used in a ReachMaster session. Functions are provided to
 generate default configuration files, as well as to save and

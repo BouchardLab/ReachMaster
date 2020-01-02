@@ -15,6 +15,9 @@ here = path.abspath(path.dirname(__file__))
 # Get the long description from the README file
 with open(path.join(here, 'README.md'), encoding='utf-8') as f:
     long_description = f.read()
+# Get package dependencies
+with open(path.join(here, 'requirements.txt'), encoding='utf-8') as f:
+    requirements = f.read().splitlines()
 
 setup(
     name='reach_master',
@@ -23,8 +26,9 @@ setup(
     long_description=long_description,
     author='Brian Gereke',
     author_email='bgereke@utexas.edu',
-    url='https://github.com/BouchardLab/ReachMaster',    
-    packages=find_packages(exclude=('tests','bin','temp')),
+    url='https://github.com/BouchardLab/ReachMaster',   
+    packages=find_packages(exclude=()),
+    install_requires=requirements,
     classifiers=[
         'Programming Language :: Python :: 2',
         'Programming Language :: Python :: 2.7',
