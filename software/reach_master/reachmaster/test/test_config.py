@@ -10,6 +10,13 @@ else:
     from .. import config
 
 class TestConfigModule(unittest2.TestCase):
+    """Simple unit tests for the config module.
+
+    Since configuration files strongly determine the behavior
+    of the ReachMaster application, it is vital to verify that
+    these files can be generated, saved and loaded properly. 
+
+    """
 
     def setUp(self):
         self.test_config = config.default_config()
