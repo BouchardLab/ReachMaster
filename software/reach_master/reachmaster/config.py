@@ -55,7 +55,7 @@ def default_config():
                                                   "-crf": 28,
                                                   "-preset":"ultrafast", 
                                                   "-tune":"zerolatency",
-                                                  "-output_dimensions": (3*688, 688)
+                                                  "-output_dimensions": [3*688, 688]
                                                  }                                   
                                  },
            'ExperimentSettings':{
@@ -154,7 +154,7 @@ def load_config(file_handle):
 
     """
     return _byteify(
-        json.load(file_handle, object_hook=_byteify),
+        json.load(open(file_handle), object_hook=_byteify),
         ignore_dicts=True
     )
 
@@ -176,9 +176,10 @@ def save_config(config):
     configPath = config['ReachMaster']['data_dir']+"/config/"
     if not os.path.isdir(configPath):
             os.makedirs(configPath)
-    fn = configPath + 'config: ' + str(datetime.datetime.now()) + '.txt'
+    fn = configPath + 'config: ' + str(datetime.datetime.now()) + '.json'
     with open(fn, 'w') as outfile:
         json.dump(config, outfile, indent=4)
+    return fn
 
 def save_tmp(config):
     """Save the configuration to a temp file.
@@ -202,6 +203,7 @@ def save_tmp(config):
     configPath = "./temp/"
     if not os.path.isdir(configPath):
             os.makedirs(configPath)
-    fn = configPath + 'tmp_config.txt'
+    fn = configPath + 'tmp_config.json'
     with open(fn, 'w') as outfile:
         json.dump(config, outfile, indent=4)
+    return fn

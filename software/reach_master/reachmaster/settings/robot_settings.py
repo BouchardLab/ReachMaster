@@ -118,7 +118,7 @@ class RobotSettings(tk.Toplevel):
         self.configure(bg='white')
         self.protocol('WM_DELETE_WINDOW', self.on_quit)
         #initialize tk variables from config
-        self.config = config.load_config(open('./temp/tmp_config.txt'))
+        self.config = config.load_config('./temp/tmp_config.json')
         self.pos_smoothing = tk.StringVar()
         self.pos_smoothing.set(str(self.config['RobotSettings']['pos_smoothing']))
         self.tol = tk.StringVar()

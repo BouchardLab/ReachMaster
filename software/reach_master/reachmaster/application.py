@@ -300,7 +300,7 @@ class ReachMaster:
     def config_file_browse_callback(self):
         """Allows user to load a previously saved configuration file."""
         self.config_file.set(tkFileDialog.askopenfilename())
-        self.config = config.load_config(open(self.config_file.get()))
+        self.config = config.load_config(self.config_file.get())
         self.config['ReachMaster']['config_file'] = self.config_file.get()
         self.config['ReachMaster']['data_dir'] = self.data_dir.get()
         config.save_tmp(self.config)
@@ -310,7 +310,7 @@ class ReachMaster:
         user selected port."""
         if not self.exp_connected:
             try:
-                self.config = config.load_config(open('./temp/tmp_config.txt'))
+                self.config = config.load_config('./temp/tmp_config.json')
                 self.config['ReachMaster']['exp_control_port'] = self.exp_control_port.get()
                 self.exp_controller = expint.start_interface(self.config)
                 self.exp_connected = True                
@@ -329,7 +329,7 @@ class ReachMaster:
         selected port."""
         if not self.rob_connected:
             try:
-                self.config = config.load_config(open('./temp/tmp_config.txt'))
+                self.config = config.load_config('./temp/tmp_config.json')
                 self.config['ReachMaster']['rob_control_port'] = self.rob_control_port.get()
                 self.rob_controller = robint.start_interface(self.config)
                 self.rob_connected = True
@@ -401,7 +401,7 @@ class ReachMaster:
     def run_protocol_callback(self):  
         """Initiates the user-selected experimental protocol."""
         if self.exp_connected and self.rob_connected:
-            self.config = config.load_config(open('./temp/tmp_config.txt'))
+            self.config = config.load_config('./temp/tmp_config.json')
             self.config['Protocol']['type'] = self.protocol.get()
             config.save_tmp(self.config)
             expint.stop_interface(self.exp_controller)

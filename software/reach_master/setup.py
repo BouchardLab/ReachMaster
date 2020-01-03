@@ -4,7 +4,6 @@ https://packaging.python.org/en/latest/distributing.html
 https://github.com/pypa/sampleproject
 """
 
-# Always prefer setuptools over distutils
 from setuptools import setup, find_packages
 # To use a consistent encoding
 from codecs import open
@@ -15,7 +14,7 @@ here = path.abspath(path.dirname(__file__))
 # Get the long description from the README file
 with open(path.join(here, 'README.md'), encoding='utf-8') as f:
     long_description = f.read()
-# Get package dependencies
+# Get package dependencies from the requirements file
 with open(path.join(here, 'requirements.txt'), encoding='utf-8') as f:
     requirements = f.read().splitlines()
 
@@ -30,10 +29,10 @@ setup(
     packages=find_packages(exclude=()),
     install_requires=requirements,
     classifiers=[
-        'Programming Language :: Python :: 2',
-        'Programming Language :: Python :: 2.7',
-        'License :: OSI Approved :: BSD License',
-        'Operating System :: Linux Ubuntu 16.04',
+    'Programming Language :: Python :: 2',
+    'Programming Language :: Python :: 2.7',
+    'License :: OSI Approved :: BSD License',
+    'Operating System :: Linux Ubuntu 16.04',
     ],
-    python_requires='~=2.7',
-    	)
+    python_requires='~=2.7'
+    )

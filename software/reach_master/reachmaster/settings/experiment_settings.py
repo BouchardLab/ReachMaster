@@ -72,7 +72,7 @@ class ExperimentSettings(tk.Toplevel):
         self.title("Experiment Settings") 
         self.configure(bg="white")
         self.protocol("WM_DELETE_WINDOW", self.on_quit) 
-        self.config = config.load_config(open('./temp/tmp_config.txt'))
+        self.config = config.load_config('./temp/tmp_config.json')
         self.lights_on_dur = tk.StringVar()
         self.lights_on_dur.set(str(self.config['ExperimentSettings']['lights_on_dur']))
         self.lights_off_dur = tk.StringVar()

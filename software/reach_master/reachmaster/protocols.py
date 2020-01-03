@@ -97,7 +97,7 @@ class Protocols(tk.Toplevel):
         self.grab_set()        
         self.configure(bg="white")
         self.protocol("WM_DELETE_WINDOW", self.on_quit)         
-        self.config = config.load_config(open('./temp/tmp_config.txt'))           
+        self.config = config.load_config('./temp/tmp_config.json')           
         self.output_params = self.config['CameraSettings']['output_params']
         self.title("Protocol: " + self.config['Protocol']['type'])                    
         #initialize protocol variables 

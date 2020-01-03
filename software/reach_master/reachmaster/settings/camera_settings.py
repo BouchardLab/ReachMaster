@@ -143,7 +143,7 @@ class CameraSettings(tk.Toplevel):
         self.configure(bg="white")
         self.protocol("WM_DELETE_WINDOW", self.on_quit) 
         #initialize tk variables from config
-        self.config = config.load_config(open('./temp/tmp_config.txt'))
+        self.config = config.load_config('./temp/tmp_config.json')
         self.output_params = self.config['CameraSettings']['output_params']        
         self.exp_controller = expint.start_interface(self.config)
         self.exp_connected = True       
