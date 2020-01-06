@@ -9,7 +9,7 @@ if __name__ == '__main__' and __package__ is None:
 else:
     from .. import config
 
-class TestConfigModule(unittest2.TestCase):
+class TestConfig(unittest2.TestCase):
     """Simple unit tests for the config module.
 
     Since configuration files strongly determine the behavior

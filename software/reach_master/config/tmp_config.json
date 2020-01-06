@@ -1,8 +1,8 @@
 {
     "ReachMaster": {
-        "rob_control_path": "/dev/ttyACM1", 
+        "rob_control_port": "/dev/ttyACM1", 
         "data_dir": "/home/pns/ReachMaster/software/reachmaster", 
-        "exp_control_path": "/dev/ttyACM0", 
+        "exp_control_port": "/dev/ttyACM0", 
         "serial_baud": 2000000, 
         "control_timeout": 5, 
         "cfg_file": "Default"

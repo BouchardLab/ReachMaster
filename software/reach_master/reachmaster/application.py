@@ -21,7 +21,7 @@ Todo:
 
 """
 
-import config
+import config as cfg
 import settings.camera_settings as camset
 import settings.experiment_settings as expset
 import settings.robot_settings as robset
@@ -32,6 +32,7 @@ import Tkinter as tk
 import tkFileDialog
 import tkMessageBox
 import time
+from os import path
 
 class ReachMaster:
     """The primary class for the root ReachMaster application.
@@ -85,8 +86,8 @@ class ReachMaster:
         self.window.title("ReachMaster")
         self.window.configure(bg="white")
         self.window.protocol("WM_DELETE_WINDOW", self.on_quit)        
-        self.config = config.default_config()        
-        config.save_tmp(self.config)
+        self.config = cfg.default_config()        
+        cfg.save_tmp(self.config)
         self.data_dir = tk.StringVar()        
         self.data_dir.set(self.config['ReachMaster']['data_dir']) 
         self.config_file = tk.StringVar()
@@ -124,11 +125,11 @@ class ReachMaster:
             return     
         answer = tkMessageBox.askyesnocancel("Question", "Save Configuration?")
         if answer == True:            
-            config.save_config(self.config)            
+            cfg.save_config(self.config)            
         elif answer == False:
             pass
         else:
-            self.run()
+            return
         if self.exp_connected:
             expint.stop_interface(self.exp_controller)
         if self.rob_connected:
@@ -138,16 +139,15 @@ class ReachMaster:
 
     def run(self):
         """The application main loop."""
-
         self.running = True
         try:
             while self.running:        
-                if self.protocol_running:
+                if self.protocol_running and self.child.baseline_acquired:
                     try:
                         self.child.run()
                     except Exception as err:
                         self.protocol_running = False
-                        print(err)
+                        tkMessageBox.showinfo("Warning", err)
                 self.window.update()
         except KeyboardInterrupt:
             self.on_quit()
@@ -295,26 +295,33 @@ class ReachMaster:
         """Allows user to set the data output directory."""
         self.data_dir.set(tkFileDialog.askdirectory())
         self.config['ReachMaster']['data_dir'] = self.data_dir.get()
-        config.save_tmp(self.config)
+        cfg.save_tmp(self.config)
 
     def config_file_browse_callback(self):
         """Allows user to load a previously saved configuration file."""
         self.config_file.set(tkFileDialog.askopenfilename())
-        self.config = config.load_config(self.config_file.get())
-        self.config['ReachMaster']['config_file'] = self.config_file.get()
-        self.config['ReachMaster']['data_dir'] = self.data_dir.get()
-        config.save_tmp(self.config)
+        try:
+            self.config = cfg.load_config(self.config_file.get())
+            self.config['ReachMaster']['config_file'] = self.config_file.get()
+            self.exp_control_port.set(self.config['ReachMaster']['exp_control_port']) 
+            self.rob_control_port.set(self.config['ReachMaster']['rob_control_port'])
+            self.protocol.set(self.config['Protocol']['type'])
+            #prefer some of the user's current directory selection
+            self.config['ReachMaster']['data_dir'] = self.data_dir.get()           
+            cfg.save_tmp(self.config)
+        except Exception as err:
+            tkMessageBox.showinfo("Warning", err)
 
     def exp_connect_callback(self):
         """Connects to the experiment microcontroller located at the
         user selected port."""
         if not self.exp_connected:
             try:
-                self.config = config.load_config('./temp/tmp_config.json')
+                self.config = cfg.load_config('./temp/tmp_config.json')
                 self.config['ReachMaster']['exp_control_port'] = self.exp_control_port.get()
                 self.exp_controller = expint.start_interface(self.config)
                 self.exp_connected = True                
-                config.save_tmp(self.config)
+                cfg.save_tmp(self.config)
             except Exception as err:
                 tkMessageBox.showinfo("Warning", err)
 
@@ -329,11 +336,11 @@ class ReachMaster:
         selected port."""
         if not self.rob_connected:
             try:
-                self.config = config.load_config('./temp/tmp_config.json')
+                self.config = cfg.load_config('./temp/tmp_config.json')
                 self.config['ReachMaster']['rob_control_port'] = self.rob_control_port.get()
                 self.rob_controller = robint.start_interface(self.config)
                 self.rob_connected = True
-                config.save_tmp(self.config)
+                cfg.save_tmp(self.config)
             except Exception as err:
                 tkMessageBox.showinfo("Warning", err)
 
@@ -401,9 +408,9 @@ class ReachMaster:
     def run_protocol_callback(self):  
         """Initiates the user-selected experimental protocol."""
         if self.exp_connected and self.rob_connected:
-            self.config = config.load_config('./temp/tmp_config.json')
+            self.config = cfg.load_config('./temp/tmp_config.json')
             self.config['Protocol']['type'] = self.protocol.get()
-            config.save_tmp(self.config)
+            cfg.save_tmp(self.config)
             expint.stop_interface(self.exp_controller)
             self.exp_connected = False
             robint.stop_interface(self.rob_controller)

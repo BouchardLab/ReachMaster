@@ -1,9 +1,0 @@
-{
-    "ReachMaster": {
-        "data_dir": "/home/pns/ReachMaster/software/reach_master/reachmaster/test"
-    }, 
-    "CameraSettings": "fake_camera_settings", 
-    "ExperimentSettings": "fake_exp_settings", 
-    "Protocol": "fake_pro", 
-    "RobotSettings": "fake_rob_settings"
-}

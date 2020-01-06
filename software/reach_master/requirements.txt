@@ -5,4 +5,4 @@ pyserial
 vidgear
 sphinx-gallery
 sphinx_rtd_theme
-unittest2
+pytest

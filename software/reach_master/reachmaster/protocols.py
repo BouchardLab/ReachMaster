@@ -101,6 +101,7 @@ class Protocols(tk.Toplevel):
         self.output_params = self.config['CameraSettings']['output_params']
         self.title("Protocol: " + self.config['Protocol']['type'])                    
         #initialize protocol variables 
+        self.baseline_acquired = False
         self.exp_connected = False
         self.rob_connected = False
         self.cams_connected = False     
@@ -114,7 +115,7 @@ class Protocols(tk.Toplevel):
         self.reach_detected = False
         #check config for errors
         if len(self.config['CameraSettings']['saved_pois']) == 0:
-           print("No saved _pois.") 
+           tkMessageBox.showinfo("Warning", "No saved POIs")
            self.on_quit()
            return
         #start interfaces, load settings and aquire baseline for reach detection
@@ -131,7 +132,8 @@ class Protocols(tk.Toplevel):
             print("loading robot settings...")
             self.config = robint.set_rob_controller(self.rob_controller, self.config)            
             self.img = camint.init_image() 
-            self._acquire_baseline()           
+            self._acquire_baseline() 
+            self.baseline_acquired = True          
         except Exception as err:
             print(err)
             self.on_quit()                    
