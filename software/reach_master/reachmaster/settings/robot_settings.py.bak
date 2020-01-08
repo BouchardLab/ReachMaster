@@ -18,9 +18,9 @@ Todo:
 """
 
 from .. import config
-import tkinter as tk 
-import tkinter.filedialog
-import tkinter.messagebox
+import Tkinter as tk 
+import tkFileDialog
+import tkMessageBox
 import numpy as np
 import os
 
@@ -532,11 +532,11 @@ class RobotSettings(tk.Toplevel):
     def calibration_browse_callback(self):
         """Allows the user to select a calibration file to be loaded to the
         robot microcontroller."""
-        self.calibration_file.set(tkinter.filedialog.askopenfilename())
+        self.calibration_file.set(tkFileDialog.askopenfilename())
         self.config['RobotSettings']['calibration_file'] = self.calibration_file.get()                  
 
     def command_browse_callback(self):
         """Allows the user to select a position command file to be loaded 
         to the robot microcontroller."""
-        self.command_file.set(tkinter.filedialog.askopenfilename())
+        self.command_file.set(tkFileDialog.askopenfilename())
         self.config['RobotSettings']['command_file'] = self.command_file.get()

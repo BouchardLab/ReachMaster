@@ -19,41 +19,39 @@ from serial.tools import list_ports
 #private functions----------------------------------------------
 
 def _load_calibration_variable(rob_controller, varname, value):
-    rob_controller.write(b"c")
-    if rob_controller.read() == b"c":
-        rob_controller.write((varname + "\n").encode('utf-8'))
-        if rob_controller.read() == b"c":
-            rob_controller.write(str(value).encode('utf-8'))
-    if rob_controller.read() == b"c":
-        print((varname + ' loaded'))
+    robot.write("c")
+    if robot.read() == "c":
+        robot.write(varname + "\n")
+        if robot.read() == "c":
+            robot.write(value)
+    if robot.read() == "c":
+        print(varname + ' loaded')
     else:
-        print(varname + ' calibration failed')
         raise Exception(varname)
 
 def _load_command_variable(rob_controller, varname, value):  
-    rob_controller.write(b"p")
-    if rob_controller.read() == b"p":
-        rob_controller.write((varname + "\n").encode('utf-8'))
-        if rob_controller.read() == b"p":
-            rob_controller.write(str(value).encode('utf-8'))
-    if rob_controller.read() == b"p":
-        print((varname + ' loaded'))
+    robot.write("p")
+    if robot.read() == "p":
+        robot.write(varname + "\n")
+        if robot.read() == "p":
+            robot.write(value)
+    if robot.read() == "p":
+        print(varname + ' loaded')
     else:
-        print(varname + 'load failed')
         raise Exception(varname)
 
 def _variable_read(rob_controller, varname):
-    rob_controller.write(b"g")
-    if rob_controller.read() == b"g":
-        rob_controller.write((varname + "\n").encode('utf-8'))
-        return rob_controller.readline().decode('utf-8')
+    rob_controller.write("g")
+    if rob_controller.read() == "g":
+        rob_controller.write(varname+"\n")
+        return rob_controller.readline()[:-2]
 
 def _variable_write(rob_controller, varname, value):
-    rob_controller.write(b"v")
-    if rob_controller.read() == b"v":
-        rob_controller.write(bytes(varname + "\n", 'utf-8'))
-        if rob_controller.read() == b"v":
-            rob_controller.write(bytes(value + "\n", 'utf-8'))
+    rob_controller.write("v")
+    if rob_controller.read() == "v":
+        rob_controller.write(varname+"\n")
+        if rob_controller.read() == "v":
+            rob_controller.write(value+"\n")
 
 #public functions---------------------------------------------------
 
@@ -76,9 +74,9 @@ def start_interface(config):
         config['ReachMaster']['serial_baud'],
         timeout=config['ReachMaster']['control_timeout'])
     rob_controller.flushInput()
-    rob_controller.write(b"h")
+    rob_controller.write("h")
     response = rob_controller.read()
-    if response == b"h":
+    if response == "h":
         rob_connected = True
         return rob_controller
     else:
@@ -94,7 +92,7 @@ def stop_interface(rob_controller):
         The serial interface to the robot controller.
 
     """   
-    rob_controller.write(b"e")
+    rob_controller.write("e")
     rob_controller.close()
 
 def get_ports():
@@ -209,7 +207,7 @@ def load_config_commands(rob_controller, config):
             unpack = True, 
             usecols = (1, 2, 3)
             )
-        rand_sample = np.random.choice(list(range(len(r_set))), replace = True, size = n)
+        rand_sample = np.random.choice(range(len(r_set)), replace = True, size = n)
         r = r_set[rand_sample]
         theta_y = theta_y_set[rand_sample]
         theta_z = theta_z_set[rand_sample]

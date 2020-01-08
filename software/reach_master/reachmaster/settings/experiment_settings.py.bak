@@ -13,8 +13,8 @@ Todo:
 """
 
 from .. import config
-import tkinter as tk 
-import tkinter.messagebox
+import Tkinter as tk 
+import tkMessageBox
 
 class ExperimentSettings(tk.Toplevel):
     """The primary class for the camera settings window.  

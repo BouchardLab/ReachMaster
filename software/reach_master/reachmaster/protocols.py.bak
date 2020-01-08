@@ -14,13 +14,13 @@ Todo:
 
 """
 
-from . import config
-from .interfaces import camera_interface as camint
-from .interfaces import robot_interface as robint
-from .interfaces import experiment_interface as expint
-import tkinter as tk 
-import tkinter.filedialog
-import tkinter.messagebox
+import config
+import interfaces.camera_interface as camint
+import interfaces.robot_interface as robint
+import interfaces.experiment_interface as expint
+import Tkinter as tk 
+import tkFileDialog
+import tkMessageBox
 import time
 import datetime
 import os 
@@ -115,29 +115,29 @@ class Protocols(tk.Toplevel):
         self.reach_detected = False
         #check config for errors
         if len(self.config['CameraSettings']['saved_pois']) == 0:
-           tkinter.messagebox.showinfo("Warning", "No saved POIs")
+           tkMessageBox.showinfo("Warning", "No saved POIs")
            self.on_quit()
            return
         #start interfaces, load settings and aquire baseline for reach detection
         try:
             print("starting interfaces...")
             self.exp_controller = expint.start_interface(self.config) 
-            self.exp_connected = True 
-            print("loading experiment settings...")        
-            expint.set_exp_controller(self.exp_controller, self.config)                      
+            self.exp_connected = True           
             self.rob_controller = robint.start_interface(self.config) 
-            self.rob_connected = True     
-            print("loading robot settings...")
-            self.config = robint.set_rob_controller(self.rob_controller, self.config)      
+            self.rob_connected = True           
             self.cams = camint.start_interface(self.config)         
-            self.cams_connected = True                       
+            self.cams_connected = True    
+            print("loading experiment settings...")        
+            expint.set_exp_controller(self.exp_controller, self.config)
+            print("loading robot settings...")
+            self.config = robint.set_rob_controller(self.rob_controller, self.config)            
             self.img = camint.init_image() 
             self._acquire_baseline() 
             self.baseline_acquired = True          
         except Exception as err:
             print(err)
             self.on_quit()                    
-        self._init_data_output()      
+        self._init_data_output()        
         self._init_special_protocol() 
         self._configure_window() 
         self.control_message = 'b'
@@ -163,7 +163,7 @@ class Protocols(tk.Toplevel):
             pass
 
     def _special_protocol_quit(self): 
-        if self.config['Protocol']['type'] == 'CONTINUOUS' and self.video_open:
+        if self.config['Protocol']['type'] == 'CONTINUOUS':
             self.video.close()
         elif self.config['Protocol']['type'] == 'TRIALS':
             self.img_buffer = deque()
@@ -193,7 +193,7 @@ class Protocols(tk.Toplevel):
                 )
         #get baseline images and extract sample pois for each camera
         for cnt in range(num_imgs):
-            expint.trigger_image(self.exp_controller)
+            self.exp_controller.write("t")
             for i in range(self.config['CameraSettings']['num_cams']):
                 # npimg = camint.get_npimage(self.cams[i],self.img)
                 self.cams[i].get_image(self.img, timeout = 2000)                  
@@ -254,28 +254,28 @@ class Protocols(tk.Toplevel):
             text = "Move Robot", 
             font = 'Arial 10 bold',
             width = 14, 
-            command = self.move_robot_callback()
+            command = self.move_robot_callback
             ).grid(row = 0, sticky = 'W')
         tk.Button(
             self, 
             text = "Toggle LED", 
             font = 'Arial 10 bold',
             width = 14, 
-            command = self.toggle_led_callback()
+            command = self.toggle_led_callback
             ).grid(row = 1, sticky = 'W')
         tk.Button(
             self, 
             text = "Toggle Lights", 
             font = 'Arial 10 bold',
             width = 14, 
-            command = self.toggle_lights_callback()
+            command = self.toggle_lights_callback
             ).grid(row = 2, sticky = 'W')
         tk.Button(
             self, 
             text = "Deliver Water", 
             font = 'Arial 10 bold',
             width = 14, 
-            command = self.deliver_water_callback()
+            command = self.deliver_water_callback
             ).grid(row = 3, sticky = 'W')
 
     #Callbacks ------------------------------------------------------------------
@@ -363,7 +363,7 @@ class Protocols(tk.Toplevel):
         elif self.exp_response[1] == 'e': 
             self.reach_detected = False
             self.control_message = 's'   
-            print((self.exp_response[0]))
+            print(self.exp_response[0])
         elif (
             self.reach_detected and 
             (int(now) - int(self.reach_init)) > 
@@ -463,7 +463,7 @@ class Protocols(tk.Toplevel):
             self.reach_detected = False
             self.control_message = 's' 
             self.img_buffer = deque() 
-            print((self.exp_response[0]))
+            print(self.exp_response[0])
         elif (
             self.reach_detected and 
             (int(now) - int(self.reach_init)) > 

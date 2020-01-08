@@ -51,7 +51,6 @@ bool yOn;
 bool zOn;
 unsigned long tOn;
 int off_dur = 1000;
-int intoff_dur = 1000;
 char ser;
 int tolCnt = 0;
 int num_tol = 5;
@@ -130,7 +129,7 @@ void setup() {
     if (Serial.available()) {
       serPNS = Serial.read();
       if (serPNS == 'h') {
-        Serial.println(serPNS);
+        Serial.print(serPNS);
         handshake = 1;
       }
     }
@@ -172,37 +171,53 @@ void loop() {
         while (!Serial.available()) {}
         varName = Serial.readStringUntil('\n');
         if (varName == "alpha") {
-          Serial.println(alpha);
+          Serial.print(alpha);
+          Serial.print('\n');
         } else if (varName == "tol") {
-          Serial.println(tol);
+          Serial.print(tol);
+          Serial.print('\n');
         } else if (varName == "period") {
-          Serial.println(period);
+          Serial.print(period);
+          Serial.print('\n');
         } else if (varName == "num_tol") {
-          Serial.println(num_tol);
+          Serial.print(num_tol);
+          Serial.print('\n');
         } else if (varName == "off_dur") {
-          Serial.println(off_dur);
+          Serial.print(off_dur);
+          Serial.print('\n');
         } else if (varName == "x_push_wt") {
-          Serial.println(x_push_wt);
+          Serial.print(x_push_wt);
+          Serial.print('\n');
         } else if (varName == "x_pull_wt") {
-          Serial.println(x_pull_wt);
+          Serial.print(x_pull_wt);
+          Serial.print('\n');
         } else if (varName == "y_push_wt") {
-          Serial.println(y_push_wt);
+          Serial.print(y_push_wt);
+          Serial.print('\n');
         } else if (varName == "y_pull_wt") {
-          Serial.println(y_pull_wt);
+          Serial.print(y_pull_wt);
+          Serial.print('\n');
         } else if (varName == "z_push_wt") {
-          Serial.println(z_push_wt);
+          Serial.print(z_push_wt);
+          Serial.print('\n');
         } else if (varName == "z_pull_wt") {
-          Serial.println(z_pull_wt);
+          Serial.print(z_pull_wt);
+          Serial.print('\n');
         } else if (varName == "rew_zone_x") {
-          Serial.println(rew_zone_x);
+          Serial.print(rew_zone_x);
+          Serial.print('\n');
         } else if (varName == "rew_zone_y_min") {
-          Serial.println(rew_zone_y_min);
+          Serial.print(rew_zone_y_min);
+          Serial.print('\n');
         } else if (varName == "rew_zone_y_max") {
-          Serial.println(rew_zone_y_max);
+          Serial.print(rew_zone_y_max);
+          Serial.print('\n');
         } else if (varName == "rew_zone_z_min") {
-          Serial.println(rew_zone_z_min);
+          Serial.print(rew_zone_z_min);
+          Serial.print('\n');
         } else if (varName == "rew_zone_z_max") {
-          Serial.println(rew_zone_z_max);          
+          Serial.print(rew_zone_z_max);  
+          Serial.print('\n');        
         }
         break;
       case 'v':

@@ -21,16 +21,16 @@ Todo:
 
 """
 
-from . import config as cfg
-from .settings import camera_settings as camset
-from .settings import experiment_settings as expset
-from .settings import robot_settings as robset
-from .interfaces import experiment_interface as expint
-from .interfaces import robot_interface as robint
-from . import protocols
-import tkinter as tk 
-import tkinter.filedialog
-import tkinter.messagebox
+import config as cfg
+import settings.camera_settings as camset
+import settings.experiment_settings as expset
+import settings.robot_settings as robset
+import interfaces.experiment_interface as expint
+import interfaces.robot_interface as robint
+import protocols
+import Tkinter as tk 
+import tkFileDialog
+import tkMessageBox
 import time
 from os import path
 
@@ -86,13 +86,13 @@ class ReachMaster:
         self.window.title("ReachMaster")
         self.window.configure(bg="white")
         self.window.protocol("WM_DELETE_WINDOW", self.on_quit)        
-        self.config = cfg.default_config()    
+        self.config = cfg.default_config()        
         cfg.save_tmp(self.config)
         self.data_dir = tk.StringVar()        
         self.data_dir.set(self.config['ReachMaster']['data_dir']) 
         self.config_file = tk.StringVar()
         self.config_file.set(self.config['ReachMaster']['config_file'])
-        self.port_list = expint.get_ports()      
+        self.port_list = expint.get_ports()        
         self.exp_control_port = tk.StringVar()
         self.rob_control_port = tk.StringVar()
         if self.config['ReachMaster']['exp_control_port'] in self.port_list:
@@ -123,7 +123,7 @@ class ReachMaster:
         """ 
         if (self.child is not None) and self.child.winfo_exists(): 
             return     
-        answer = tkinter.messagebox.askyesnocancel("Question", "Save Configuration?")
+        answer = tkMessageBox.askyesnocancel("Question", "Save Configuration?")
         if answer == True:            
             cfg.save_config(self.config)            
         elif answer == False:
@@ -147,7 +147,7 @@ class ReachMaster:
                         self.child.run()
                     except Exception as err:
                         self.protocol_running = False
-                        tkinter.messagebox.showinfo("Warning", err)
+                        tkMessageBox.showinfo("Warning", err)
                 self.window.update()
         except KeyboardInterrupt:
             self.on_quit()
@@ -188,7 +188,10 @@ class ReachMaster:
             width = 22,
             anchor = "e"
             ).grid(row = 2, column = 0)
-        self.exp_controller_menu = tk.OptionMenu(*(self.window, self.exp_control_port) + tuple(self.port_list))
+        self.exp_controller_menu = apply(
+            tk.OptionMenu, 
+            (self.window, self.exp_control_port) + tuple(self.port_list)
+            )
         self.exp_controller_menu.grid(row = 2, column = 1)
         tk.Button(
             text = "Connect", 
@@ -209,7 +212,10 @@ class ReachMaster:
             width = 22,
             anchor = "e"
             ).grid(row = 3, column = 0)
-        self.rob_controller_menu = tk.OptionMenu(*(self.window, self.rob_control_port) + tuple(self.port_list))
+        self.rob_controller_menu = apply(
+            tk.OptionMenu, 
+            (self.window, self.rob_control_port) + tuple(self.port_list)
+            )
         self.rob_controller_menu.grid(row = 3, column = 1)
         tk.Button(
             text = "Connect", 
@@ -271,7 +277,10 @@ class ReachMaster:
             width = 14, 
             command = self.flush_water_callback
             ).grid(row = 7, column = 1)
-        self.protocol_menu = tk.OptionMenu(*(self.window, self.protocol) + tuple(self.protocol_list))
+        self.protocol_menu = apply(
+            tk.OptionMenu, 
+            (self.window, self.protocol) + tuple(self.protocol_list)
+            )
         self.protocol_menu.grid(row = 5, column = 2)
         tk.Button(
             text = "Run Protocol", 
@@ -284,13 +293,13 @@ class ReachMaster:
 
     def data_dir_browse_callback(self):
         """Allows user to set the data output directory."""
-        self.data_dir.set(tkinter.filedialog.askdirectory())
+        self.data_dir.set(tkFileDialog.askdirectory())
         self.config['ReachMaster']['data_dir'] = self.data_dir.get()
         cfg.save_tmp(self.config)
 
     def config_file_browse_callback(self):
         """Allows user to load a previously saved configuration file."""
-        self.config_file.set(tkinter.filedialog.askopenfilename())
+        self.config_file.set(tkFileDialog.askopenfilename())
         try:
             self.config = cfg.load_config(self.config_file.get())
             self.config['ReachMaster']['config_file'] = self.config_file.get()
@@ -301,21 +310,20 @@ class ReachMaster:
             self.config['ReachMaster']['data_dir'] = self.data_dir.get()           
             cfg.save_tmp(self.config)
         except Exception as err:
-            tkinter.messagebox.showinfo("Warning", err)
+            tkMessageBox.showinfo("Warning", err)
 
     def exp_connect_callback(self):
         """Connects to the experiment microcontroller located at the
         user selected port."""
         if not self.exp_connected:
             try:
-                self.config = cfg.load_config('./temp/tmp_config.json') ##byte conversion off
+                self.config = cfg.load_config('./temp/tmp_config.json')
                 self.config['ReachMaster']['exp_control_port'] = self.exp_control_port.get()
                 self.exp_controller = expint.start_interface(self.config)
                 self.exp_connected = True                
                 cfg.save_tmp(self.config)
             except Exception as err:
-                print(err)
-                tkinter.messagebox.showinfo("Warning", err)
+                tkMessageBox.showinfo("Warning", err)
 
     def exp_disconnect_callback(self):
         """Disconncects from the experiment microcontroller."""
@@ -334,7 +342,7 @@ class ReachMaster:
                 self.rob_connected = True
                 cfg.save_tmp(self.config)
             except Exception as err:
-                tkinter.messagebox.showinfo("Warning", err)
+                tkMessageBox.showinfo("Warning", err)
 
     def rob_disconnect_callback(self):
         """Disconncects from the robot microcontroller."""
@@ -349,7 +357,7 @@ class ReachMaster:
             time.sleep(2)
             self.child = camset.CameraSettings(self.window)
         else:
-            tkinter.messagebox.showinfo("Warning", "Experiment Controller not connected.")
+            tkMessageBox.showinfo("Warning", "Experiment Controller not connected.")
 
     def exp_settings_callback(self):
         """Opens the experiment settings window."""
@@ -365,21 +373,21 @@ class ReachMaster:
         if self.exp_connected:
             expint.move_robot(self.exp_controller)
         else:
-            tkinter.messagebox.showinfo("Warning", "Experiment controller not connected.")
+            tkMessageBox.showinfo("Warning", "Experiment controller not connected.")
 
     def toggle_led_callback(self):
         """Toggles the LED located on the robot handle."""
         if self.exp_connected:
             expint.toggle_led(self.exp_controller)
         else:
-            tkinter.messagebox.showinfo("Warning", "Experiment controller not connected.")
+            tkMessageBox.showinfo("Warning", "Experiment controller not connected.")
 
     def toggle_lights_callback(self):
         """Toggles the neopixel lights."""
         if self.exp_connected:
             expint.toggle_lights(self.exp_controller)
         else:
-            tkinter.messagebox.showinfo("Warning", "Experiment controller not connected.")
+            tkMessageBox.showinfo("Warning", "Experiment controller not connected.")
     
     def deliver_water_callback(self):
         """Opens the reward solenoid for the reward duration set 
@@ -387,7 +395,7 @@ class ReachMaster:
         if self.exp_connected:
             expint.deliver_water(self.exp_controller)
         else:
-            tkinter.messagebox.showinfo("Warning", "Experiment controller not connected.")
+            tkMessageBox.showinfo("Warning", "Experiment controller not connected.")
 
     def flush_water_callback(self):
         """Opens the reward solenoid for the flush duration set in
@@ -395,7 +403,7 @@ class ReachMaster:
         if self.exp_connected:
             expint.flush_water(self.exp_controller)
         else:
-            tkinter.messagebox.showinfo("Warning", "Experiment controller not connected.")
+            tkMessageBox.showinfo("Warning", "Experiment controller not connected.")
 
     def run_protocol_callback(self):  
         """Initiates the user-selected experimental protocol."""
@@ -411,9 +419,9 @@ class ReachMaster:
             self.child = protocols.Protocols(self.window)
             self.protocol_running = True
         elif not self.exp_connected:
-            tkinter.messagebox.showinfo("Warning", "Experiment controller not connected.")
+            tkMessageBox.showinfo("Warning", "Experiment controller not connected.")
         else:
-            tkinter.messagebox.showinfo("Warning", "Robot controller not connected.")                
+            tkMessageBox.showinfo("Warning", "Robot controller not connected.")                
 
 if __name__ == '__main__':
     rm = ReachMaster()

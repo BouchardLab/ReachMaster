@@ -234,21 +234,29 @@ void loop() {
           while (!Serial.available()){}
           varName = Serial.readStringUntil('\n');
           if (varName=="flush_dur"){ 
-            Serial.println(flush_dur);
+            Serial.print(flush_dur);
+            Serial.print('\n');
           }else if(varName=="solenoid_open_dur"){
-            Serial.println(solenoid_open_dur);
+            Serial.print(solenoid_open_dur);
+            Serial.print('\n');
           }else if(varName=="solenoid_bounce_dur"){
-            Serial.println(solenoid_bounce_dur);
+            Serial.print(solenoid_bounce_dur);
+            Serial.print('\n');
           }else if(varName=="reward_win_dur"){
-            Serial.println(reward_win_dur);
+            Serial.print(reward_win_dur);
+            Serial.print('\n');
           }else if(varName=="max_rewards"){
-            Serial.println(max_rewards);
+            Serial.print(max_rewards);
+            Serial.print('\n');
           }else if(varName=="lights_off_dur"){
-            Serial.println(lights_off_dur);
+            Serial.print(lights_off_dur);
+            Serial.print('\n');
           }else if(varName=="lights_on_dur"){
-            Serial.println(lights_on_dur);
+            Serial.print(lights_on_dur);
+            Serial.print('\n');
           }else if(varName=="reachDelay"){
-            Serial.println(reachDelay);
+            Serial.print(reachDelay);
+            Serial.print('\n');
           }
           break;
         case 'v':
@@ -370,7 +378,8 @@ void loop() {
       Serial.print(' ');  
       Serial.print(triggered); 
       Serial.print(' ');  
-      Serial.println(robotRZState); 
+      Serial.print(robotRZState); 
+      Serial.print('\n');
 //      Serial.print(' ');  
 //      Serial.println(robotRZState); 
 //      Serial.print(' ');  

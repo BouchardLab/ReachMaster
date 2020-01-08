@@ -95,7 +95,7 @@
         "x_pull_dur": "None", 
         "rew_zone_z_max": 581, 
         "y_push_dur": "None", 
-        "command_source": "parametric_sample", 
+        "command_type": "parametric_sample", 
         "pos": "None", 
         "calibration_file": "/home/pns/ReachMaster/software/reachmaster/data/calibration files/calibrationFile.txt", 
         "reach_dist_max": 40, 

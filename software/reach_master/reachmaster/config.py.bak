@@ -72,24 +72,24 @@ def default_config():
                                  'reach_delay':100
                                  },
            'RobotSettings':     {
-                                 'calibration_file':None,
-                                 'dis':None,
-                                 'pos':None,
-                                 'x_push_dur':None,
-                                 'x_pull_dur':None,
-                                 'y_push_dur':None,
-                                 'y_pull_dur':None,
-                                 'z_push_dur':None,
-                                 'z_pull_dur':None,
-                                 'command_type':None,
-                                 'command_set':None,
-                                 'command_file':None,
-                                 'x_command_pos':None,
-                                 'y_command_pos':None,
-                                 'z_command_pos':None,
-                                 'r_command_pos':None,
-                                 'theta_y_command_pos':None,
-                                 'theta_z_command_pos':None,
+                                 'calibration_file':'None',
+                                 'dis':'None',
+                                 'pos':'None',
+                                 'x_push_dur':'None',
+                                 'x_pull_dur':'None',
+                                 'y_push_dur':'None',
+                                 'y_pull_dur':'None',
+                                 'z_push_dur':'None',
+                                 'z_pull_dur':'None',
+                                 'command_type':'None',
+                                 'command_set':'None',
+                                 'command_file':'None',
+                                 'x_command_pos':'None',
+                                 'y_command_pos':'None',
+                                 'z_command_pos':'None',
+                                 'r_command_pos':'None',
+                                 'theta_y_command_pos':'None',
+                                 'theta_z_command_pos':'None',
                                  'reach_dist_min':10,
                                  'reach_dist_max':40,
                                  'reach_angle_max':np.pi/3,
@@ -124,6 +124,18 @@ def default_config():
            }
   return config
 
+def _byteify(data, ignore_dicts = False):
+    if isinstance(data, unicode):
+        return data.encode('utf-8')
+    if isinstance(data, list):
+        return [ _byteify(item, ignore_dicts=True) for item in data ]
+    if isinstance(data, dict) and not ignore_dicts:
+        return {
+            _byteify(key, ignore_dicts=True): _byteify(value, ignore_dicts=True)
+            for key, value in data.iteritems()
+        }
+    return data
+
 def load_config(file_handle):
     """Load a configuration file.
 
@@ -141,7 +153,10 @@ def load_config(file_handle):
       A default configuration.       
 
     """
-    return json.load(open(file_handle))
+    return _byteify(
+        json.load(open(file_handle), object_hook=_byteify),
+        ignore_dicts=True
+    )
 
 def save_config(config):
     """Save a configuration file.

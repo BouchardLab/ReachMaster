@@ -20,14 +20,14 @@ from ximea import xiapi
 def _open_cameras(config):              
     cams = []
     for i in range(config['CameraSettings']['num_cams']):
-        print(('loading camera %s ...' %(i)))
+        print('loading camera %s ...' %(i))
         cams.append(xiapi.Camera(dev_id = i))
         cams[i].open_device()     
     return cams
 
 def _set_cameras(cams, config):
     for i in range(config['CameraSettings']['num_cams']):
-        print(('Setting camera %d ...' %i))
+        print('Setting camera %d ...' %i)
         cams[i].set_imgdataformat(config['CameraSettings']['imgdataformat'])
         cams[i].set_exposure(config['CameraSettings']['exposure'])
         cams[i].set_gain(config['CameraSettings']['gain'])
@@ -63,7 +63,7 @@ def _set_cameras(cams, config):
 
 def _start_cameras(cams):
     for i in range(len(cams)):
-        print(('Starting camera %d ...' %i))
+        print('Starting camera %d ...' %i)
         cams[i].start_acquisition()
 
 #public functions -----------------------------------------------------------------
@@ -79,7 +79,7 @@ def stop_interface(cams):
     """
 
     for i in range(len(cams)):
-        print(('stopping camera %d ...' %i))
+        print('stopping camera %d ...' %i)
         cams[i].stop_acquisition()
         cams[i].close_device()
 

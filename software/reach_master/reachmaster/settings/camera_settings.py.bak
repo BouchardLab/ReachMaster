@@ -21,8 +21,8 @@ Todo:
 from .. import config
 from ..interfaces import experiment_interface as expint
 from ..interfaces import camera_interface as camint
-import tkinter as tk 
-import tkinter.messagebox
+import Tkinter as tk 
+import tkMessageBox
 import cv2
 import PIL.Image, PIL.ImageTk
 from ximea import xiapi
@@ -463,7 +463,7 @@ class CameraSettings(tk.Toplevel):
         if not self.streaming:
             self._start_stream()
         else: 
-            tkinter.messagebox.showinfo("Warning", "Already streaming.") 
+            tkMessageBox.showinfo("Warning", "Already streaming.") 
 
     def stop_stream_callback(self):
         """Stops triggering and displaying new images."""
@@ -478,9 +478,9 @@ class CameraSettings(tk.Toplevel):
                 self.saved_pois = self.config['CameraSettings']['saved_pois']
                 self.draw_saved = True
             else:
-                tkinter.messagebox.showinfo("Warning", "No saved POIs.")
+                tkMessageBox.showinfo("Warning", "No saved POIs.")
         else: 
-            tkinter.messagebox.showinfo("Warning", "Must be streaming to load POIs.")
+            tkMessageBox.showinfo("Warning", "Must be streaming to load POIs.")
 
     def add_pois_callback(self):
         """Allows the user to add new pixels-of-interest by clicking 
@@ -490,7 +490,7 @@ class CameraSettings(tk.Toplevel):
             self.add_pois = True
             self.remove_pois = False
         else: 
-            tkinter.messagebox.showinfo("Warning", "Must be streaming to add POIs.") 
+            tkMessageBox.showinfo("Warning", "Must be streaming to add POIs.") 
 
     def remove_pois_callback(self):
         """Allows the user to removed either saved or unsaved 
@@ -502,9 +502,9 @@ class CameraSettings(tk.Toplevel):
                 self.add_pois = False
                 self.remove_pois = True
             else:
-                tkinter.messagebox.showinfo("Warning", "No POIs to remove.")
+                tkMessageBox.showinfo("Warning", "No POIs to remove.")
         else: 
-            tkinter.messagebox.showinfo("Warning", "Must be streaming to remove POIs.")
+            tkMessageBox.showinfo("Warning", "Must be streaming to remove POIs.")
 
     def save_pois_callback(self):
         """Saves all added and/or removed pixel-of-interest to the 
@@ -521,7 +521,7 @@ class CameraSettings(tk.Toplevel):
         if self.streaming:
             self.capture = True
         else: 
-            tkinter.messagebox.showinfo("Warning", "Must be streaming to capture images.")
+            tkMessageBox.showinfo("Warning", "Must be streaming to capture images.")
 
     def start_rec_callback(self):
         """Allows the user to record a video which is saved to the `calibration
@@ -556,7 +556,7 @@ class CameraSettings(tk.Toplevel):
             self.record = True
             self._rec()
         else: 
-            tkinter.messagebox.showinfo("Warning", "Shouldn't record while streaming. Bad framerates!")
+            tkMessageBox.showinfo("Warning", "Shouldn't record while streaming. Bad framerates!")
 
     def stop_rec_callback(self):
         """Stops a video recording."""
@@ -571,7 +571,7 @@ class CameraSettings(tk.Toplevel):
         if self.exp_connected:
             expint.toggle_lights(self.exp_controller)
         else:
-            tkinter.messagebox.showinfo("Warning", "Experiment controller not connected.")
+            tkMessageBox.showinfo("Warning", "Experiment controller not connected.")
 
     # private methods -------------------------------------------------------------------------------
 
