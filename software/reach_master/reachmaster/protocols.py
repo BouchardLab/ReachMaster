@@ -345,7 +345,7 @@ class Protocols(tk.Toplevel):
             self.video.write(frame)
         self.exp_response = expint.read_response(self.exp_controller) 
         self.outputfile.write(
-            now + " " + self.exp_response[0:-2:1] + " " + str(min(self.poi_zscores)) + "\n"
+            now + " " + self.exp_response[0:-1:1] + " " + str(min(self.poi_zscores)) + "\n"
             )
         self.exp_response = self.exp_response.split() 
         if (

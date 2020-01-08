@@ -1,6 +1,5 @@
 numpy
 datetime
-python3-tk
 opencv-python
 pyserial
 vidgear
