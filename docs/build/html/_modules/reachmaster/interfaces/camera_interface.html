@@ -163,26 +163,25 @@
 <span class="sd">    * Object orient</span>
 <span class="sd">    * GPU-accelerated video encoding</span>
 <span class="sd">    * Automate unit tests</span>
-<span class="sd">    * Python 3 compatibility</span>
 <span class="sd">    * PEP 8</span>
 
 <span class="sd">&quot;&quot;&quot;</span>
 
-<span class="kn">from</span> <span class="nn">ximea</span> <span class="k">import</span> <span class="n">xiapi</span>
+<span class="kn">from</span> <span class="nn">ximea</span> <span class="kn">import</span> <span class="n">xiapi</span>
 
 <span class="c1">#private functions -----------------------------------------------------------------</span>
 
 <span class="k">def</span> <span class="nf">_open_cameras</span><span class="p">(</span><span class="n">config</span><span class="p">):</span>              
     <span class="n">cams</span> <span class="o">=</span> <span class="p">[]</span>
     <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;CameraSettings&#39;</span><span class="p">][</span><span class="s1">&#39;num_cams&#39;</span><span class="p">]):</span>
-        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;loading camera </span><span class="si">%s</span><span class="s1"> ...&#39;</span> <span class="o">%</span><span class="p">(</span><span class="n">i</span><span class="p">))</span>
+        <span class="nb">print</span><span class="p">((</span><span class="s1">&#39;loading camera </span><span class="si">%s</span><span class="s1"> ...&#39;</span> <span class="o">%</span><span class="p">(</span><span class="n">i</span><span class="p">)))</span>
         <span class="n">cams</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">xiapi</span><span class="o">.</span><span class="n">Camera</span><span class="p">(</span><span class="n">dev_id</span> <span class="o">=</span> <span class="n">i</span><span class="p">))</span>
         <span class="n">cams</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">open_device</span><span class="p">()</span>     
     <span class="k">return</span> <span class="n">cams</span>
 
 <span class="k">def</span> <span class="nf">_set_cameras</span><span class="p">(</span><span class="n">cams</span><span class="p">,</span> <span class="n">config</span><span class="p">):</span>
     <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;CameraSettings&#39;</span><span class="p">][</span><span class="s1">&#39;num_cams&#39;</span><span class="p">]):</span>
-        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Setting camera </span><span class="si">%d</span><span class="s1"> ...&#39;</span> <span class="o">%</span><span class="n">i</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">((</span><span class="s1">&#39;Setting camera </span><span class="si">%d</span><span class="s1"> ...&#39;</span> <span class="o">%</span><span class="n">i</span><span class="p">))</span>
         <span class="n">cams</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">set_imgdataformat</span><span class="p">(</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;CameraSettings&#39;</span><span class="p">][</span><span class="s1">&#39;imgdataformat&#39;</span><span class="p">])</span>
         <span class="n">cams</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">set_exposure</span><span class="p">(</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;CameraSettings&#39;</span><span class="p">][</span><span class="s1">&#39;exposure&#39;</span><span class="p">])</span>
         <span class="n">cams</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">set_gain</span><span class="p">(</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;CameraSettings&#39;</span><span class="p">][</span><span class="s1">&#39;gain&#39;</span><span class="p">])</span>
@@ -218,7 +217,7 @@
 
 <span class="k">def</span> <span class="nf">_start_cameras</span><span class="p">(</span><span class="n">cams</span><span class="p">):</span>
     <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">cams</span><span class="p">)):</span>
-        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Starting camera </span><span class="si">%d</span><span class="s1"> ...&#39;</span> <span class="o">%</span><span class="n">i</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">((</span><span class="s1">&#39;Starting camera </span><span class="si">%d</span><span class="s1"> ...&#39;</span> <span class="o">%</span><span class="n">i</span><span class="p">))</span>
         <span class="n">cams</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">start_acquisition</span><span class="p">()</span>
 
 <span class="c1">#public functions -----------------------------------------------------------------</span>
@@ -234,7 +233,7 @@
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">cams</span><span class="p">)):</span>
-        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;stopping camera </span><span class="si">%d</span><span class="s1"> ...&#39;</span> <span class="o">%</span><span class="n">i</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">((</span><span class="s1">&#39;stopping camera </span><span class="si">%d</span><span class="s1"> ...&#39;</span> <span class="o">%</span><span class="n">i</span><span class="p">))</span>
         <span class="n">cams</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">stop_acquisition</span><span class="p">()</span>
         <span class="n">cams</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">close_device</span><span class="p">()</span></div>
 
@@ -259,7 +258,7 @@
         <span class="n">_start_cameras</span><span class="p">(</span><span class="n">cams</span><span class="p">)</span>     
     <span class="k">except</span> <span class="n">xiapi</span><span class="o">.</span><span class="n">Xi_error</span> <span class="k">as</span> <span class="n">err</span><span class="p">:</span>
         <span class="n">expActive</span> <span class="o">=</span> <span class="kc">False</span>
-        <span class="n">stop_interface</span><span class="p">()</span>
+        <span class="n">stop_interface</span><span class="p">(</span><span class="n">cams</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">err</span><span class="o">.</span><span class="n">status</span> <span class="o">==</span> <span class="mi">10</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s2">&quot;No image triggers detected.&quot;</span><span class="p">)</span>
             <span class="k">return</span>

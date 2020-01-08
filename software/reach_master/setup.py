@@ -29,10 +29,10 @@ setup(
     packages=find_packages(exclude=()),
     install_requires=requirements,
     classifiers=[
-    'Programming Language :: Python :: 2',
-    'Programming Language :: Python :: 2.7',
+    'Programming Language :: Python :: 3',
+    'Programming Language :: Python :: 3.6',
     'License :: OSI Approved :: BSD License',
     'Operating System :: Linux Ubuntu 16.04',
     ],
-    python_requires='~=2.7'
+    python_requires='~=3.6'
     )

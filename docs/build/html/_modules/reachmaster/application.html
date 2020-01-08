@@ -171,22 +171,22 @@
 
 <span class="sd">Todo:</span>
 <span class="sd">    * Automated unit tests</span>
-<span class="sd">    * Python 3 compatibility</span>
 <span class="sd">    * PEP 8</span>
 
 <span class="sd">&quot;&quot;&quot;</span>
 
-<span class="kn">import</span> <span class="nn">config</span>
-<span class="kn">import</span> <span class="nn">settings.camera_settings</span> <span class="k">as</span> <span class="nn">camset</span>
-<span class="kn">import</span> <span class="nn">settings.experiment_settings</span> <span class="k">as</span> <span class="nn">expset</span>
-<span class="kn">import</span> <span class="nn">settings.robot_settings</span> <span class="k">as</span> <span class="nn">robset</span>
-<span class="kn">import</span> <span class="nn">interfaces.experiment_interface</span> <span class="k">as</span> <span class="nn">expint</span>
-<span class="kn">import</span> <span class="nn">interfaces.robot_interface</span> <span class="k">as</span> <span class="nn">robint</span>
-<span class="kn">import</span> <span class="nn">protocols</span>
-<span class="kn">import</span> <span class="nn">Tkinter</span> <span class="k">as</span> <span class="nn">tk</span> 
-<span class="kn">import</span> <span class="nn">tkFileDialog</span>
-<span class="kn">import</span> <span class="nn">tkMessageBox</span>
+<span class="kn">from</span> <span class="nn">.</span> <span class="kn">import</span> <span class="n">config</span> <span class="k">as</span> <span class="n">cfg</span>
+<span class="kn">from</span> <span class="nn">.settings</span> <span class="kn">import</span> <span class="n">camera_settings</span> <span class="k">as</span> <span class="n">camset</span>
+<span class="kn">from</span> <span class="nn">.settings</span> <span class="kn">import</span> <span class="n">experiment_settings</span> <span class="k">as</span> <span class="n">expset</span>
+<span class="kn">from</span> <span class="nn">.settings</span> <span class="kn">import</span> <span class="n">robot_settings</span> <span class="k">as</span> <span class="n">robset</span>
+<span class="kn">from</span> <span class="nn">.interfaces</span> <span class="kn">import</span> <span class="n">experiment_interface</span> <span class="k">as</span> <span class="n">expint</span>
+<span class="kn">from</span> <span class="nn">.interfaces</span> <span class="kn">import</span> <span class="n">robot_interface</span> <span class="k">as</span> <span class="n">robint</span>
+<span class="kn">from</span> <span class="nn">.</span> <span class="kn">import</span> <span class="n">protocols</span>
+<span class="kn">import</span> <span class="nn">tkinter</span> <span class="k">as</span> <span class="nn">tk</span> 
+<span class="kn">import</span> <span class="nn">tkinter.filedialog</span>
+<span class="kn">import</span> <span class="nn">tkinter.messagebox</span>
 <span class="kn">import</span> <span class="nn">time</span>
+<span class="kn">from</span> <span class="nn">os</span> <span class="kn">import</span> <span class="n">path</span>
 
 <div class="viewcode-block" id="ReachMaster"><a class="viewcode-back" href="../../software/reach_master/reach_master.html#reachmaster.application.ReachMaster">[docs]</a><span class="k">class</span> <span class="nc">ReachMaster</span><span class="p">:</span>
     <span class="sd">&quot;&quot;&quot;The primary class for the root ReachMaster application.</span>
@@ -235,18 +235,18 @@
 
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">window</span> <span class="o">=</span> <span class="n">tk</span><span class="o">.</span><span class="n">Tk</span><span class="p">()</span>        
         <span class="bp">self</span><span class="o">.</span><span class="n">window</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s2">&quot;ReachMaster&quot;</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">window</span><span class="o">.</span><span class="n">configure</span><span class="p">(</span><span class="n">bg</span><span class="o">=</span><span class="s2">&quot;white&quot;</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">window</span><span class="o">.</span><span class="n">protocol</span><span class="p">(</span><span class="s2">&quot;WM_DELETE_WINDOW&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">on_quit</span><span class="p">)</span>        
-        <span class="bp">self</span><span class="o">.</span><span class="n">config</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">default_config</span><span class="p">()</span>        
-        <span class="n">config</span><span class="o">.</span><span class="n">save_tmp</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">config</span> <span class="o">=</span> <span class="n">cfg</span><span class="o">.</span><span class="n">default_config</span><span class="p">()</span>    
+        <span class="n">cfg</span><span class="o">.</span><span class="n">save_tmp</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">data_dir</span> <span class="o">=</span> <span class="n">tk</span><span class="o">.</span><span class="n">StringVar</span><span class="p">()</span>        
         <span class="bp">self</span><span class="o">.</span><span class="n">data_dir</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;ReachMaster&#39;</span><span class="p">][</span><span class="s1">&#39;data_dir&#39;</span><span class="p">])</span> 
         <span class="bp">self</span><span class="o">.</span><span class="n">config_file</span> <span class="o">=</span> <span class="n">tk</span><span class="o">.</span><span class="n">StringVar</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">config_file</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;ReachMaster&#39;</span><span class="p">][</span><span class="s1">&#39;config_file&#39;</span><span class="p">])</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">port_list</span> <span class="o">=</span> <span class="n">expint</span><span class="o">.</span><span class="n">get_ports</span><span class="p">()</span>        
+        <span class="bp">self</span><span class="o">.</span><span class="n">port_list</span> <span class="o">=</span> <span class="n">expint</span><span class="o">.</span><span class="n">get_ports</span><span class="p">()</span>      
         <span class="bp">self</span><span class="o">.</span><span class="n">exp_control_port</span> <span class="o">=</span> <span class="n">tk</span><span class="o">.</span><span class="n">StringVar</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">rob_control_port</span> <span class="o">=</span> <span class="n">tk</span><span class="o">.</span><span class="n">StringVar</span><span class="p">()</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;ReachMaster&#39;</span><span class="p">][</span><span class="s1">&#39;exp_control_port&#39;</span><span class="p">]</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">port_list</span><span class="p">:</span>
@@ -277,13 +277,13 @@
 <span class="sd">        &quot;&quot;&quot;</span> 
         <span class="k">if</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">child</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">child</span><span class="o">.</span><span class="n">winfo_exists</span><span class="p">():</span> 
             <span class="k">return</span>     
-        <span class="n">answer</span> <span class="o">=</span> <span class="n">tkMessageBox</span><span class="o">.</span><span class="n">askyesnocancel</span><span class="p">(</span><span class="s2">&quot;Question&quot;</span><span class="p">,</span> <span class="s2">&quot;Save Configuration?&quot;</span><span class="p">)</span>
+        <span class="n">answer</span> <span class="o">=</span> <span class="n">tkinter</span><span class="o">.</span><span class="n">messagebox</span><span class="o">.</span><span class="n">askyesnocancel</span><span class="p">(</span><span class="s2">&quot;Question&quot;</span><span class="p">,</span> <span class="s2">&quot;Save Configuration?&quot;</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">answer</span> <span class="o">==</span> <span class="kc">True</span><span class="p">:</span>            
-            <span class="n">config</span><span class="o">.</span><span class="n">save_config</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">)</span>            
+            <span class="n">cfg</span><span class="o">.</span><span class="n">save_config</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">)</span>            
         <span class="k">elif</span> <span class="n">answer</span> <span class="o">==</span> <span class="kc">False</span><span class="p">:</span>
             <span class="k">pass</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
+            <span class="k">return</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">exp_connected</span><span class="p">:</span>
             <span class="n">expint</span><span class="o">.</span><span class="n">stop_interface</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">exp_controller</span><span class="p">)</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">rob_connected</span><span class="p">:</span>
@@ -293,16 +293,15 @@
 
 <div class="viewcode-block" id="ReachMaster.run"><a class="viewcode-back" href="../../software/reach_master/reach_master.html#reachmaster.application.ReachMaster.run">[docs]</a>    <span class="k">def</span> <span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;The application main loop.&quot;&quot;&quot;</span>
-
         <span class="bp">self</span><span class="o">.</span><span class="n">running</span> <span class="o">=</span> <span class="kc">True</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="k">while</span> <span class="bp">self</span><span class="o">.</span><span class="n">running</span><span class="p">:</span>        
-                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">protocol_running</span><span class="p">:</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">protocol_running</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">child</span><span class="o">.</span><span class="n">baseline_acquired</span><span class="p">:</span>
                     <span class="k">try</span><span class="p">:</span>
                         <span class="bp">self</span><span class="o">.</span><span class="n">child</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
                     <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">err</span><span class="p">:</span>
                         <span class="bp">self</span><span class="o">.</span><span class="n">protocol_running</span> <span class="o">=</span> <span class="kc">False</span>
-                        <span class="nb">print</span><span class="p">(</span><span class="n">err</span><span class="p">)</span>
+                        <span class="n">tkinter</span><span class="o">.</span><span class="n">messagebox</span><span class="o">.</span><span class="n">showinfo</span><span class="p">(</span><span class="s2">&quot;Warning&quot;</span><span class="p">,</span> <span class="n">err</span><span class="p">)</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">window</span><span class="o">.</span><span class="n">update</span><span class="p">()</span>
         <span class="k">except</span> <span class="ne">KeyboardInterrupt</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">on_quit</span><span class="p">()</span></div>
@@ -343,10 +342,7 @@
             <span class="n">width</span> <span class="o">=</span> <span class="mi">22</span><span class="p">,</span>
             <span class="n">anchor</span> <span class="o">=</span> <span class="s2">&quot;e&quot;</span>
             <span class="p">)</span><span class="o">.</span><span class="n">grid</span><span class="p">(</span><span class="n">row</span> <span class="o">=</span> <span class="mi">2</span><span class="p">,</span> <span class="n">column</span> <span class="o">=</span> <span class="mi">0</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">exp_controller_menu</span> <span class="o">=</span> <span class="n">apply</span><span class="p">(</span>
-            <span class="n">tk</span><span class="o">.</span><span class="n">OptionMenu</span><span class="p">,</span> 
-            <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">window</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">exp_control_port</span><span class="p">)</span> <span class="o">+</span> <span class="nb">tuple</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">port_list</span><span class="p">)</span>
-            <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">exp_controller_menu</span> <span class="o">=</span> <span class="n">tk</span><span class="o">.</span><span class="n">OptionMenu</span><span class="p">(</span><span class="o">*</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">window</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">exp_control_port</span><span class="p">)</span> <span class="o">+</span> <span class="nb">tuple</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">port_list</span><span class="p">))</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">exp_controller_menu</span><span class="o">.</span><span class="n">grid</span><span class="p">(</span><span class="n">row</span> <span class="o">=</span> <span class="mi">2</span><span class="p">,</span> <span class="n">column</span> <span class="o">=</span> <span class="mi">1</span><span class="p">)</span>
         <span class="n">tk</span><span class="o">.</span><span class="n">Button</span><span class="p">(</span>
             <span class="n">text</span> <span class="o">=</span> <span class="s2">&quot;Connect&quot;</span><span class="p">,</span> 
@@ -367,10 +363,7 @@
             <span class="n">width</span> <span class="o">=</span> <span class="mi">22</span><span class="p">,</span>
             <span class="n">anchor</span> <span class="o">=</span> <span class="s2">&quot;e&quot;</span>
             <span class="p">)</span><span class="o">.</span><span class="n">grid</span><span class="p">(</span><span class="n">row</span> <span class="o">=</span> <span class="mi">3</span><span class="p">,</span> <span class="n">column</span> <span class="o">=</span> <span class="mi">0</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">rob_controller_menu</span> <span class="o">=</span> <span class="n">apply</span><span class="p">(</span>
-            <span class="n">tk</span><span class="o">.</span><span class="n">OptionMenu</span><span class="p">,</span> 
-            <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">window</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">rob_control_port</span><span class="p">)</span> <span class="o">+</span> <span class="nb">tuple</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">port_list</span><span class="p">)</span>
-            <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">rob_controller_menu</span> <span class="o">=</span> <span class="n">tk</span><span class="o">.</span><span class="n">OptionMenu</span><span class="p">(</span><span class="o">*</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">window</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">rob_control_port</span><span class="p">)</span> <span class="o">+</span> <span class="nb">tuple</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">port_list</span><span class="p">))</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">rob_controller_menu</span><span class="o">.</span><span class="n">grid</span><span class="p">(</span><span class="n">row</span> <span class="o">=</span> <span class="mi">3</span><span class="p">,</span> <span class="n">column</span> <span class="o">=</span> <span class="mi">1</span><span class="p">)</span>
         <span class="n">tk</span><span class="o">.</span><span class="n">Button</span><span class="p">(</span>
             <span class="n">text</span> <span class="o">=</span> <span class="s2">&quot;Connect&quot;</span><span class="p">,</span> 
@@ -432,10 +425,7 @@
             <span class="n">width</span> <span class="o">=</span> <span class="mi">14</span><span class="p">,</span> 
             <span class="n">command</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">flush_water_callback</span>
             <span class="p">)</span><span class="o">.</span><span class="n">grid</span><span class="p">(</span><span class="n">row</span> <span class="o">=</span> <span class="mi">7</span><span class="p">,</span> <span class="n">column</span> <span class="o">=</span> <span class="mi">1</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">protocol_menu</span> <span class="o">=</span> <span class="n">apply</span><span class="p">(</span>
-            <span class="n">tk</span><span class="o">.</span><span class="n">OptionMenu</span><span class="p">,</span> 
-            <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">window</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">protocol</span><span class="p">)</span> <span class="o">+</span> <span class="nb">tuple</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">protocol_list</span><span class="p">)</span>
-            <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">protocol_menu</span> <span class="o">=</span> <span class="n">tk</span><span class="o">.</span><span class="n">OptionMenu</span><span class="p">(</span><span class="o">*</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">window</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">protocol</span><span class="p">)</span> <span class="o">+</span> <span class="nb">tuple</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">protocol_list</span><span class="p">))</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">protocol_menu</span><span class="o">.</span><span class="n">grid</span><span class="p">(</span><span class="n">row</span> <span class="o">=</span> <span class="mi">5</span><span class="p">,</span> <span class="n">column</span> <span class="o">=</span> <span class="mi">2</span><span class="p">)</span>
         <span class="n">tk</span><span class="o">.</span><span class="n">Button</span><span class="p">(</span>
             <span class="n">text</span> <span class="o">=</span> <span class="s2">&quot;Run Protocol&quot;</span><span class="p">,</span> 
@@ -448,30 +438,38 @@
 
 <div class="viewcode-block" id="ReachMaster.data_dir_browse_callback"><a class="viewcode-back" href="../../software/reach_master/reach_master.html#reachmaster.application.ReachMaster.data_dir_browse_callback">[docs]</a>    <span class="k">def</span> <span class="nf">data_dir_browse_callback</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Allows user to set the data output directory.&quot;&quot;&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">data_dir</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="n">tkFileDialog</span><span class="o">.</span><span class="n">askdirectory</span><span class="p">())</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">data_dir</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="n">tkinter</span><span class="o">.</span><span class="n">filedialog</span><span class="o">.</span><span class="n">askdirectory</span><span class="p">())</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;ReachMaster&#39;</span><span class="p">][</span><span class="s1">&#39;data_dir&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data_dir</span><span class="o">.</span><span class="n">get</span><span class="p">()</span>
-        <span class="n">config</span><span class="o">.</span><span class="n">save_tmp</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">)</span></div>
+        <span class="n">cfg</span><span class="o">.</span><span class="n">save_tmp</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="ReachMaster.config_file_browse_callback"><a class="viewcode-back" href="../../software/reach_master/reach_master.html#reachmaster.application.ReachMaster.config_file_browse_callback">[docs]</a>    <span class="k">def</span> <span class="nf">config_file_browse_callback</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Allows user to load a previously saved configuration file.&quot;&quot;&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">config_file</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="n">tkFileDialog</span><span class="o">.</span><span class="n">askopenfilename</span><span class="p">())</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">config</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">load_config</span><span class="p">(</span><span class="nb">open</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config_file</span><span class="o">.</span><span class="n">get</span><span class="p">()))</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;ReachMaster&#39;</span><span class="p">][</span><span class="s1">&#39;config_file&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config_file</span><span class="o">.</span><span class="n">get</span><span class="p">()</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;ReachMaster&#39;</span><span class="p">][</span><span class="s1">&#39;data_dir&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data_dir</span><span class="o">.</span><span class="n">get</span><span class="p">()</span>
-        <span class="n">config</span><span class="o">.</span><span class="n">save_tmp</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">)</span></div>
+        <span class="bp">self</span><span class="o">.</span><span class="n">config_file</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="n">tkinter</span><span class="o">.</span><span class="n">filedialog</span><span class="o">.</span><span class="n">askopenfilename</span><span class="p">())</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">config</span> <span class="o">=</span> <span class="n">cfg</span><span class="o">.</span><span class="n">load_config</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config_file</span><span class="o">.</span><span class="n">get</span><span class="p">())</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;ReachMaster&#39;</span><span class="p">][</span><span class="s1">&#39;config_file&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config_file</span><span class="o">.</span><span class="n">get</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">exp_control_port</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;ReachMaster&#39;</span><span class="p">][</span><span class="s1">&#39;exp_control_port&#39;</span><span class="p">])</span> 
+            <span class="bp">self</span><span class="o">.</span><span class="n">rob_control_port</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;ReachMaster&#39;</span><span class="p">][</span><span class="s1">&#39;rob_control_port&#39;</span><span class="p">])</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">protocol</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;Protocol&#39;</span><span class="p">][</span><span class="s1">&#39;type&#39;</span><span class="p">])</span>
+            <span class="c1">#prefer some of the user&#39;s current directory selection</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;ReachMaster&#39;</span><span class="p">][</span><span class="s1">&#39;data_dir&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data_dir</span><span class="o">.</span><span class="n">get</span><span class="p">()</span>           
+            <span class="n">cfg</span><span class="o">.</span><span class="n">save_tmp</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">err</span><span class="p">:</span>
+            <span class="n">tkinter</span><span class="o">.</span><span class="n">messagebox</span><span class="o">.</span><span class="n">showinfo</span><span class="p">(</span><span class="s2">&quot;Warning&quot;</span><span class="p">,</span> <span class="n">err</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="ReachMaster.exp_connect_callback"><a class="viewcode-back" href="../../software/reach_master/reach_master.html#reachmaster.application.ReachMaster.exp_connect_callback">[docs]</a>    <span class="k">def</span> <span class="nf">exp_connect_callback</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Connects to the experiment microcontroller located at the</span>
 <span class="sd">        user selected port.&quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">exp_connected</span><span class="p">:</span>
             <span class="k">try</span><span class="p">:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">config</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">load_config</span><span class="p">(</span><span class="nb">open</span><span class="p">(</span><span class="s1">&#39;./temp/tmp_config.txt&#39;</span><span class="p">))</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">config</span> <span class="o">=</span> <span class="n">cfg</span><span class="o">.</span><span class="n">load_config</span><span class="p">(</span><span class="s1">&#39;./temp/tmp_config.json&#39;</span><span class="p">)</span> <span class="c1">##byte conversion off</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;ReachMaster&#39;</span><span class="p">][</span><span class="s1">&#39;exp_control_port&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">exp_control_port</span><span class="o">.</span><span class="n">get</span><span class="p">()</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">exp_controller</span> <span class="o">=</span> <span class="n">expint</span><span class="o">.</span><span class="n">start_interface</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">)</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">exp_connected</span> <span class="o">=</span> <span class="kc">True</span>                
-                <span class="n">config</span><span class="o">.</span><span class="n">save_tmp</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">)</span>
+                <span class="n">cfg</span><span class="o">.</span><span class="n">save_tmp</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">)</span>
             <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">err</span><span class="p">:</span>
-                <span class="n">tkMessageBox</span><span class="o">.</span><span class="n">showinfo</span><span class="p">(</span><span class="s2">&quot;Warning&quot;</span><span class="p">,</span> <span class="n">err</span><span class="p">)</span></div>
+                <span class="nb">print</span><span class="p">(</span><span class="n">err</span><span class="p">)</span>
+                <span class="n">tkinter</span><span class="o">.</span><span class="n">messagebox</span><span class="o">.</span><span class="n">showinfo</span><span class="p">(</span><span class="s2">&quot;Warning&quot;</span><span class="p">,</span> <span class="n">err</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="ReachMaster.exp_disconnect_callback"><a class="viewcode-back" href="../../software/reach_master/reach_master.html#reachmaster.application.ReachMaster.exp_disconnect_callback">[docs]</a>    <span class="k">def</span> <span class="nf">exp_disconnect_callback</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Disconncects from the experiment microcontroller.&quot;&quot;&quot;</span>
@@ -484,13 +482,13 @@
 <span class="sd">        selected port.&quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">rob_connected</span><span class="p">:</span>
             <span class="k">try</span><span class="p">:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">config</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">load_config</span><span class="p">(</span><span class="nb">open</span><span class="p">(</span><span class="s1">&#39;./temp/tmp_config.txt&#39;</span><span class="p">))</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">config</span> <span class="o">=</span> <span class="n">cfg</span><span class="o">.</span><span class="n">load_config</span><span class="p">(</span><span class="s1">&#39;./temp/tmp_config.json&#39;</span><span class="p">)</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;ReachMaster&#39;</span><span class="p">][</span><span class="s1">&#39;rob_control_port&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rob_control_port</span><span class="o">.</span><span class="n">get</span><span class="p">()</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">rob_controller</span> <span class="o">=</span> <span class="n">robint</span><span class="o">.</span><span class="n">start_interface</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">)</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">rob_connected</span> <span class="o">=</span> <span class="kc">True</span>
-                <span class="n">config</span><span class="o">.</span><span class="n">save_tmp</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">)</span>
+                <span class="n">cfg</span><span class="o">.</span><span class="n">save_tmp</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">)</span>
             <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">err</span><span class="p">:</span>
-                <span class="n">tkMessageBox</span><span class="o">.</span><span class="n">showinfo</span><span class="p">(</span><span class="s2">&quot;Warning&quot;</span><span class="p">,</span> <span class="n">err</span><span class="p">)</span></div>
+                <span class="n">tkinter</span><span class="o">.</span><span class="n">messagebox</span><span class="o">.</span><span class="n">showinfo</span><span class="p">(</span><span class="s2">&quot;Warning&quot;</span><span class="p">,</span> <span class="n">err</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="ReachMaster.rob_disconnect_callback"><a class="viewcode-back" href="../../software/reach_master/reach_master.html#reachmaster.application.ReachMaster.rob_disconnect_callback">[docs]</a>    <span class="k">def</span> <span class="nf">rob_disconnect_callback</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Disconncects from the robot microcontroller.&quot;&quot;&quot;</span>
@@ -505,7 +503,7 @@
             <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">child</span> <span class="o">=</span> <span class="n">camset</span><span class="o">.</span><span class="n">CameraSettings</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">window</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">tkMessageBox</span><span class="o">.</span><span class="n">showinfo</span><span class="p">(</span><span class="s2">&quot;Warning&quot;</span><span class="p">,</span> <span class="s2">&quot;Experiment Controller not connected.&quot;</span><span class="p">)</span></div>
+            <span class="n">tkinter</span><span class="o">.</span><span class="n">messagebox</span><span class="o">.</span><span class="n">showinfo</span><span class="p">(</span><span class="s2">&quot;Warning&quot;</span><span class="p">,</span> <span class="s2">&quot;Experiment Controller not connected.&quot;</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="ReachMaster.exp_settings_callback"><a class="viewcode-back" href="../../software/reach_master/reach_master.html#reachmaster.application.ReachMaster.exp_settings_callback">[docs]</a>    <span class="k">def</span> <span class="nf">exp_settings_callback</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Opens the experiment settings window.&quot;&quot;&quot;</span>
@@ -521,21 +519,21 @@
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">exp_connected</span><span class="p">:</span>
             <span class="n">expint</span><span class="o">.</span><span class="n">move_robot</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">exp_controller</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">tkMessageBox</span><span class="o">.</span><span class="n">showinfo</span><span class="p">(</span><span class="s2">&quot;Warning&quot;</span><span class="p">,</span> <span class="s2">&quot;Experiment controller not connected.&quot;</span><span class="p">)</span></div>
+            <span class="n">tkinter</span><span class="o">.</span><span class="n">messagebox</span><span class="o">.</span><span class="n">showinfo</span><span class="p">(</span><span class="s2">&quot;Warning&quot;</span><span class="p">,</span> <span class="s2">&quot;Experiment controller not connected.&quot;</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="ReachMaster.toggle_led_callback"><a class="viewcode-back" href="../../software/reach_master/reach_master.html#reachmaster.application.ReachMaster.toggle_led_callback">[docs]</a>    <span class="k">def</span> <span class="nf">toggle_led_callback</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Toggles the LED located on the robot handle.&quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">exp_connected</span><span class="p">:</span>
             <span class="n">expint</span><span class="o">.</span><span class="n">toggle_led</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">exp_controller</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">tkMessageBox</span><span class="o">.</span><span class="n">showinfo</span><span class="p">(</span><span class="s2">&quot;Warning&quot;</span><span class="p">,</span> <span class="s2">&quot;Experiment controller not connected.&quot;</span><span class="p">)</span></div>
+            <span class="n">tkinter</span><span class="o">.</span><span class="n">messagebox</span><span class="o">.</span><span class="n">showinfo</span><span class="p">(</span><span class="s2">&quot;Warning&quot;</span><span class="p">,</span> <span class="s2">&quot;Experiment controller not connected.&quot;</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="ReachMaster.toggle_lights_callback"><a class="viewcode-back" href="../../software/reach_master/reach_master.html#reachmaster.application.ReachMaster.toggle_lights_callback">[docs]</a>    <span class="k">def</span> <span class="nf">toggle_lights_callback</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Toggles the neopixel lights.&quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">exp_connected</span><span class="p">:</span>
             <span class="n">expint</span><span class="o">.</span><span class="n">toggle_lights</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">exp_controller</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">tkMessageBox</span><span class="o">.</span><span class="n">showinfo</span><span class="p">(</span><span class="s2">&quot;Warning&quot;</span><span class="p">,</span> <span class="s2">&quot;Experiment controller not connected.&quot;</span><span class="p">)</span></div>
+            <span class="n">tkinter</span><span class="o">.</span><span class="n">messagebox</span><span class="o">.</span><span class="n">showinfo</span><span class="p">(</span><span class="s2">&quot;Warning&quot;</span><span class="p">,</span> <span class="s2">&quot;Experiment controller not connected.&quot;</span><span class="p">)</span></div>
     
 <div class="viewcode-block" id="ReachMaster.deliver_water_callback"><a class="viewcode-back" href="../../software/reach_master/reach_master.html#reachmaster.application.ReachMaster.deliver_water_callback">[docs]</a>    <span class="k">def</span> <span class="nf">deliver_water_callback</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Opens the reward solenoid for the reward duration set </span>
@@ -543,7 +541,7 @@
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">exp_connected</span><span class="p">:</span>
             <span class="n">expint</span><span class="o">.</span><span class="n">deliver_water</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">exp_controller</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">tkMessageBox</span><span class="o">.</span><span class="n">showinfo</span><span class="p">(</span><span class="s2">&quot;Warning&quot;</span><span class="p">,</span> <span class="s2">&quot;Experiment controller not connected.&quot;</span><span class="p">)</span></div>
+            <span class="n">tkinter</span><span class="o">.</span><span class="n">messagebox</span><span class="o">.</span><span class="n">showinfo</span><span class="p">(</span><span class="s2">&quot;Warning&quot;</span><span class="p">,</span> <span class="s2">&quot;Experiment controller not connected.&quot;</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="ReachMaster.flush_water_callback"><a class="viewcode-back" href="../../software/reach_master/reach_master.html#reachmaster.application.ReachMaster.flush_water_callback">[docs]</a>    <span class="k">def</span> <span class="nf">flush_water_callback</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Opens the reward solenoid for the flush duration set in</span>
@@ -551,14 +549,14 @@
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">exp_connected</span><span class="p">:</span>
             <span class="n">expint</span><span class="o">.</span><span class="n">flush_water</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">exp_controller</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">tkMessageBox</span><span class="o">.</span><span class="n">showinfo</span><span class="p">(</span><span class="s2">&quot;Warning&quot;</span><span class="p">,</span> <span class="s2">&quot;Experiment controller not connected.&quot;</span><span class="p">)</span></div>
+            <span class="n">tkinter</span><span class="o">.</span><span class="n">messagebox</span><span class="o">.</span><span class="n">showinfo</span><span class="p">(</span><span class="s2">&quot;Warning&quot;</span><span class="p">,</span> <span class="s2">&quot;Experiment controller not connected.&quot;</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="ReachMaster.run_protocol_callback"><a class="viewcode-back" href="../../software/reach_master/reach_master.html#reachmaster.application.ReachMaster.run_protocol_callback">[docs]</a>    <span class="k">def</span> <span class="nf">run_protocol_callback</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>  
         <span class="sd">&quot;&quot;&quot;Initiates the user-selected experimental protocol.&quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">exp_connected</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">rob_connected</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">config</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">load_config</span><span class="p">(</span><span class="nb">open</span><span class="p">(</span><span class="s1">&#39;./temp/tmp_config.txt&#39;</span><span class="p">))</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">config</span> <span class="o">=</span> <span class="n">cfg</span><span class="o">.</span><span class="n">load_config</span><span class="p">(</span><span class="s1">&#39;./temp/tmp_config.json&#39;</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;Protocol&#39;</span><span class="p">][</span><span class="s1">&#39;type&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">protocol</span><span class="o">.</span><span class="n">get</span><span class="p">()</span>
-            <span class="n">config</span><span class="o">.</span><span class="n">save_tmp</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">)</span>
+            <span class="n">cfg</span><span class="o">.</span><span class="n">save_tmp</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">)</span>
             <span class="n">expint</span><span class="o">.</span><span class="n">stop_interface</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">exp_controller</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">exp_connected</span> <span class="o">=</span> <span class="kc">False</span>
             <span class="n">robint</span><span class="o">.</span><span class="n">stop_interface</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">rob_controller</span><span class="p">)</span>
@@ -567,9 +565,9 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">child</span> <span class="o">=</span> <span class="n">protocols</span><span class="o">.</span><span class="n">Protocols</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">window</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">protocol_running</span> <span class="o">=</span> <span class="kc">True</span>
         <span class="k">elif</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">exp_connected</span><span class="p">:</span>
-            <span class="n">tkMessageBox</span><span class="o">.</span><span class="n">showinfo</span><span class="p">(</span><span class="s2">&quot;Warning&quot;</span><span class="p">,</span> <span class="s2">&quot;Experiment controller not connected.&quot;</span><span class="p">)</span>
+            <span class="n">tkinter</span><span class="o">.</span><span class="n">messagebox</span><span class="o">.</span><span class="n">showinfo</span><span class="p">(</span><span class="s2">&quot;Warning&quot;</span><span class="p">,</span> <span class="s2">&quot;Experiment controller not connected.&quot;</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">tkMessageBox</span><span class="o">.</span><span class="n">showinfo</span><span class="p">(</span><span class="s2">&quot;Warning&quot;</span><span class="p">,</span> <span class="s2">&quot;Robot controller not connected.&quot;</span><span class="p">)</span>                </div></div>
+            <span class="n">tkinter</span><span class="o">.</span><span class="n">messagebox</span><span class="o">.</span><span class="n">showinfo</span><span class="p">(</span><span class="s2">&quot;Warning&quot;</span><span class="p">,</span> <span class="s2">&quot;Robot controller not connected.&quot;</span><span class="p">)</span>                </div></div>
 
 <span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s1">&#39;__main__&#39;</span><span class="p">:</span>
     <span class="n">rm</span> <span class="o">=</span> <span class="n">ReachMaster</span><span class="p">()</span>

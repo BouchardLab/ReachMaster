@@ -16,7 +16,6 @@ Examples:
 
 Todo:
     * Automated unit tests
-    * Python 3 compatibility
     * PEP 8
 
 """

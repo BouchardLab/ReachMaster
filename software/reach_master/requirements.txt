@@ -1,8 +1,10 @@
 numpy
 datetime
-opencv-contrib-python
+python3-tk
+opencv-python
 pyserial
 vidgear
+sphinx
 sphinx-gallery
 sphinx_rtd_theme
-pytest
+autodoc

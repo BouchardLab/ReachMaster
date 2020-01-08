@@ -210,7 +210,7 @@
                                                   <span class="s2">&quot;-crf&quot;</span><span class="p">:</span> <span class="mi">28</span><span class="p">,</span>
                                                   <span class="s2">&quot;-preset&quot;</span><span class="p">:</span><span class="s2">&quot;ultrafast&quot;</span><span class="p">,</span> 
                                                   <span class="s2">&quot;-tune&quot;</span><span class="p">:</span><span class="s2">&quot;zerolatency&quot;</span><span class="p">,</span>
-                                                  <span class="s2">&quot;-output_dimensions&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">3</span><span class="o">*</span><span class="mi">688</span><span class="p">,</span> <span class="mi">688</span><span class="p">)</span>
+                                                  <span class="s2">&quot;-output_dimensions&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mi">3</span><span class="o">*</span><span class="mi">688</span><span class="p">,</span> <span class="mi">688</span><span class="p">]</span>
                                                  <span class="p">}</span>                                   
                                  <span class="p">},</span>
            <span class="s1">&#39;ExperimentSettings&#39;</span><span class="p">:{</span>
@@ -227,24 +227,24 @@
                                  <span class="s1">&#39;reach_delay&#39;</span><span class="p">:</span><span class="mi">100</span>
                                  <span class="p">},</span>
            <span class="s1">&#39;RobotSettings&#39;</span><span class="p">:</span>     <span class="p">{</span>
-                                 <span class="s1">&#39;calibration_file&#39;</span><span class="p">:</span><span class="s1">&#39;None&#39;</span><span class="p">,</span>
-                                 <span class="s1">&#39;dis&#39;</span><span class="p">:</span><span class="s1">&#39;None&#39;</span><span class="p">,</span>
-                                 <span class="s1">&#39;pos&#39;</span><span class="p">:</span><span class="s1">&#39;None&#39;</span><span class="p">,</span>
-                                 <span class="s1">&#39;x_push_dur&#39;</span><span class="p">:</span><span class="s1">&#39;None&#39;</span><span class="p">,</span>
-                                 <span class="s1">&#39;x_pull_dur&#39;</span><span class="p">:</span><span class="s1">&#39;None&#39;</span><span class="p">,</span>
-                                 <span class="s1">&#39;y_push_dur&#39;</span><span class="p">:</span><span class="s1">&#39;None&#39;</span><span class="p">,</span>
-                                 <span class="s1">&#39;y_pull_dur&#39;</span><span class="p">:</span><span class="s1">&#39;None&#39;</span><span class="p">,</span>
-                                 <span class="s1">&#39;z_push_dur&#39;</span><span class="p">:</span><span class="s1">&#39;None&#39;</span><span class="p">,</span>
-                                 <span class="s1">&#39;z_pull_dur&#39;</span><span class="p">:</span><span class="s1">&#39;None&#39;</span><span class="p">,</span>
-                                 <span class="s1">&#39;command_type&#39;</span><span class="p">:</span><span class="s1">&#39;None&#39;</span><span class="p">,</span>
-                                 <span class="s1">&#39;command_set&#39;</span><span class="p">:</span><span class="s1">&#39;None&#39;</span><span class="p">,</span>
-                                 <span class="s1">&#39;command_file&#39;</span><span class="p">:</span><span class="s1">&#39;None&#39;</span><span class="p">,</span>
-                                 <span class="s1">&#39;x_command_pos&#39;</span><span class="p">:</span><span class="s1">&#39;None&#39;</span><span class="p">,</span>
-                                 <span class="s1">&#39;y_command_pos&#39;</span><span class="p">:</span><span class="s1">&#39;None&#39;</span><span class="p">,</span>
-                                 <span class="s1">&#39;z_command_pos&#39;</span><span class="p">:</span><span class="s1">&#39;None&#39;</span><span class="p">,</span>
-                                 <span class="s1">&#39;r_command_pos&#39;</span><span class="p">:</span><span class="s1">&#39;None&#39;</span><span class="p">,</span>
-                                 <span class="s1">&#39;theta_y_command_pos&#39;</span><span class="p">:</span><span class="s1">&#39;None&#39;</span><span class="p">,</span>
-                                 <span class="s1">&#39;theta_z_command_pos&#39;</span><span class="p">:</span><span class="s1">&#39;None&#39;</span><span class="p">,</span>
+                                 <span class="s1">&#39;calibration_file&#39;</span><span class="p">:</span><span class="kc">None</span><span class="p">,</span>
+                                 <span class="s1">&#39;dis&#39;</span><span class="p">:</span><span class="kc">None</span><span class="p">,</span>
+                                 <span class="s1">&#39;pos&#39;</span><span class="p">:</span><span class="kc">None</span><span class="p">,</span>
+                                 <span class="s1">&#39;x_push_dur&#39;</span><span class="p">:</span><span class="kc">None</span><span class="p">,</span>
+                                 <span class="s1">&#39;x_pull_dur&#39;</span><span class="p">:</span><span class="kc">None</span><span class="p">,</span>
+                                 <span class="s1">&#39;y_push_dur&#39;</span><span class="p">:</span><span class="kc">None</span><span class="p">,</span>
+                                 <span class="s1">&#39;y_pull_dur&#39;</span><span class="p">:</span><span class="kc">None</span><span class="p">,</span>
+                                 <span class="s1">&#39;z_push_dur&#39;</span><span class="p">:</span><span class="kc">None</span><span class="p">,</span>
+                                 <span class="s1">&#39;z_pull_dur&#39;</span><span class="p">:</span><span class="kc">None</span><span class="p">,</span>
+                                 <span class="s1">&#39;command_type&#39;</span><span class="p">:</span><span class="kc">None</span><span class="p">,</span>
+                                 <span class="s1">&#39;command_set&#39;</span><span class="p">:</span><span class="kc">None</span><span class="p">,</span>
+                                 <span class="s1">&#39;command_file&#39;</span><span class="p">:</span><span class="kc">None</span><span class="p">,</span>
+                                 <span class="s1">&#39;x_command_pos&#39;</span><span class="p">:</span><span class="kc">None</span><span class="p">,</span>
+                                 <span class="s1">&#39;y_command_pos&#39;</span><span class="p">:</span><span class="kc">None</span><span class="p">,</span>
+                                 <span class="s1">&#39;z_command_pos&#39;</span><span class="p">:</span><span class="kc">None</span><span class="p">,</span>
+                                 <span class="s1">&#39;r_command_pos&#39;</span><span class="p">:</span><span class="kc">None</span><span class="p">,</span>
+                                 <span class="s1">&#39;theta_y_command_pos&#39;</span><span class="p">:</span><span class="kc">None</span><span class="p">,</span>
+                                 <span class="s1">&#39;theta_z_command_pos&#39;</span><span class="p">:</span><span class="kc">None</span><span class="p">,</span>
                                  <span class="s1">&#39;reach_dist_min&#39;</span><span class="p">:</span><span class="mi">10</span><span class="p">,</span>
                                  <span class="s1">&#39;reach_dist_max&#39;</span><span class="p">:</span><span class="mi">40</span><span class="p">,</span>
                                  <span class="s1">&#39;reach_angle_max&#39;</span><span class="p">:</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">/</span><span class="mi">3</span><span class="p">,</span>
@@ -279,18 +279,6 @@
            <span class="p">}</span>
   <span class="k">return</span> <span class="n">config</span></div>
 
-<span class="k">def</span> <span class="nf">_byteify</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">ignore_dicts</span> <span class="o">=</span> <span class="kc">False</span><span class="p">):</span>
-    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">unicode</span><span class="p">):</span>
-        <span class="k">return</span> <span class="n">data</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="s1">&#39;utf-8&#39;</span><span class="p">)</span>
-    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
-        <span class="k">return</span> <span class="p">[</span> <span class="n">_byteify</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="n">ignore_dicts</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span> <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">data</span> <span class="p">]</span>
-    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="nb">dict</span><span class="p">)</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">ignore_dicts</span><span class="p">:</span>
-        <span class="k">return</span> <span class="p">{</span>
-            <span class="n">_byteify</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">ignore_dicts</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span> <span class="n">_byteify</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">ignore_dicts</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-            <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">data</span><span class="o">.</span><span class="n">iteritems</span><span class="p">()</span>
-        <span class="p">}</span>
-    <span class="k">return</span> <span class="n">data</span>
-
 <div class="viewcode-block" id="load_config"><a class="viewcode-back" href="../../software/reach_master/reach_master.html#reachmaster.config.load_config">[docs]</a><span class="k">def</span> <span class="nf">load_config</span><span class="p">(</span><span class="n">file_handle</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Load a configuration file.</span>
 
@@ -308,10 +296,7 @@
 <span class="sd">      A default configuration.       </span>
 
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">return</span> <span class="n">_byteify</span><span class="p">(</span>
-        <span class="n">json</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">file_handle</span><span class="p">,</span> <span class="n">object_hook</span><span class="o">=</span><span class="n">_byteify</span><span class="p">),</span>
-        <span class="n">ignore_dicts</span><span class="o">=</span><span class="kc">True</span>
-    <span class="p">)</span></div>
+    <span class="k">return</span> <span class="n">json</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="nb">open</span><span class="p">(</span><span class="n">file_handle</span><span class="p">))</span></div>
 
 <div class="viewcode-block" id="save_config"><a class="viewcode-back" href="../../software/reach_master/reach_master.html#reachmaster.config.save_config">[docs]</a><span class="k">def</span> <span class="nf">save_config</span><span class="p">(</span><span class="n">config</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Save a configuration file.</span>
@@ -331,9 +316,10 @@
     <span class="n">configPath</span> <span class="o">=</span> <span class="n">config</span><span class="p">[</span><span class="s1">&#39;ReachMaster&#39;</span><span class="p">][</span><span class="s1">&#39;data_dir&#39;</span><span class="p">]</span><span class="o">+</span><span class="s2">&quot;/config/&quot;</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">configPath</span><span class="p">):</span>
             <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">configPath</span><span class="p">)</span>
-    <span class="n">fn</span> <span class="o">=</span> <span class="n">configPath</span> <span class="o">+</span> <span class="s1">&#39;config: &#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">())</span> <span class="o">+</span> <span class="s1">&#39;.txt&#39;</span>
+    <span class="n">fn</span> <span class="o">=</span> <span class="n">configPath</span> <span class="o">+</span> <span class="s1">&#39;config: &#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">())</span> <span class="o">+</span> <span class="s1">&#39;.json&#39;</span>
     <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">fn</span><span class="p">,</span> <span class="s1">&#39;w&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">outfile</span><span class="p">:</span>
-        <span class="n">json</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="n">config</span><span class="p">,</span> <span class="n">outfile</span><span class="p">,</span> <span class="n">indent</span><span class="o">=</span><span class="mi">4</span><span class="p">)</span></div>
+        <span class="n">json</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="n">config</span><span class="p">,</span> <span class="n">outfile</span><span class="p">,</span> <span class="n">indent</span><span class="o">=</span><span class="mi">4</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">fn</span></div>
 
 <div class="viewcode-block" id="save_tmp"><a class="viewcode-back" href="../../software/reach_master/reach_master.html#reachmaster.config.save_tmp">[docs]</a><span class="k">def</span> <span class="nf">save_tmp</span><span class="p">(</span><span class="n">config</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Save the configuration to a temp file.</span>
@@ -357,9 +343,10 @@
     <span class="n">configPath</span> <span class="o">=</span> <span class="s2">&quot;./temp/&quot;</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">configPath</span><span class="p">):</span>
             <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">configPath</span><span class="p">)</span>
-    <span class="n">fn</span> <span class="o">=</span> <span class="n">configPath</span> <span class="o">+</span> <span class="s1">&#39;tmp_config.txt&#39;</span>
+    <span class="n">fn</span> <span class="o">=</span> <span class="n">configPath</span> <span class="o">+</span> <span class="s1">&#39;tmp_config.json&#39;</span>
     <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">fn</span><span class="p">,</span> <span class="s1">&#39;w&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">outfile</span><span class="p">:</span>
-        <span class="n">json</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="n">config</span><span class="p">,</span> <span class="n">outfile</span><span class="p">,</span> <span class="n">indent</span><span class="o">=</span><span class="mi">4</span><span class="p">)</span></div>
+        <span class="n">json</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="n">config</span><span class="p">,</span> <span class="n">outfile</span><span class="p">,</span> <span class="n">indent</span><span class="o">=</span><span class="mi">4</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">fn</span></div>
 </pre></div>
 
            </div>

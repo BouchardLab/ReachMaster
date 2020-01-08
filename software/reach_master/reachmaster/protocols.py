@@ -5,11 +5,9 @@ while an experiment is running (e.g., for manual reward
 delivery, toggling lights, etc.).
 
 Todo:
-    * Can't trigger images with lights on
     * Keep adding new protocol types
     * GPU-accelerated video encoding
     * Automate unit tests
-    * Python 3 compatibility
     * PEP 8
 
 """
@@ -136,7 +134,8 @@ class Protocols(tk.Toplevel):
             self.baseline_acquired = True          
         except Exception as err:
             print(err)
-            self.on_quit()                    
+            self.on_quit()  
+            return                  
         self._init_data_output()      
         self._init_special_protocol() 
         self._configure_window() 
@@ -157,10 +156,7 @@ class Protocols(tk.Toplevel):
         if self.cams_connected:
             camint.stop_interface(self.cams)
         self._special_protocol_quit()
-        try:
-            self.destroy()
-        except:
-            pass
+        self.destroy()
 
     def _special_protocol_quit(self): 
         if self.config['Protocol']['type'] == 'CONTINUOUS' and self.video_open:
@@ -254,28 +250,28 @@ class Protocols(tk.Toplevel):
             text = "Move Robot", 
             font = 'Arial 10 bold',
             width = 14, 
-            command = self.move_robot_callback()
+            command = self.move_robot_callback
             ).grid(row = 0, sticky = 'W')
         tk.Button(
             self, 
             text = "Toggle LED", 
             font = 'Arial 10 bold',
             width = 14, 
-            command = self.toggle_led_callback()
+            command = self.toggle_led_callback
             ).grid(row = 1, sticky = 'W')
         tk.Button(
             self, 
             text = "Toggle Lights", 
             font = 'Arial 10 bold',
             width = 14, 
-            command = self.toggle_lights_callback()
+            command = self.toggle_lights_callback
             ).grid(row = 2, sticky = 'W')
         tk.Button(
             self, 
             text = "Deliver Water", 
             font = 'Arial 10 bold',
             width = 14, 
-            command = self.deliver_water_callback()
+            command = self.deliver_water_callback
             ).grid(row = 3, sticky = 'W')
 
     #Callbacks ------------------------------------------------------------------

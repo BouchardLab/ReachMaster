@@ -10,10 +10,8 @@ which are used by the experiment protocols for reach detection.
 
 Todo:
     * GPU-accelerated video encoding
-    * Currently can't trigger images with lights on
     * Remove fps setting? 
     * Automate unit tests
-    * Python 3 compatibility
     * PEP 8
 
 """

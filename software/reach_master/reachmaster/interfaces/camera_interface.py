@@ -8,7 +8,6 @@ Todo:
     * Object orient
     * GPU-accelerated video encoding
     * Automate unit tests
-    * Python 3 compatibility
     * PEP 8
 
 """

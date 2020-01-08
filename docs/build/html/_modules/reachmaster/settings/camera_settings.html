@@ -165,29 +165,27 @@
 
 <span class="sd">Todo:</span>
 <span class="sd">    * GPU-accelerated video encoding</span>
-<span class="sd">    * Currently can&#39;t trigger images with lights on</span>
 <span class="sd">    * Remove fps setting? </span>
 <span class="sd">    * Automate unit tests</span>
-<span class="sd">    * Python 3 compatibility</span>
 <span class="sd">    * PEP 8</span>
 
 <span class="sd">&quot;&quot;&quot;</span>
 
-<span class="kn">from</span> <span class="nn">..</span> <span class="k">import</span> <span class="n">config</span>
-<span class="kn">from</span> <span class="nn">..interfaces</span> <span class="k">import</span> <span class="n">experiment_interface</span> <span class="k">as</span> <span class="n">expint</span>
-<span class="kn">from</span> <span class="nn">..interfaces</span> <span class="k">import</span> <span class="n">camera_interface</span> <span class="k">as</span> <span class="n">camint</span>
-<span class="kn">import</span> <span class="nn">Tkinter</span> <span class="k">as</span> <span class="nn">tk</span> 
-<span class="kn">import</span> <span class="nn">tkMessageBox</span>
+<span class="kn">from</span> <span class="nn">..</span> <span class="kn">import</span> <span class="n">config</span>
+<span class="kn">from</span> <span class="nn">..interfaces</span> <span class="kn">import</span> <span class="n">experiment_interface</span> <span class="k">as</span> <span class="n">expint</span>
+<span class="kn">from</span> <span class="nn">..interfaces</span> <span class="kn">import</span> <span class="n">camera_interface</span> <span class="k">as</span> <span class="n">camint</span>
+<span class="kn">import</span> <span class="nn">tkinter</span> <span class="k">as</span> <span class="nn">tk</span> 
+<span class="kn">import</span> <span class="nn">tkinter.messagebox</span>
 <span class="kn">import</span> <span class="nn">cv2</span>
 <span class="kn">import</span> <span class="nn">PIL.Image</span><span class="o">,</span> <span class="nn">PIL.ImageTk</span>
-<span class="kn">from</span> <span class="nn">ximea</span> <span class="k">import</span> <span class="n">xiapi</span>
+<span class="kn">from</span> <span class="nn">ximea</span> <span class="kn">import</span> <span class="n">xiapi</span>
 <span class="kn">import</span> <span class="nn">time</span>
 <span class="kn">import</span> <span class="nn">datetime</span>
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 <span class="kn">import</span> <span class="nn">serial</span>
 <span class="kn">import</span> <span class="nn">os</span> 
-<span class="kn">from</span> <span class="nn">collections</span> <span class="k">import</span> <span class="n">deque</span>
-<span class="kn">from</span> <span class="nn">vidgear.gears</span> <span class="k">import</span> <span class="n">WriteGear</span>
+<span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">deque</span>
+<span class="kn">from</span> <span class="nn">vidgear.gears</span> <span class="kn">import</span> <span class="n">WriteGear</span>
 
 <div class="viewcode-block" id="CameraSettings"><a class="viewcode-back" href="../../../software/reach_master/reach_master.html#reachmaster.settings.camera_settings.CameraSettings">[docs]</a><span class="k">class</span> <span class="nc">CameraSettings</span><span class="p">(</span><span class="n">tk</span><span class="o">.</span><span class="n">Toplevel</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;The primary class for the camera settings window.</span>
@@ -289,7 +287,7 @@
 
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parent</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parent</span><span class="p">):</span>
         <span class="c1">#create window and suppress parent</span>
         <span class="n">tk</span><span class="o">.</span><span class="n">Toplevel</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parent</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">transient</span><span class="p">(</span><span class="n">parent</span><span class="p">)</span> 
@@ -298,7 +296,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">configure</span><span class="p">(</span><span class="n">bg</span><span class="o">=</span><span class="s2">&quot;white&quot;</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">protocol</span><span class="p">(</span><span class="s2">&quot;WM_DELETE_WINDOW&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">on_quit</span><span class="p">)</span> 
         <span class="c1">#initialize tk variables from config</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">config</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">load_config</span><span class="p">(</span><span class="nb">open</span><span class="p">(</span><span class="s1">&#39;./temp/tmp_config.txt&#39;</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">config</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">load_config</span><span class="p">(</span><span class="s1">&#39;./temp/tmp_config.json&#39;</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">output_params</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;CameraSettings&#39;</span><span class="p">][</span><span class="s1">&#39;output_params&#39;</span><span class="p">]</span>        
         <span class="bp">self</span><span class="o">.</span><span class="n">exp_controller</span> <span class="o">=</span> <span class="n">expint</span><span class="o">.</span><span class="n">start_interface</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">exp_connected</span> <span class="o">=</span> <span class="kc">True</span>       
@@ -618,7 +616,7 @@
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">streaming</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_start_stream</span><span class="p">()</span>
         <span class="k">else</span><span class="p">:</span> 
-            <span class="n">tkMessageBox</span><span class="o">.</span><span class="n">showinfo</span><span class="p">(</span><span class="s2">&quot;Warning&quot;</span><span class="p">,</span> <span class="s2">&quot;Already streaming.&quot;</span><span class="p">)</span> </div>
+            <span class="n">tkinter</span><span class="o">.</span><span class="n">messagebox</span><span class="o">.</span><span class="n">showinfo</span><span class="p">(</span><span class="s2">&quot;Warning&quot;</span><span class="p">,</span> <span class="s2">&quot;Already streaming.&quot;</span><span class="p">)</span> </div>
 
 <div class="viewcode-block" id="CameraSettings.stop_stream_callback"><a class="viewcode-back" href="../../../software/reach_master/reach_master.html#reachmaster.settings.camera_settings.CameraSettings.stop_stream_callback">[docs]</a>    <span class="k">def</span> <span class="nf">stop_stream_callback</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Stops triggering and displaying new images.&quot;&quot;&quot;</span>
@@ -633,9 +631,9 @@
                 <span class="bp">self</span><span class="o">.</span><span class="n">saved_pois</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;CameraSettings&#39;</span><span class="p">][</span><span class="s1">&#39;saved_pois&#39;</span><span class="p">]</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">draw_saved</span> <span class="o">=</span> <span class="kc">True</span>
             <span class="k">else</span><span class="p">:</span>
-                <span class="n">tkMessageBox</span><span class="o">.</span><span class="n">showinfo</span><span class="p">(</span><span class="s2">&quot;Warning&quot;</span><span class="p">,</span> <span class="s2">&quot;No saved POIs.&quot;</span><span class="p">)</span>
+                <span class="n">tkinter</span><span class="o">.</span><span class="n">messagebox</span><span class="o">.</span><span class="n">showinfo</span><span class="p">(</span><span class="s2">&quot;Warning&quot;</span><span class="p">,</span> <span class="s2">&quot;No saved POIs.&quot;</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span> 
-            <span class="n">tkMessageBox</span><span class="o">.</span><span class="n">showinfo</span><span class="p">(</span><span class="s2">&quot;Warning&quot;</span><span class="p">,</span> <span class="s2">&quot;Must be streaming to load POIs.&quot;</span><span class="p">)</span></div>
+            <span class="n">tkinter</span><span class="o">.</span><span class="n">messagebox</span><span class="o">.</span><span class="n">showinfo</span><span class="p">(</span><span class="s2">&quot;Warning&quot;</span><span class="p">,</span> <span class="s2">&quot;Must be streaming to load POIs.&quot;</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="CameraSettings.add_pois_callback"><a class="viewcode-back" href="../../../software/reach_master/reach_master.html#reachmaster.settings.camera_settings.CameraSettings.add_pois_callback">[docs]</a>    <span class="k">def</span> <span class="nf">add_pois_callback</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Allows the user to add new pixels-of-interest by clicking </span>
@@ -645,7 +643,7 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">add_pois</span> <span class="o">=</span> <span class="kc">True</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">remove_pois</span> <span class="o">=</span> <span class="kc">False</span>
         <span class="k">else</span><span class="p">:</span> 
-            <span class="n">tkMessageBox</span><span class="o">.</span><span class="n">showinfo</span><span class="p">(</span><span class="s2">&quot;Warning&quot;</span><span class="p">,</span> <span class="s2">&quot;Must be streaming to add POIs.&quot;</span><span class="p">)</span> </div>
+            <span class="n">tkinter</span><span class="o">.</span><span class="n">messagebox</span><span class="o">.</span><span class="n">showinfo</span><span class="p">(</span><span class="s2">&quot;Warning&quot;</span><span class="p">,</span> <span class="s2">&quot;Must be streaming to add POIs.&quot;</span><span class="p">)</span> </div>
 
 <div class="viewcode-block" id="CameraSettings.remove_pois_callback"><a class="viewcode-back" href="../../../software/reach_master/reach_master.html#reachmaster.settings.camera_settings.CameraSettings.remove_pois_callback">[docs]</a>    <span class="k">def</span> <span class="nf">remove_pois_callback</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Allows the user to removed either saved or unsaved </span>
@@ -657,9 +655,9 @@
                 <span class="bp">self</span><span class="o">.</span><span class="n">add_pois</span> <span class="o">=</span> <span class="kc">False</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">remove_pois</span> <span class="o">=</span> <span class="kc">True</span>
             <span class="k">else</span><span class="p">:</span>
-                <span class="n">tkMessageBox</span><span class="o">.</span><span class="n">showinfo</span><span class="p">(</span><span class="s2">&quot;Warning&quot;</span><span class="p">,</span> <span class="s2">&quot;No POIs to remove.&quot;</span><span class="p">)</span>
+                <span class="n">tkinter</span><span class="o">.</span><span class="n">messagebox</span><span class="o">.</span><span class="n">showinfo</span><span class="p">(</span><span class="s2">&quot;Warning&quot;</span><span class="p">,</span> <span class="s2">&quot;No POIs to remove.&quot;</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span> 
-            <span class="n">tkMessageBox</span><span class="o">.</span><span class="n">showinfo</span><span class="p">(</span><span class="s2">&quot;Warning&quot;</span><span class="p">,</span> <span class="s2">&quot;Must be streaming to remove POIs.&quot;</span><span class="p">)</span></div>
+            <span class="n">tkinter</span><span class="o">.</span><span class="n">messagebox</span><span class="o">.</span><span class="n">showinfo</span><span class="p">(</span><span class="s2">&quot;Warning&quot;</span><span class="p">,</span> <span class="s2">&quot;Must be streaming to remove POIs.&quot;</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="CameraSettings.save_pois_callback"><a class="viewcode-back" href="../../../software/reach_master/reach_master.html#reachmaster.settings.camera_settings.CameraSettings.save_pois_callback">[docs]</a>    <span class="k">def</span> <span class="nf">save_pois_callback</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Saves all added and/or removed pixel-of-interest to the </span>
@@ -676,7 +674,7 @@
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">streaming</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">capture</span> <span class="o">=</span> <span class="kc">True</span>
         <span class="k">else</span><span class="p">:</span> 
-            <span class="n">tkMessageBox</span><span class="o">.</span><span class="n">showinfo</span><span class="p">(</span><span class="s2">&quot;Warning&quot;</span><span class="p">,</span> <span class="s2">&quot;Must be streaming to capture images.&quot;</span><span class="p">)</span></div>
+            <span class="n">tkinter</span><span class="o">.</span><span class="n">messagebox</span><span class="o">.</span><span class="n">showinfo</span><span class="p">(</span><span class="s2">&quot;Warning&quot;</span><span class="p">,</span> <span class="s2">&quot;Must be streaming to capture images.&quot;</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="CameraSettings.start_rec_callback"><a class="viewcode-back" href="../../../software/reach_master/reach_master.html#reachmaster.settings.camera_settings.CameraSettings.start_rec_callback">[docs]</a>    <span class="k">def</span> <span class="nf">start_rec_callback</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Allows the user to record a video which is saved to the `calibration</span>
@@ -711,7 +709,7 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">record</span> <span class="o">=</span> <span class="kc">True</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_rec</span><span class="p">()</span>
         <span class="k">else</span><span class="p">:</span> 
-            <span class="n">tkMessageBox</span><span class="o">.</span><span class="n">showinfo</span><span class="p">(</span><span class="s2">&quot;Warning&quot;</span><span class="p">,</span> <span class="s2">&quot;Shouldn&#39;t record while streaming. Bad framerates!&quot;</span><span class="p">)</span></div>
+            <span class="n">tkinter</span><span class="o">.</span><span class="n">messagebox</span><span class="o">.</span><span class="n">showinfo</span><span class="p">(</span><span class="s2">&quot;Warning&quot;</span><span class="p">,</span> <span class="s2">&quot;Shouldn&#39;t record while streaming. Bad framerates!&quot;</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="CameraSettings.stop_rec_callback"><a class="viewcode-back" href="../../../software/reach_master/reach_master.html#reachmaster.settings.camera_settings.CameraSettings.stop_rec_callback">[docs]</a>    <span class="k">def</span> <span class="nf">stop_rec_callback</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Stops a video recording.&quot;&quot;&quot;</span>
@@ -726,7 +724,7 @@
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">exp_connected</span><span class="p">:</span>
             <span class="n">expint</span><span class="o">.</span><span class="n">toggle_lights</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">exp_controller</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">tkMessageBox</span><span class="o">.</span><span class="n">showinfo</span><span class="p">(</span><span class="s2">&quot;Warning&quot;</span><span class="p">,</span> <span class="s2">&quot;Experiment controller not connected.&quot;</span><span class="p">)</span></div>
+            <span class="n">tkinter</span><span class="o">.</span><span class="n">messagebox</span><span class="o">.</span><span class="n">showinfo</span><span class="p">(</span><span class="s2">&quot;Warning&quot;</span><span class="p">,</span> <span class="s2">&quot;Experiment controller not connected.&quot;</span><span class="p">)</span></div>
 
     <span class="c1"># private methods -------------------------------------------------------------------------------</span>
 

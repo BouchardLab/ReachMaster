@@ -7,7 +7,6 @@ files.
 Todo:
     * Object orient
     * Automate unit tests
-    * Python 3 compatibility
     * PEP 8
 
 """

@@ -160,30 +160,28 @@
 <span class="sd">delivery, toggling lights, etc.).</span>
 
 <span class="sd">Todo:</span>
-<span class="sd">    * Can&#39;t trigger images with lights on</span>
 <span class="sd">    * Keep adding new protocol types</span>
 <span class="sd">    * GPU-accelerated video encoding</span>
 <span class="sd">    * Automate unit tests</span>
-<span class="sd">    * Python 3 compatibility</span>
 <span class="sd">    * PEP 8</span>
 
 <span class="sd">&quot;&quot;&quot;</span>
 
-<span class="kn">import</span> <span class="nn">config</span>
-<span class="kn">import</span> <span class="nn">interfaces.camera_interface</span> <span class="k">as</span> <span class="nn">camint</span>
-<span class="kn">import</span> <span class="nn">interfaces.robot_interface</span> <span class="k">as</span> <span class="nn">robint</span>
-<span class="kn">import</span> <span class="nn">interfaces.experiment_interface</span> <span class="k">as</span> <span class="nn">expint</span>
-<span class="kn">import</span> <span class="nn">Tkinter</span> <span class="k">as</span> <span class="nn">tk</span> 
-<span class="kn">import</span> <span class="nn">tkFileDialog</span>
-<span class="kn">import</span> <span class="nn">tkMessageBox</span>
+<span class="kn">from</span> <span class="nn">.</span> <span class="kn">import</span> <span class="n">config</span>
+<span class="kn">from</span> <span class="nn">.interfaces</span> <span class="kn">import</span> <span class="n">camera_interface</span> <span class="k">as</span> <span class="n">camint</span>
+<span class="kn">from</span> <span class="nn">.interfaces</span> <span class="kn">import</span> <span class="n">robot_interface</span> <span class="k">as</span> <span class="n">robint</span>
+<span class="kn">from</span> <span class="nn">.interfaces</span> <span class="kn">import</span> <span class="n">experiment_interface</span> <span class="k">as</span> <span class="n">expint</span>
+<span class="kn">import</span> <span class="nn">tkinter</span> <span class="k">as</span> <span class="nn">tk</span> 
+<span class="kn">import</span> <span class="nn">tkinter.filedialog</span>
+<span class="kn">import</span> <span class="nn">tkinter.messagebox</span>
 <span class="kn">import</span> <span class="nn">time</span>
 <span class="kn">import</span> <span class="nn">datetime</span>
 <span class="kn">import</span> <span class="nn">os</span> 
-<span class="kn">from</span> <span class="nn">collections</span> <span class="k">import</span> <span class="n">deque</span>
-<span class="kn">from</span> <span class="nn">vidgear.gears</span> <span class="k">import</span> <span class="n">WriteGear</span>
+<span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">deque</span>
+<span class="kn">from</span> <span class="nn">vidgear.gears</span> <span class="kn">import</span> <span class="n">WriteGear</span>
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 <span class="kn">import</span> <span class="nn">serial</span>
-<span class="kn">from</span> <span class="nn">ximea</span> <span class="k">import</span> <span class="n">xiapi</span>
+<span class="kn">from</span> <span class="nn">ximea</span> <span class="kn">import</span> <span class="n">xiapi</span>
 
 <span class="k">def</span> <span class="nf">list_protocols</span><span class="p">():</span>
     <span class="sd">&quot;&quot;&quot;Generate a list of the available protocol types. Currently </span>
@@ -245,17 +243,18 @@
 
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parent</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parent</span><span class="p">):</span>
         <span class="c1">#create window</span>
         <span class="n">tk</span><span class="o">.</span><span class="n">Toplevel</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parent</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">transient</span><span class="p">(</span><span class="n">parent</span><span class="p">)</span> 
         <span class="bp">self</span><span class="o">.</span><span class="n">grab_set</span><span class="p">()</span>        
         <span class="bp">self</span><span class="o">.</span><span class="n">configure</span><span class="p">(</span><span class="n">bg</span><span class="o">=</span><span class="s2">&quot;white&quot;</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">protocol</span><span class="p">(</span><span class="s2">&quot;WM_DELETE_WINDOW&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">on_quit</span><span class="p">)</span>         
-        <span class="bp">self</span><span class="o">.</span><span class="n">config</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">load_config</span><span class="p">(</span><span class="nb">open</span><span class="p">(</span><span class="s1">&#39;./temp/tmp_config.txt&#39;</span><span class="p">))</span>           
+        <span class="bp">self</span><span class="o">.</span><span class="n">config</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">load_config</span><span class="p">(</span><span class="s1">&#39;./temp/tmp_config.json&#39;</span><span class="p">)</span>           
         <span class="bp">self</span><span class="o">.</span><span class="n">output_params</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;CameraSettings&#39;</span><span class="p">][</span><span class="s1">&#39;output_params&#39;</span><span class="p">]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s2">&quot;Protocol: &quot;</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;Protocol&#39;</span><span class="p">][</span><span class="s1">&#39;type&#39;</span><span class="p">])</span>                    
         <span class="c1">#initialize protocol variables </span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">baseline_acquired</span> <span class="o">=</span> <span class="kc">False</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">exp_connected</span> <span class="o">=</span> <span class="kc">False</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">rob_connected</span> <span class="o">=</span> <span class="kc">False</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">cams_connected</span> <span class="o">=</span> <span class="kc">False</span>     
@@ -269,28 +268,30 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">reach_detected</span> <span class="o">=</span> <span class="kc">False</span>
         <span class="c1">#check config for errors</span>
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;CameraSettings&#39;</span><span class="p">][</span><span class="s1">&#39;saved_pois&#39;</span><span class="p">])</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-           <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;No saved _pois.&quot;</span><span class="p">)</span> 
+           <span class="n">tkinter</span><span class="o">.</span><span class="n">messagebox</span><span class="o">.</span><span class="n">showinfo</span><span class="p">(</span><span class="s2">&quot;Warning&quot;</span><span class="p">,</span> <span class="s2">&quot;No saved POIs&quot;</span><span class="p">)</span>
            <span class="bp">self</span><span class="o">.</span><span class="n">on_quit</span><span class="p">()</span>
            <span class="k">return</span>
         <span class="c1">#start interfaces, load settings and aquire baseline for reach detection</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;starting interfaces...&quot;</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">exp_controller</span> <span class="o">=</span> <span class="n">expint</span><span class="o">.</span><span class="n">start_interface</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">)</span> 
-            <span class="bp">self</span><span class="o">.</span><span class="n">exp_connected</span> <span class="o">=</span> <span class="kc">True</span>           
-            <span class="bp">self</span><span class="o">.</span><span class="n">rob_controller</span> <span class="o">=</span> <span class="n">robint</span><span class="o">.</span><span class="n">start_interface</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">)</span> 
-            <span class="bp">self</span><span class="o">.</span><span class="n">rob_connected</span> <span class="o">=</span> <span class="kc">True</span>           
-            <span class="bp">self</span><span class="o">.</span><span class="n">cams</span> <span class="o">=</span> <span class="n">camint</span><span class="o">.</span><span class="n">start_interface</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">)</span>         
-            <span class="bp">self</span><span class="o">.</span><span class="n">cams_connected</span> <span class="o">=</span> <span class="kc">True</span>    
+            <span class="bp">self</span><span class="o">.</span><span class="n">exp_connected</span> <span class="o">=</span> <span class="kc">True</span> 
             <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;loading experiment settings...&quot;</span><span class="p">)</span>        
-            <span class="n">expint</span><span class="o">.</span><span class="n">set_exp_controller</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">exp_controller</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">)</span>
+            <span class="n">expint</span><span class="o">.</span><span class="n">set_exp_controller</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">exp_controller</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">)</span>                      
+            <span class="bp">self</span><span class="o">.</span><span class="n">rob_controller</span> <span class="o">=</span> <span class="n">robint</span><span class="o">.</span><span class="n">start_interface</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">)</span> 
+            <span class="bp">self</span><span class="o">.</span><span class="n">rob_connected</span> <span class="o">=</span> <span class="kc">True</span>     
             <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;loading robot settings...&quot;</span><span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">config</span> <span class="o">=</span> <span class="n">robint</span><span class="o">.</span><span class="n">set_rob_controller</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">rob_controller</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">)</span>            
+            <span class="bp">self</span><span class="o">.</span><span class="n">config</span> <span class="o">=</span> <span class="n">robint</span><span class="o">.</span><span class="n">set_rob_controller</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">rob_controller</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">)</span>      
+            <span class="bp">self</span><span class="o">.</span><span class="n">cams</span> <span class="o">=</span> <span class="n">camint</span><span class="o">.</span><span class="n">start_interface</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">)</span>         
+            <span class="bp">self</span><span class="o">.</span><span class="n">cams_connected</span> <span class="o">=</span> <span class="kc">True</span>                       
             <span class="bp">self</span><span class="o">.</span><span class="n">img</span> <span class="o">=</span> <span class="n">camint</span><span class="o">.</span><span class="n">init_image</span><span class="p">()</span> 
-            <span class="bp">self</span><span class="o">.</span><span class="n">_acquire_baseline</span><span class="p">()</span>           
+            <span class="bp">self</span><span class="o">.</span><span class="n">_acquire_baseline</span><span class="p">()</span> 
+            <span class="bp">self</span><span class="o">.</span><span class="n">baseline_acquired</span> <span class="o">=</span> <span class="kc">True</span>          
         <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">err</span><span class="p">:</span>
             <span class="nb">print</span><span class="p">(</span><span class="n">err</span><span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">on_quit</span><span class="p">()</span>                    
-        <span class="bp">self</span><span class="o">.</span><span class="n">_init_data_output</span><span class="p">()</span>        
+            <span class="bp">self</span><span class="o">.</span><span class="n">on_quit</span><span class="p">()</span>  
+            <span class="k">return</span>                  
+        <span class="bp">self</span><span class="o">.</span><span class="n">_init_data_output</span><span class="p">()</span>      
         <span class="bp">self</span><span class="o">.</span><span class="n">_init_special_protocol</span><span class="p">()</span> 
         <span class="bp">self</span><span class="o">.</span><span class="n">_configure_window</span><span class="p">()</span> 
         <span class="bp">self</span><span class="o">.</span><span class="n">control_message</span> <span class="o">=</span> <span class="s1">&#39;b&#39;</span>
@@ -310,13 +311,10 @@
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">cams_connected</span><span class="p">:</span>
             <span class="n">camint</span><span class="o">.</span><span class="n">stop_interface</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cams</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_special_protocol_quit</span><span class="p">()</span>
-        <span class="k">try</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">destroy</span><span class="p">()</span>
-        <span class="k">except</span><span class="p">:</span>
-            <span class="k">pass</span></div>
+        <span class="bp">self</span><span class="o">.</span><span class="n">destroy</span><span class="p">()</span></div>
 
     <span class="k">def</span> <span class="nf">_special_protocol_quit</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span> 
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;Protocol&#39;</span><span class="p">][</span><span class="s1">&#39;type&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;CONTINUOUS&#39;</span><span class="p">:</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;Protocol&#39;</span><span class="p">][</span><span class="s1">&#39;type&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;CONTINUOUS&#39;</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">video_open</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">video</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
         <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;Protocol&#39;</span><span class="p">][</span><span class="s1">&#39;type&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;TRIALS&#39;</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">img_buffer</span> <span class="o">=</span> <span class="n">deque</span><span class="p">()</span>
@@ -346,7 +344,7 @@
                 <span class="p">)</span>
         <span class="c1">#get baseline images and extract sample pois for each camera</span>
         <span class="k">for</span> <span class="n">cnt</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">num_imgs</span><span class="p">):</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">exp_controller</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">&quot;t&quot;</span><span class="p">)</span>
+            <span class="n">expint</span><span class="o">.</span><span class="n">trigger_image</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">exp_controller</span><span class="p">)</span>
             <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;CameraSettings&#39;</span><span class="p">][</span><span class="s1">&#39;num_cams&#39;</span><span class="p">]):</span>
                 <span class="c1"># npimg = camint.get_npimage(self.cams[i],self.img)</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">cams</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">get_image</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">img</span><span class="p">,</span> <span class="n">timeout</span> <span class="o">=</span> <span class="mi">2000</span><span class="p">)</span>                  
@@ -516,7 +514,7 @@
         <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">exp_response</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;e&#39;</span><span class="p">:</span> 
             <span class="bp">self</span><span class="o">.</span><span class="n">reach_detected</span> <span class="o">=</span> <span class="kc">False</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">control_message</span> <span class="o">=</span> <span class="s1">&#39;s&#39;</span>   
-            <span class="nb">print</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">exp_response</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+            <span class="nb">print</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">exp_response</span><span class="p">[</span><span class="mi">0</span><span class="p">]))</span>
         <span class="k">elif</span> <span class="p">(</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">reach_detected</span> <span class="ow">and</span> 
             <span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">now</span><span class="p">)</span> <span class="o">-</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">reach_init</span><span class="p">))</span> <span class="o">&gt;</span> 
@@ -616,7 +614,7 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">reach_detected</span> <span class="o">=</span> <span class="kc">False</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">control_message</span> <span class="o">=</span> <span class="s1">&#39;s&#39;</span> 
             <span class="bp">self</span><span class="o">.</span><span class="n">img_buffer</span> <span class="o">=</span> <span class="n">deque</span><span class="p">()</span> 
-            <span class="nb">print</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">exp_response</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+            <span class="nb">print</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">exp_response</span><span class="p">[</span><span class="mi">0</span><span class="p">]))</span>
         <span class="k">elif</span> <span class="p">(</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">reach_detected</span> <span class="ow">and</span> 
             <span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">now</span><span class="p">)</span> <span class="o">-</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">reach_init</span><span class="p">))</span> <span class="o">&gt;</span> 

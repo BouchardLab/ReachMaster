@@ -12,7 +12,6 @@ Todo:
     * Run calibration callback
     * Re-add load calibration callback?
     * Automate unit tests
-    * Python 3 compatibility
     * PEP 8
 
 """

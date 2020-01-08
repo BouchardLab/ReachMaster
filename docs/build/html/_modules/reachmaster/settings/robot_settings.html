@@ -167,15 +167,14 @@
 <span class="sd">    * Run calibration callback</span>
 <span class="sd">    * Re-add load calibration callback?</span>
 <span class="sd">    * Automate unit tests</span>
-<span class="sd">    * Python 3 compatibility</span>
 <span class="sd">    * PEP 8</span>
 
 <span class="sd">&quot;&quot;&quot;</span>
 
-<span class="kn">from</span> <span class="nn">..</span> <span class="k">import</span> <span class="n">config</span>
-<span class="kn">import</span> <span class="nn">Tkinter</span> <span class="k">as</span> <span class="nn">tk</span> 
-<span class="kn">import</span> <span class="nn">tkFileDialog</span>
-<span class="kn">import</span> <span class="nn">tkMessageBox</span>
+<span class="kn">from</span> <span class="nn">..</span> <span class="kn">import</span> <span class="n">config</span>
+<span class="kn">import</span> <span class="nn">tkinter</span> <span class="k">as</span> <span class="nn">tk</span> 
+<span class="kn">import</span> <span class="nn">tkinter.filedialog</span>
+<span class="kn">import</span> <span class="nn">tkinter.messagebox</span>
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 <span class="kn">import</span> <span class="nn">os</span>
 
@@ -264,7 +263,7 @@
 
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parent</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parent</span><span class="p">):</span>
         <span class="c1">#create window</span>
         <span class="n">tk</span><span class="o">.</span><span class="n">Toplevel</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parent</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">transient</span><span class="p">(</span><span class="n">parent</span><span class="p">)</span> 
@@ -273,7 +272,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">configure</span><span class="p">(</span><span class="n">bg</span><span class="o">=</span><span class="s1">&#39;white&#39;</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">protocol</span><span class="p">(</span><span class="s1">&#39;WM_DELETE_WINDOW&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">on_quit</span><span class="p">)</span>
         <span class="c1">#initialize tk variables from config</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">config</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">load_config</span><span class="p">(</span><span class="nb">open</span><span class="p">(</span><span class="s1">&#39;./temp/tmp_config.txt&#39;</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">config</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">load_config</span><span class="p">(</span><span class="s1">&#39;./temp/tmp_config.json&#39;</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">pos_smoothing</span> <span class="o">=</span> <span class="n">tk</span><span class="o">.</span><span class="n">StringVar</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">pos_smoothing</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;RobotSettings&#39;</span><span class="p">][</span><span class="s1">&#39;pos_smoothing&#39;</span><span class="p">]))</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">tol</span> <span class="o">=</span> <span class="n">tk</span><span class="o">.</span><span class="n">StringVar</span><span class="p">()</span>
@@ -687,13 +686,13 @@
 <div class="viewcode-block" id="RobotSettings.calibration_browse_callback"><a class="viewcode-back" href="../../../software/reach_master/reach_master.html#reachmaster.settings.robot_settings.RobotSettings.calibration_browse_callback">[docs]</a>    <span class="k">def</span> <span class="nf">calibration_browse_callback</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Allows the user to select a calibration file to be loaded to the</span>
 <span class="sd">        robot microcontroller.&quot;&quot;&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">calibration_file</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="n">tkFileDialog</span><span class="o">.</span><span class="n">askopenfilename</span><span class="p">())</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">calibration_file</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="n">tkinter</span><span class="o">.</span><span class="n">filedialog</span><span class="o">.</span><span class="n">askopenfilename</span><span class="p">())</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;RobotSettings&#39;</span><span class="p">][</span><span class="s1">&#39;calibration_file&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">calibration_file</span><span class="o">.</span><span class="n">get</span><span class="p">()</span>                  </div>
 
 <div class="viewcode-block" id="RobotSettings.command_browse_callback"><a class="viewcode-back" href="../../../software/reach_master/reach_master.html#reachmaster.settings.robot_settings.RobotSettings.command_browse_callback">[docs]</a>    <span class="k">def</span> <span class="nf">command_browse_callback</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Allows the user to select a position command file to be loaded </span>
 <span class="sd">        to the robot microcontroller.&quot;&quot;&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">command_file</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="n">tkFileDialog</span><span class="o">.</span><span class="n">askopenfilename</span><span class="p">())</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">command_file</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="n">tkinter</span><span class="o">.</span><span class="n">filedialog</span><span class="o">.</span><span class="n">askopenfilename</span><span class="p">())</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;RobotSettings&#39;</span><span class="p">][</span><span class="s1">&#39;command_file&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">command_file</span><span class="o">.</span><span class="n">get</span><span class="p">()</span></div></div>
 </pre></div>
 

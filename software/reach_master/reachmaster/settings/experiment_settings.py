@@ -7,7 +7,6 @@ experiment parameters located on the experiment microcontroller
 Todo:
     * Move protocol type options here?
     * Automate unit tests
-    * Python 3 compatibility
     * PEP 8
 
 """
