@@ -7,7 +7,6 @@ and read/write custom messages.
 Todo:
     * Object orient
     * Automate unit tests
-    * PEP 8
 
 """
 

@@ -12,7 +12,6 @@ Todo:
     * Run calibration callback
     * Re-add load calibration callback?
     * Automate unit tests
-    * PEP 8
 
 """
 

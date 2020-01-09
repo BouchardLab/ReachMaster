@@ -8,7 +8,6 @@ Todo:
     * Keep adding new protocol types
     * GPU-accelerated video encoding
     * Automate unit tests
-    * PEP 8
 
 """
 

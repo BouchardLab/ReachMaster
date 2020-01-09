@@ -163,7 +163,6 @@
 <span class="sd">    * Keep adding new protocol types</span>
 <span class="sd">    * GPU-accelerated video encoding</span>
 <span class="sd">    * Automate unit tests</span>
-<span class="sd">    * PEP 8</span>
 
 <span class="sd">&quot;&quot;&quot;</span>
 
@@ -500,7 +499,7 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">video</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">frame</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">exp_response</span> <span class="o">=</span> <span class="n">expint</span><span class="o">.</span><span class="n">read_response</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">exp_controller</span><span class="p">)</span> 
         <span class="bp">self</span><span class="o">.</span><span class="n">outputfile</span><span class="o">.</span><span class="n">write</span><span class="p">(</span>
-            <span class="n">now</span> <span class="o">+</span> <span class="s2">&quot; &quot;</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">exp_response</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="o">-</span><span class="mi">2</span><span class="p">:</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="s2">&quot; &quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="nb">min</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">poi_zscores</span><span class="p">))</span> <span class="o">+</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span>
+            <span class="n">now</span> <span class="o">+</span> <span class="s2">&quot; &quot;</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">exp_response</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">:</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="s2">&quot; &quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="nb">min</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">poi_zscores</span><span class="p">))</span> <span class="o">+</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span>
             <span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">exp_response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">exp_response</span><span class="o">.</span><span class="n">split</span><span class="p">()</span> 
         <span class="k">if</span> <span class="p">(</span>

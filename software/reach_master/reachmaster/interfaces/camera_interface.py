@@ -8,7 +8,6 @@ Todo:
     * Object orient
     * GPU-accelerated video encoding
     * Automate unit tests
-    * PEP 8
 
 """
 

@@ -12,7 +12,6 @@ Todo:
     * GPU-accelerated video encoding
     * Remove fps setting? 
     * Automate unit tests
-    * PEP 8
 
 """
 
@@ -142,7 +141,7 @@ class CameraSettings(tk.Toplevel):
         self.protocol("WM_DELETE_WINDOW", self.on_quit) 
         #initialize tk variables from config
         self.config = config.load_config('./temp/tmp_config.json')
-        self.output_params = self.config['CameraSettings']['output_params']        
+        self.output_params = self.config['CameraSettings']['output_params']   
         self.exp_controller = expint.start_interface(self.config)
         self.exp_connected = True       
         self.num_cams = tk.StringVar()
@@ -207,8 +206,11 @@ class CameraSettings(tk.Toplevel):
         self.config['CameraSettings']['trigger_source'] = self.trigger_source.get()
         self.config['CameraSettings']['gpo_mode'] = self.gpo_mode.get()
         self.config['CameraSettings']['poi_threshold'] = float(self.poi_threshold.get())
-        self.config['CameraSettings']['self.output_params'] = (self.config['CameraSettings']['num_cams']*
-            self.config['CameraSettings']['img_width'],self.config['CameraSettings']['img_height'])
+        self.config['CameraSettings']['output_params']['-output_dimensions'] = [
+            self.config['CameraSettings']['num_cams']*
+            self.config['CameraSettings']['img_width'],
+            self.config['CameraSettings']['img_height']
+            ]
         config.save_tmp(self.config)
         if self.streaming:
             self._on_stream_quit()
@@ -535,8 +537,11 @@ class CameraSettings(tk.Toplevel):
             self.config['CameraSettings']['img_height'] = int(self.img_height.get())
             self.config['CameraSettings']['offset_x'] = int(self.offset_x.get())
             self.config['CameraSettings']['offset_y'] = int(self.offset_y.get())
-            self.output_params = (self.config['CameraSettings']['num_cams']*
-            self.config['CameraSettings']['img_width'],self.config['CameraSettings']['img_height']) 
+            self.output_params['-output_dimensions'] = [
+                self.config['CameraSettings']['num_cams']*
+                self.config['CameraSettings']['img_width'],
+                self.config['CameraSettings']['img_height']
+                ] 
             self.config['CameraSettings']['output_params'] = self.output_params            
             self.cams = camint.start_interface(self.config)
             self.cams_connected = True
@@ -673,4 +678,4 @@ class CameraSettings(tk.Toplevel):
                 else:
                     frame = np.hstack((frame,npimg))               
             self.video.write(frame)
-            self.after(self.delay,self.rec)
+            self.after(self.delay,self._rec)

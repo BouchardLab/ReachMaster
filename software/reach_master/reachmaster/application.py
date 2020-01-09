@@ -16,7 +16,6 @@ Examples:
 
 Todo:
     * Automated unit tests
-    * PEP 8
 
 """
 

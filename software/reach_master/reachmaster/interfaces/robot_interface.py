@@ -7,7 +7,6 @@ files.
 Todo:
     * Object orient
     * Automate unit tests
-    * PEP 8
 
 """
 
