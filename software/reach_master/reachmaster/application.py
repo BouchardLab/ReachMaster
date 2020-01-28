@@ -140,7 +140,7 @@ class ReachMaster:
         self.running = True
         try:
             while self.running:        
-                if self.protocol_running and self.child.baseline_acquired:
+                if self.protocol_running and self.child.ready:
                     try:
                         self.child.run()
                     except Exception as err:

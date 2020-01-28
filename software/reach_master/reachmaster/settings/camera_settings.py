@@ -29,7 +29,7 @@ import numpy as np
 import serial
 import os 
 from collections import deque
-from vidgear.gears import WriteGear
+import subprocess as sp
 
 class CameraSettings(tk.Toplevel):
     """The primary class for the camera settings window.
@@ -141,7 +141,27 @@ class CameraSettings(tk.Toplevel):
         self.protocol("WM_DELETE_WINDOW", self.on_quit) 
         #initialize tk variables from config
         self.config = config.load_config('./temp/tmp_config.json')
-        self.output_params = self.config['CameraSettings']['output_params']   
+        self.ffmpeg_command = [
+        'ffmpeg', '-y', 
+        '-hwaccel', 'cuvid', 
+        '-f', 'rawvideo',  
+        '-s', str(
+            self.config['CameraSettings']['img_width'] * 
+            self.config['CameraSettings']['num_cams']
+            ) + 'x' + str(self.config['CameraSettings']['img_height']), 
+        '-pix_fmt', 'bgr24',
+        '-r', str(self.config['CameraSettings']['fps']), 
+        '-i', '-',
+        '-b:v', '2M', 
+        '-maxrate', '2M', 
+        '-bufsize', '1M',
+        '-c:v', 'h264_nvenc', 
+        '-preset', 'medium', 
+        '-profile:v', 'high',
+        '-rc', 'cbr', 
+        '-pix_fmt', 'yuv420p'
+        ] 
+        self.ffmpeg_process = None
         self.exp_controller = expint.start_interface(self.config)
         self.exp_connected = True       
         self.num_cams = tk.StringVar()
@@ -536,25 +556,30 @@ class CameraSettings(tk.Toplevel):
             self.config['CameraSettings']['img_width'] = int(self.img_width.get())
             self.config['CameraSettings']['img_height'] = int(self.img_height.get())
             self.config['CameraSettings']['offset_x'] = int(self.offset_x.get())
-            self.config['CameraSettings']['offset_y'] = int(self.offset_y.get())
-            self.output_params['-output_dimensions'] = [
-                self.config['CameraSettings']['num_cams']*
-                self.config['CameraSettings']['img_width'],
-                self.config['CameraSettings']['img_height']
-                ] 
-            self.config['CameraSettings']['output_params'] = self.output_params            
+            self.config['CameraSettings']['offset_y'] = int(self.offset_y.get())          
             self.cams = camint.start_interface(self.config)
             self.cams_connected = True
             self.img = camint.init_image()
-            self.calibration_path = self.config['ReachMaster']['data_dir'] + "/calibration_videos/"
-            if not os.path.isdir(self.calibration_path):
-                os.makedirs(self.calibration_path)
-            self.vid_fn = self.calibration_path + str(datetime.datetime.now()) + '.mp4'             
-            self.video = WriteGear(
-                output_filename = self.vid_fn,
-                compression_mode = True,
-                logging=False,
-                **self.output_params)
+            calibration_path = self.config['ReachMaster']['data_dir'] + "/calibration_videos/"
+            if not os.path.isdir(calibration_path):
+                os.makedirs(calibration_path)
+            vid_fn = calibration_path + str(datetime.datetime.now()) + '.mp4'  
+            ffmpeg_command = self.ffmpeg_command          
+            ffmpeg_command.append(vid_fn)
+            ffmpeg_command[ffmpeg_command.index('-s') + 1] = str(
+                self.config['CameraSettings']['img_width'] * 
+                self.config['CameraSettings']['num_cams']
+                ) + 'x' + str(self.config['CameraSettings']['img_height'])
+            ffmpeg_command[ffmpeg_command.index('-r') + 1] = str(
+                self.config['CameraSettings']['fps']
+                )
+            self.ffmpeg_process = sp.Popen(
+            ffmpeg_command, 
+            stdin=sp.PIPE, 
+            stdout=sp.DEVNULL, 
+            stderr=sp.DEVNULL, 
+            bufsize=-1
+            )
             self.delay = int(np.round(1.0/float(self.config['CameraSettings']['fps'])*1000.0))
             self.record = True
             self._rec()
@@ -564,7 +589,10 @@ class CameraSettings(tk.Toplevel):
     def stop_rec_callback(self):
         """Stops a video recording."""
         self.record = False
-        self.video.close()
+        if self.ffmpeg_process is not None:
+            self.ffmpeg_process.stdin.close()
+            self.ffmpeg_process.wait()
+            self.ffmpeg_process = None
         camint.stop_interface(self.cams)
         self.cams_connected = False
 
@@ -600,7 +628,11 @@ class CameraSettings(tk.Toplevel):
         self.delay = int(np.round(1.0/float(self.config['CameraSettings']['fps'])*1000.0))
         self.photo_img = [0 for _ in range(self.config['CameraSettings']['num_cams'])]
         self.streaming = True
-        self._refresh()
+        try:
+            self._refresh()
+        except Exception as err:
+            tkinter.messagebox.showinfo("Warning", err)
+            self._on_stream_quit()
 
     def _refresh(self):
         if self.streaming:
@@ -609,7 +641,7 @@ class CameraSettings(tk.Toplevel):
             for i in range(self.config['CameraSettings']['num_cams']):
                 #display image
                 npimg = camint.get_npimage(self.cams[i],self.img)
-                npimg = cv2.cvtColor(npimg,cv2.COLOR_BAYER_BG2RGB)
+                npimg = cv2.cvtColor(npimg,cv2.COLOR_BAYER_BG2BGR)
                 self.photo_img[i] = PIL.ImageTk.PhotoImage(image = PIL.Image.fromarray(npimg))
                 self.cam_windows[i].canvas.create_image(
                     0, 0, image = self.photo_img[i], anchor = tk.NW
@@ -669,13 +701,18 @@ class CameraSettings(tk.Toplevel):
     def _rec(self):
         if self.record:
             expint.trigger_image(self.exp_controller)
-            now = str(int(round(time.time()*1000)))          
-            for i in range(self.config['CameraSettings']['num_cams']):
-                npimg = camint.get_npimage(self.cams[i],self.img)
-                # npimg = cv2.cvtColor(npimg,cv2.COLOR_BAYER_BG2RGB)
-                if i == 0:
-                    frame = npimg
-                else:
-                    frame = np.hstack((frame,npimg))               
-            self.video.write(frame)
+            now = str(int(round(time.time()*1000)))
+            try:          
+                for i in range(self.config['CameraSettings']['num_cams']):
+                    npimg = camint.get_npimage(self.cams[i],self.img)
+                    npimg = cv2.cvtColor(npimg, cv2.COLOR_BAYER_BG2BGR)
+                    if i == 0:
+                        frame = npimg
+                    else:
+                        frame = np.hstack((frame, npimg))  
+            except Exception as err:
+                tkinter.messagebox.showinfo("Warning", err)
+                self.stop_rec_callback() 
+                return      
+            self.ffmpeg_process.stdin.write(frame)
             self.after(self.delay,self._rec)

@@ -10,7 +10,7 @@
     "CameraSettings": {
         "num_cams": 3,
         "imgdataformat": "XI_RAW8",
-        "fps": 200,
+        "fps": 100,
         "exposure": 2000,
         "gain": 15.0,
         "sensor_feature_value": 1,
@@ -25,7 +25,7 @@
         "offset_y": 168,
         "downsampling": "XI_DWN_1x1",
         "saved_pois": [],
-        "poi_threshold": 15,
+        "poi_threshold": 15.0,
         "output_params": {
             "-vcodec": "libx264",
             "-crf": 28,

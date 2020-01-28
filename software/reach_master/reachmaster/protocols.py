@@ -18,7 +18,7 @@ from .interfaces import experiment_interface as expint
 import tkinter as tk 
 import tkinter.filedialog
 import tkinter.messagebox
-import time
+from time import time, sleep
 import datetime
 import os 
 from collections import deque
@@ -88,6 +88,7 @@ class Protocols(tk.Toplevel):
     """
 
     def __init__(self, parent):
+        self.ready = False
         #create window
         tk.Toplevel.__init__(self, parent)
         self.transient(parent) 
@@ -95,27 +96,19 @@ class Protocols(tk.Toplevel):
         self.configure(bg="white")
         self.protocol("WM_DELETE_WINDOW", self.on_quit)         
         self.config = config.load_config('./temp/tmp_config.json')           
-        self.output_params = self.config['CameraSettings']['output_params']
         self.title("Protocol: " + self.config['Protocol']['type'])                    
-        #initialize protocol variables 
-        self.baseline_acquired = False
+        #initialize protocol variables         
         self.exp_connected = False
         self.rob_connected = False
-        self.cams_connected = False     
-        self.video_open = False       
-        self.poi_means = []
-        self.poi_stds = []
-        self.poi_obs = []
-        self.poi_zscores = []  
-        self.lights_on = False          
-        self.buffer_full = False 
-        self.reach_detected = False
+        self.cams_connected = False         
+        self.lights_on = False
+        self.baseline_acquired = False          
         #check config for errors
         if len(self.config['CameraSettings']['saved_pois']) == 0:
            tkinter.messagebox.showinfo("Warning", "No saved POIs")
            self.on_quit()
            return
-        #start interfaces, load settings and aquire baseline for reach detection
+        #start interfaces, load settings and acquire baseline for reach detection
         try:
             print("starting interfaces...")
             self.exp_controller = expint.start_interface(self.config) 
@@ -126,42 +119,35 @@ class Protocols(tk.Toplevel):
             self.rob_connected = True     
             print("loading robot settings...")
             self.config = robint.set_rob_controller(self.rob_controller, self.config)      
-            self.cams = camint.start_interface(self.config)         
-            self.cams_connected = True                       
-            self.img = camint.init_image() 
-            self._acquire_baseline() 
-            self.baseline_acquired = True          
+            self.cams = camint.CameraInterface(self.config) 
+            self.cams_connected = True 
+            self.cams.start_protocol_interface() 
+            sleep(10) #allow cameras time to setup                              
+            self._acquire_baseline()                       
         except Exception as err:
             print(err)
             self.on_quit()  
             return                  
         self._init_data_output()      
-        self._init_special_protocol() 
         self._configure_window() 
         self.control_message = 'b'
-        self.exp_response = expint.start_experiment(self.exp_controller)                             
+        self.exp_response = expint.start_experiment(self.exp_controller)    
+        self.ready = True                         
 
     def on_quit(self):
         """Called prior to destruction protocol window.
 
-        Prior to destruction, all interfaces must be stopped and 
-        protocol-specific cleanup needs to take place. 
+        Prior to destruction, all interfaces must be stopped.
 
         """
+        self.ready = False
         if self.exp_connected:
             expint.stop_interface(self.exp_controller)
         if self.rob_connected:
             robint.stop_interface(self.rob_controller)
         if self.cams_connected:
-            camint.stop_interface(self.cams)
-        self._special_protocol_quit()
+            self.cams.stop_interface()
         self.destroy()
-
-    def _special_protocol_quit(self): 
-        if self.config['Protocol']['type'] == 'CONTINUOUS' and self.video_open:
-            self.video.close()
-        elif self.config['Protocol']['type'] == 'TRIALS':
-            self.img_buffer = deque()
 
     def _acquire_baseline(self):
         print("Acquiring baseline...")
@@ -181,56 +167,14 @@ class Protocols(tk.Toplevel):
                     )
                 )
             )
-        baseline_pois = []
-        for i in range(self.config['CameraSettings']['num_cams']):
-            baseline_pois.append(
-                np.zeros(shape = (len(self.config['CameraSettings']['saved_pois'][i]), num_imgs))
-                )
-        #get baseline images and extract sample pois for each camera
         for cnt in range(num_imgs):
+            while not self.cams.all_triggerable():
+                pass
             expint.trigger_image(self.exp_controller)
-            for i in range(self.config['CameraSettings']['num_cams']):
-                # npimg = camint.get_npimage(self.cams[i],self.img)
-                self.cams[i].get_image(self.img, timeout = 2000)                  
-                npimg = self.img.get_image_data_numpy()
-                for j in range(len(self.config['CameraSettings']['saved_pois'][i])): 
-                    baseline_pois[i][j,cnt] = npimg[
-                    self.config['CameraSettings']['saved_pois'][i][j][1],
-                    self.config['CameraSettings']['saved_pois'][i][j][0]
-                    ]
-        #compute poi stats for each camera
-        for i in range(self.config['CameraSettings']['num_cams']):   
-            self.poi_means.append(np.mean(baseline_pois[i], axis = 1))             
-            self.poi_stds.append(
-                np.std(
-                    np.sum(
-                        np.square(
-                    baseline_pois[i] - 
-                    self.poi_means[i].reshape(
-                        len(
-                            self.config['CameraSettings']['saved_pois'][i]), 1
-                        )
-                    )
-                        ,axis=0
-                        )
-                    )
-                )
-            self.poi_obs.append(np.zeros(len(self.config['CameraSettings']['saved_pois'][i])))
-            self.poi_zscores.append(0)
+            self.cams.triggered()
+        self.baseline_acquired = True
         print("Baseline acquired!")
-
-    def _init_special_protocol(self):        
-        if self.config['Protocol']['type'] == 'CONTINUOUS':
-            self.vid_fn = self.video_data_path + str(datetime.datetime.now()) + '.mp4' 
-            self.video = WriteGear(
-                output_filename = self.vid_fn,
-                compression_mode = True,
-                logging=False,
-                **self.output_params)
-            self.video_open = True
-        elif self.config['Protocol']['type'] == 'TRIALS':
-            self.img_buffer = deque()
-
+        
     def _init_data_output(self):
         self.controller_data_path = self.config['ReachMaster']['data_dir'] + "/controller_data/"
         self.video_data_path = self.config['ReachMaster']['data_dir'] + "/videos/" 
@@ -312,47 +256,28 @@ class Protocols(tk.Toplevel):
 
         Todo:
             * Functionalize code chunks so logic is clearer and custom protocol types are easier to implement. 
-            * Absorb communication codes into experiment interface module
+            * Absorb communication codes into experiment interface module and document
 
         """
-        now = str(int(round(time.time()*1000)))  
-        if self.exp_response[3]=='1': 
-            self.lights_on = 1 
-            for i in range(self.config['CameraSettings']['num_cams']):
-                npimg = camint.get_npimage(self.cams[i],self.img)
-                for j in range(len(self.config['CameraSettings']['saved_pois'][i])): 
-                    self.poi_obs[i][j] = npimg[
-                    self.config['CameraSettings']['saved_pois'][i][j][1],
-                    self.config['CameraSettings']['saved_pois'][i][j][0]
-                    ]
-                self.poi_zscores[i] = np.round(
-                    np.sum(
-                        np.square(
-                            self.poi_obs[i] - self.poi_means[i]
-                            )
-                        ) / (self.poi_stds[i] + np.finfo(float).eps), decimals = 1)
-                if i == 0:
-                    frame = npimg
-                else:
-                    frame = np.hstack((frame,npimg))
+        now = str(int(round(time()*1000)))  
+        if self.exp_response[3]=='1':
+            self.cams.triggered() 
+            self.lights_on = 1             
+            self.reach_detected =  self.cams.all_detected_reach()
         else:
             self.lights_on = 0
-            for i in range(self.config['CameraSettings']['num_cams']):
-                self.poi_zscores[i] = 0
+            self.reach_detected = False
         expint.write_message(self.exp_controller, self.control_message) 
-        if self.exp_response[3] == '1':
-            self.video.write(frame)
         self.exp_response = expint.read_response(self.exp_controller) 
         self.outputfile.write(
-            now + " " + self.exp_response[0:-1:1] + " " + str(min(self.poi_zscores)) + "\n"
+            now + " " + self.exp_response[0:-1:1] + " " + str(self.reach_detected) + "\n"
             )
         self.exp_response = self.exp_response.split() 
         if (
             self.exp_response[1] == 's' and 
             self.exp_response[2] == '0' and 
-            min(self.poi_zscores) > self.config['CameraSettings']['poi_threshold']
-            ): 
-            self.reach_detected = True  
+            self.reach_detected
+            ):  
             self.reach_init = now     
             self.control_message = 'r'
         elif self.exp_response[1] == 'e': 
@@ -381,83 +306,34 @@ class Protocols(tk.Toplevel):
 
         Todo:
             * Functionalize code chunks so logic is clearer and custom protocol types are easier to implement.
-            * Absorb communication codes into experiment interface module
+            * Absorb communication codes into experiment interface module and document
 
         """
-        now = str(int(round(time.time()*1000)))   
+        now = str(int(round(time()*1000)))   
         if self.exp_response[3] == '1': 
-            self.lights_on = 1
-            for i in range(self.config['CameraSettings']['num_cams']):
-                npimg = camint.get_npimage(self.cams[i],self.img)
-                for j in range(len(self.config['CameraSettings']['saved_pois'][i])): 
-                    self.poi_obs[i][j] = npimg[self.config['CameraSettings']['saved_pois'][i][j][1],
-                        self.config['CameraSettings']['saved_pois'][i][j][0]]
-                self.poi_zscores[i] = np.round(
-                    np.sum(
-                        np.square(
-                            self.poi_obs[i] - self.poi_means[i]
-                            )
-                        ) / (self.poi_stds[i] + np.finfo(float).eps), decimals=1)
-                self.img_buffer.append(npimg)
-                if (
-                    len(self.img_buffer) > 
-                    self.config['CameraSettings']['num_cams'] * 
-                    self.config['ExperimentSettings']['buffer_dur'] * 
-                    self.config['CameraSettings']['fps'] and not 
-                    self.reach_detected
-                    ):
-                    self.img_buffer.popleft()
+            self.cams.triggered() 
+            self.lights_on = 1             
+            self.reach_detected =  self.cams.all_detected_reach()
         else:
             self.lights_on = 0
-            for i in range(self.config['CameraSettings']['num_cams']):
-                self.poi_zscores[i] = 0     
+            self.reach_detected = False   
         expint.write_message(self.exp_controller, self.control_message)  
         self.exp_response = expint.read_response(self.exp_controller) 
         self.outputfile.write(
-            now + " " + self.exp_response[0:-2:1] + " " + str(min(self.poi_zscores)) + "\n"
+            now + " " + self.exp_response[0:-2:1] + " " + str(self.reach_detected) + "\n"
             )
         self.exp_response = self.exp_response.split() 
         if (
             self.exp_response[1] == 's' and 
             self.exp_response[2] == '0' and 
-            min(self.poi_zscores) > self.config['CameraSettings']['poi_threshold']
+            self.reach_detected
             ): 
-            self.reach_detected = True  
             self.reach_init = now     
             self.control_message = 'r'
         elif self.exp_response[1] == 'e': 
-            if not os.path.isdir(self.video_data_path):
-                os.makedirs(self.video_data_path)
-            trial_fn = self.video_data_path + 'trial: ' + str(self.exp_response[0]) + '.mp4' 
-            self.video = WriteGear(
-                output_filename = trial_fn,
-                compression_mode = True,
-                logging = False, 
-                **self.output_params
-                )
-            for i in range(
-                len(self.img_buffer) / self.config['CameraSettings']['num_cams']
-                ):
-                frame = (
-                    self.img_buffer[
-                    (i + 1) * self.config['CameraSettings']['num_cams'] - 
-                    self.config['CameraSettings']['num_cams']
-                    ]
-                    )
-                for f in range(self.config['CameraSettings']['num_cams'] - 1):
-                    frame = (
-                        np.hstack((
-                            frame, self.img_buffer[(i + 1) * 
-                            self.config['CameraSettings']['num_cams'] - 
-                            self.config['CameraSettings']['num_cams'] + f + 1]
-                            )
-                        )
-                        )
-                self.video.write(frame)   
-            self.video.close()
+            self.cams.trial_ended()
             self.reach_detected = False
             self.control_message = 's' 
-            self.img_buffer = deque() 
             print((self.exp_response[0]))
         elif (
             self.reach_detected and 
@@ -477,7 +353,6 @@ class Protocols(tk.Toplevel):
         where all the vital real-time operations are executed.
 
         """
-        #As number of types increase, consider converting to switch
         if self.config['Protocol']['type'] == 'CONTINUOUS':
             self.run_continuous()
         elif self.config['Protocol']['type'] == 'TRIALS':
