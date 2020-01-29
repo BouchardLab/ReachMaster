@@ -189,64 +189,87 @@ class CameraInterface:
         '-pix_fmt', 'yuv420p'
         ]
         self.camera_processes = []
+        self.cam_trigger_pipes = []
+        self.poi_deviation_pipes = []
         self.cams_started = mp.Value(c_bool, False)
         self.increment_trial = mp.Value(c_bool, False)
-        self.cams_triggered = mp.Array(
-            c_bool, 
-            [False]*self.config['CameraSettings']['num_cams'], 
-            )    
-        self.reach_detected = mp.Array(
-            c_bool, 
-            [False]*self.config['CameraSettings']['num_cams'], 
-            )              
+        # self.cams_triggered = mp.Value(c_bool, False)
+        # self.cams_triggered = mp.Array(
+        #     c_bool, 
+        #     [False]*self.config['CameraSettings']['num_cams'], 
+        #     )    
+        # self.poi_deviations = mp.Array(
+        #     'i', 
+        #     [0]*self.config['CameraSettings']['num_cams'], 
+        #     )            
 
     def start_protocol_interface(self):
         print('starting camera processes... ')
         for cam_id in range(self.config['CameraSettings']['num_cams']):
+            trigger_parent, trigger_child = mp.Pipe()
+            self.cam_trigger_pipes.append(trigger_parent)
+            poi_parent, poi_child = mp.Pipe()
+            self.poi_deviation_pipes.append(poi_parent)
             self.camera_processes.append(
                 mp.Process(
                     target = self._protocol_process, 
-                    args=(
-                        cam_id                 
+                    args = (
+                        cam_id,
+                        trigger_child,
+                        poi_child
                         )
                     )
                 )
         self.cams_started.value = True   
         for process in self.camera_processes:
             process.start()
-        sleep(10) #give cameras time to setup       
+        sleep(5) #give cameras time to setup       
 
     def stop_interface(self):
         self.cams_started.value = False
-        for cam in self.camera_processes:
-            cam.join()
-        self.camera_processes = []
-        self.cams_triggered[:] = [False for cam in self.cams_triggered]
-        self.reach_detected[:] = [False for cam in self.reach_detected]
+        for proc in self.camera_processes:
+            proc.join()
+        self.cam_trigger_pipes = []
+        self.poi_deviation_pipes = []
+        # self.cams_triggered[:] = [False for cam in self.cams_triggered]
+        # self.poi_deviations[:] = [0 for cam in self.poi_deviations]
 
     def triggered(self):
-        self.cams_triggered[:] = [True for cam in self.cams_triggered]
+        for pipe in self.cam_trigger_pipes:
+            pipe.send('p')
 
     def all_triggerable(self):
-        return not all(self.cams_triggered)
+        print('before trig')
+        if all([pipe.poll() for pipe in self.cam_trigger_pipes]):
+            for pipe in self.cam_trigger_pipes:
+                pipe.recv()
+            print('after trig success')
+            return True
+        else: 
+            return False
 
-    def all_detected_reach(self):
-        return all(self.reach_detected)
+    def get_poi_deviation(self):
+        print('before dev')
+        deviations = [pipe.recv() for pipe in self.poi_deviation_pipes]
+        print('after dev')
+        return min(deviations)
 
     def trial_ended(self):
         self.increment_trial.value = True
 
-    def _acquire_baseline(self, cam, cam_id, img, num_imgs):
+    def _acquire_baseline(self, cam, cam_id, img, num_imgs, trigger_pipe):
         poi_indices = self.config['CameraSettings']['saved_pois'][cam_id]
         num_pois = len(poi_indices)
         baseline_pois = np.zeros(shape = (num_pois, num_imgs))
+        trigger_pipe.send(1)
         #acquire baseline images 
         for i in range(num_imgs):  
-            while not self.cams_triggered[cam_id]:
+            while not trigger_pipe.poll():
                 pass 
+            trigger_pipe.recv()
             try:
                 cam.get_image(img, timeout = 2000) 
-                self.cams_triggered[cam_id] = False 
+                trigger_pipe.send('c') 
                 npimg = img.get_image_data_numpy()   
                 for j in range(num_pois): 
                     baseline_pois[j,i] = npimg[
@@ -256,7 +279,6 @@ class CameraInterface:
             except Exception as err:
                 print("error: "+str(cam_id))
                 print(err)
-                self.cams_triggered[cam_id] = False 
         #compute summary stats
         poi_means = np.mean(baseline_pois, axis = 1)            
         poi_std = np.std(
@@ -270,21 +292,18 @@ class CameraInterface:
             )
         return poi_means, poi_std
 
-    def _detect_reach(self, cam_id, npimg, poi_means, poi_std):
-        num_pois = len(self.config['CameraSettings']['saved_pois'][i])
-        poi_obs = np.zeros(len(self.config['CameraSettings']['saved_pois'][cam_id]))
+    def _estimate_poi_deviation(self, cam_id, npimg, poi_means, poi_std):
+        poi_indices = self.config['CameraSettings']['saved_pois'][cam_id]
+        num_pois = len(poi_indices)
+        poi_obs = np.zeros(num_pois)
         for j in range(num_pois): 
-            poi_obs[j] = npimg[
-            self.config['CameraSettings']['saved_pois'][j][1],
-            self.config['CameraSettings']['saved_pois'][j][0]
-            ]
-        poi_zscore = np.round(
-            np.sum(np.square(poi_obs - poi_means)) / (poi_std + np.finfo(float).eps), 
-            decimals = 1
-            )     
-        self.reach_detected[cam_id] = poi_zscore > self.config['CameraSettings']['poi_threshold'] 
+            poi_obs[j] = npimg[poi_indices[j][1], poi_indices[j][0]]
+        dev = int(
+            np.sum(np.square(poi_obs - poi_means)) / (poi_std + np.finfo(float).eps)
+            )
+        return dev
 
-    def _protocol_process(self, cam_id):
+    def _protocol_process(self, cam_id, trigger_pipe, poi_deviation_pipe):
         sleep(2*cam_id) #prevents simultaneous calls to the ximea api
         print('finding camera: ', cam_id)
         cam = xiapi.Camera(dev_id = cam_id)
@@ -313,7 +332,8 @@ class CameraInterface:
                 cam,
                 cam_id,
                 img,
-                num_baseline
+                num_baseline,
+                trigger_pipe
                 ) 
         if self.config['Protocol']['type'] == 'CONTINUOUS':
             vid_fn = (
@@ -335,16 +355,22 @@ class CameraInterface:
             bufsize=-1
             )
         while self.cams_started.value == True:        
-            if self.cams_triggered[cam_id]:
+            if trigger_pipe.poll():
+                trigger_pipe.recv()
+                print('cam_id: '+str(cam_id)+', trigger received')
                 try:
-                    cam.get_image(img, timeout = 2000)         
-                    self.cams_triggered[cam_id] = False
-                    frame = img.get_image_data_numpy()      
-                    frame = cv2.cvtColor(frame, cv2.COLOR_BAYER_BG2BGR)
+                    cam.get_image(img, timeout = 2000) 
+                    trigger_pipe.send('c')
+                    npimg = img.get_image_data_numpy()  
+                    print('cam_id: ' + str(cam_id) + ', pipe sent')    
+                    frame = cv2.cvtColor(npimg, cv2.COLOR_BAYER_BG2BGR)
                     ffmpeg_process.stdin.write(frame)
-                    self._detect_reach()  
-                except:
-                   self.cams_triggered[cam_id] = False
+                    print('cam_id: '+str(cam_id)+' getting dev')
+                    dev = self._estimate_poi_deviation(cam_id, npimg, poi_means, poi_std)      
+                    poi_deviation_pipe.send(dev)
+                except Exception as err:
+                    print("cam_id: " + str(err))
+                    pass
             elif self.config['Protocol']['type'] == 'TRIALS' and self.increment_trial.value:
                 ffmpeg_process.stdin.close()
                 ffmpeg_process.wait()

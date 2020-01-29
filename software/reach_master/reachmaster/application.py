@@ -140,12 +140,18 @@ class ReachMaster:
         self.running = True
         try:
             while self.running:        
-                if self.protocol_running and self.child.ready:
-                    try:
-                        self.child.run()
-                    except Exception as err:
-                        self.protocol_running = False
-                        tkinter.messagebox.showinfo("Warning", err)
+                if (self.protocol_running and
+                    self.child is not None and 
+                    self.child.winfo_exists()
+                    ):
+                    if self.child.ready:
+                        try:
+                            self.child.run()
+                        except Exception as err:
+                            self.protocol_running = False
+                            tkinter.messagebox.showinfo("Warning", err)
+                else:
+                    self.protocol_running = False
                 self.window.update()
         except KeyboardInterrupt:
             self.on_quit()

@@ -296,7 +296,7 @@ def set_rob_controller(rob_controller, config):
         the command values that were loaded.
 
     """
-    _variable_write(rob_controller, 'alpha', str(config['RobotSettings']['alpha']))
+    _variable_write(rob_controller, 'pos_smoothing', str(config['RobotSettings']['pos_smoothing']))
     _variable_write(rob_controller, 'tol', str(config['RobotSettings']['tol']))
     _variable_write(rob_controller, 'period', str(config['RobotSettings']['period']))
     _variable_write(rob_controller, 'off_dur', str(config['RobotSettings']['off_dur']))

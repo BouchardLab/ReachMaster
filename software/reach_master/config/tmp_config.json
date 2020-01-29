@@ -122,7 +122,7 @@
         "z_command_pos": "None", 
         "period": 125000.0, 
         "x_pull_wt": 1.0, 
-        "alpha": 0.1, 
+        "pos_smoothing": 0.1, 
         "theta_z_command_pos": "None", 
         "rew_zone_x": 1000, 
         "num_tol": 5, 

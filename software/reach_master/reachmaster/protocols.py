@@ -74,7 +74,7 @@ class Protocols(tk.Toplevel):
         True if neopixel lights are on.
     buffer_full : bool
         True if video buffer is full when `protocol type` is 'TRIALS'
-    reach_detected : bool
+    poi_deviation : bool
         True when poi_zscores from all cameras are above the 
         user-specified threshold.  
     control_message : char
@@ -102,7 +102,9 @@ class Protocols(tk.Toplevel):
         self.rob_connected = False
         self.cams_connected = False         
         self.lights_on = False
-        self.baseline_acquired = False          
+        self.baseline_acquired = False  
+        self.reach_detected = False  
+        self.reach_init = 0      
         #check config for errors
         if len(self.config['CameraSettings']['saved_pois']) == 0:
            tkinter.messagebox.showinfo("Warning", "No saved POIs")
@@ -131,6 +133,8 @@ class Protocols(tk.Toplevel):
         self._init_data_output()      
         self._configure_window() 
         self.control_message = 'b'
+        while not self.cams.all_triggerable():
+            pass
         self.exp_response = expint.start_experiment(self.exp_controller)    
         self.ready = True                         
 
@@ -263,26 +267,29 @@ class Protocols(tk.Toplevel):
         if self.exp_response[3]=='1':
             self.cams.triggered() 
             self.lights_on = 1             
-            self.reach_detected =  self.cams.all_detected_reach()
+            self.poi_deviation =  self.cams.get_poi_deviation()
+            print(str(self.poi_deviation))
         else:
             self.lights_on = 0
-            self.reach_detected = False
+            self.poi_deviation = 0
         expint.write_message(self.exp_controller, self.control_message) 
         self.exp_response = expint.read_response(self.exp_controller) 
         self.outputfile.write(
-            now + " " + self.exp_response[0:-1:1] + " " + str(self.reach_detected) + "\n"
+            now + " " + self.exp_response[0:-1:1] + " " + str(self.poi_deviation) + "\n"
             )
         self.exp_response = self.exp_response.split() 
         if (
             self.exp_response[1] == 's' and 
             self.exp_response[2] == '0' and 
-            self.reach_detected
+            self.poi_deviation > self.config['CameraSettings']['poi_threshold']
             ):  
-            self.reach_init = now     
+            self.reach_init = now  
+            self.reach_detected = True   
             self.control_message = 'r'
         elif self.exp_response[1] == 'e': 
-            self.reach_detected = False
+            self.poi_deviation = 0
             self.control_message = 's'   
+            self.reach_detected = False
             print((self.exp_response[0]))
         elif (
             self.reach_detected and 
@@ -291,6 +298,7 @@ class Protocols(tk.Toplevel):
             self.exp_response[4] == '0'
             ):
             self.move_robot_callback()
+            self.reach_detected = False
 
     def run_trials(self): 
         """Operations performed for a single iteration of protocol type TRIALS.
@@ -313,27 +321,30 @@ class Protocols(tk.Toplevel):
         if self.exp_response[3] == '1': 
             self.cams.triggered() 
             self.lights_on = 1             
-            self.reach_detected =  self.cams.all_detected_reach()
+            self.poi_deviation =  self.cams.get_poi_deviation()
         else:
             self.lights_on = 0
-            self.reach_detected = False   
+            self.poi_deviation = 0   
         expint.write_message(self.exp_controller, self.control_message)  
         self.exp_response = expint.read_response(self.exp_controller) 
         self.outputfile.write(
-            now + " " + self.exp_response[0:-2:1] + " " + str(self.reach_detected) + "\n"
+            now + " " + self.exp_response[0:-2:1] + " " + str(self.poi_deviation) + "\n"
             )
         self.exp_response = self.exp_response.split() 
         if (
             self.exp_response[1] == 's' and 
             self.exp_response[2] == '0' and 
-            self.reach_detected
+            self.poi_deviation > self.config['CameraSettings']['poi_threshold']
             ): 
-            self.reach_init = now     
+            self.reach_init = now
+            self.reach_detected = True
+            self.reach_detected = True     
             self.control_message = 'r'
         elif self.exp_response[1] == 'e': 
             self.cams.trial_ended()
-            self.reach_detected = False
+            self.poi_deviation = 0
             self.control_message = 's' 
+            self.reach_detected = False
             print((self.exp_response[0]))
         elif (
             self.reach_detected and 
@@ -342,6 +353,7 @@ class Protocols(tk.Toplevel):
             self.exp_response[4] == '0'
             ):
             self.move_robot_callback()
+            self.reach_detected = False
 
     def run(self):
         """Execute a single iteration of the selected protocol type.

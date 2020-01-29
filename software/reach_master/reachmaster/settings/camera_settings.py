@@ -156,7 +156,7 @@ class CameraSettings(tk.Toplevel):
         '-maxrate', '2M', 
         '-bufsize', '1M',
         '-c:v', 'h264_nvenc', 
-        '-preset', 'medium', 
+        '-preset', 'llhp', 
         '-profile:v', 'high',
         '-rc', 'cbr', 
         '-pix_fmt', 'yuv420p'
@@ -226,11 +226,6 @@ class CameraSettings(tk.Toplevel):
         self.config['CameraSettings']['trigger_source'] = self.trigger_source.get()
         self.config['CameraSettings']['gpo_mode'] = self.gpo_mode.get()
         self.config['CameraSettings']['poi_threshold'] = float(self.poi_threshold.get())
-        self.config['CameraSettings']['output_params']['-output_dimensions'] = [
-            self.config['CameraSettings']['num_cams']*
-            self.config['CameraSettings']['img_width'],
-            self.config['CameraSettings']['img_height']
-            ]
         config.save_tmp(self.config)
         if self.streaming:
             self._on_stream_quit()
