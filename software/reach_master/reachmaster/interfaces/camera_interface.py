@@ -27,48 +27,48 @@ import numpy as np
 #private functions -----------------------------------------------------------------
 
 def _set_camera(cam, config):
-        cam.set_imgdataformat(config['CameraSettings']['imgdataformat'])
-        cam.set_exposure(config['CameraSettings']['exposure'])
-        cam.set_gain(config['CameraSettings']['gain'])
-        cam.set_sensor_feature_value(config['CameraSettings']['sensor_feature_value'])
-        cam.set_gpi_selector(config['CameraSettings']['gpi_selector'])
-        cam.set_gpi_mode(config['CameraSettings']['gpi_mode'])
-        cam.set_trigger_source(config['CameraSettings']['trigger_source'])
-        cam.set_gpo_selector(config['CameraSettings']['gpo_selector'])
-        cam.set_gpo_mode(config['CameraSettings']['gpo_mode'])        
-        if config['CameraSettings']['downsampling'] == "XI_DWN_2x2":
-            cam.set_downsampling(config['CameraSettings']['downsampling'])
+    cam.set_imgdataformat(config['CameraSettings']['imgdataformat'])
+    cam.set_exposure(config['CameraSettings']['exposure'])
+    cam.set_gain(config['CameraSettings']['gain'])
+    cam.set_sensor_feature_value(config['CameraSettings']['sensor_feature_value'])
+    cam.set_gpi_selector(config['CameraSettings']['gpi_selector'])
+    cam.set_gpi_mode(config['CameraSettings']['gpi_mode'])
+    cam.set_trigger_source(config['CameraSettings']['trigger_source'])
+    cam.set_gpo_selector(config['CameraSettings']['gpo_selector'])
+    cam.set_gpo_mode(config['CameraSettings']['gpo_mode'])        
+    if config['CameraSettings']['downsampling'] == "XI_DWN_2x2":
+        cam.set_downsampling(config['CameraSettings']['downsampling'])
+    else:
+        widthIncrement = cam.get_width_increment()
+        heightIncrement = cam.get_height_increment()
+        if (config['CameraSettings']['img_width'] % widthIncrement) != 0:
+            raise Exception(
+                "Image width not divisible by " + str(widthIncrement)
+                )
+            return
+        elif (config['CameraSettings']['img_height'] % heightIncrement) != 0:
+            raise Exception(
+                "Image height not divisible by " + str(heightIncrement) 
+                )
+            return
+        elif (
+            config['CameraSettings']['img_width'] + 
+            config['CameraSettings']['offset_x']
+            ) > 1280:
+            raise Exception("Image width + x offset > 1280") 
+            return
+        elif (
+            config['CameraSettings']['img_height'] + 
+            config['CameraSettings']['offset_y']
+            ) > 1024:
+            raise Exception("Image height + y offset > 1024") 
+            return
         else:
-            widthIncrement = cam.get_width_increment()
-            heightIncrement = cam.get_height_increment()
-            if (config['CameraSettings']['img_width'] % widthIncrement) != 0:
-                raise Exception(
-                    "Image width not divisible by " + str(widthIncrement)
-                    )
-                return
-            elif (config['CameraSettings']['img_height'] % heightIncrement) != 0:
-                raise Exception(
-                    "Image height not divisible by " + str(heightIncrement) 
-                    )
-                return
-            elif (
-                config['CameraSettings']['img_width'] + 
-                config['CameraSettings']['offset_x']
-                ) > 1280:
-                raise Exception("Image width + x offset > 1280") 
-                return
-            elif (
-                config['CameraSettings']['img_height'] + 
-                config['CameraSettings']['offset_y']
-                ) > 1024:
-                raise Exception("Image height + y offset > 1024") 
-                return
-            else:
-                cam.set_height(config['CameraSettings']['img_height'])
-                cam.set_width(config['CameraSettings']['img_width'])
-                cam.set_offsetX(config['CameraSettings']['offset_x'])
-                cam.set_offsetY(config['CameraSettings']['offset_y'])
-        cam.enable_recent_frame()
+            cam.set_height(config['CameraSettings']['img_height'])
+            cam.set_width(config['CameraSettings']['img_width'])
+            cam.set_offsetX(config['CameraSettings']['offset_x'])
+            cam.set_offsetY(config['CameraSettings']['offset_y'])
+    cam.enable_recent_frame()
 
 def _set_cameras(cams, config):
     for i in range(config['CameraSettings']['num_cams']):
@@ -192,16 +192,7 @@ class CameraInterface:
         self.cam_trigger_pipes = []
         self.poi_deviation_pipes = []
         self.cams_started = mp.Value(c_bool, False)
-        self.increment_trial = mp.Value(c_bool, False)
-        # self.cams_triggered = mp.Value(c_bool, False)
-        # self.cams_triggered = mp.Array(
-        #     c_bool, 
-        #     [False]*self.config['CameraSettings']['num_cams'], 
-        #     )    
-        # self.poi_deviations = mp.Array(
-        #     'i', 
-        #     [0]*self.config['CameraSettings']['num_cams'], 
-        #     )            
+        self.increment_trial = mp.Value(c_bool, False)          
 
     def start_protocol_interface(self):
         print('starting camera processes... ')
@@ -239,20 +230,19 @@ class CameraInterface:
             pipe.send('p')
 
     def all_triggerable(self):
-        print('before trig')
         if all([pipe.poll() for pipe in self.cam_trigger_pipes]):
             for pipe in self.cam_trigger_pipes:
                 pipe.recv()
-            print('after trig success')
             return True
         else: 
             return False
 
     def get_poi_deviation(self):
-        print('before dev')
-        deviations = [pipe.recv() for pipe in self.poi_deviation_pipes]
-        print('after dev')
-        return min(deviations)
+        if all([pipe.poll() for pipe in self.poi_deviation_pipes]):
+            deviations = [pipe.recv() for pipe in self.poi_deviation_pipes]
+            return min(deviations)
+        else:
+            return 0
 
     def trial_ended(self):
         self.increment_trial.value = True
@@ -284,8 +274,7 @@ class CameraInterface:
         poi_std = np.std(
             np.sum(
                 np.square(
-                    baseline_pois - 
-                    poi_means.reshape(num_pois, 1)
+                    baseline_pois - poi_means.reshape(num_pois, 1)
                     ), 
                 axis = 0
                 )
@@ -357,15 +346,12 @@ class CameraInterface:
         while self.cams_started.value == True:        
             if trigger_pipe.poll():
                 trigger_pipe.recv()
-                print('cam_id: '+str(cam_id)+', trigger received')
                 try:
                     cam.get_image(img, timeout = 2000) 
                     trigger_pipe.send('c')
-                    npimg = img.get_image_data_numpy()  
-                    print('cam_id: ' + str(cam_id) + ', pipe sent')    
+                    npimg = img.get_image_data_numpy()     
                     frame = cv2.cvtColor(npimg, cv2.COLOR_BAYER_BG2BGR)
                     ffmpeg_process.stdin.write(frame)
-                    print('cam_id: '+str(cam_id)+' getting dev')
                     dev = self._estimate_poi_deviation(cam_id, npimg, poi_means, poi_std)      
                     poi_deviation_pipe.send(dev)
                 except Exception as err:

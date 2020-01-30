@@ -265,15 +265,19 @@ class Protocols(tk.Toplevel):
         """
         now = str(int(round(time()*1000)))  
         if self.exp_response[3]=='1':
-            self.cams.triggered() 
+            # self.cams.triggered() 
             self.lights_on = 1             
             self.poi_deviation =  self.cams.get_poi_deviation()
-            print(str(self.poi_deviation))
+            # while not self.cams.all_triggerable():
+            #     pass
         else:
             self.lights_on = 0
             self.poi_deviation = 0
         expint.write_message(self.exp_controller, self.control_message) 
-        self.exp_response = expint.read_response(self.exp_controller) 
+        self.cams.triggered()
+        self.exp_response = expint.read_response(self.exp_controller)
+        while not self.cams.all_triggerable():
+            pass 
         self.outputfile.write(
             now + " " + self.exp_response[0:-1:1] + " " + str(self.poi_deviation) + "\n"
             )
