@@ -1,3 +1,5 @@
+flake8
+cython
 sphinx
 sphinx-gallery
 sphinx_rtd_theme
