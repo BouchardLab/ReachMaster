@@ -1,16 +1,13 @@
-"""This module provides a set of functions for interfacing
+"""This module provides a wrapper library for interfacing
 with Ximea machine vision USB3.0 cameras via the
-Ximea API. It establishes camera connections, application
-of user-selected settings, image acquisition, debayering,
-and encoding to video. Video encoding can be performed as 
-either a single or multiprocess. For multiprocess,
-fast NVIDIA gpu-accelerated encoding is performed using 
-CUDA-enabled ffmpeg. 
+Ximea API. It also provides a high performance video 
+encoding and online feature detection class for use by 
+protocols. 
 
 Todo:
-    * Object orient
-    * GPU-accelerated video encoding
     * Automate unit tests
+    * Fix camera connection bug
+    * Integrate ffmpeg settings into configuration file
 
 """
 
@@ -167,6 +164,41 @@ def get_npimage(cam, img):
     return npimg
 
 class CameraInterface:
+    """The primary class for the camera interface module.
+
+    Creates a multiprocess object that performs gpu-accelerated
+    video encoding and feature (i.e., reach) detection on 
+    separate processes. Interprocess communincation and 
+    synchronization is achieved using pipe messages.   
+
+    Attributes
+    ----------
+    config : dict
+        The current configuration settings for the application.
+    ffmpeg_command : list
+        Arguments to the ffmpeg subprocess for video encoding.
+    camera_processes : list
+        List of multiprocessing Process objects. One per camera.
+    cam_trigger_pripes : list
+        List of two-way multiprocessing Pipe objects. Allows the
+        parent process to alert a child camera process that its
+        camera has been triggered. Allows the camera process to
+        alert the parent process when it is triggerable (i.e.,
+        after the most recent image has been encoded).
+    poi_deviation_pipes : list
+        List of one-way multiprocessing Pipe objects. Allows a 
+        child camera process to send the parent process the 
+        deviation from baseline of the pixels of interest used
+        for reach detection.
+    trial_ended_pipes : list
+        List of one-way multiprocessing Pipe objects. Allows the
+        parent process to alert a child camera process when a trial
+        has ended.
+    cams_started : <class 'multiprocessing.sharedctypes.Synchronized'>  
+        Boolean multiprocessing shared memory variable. True when
+        camera processing are running. 
+
+    """
 
     def __init__(self, config):
         self.config = config
@@ -191,23 +223,31 @@ class CameraInterface:
         self.camera_processes = []
         self.cam_trigger_pipes = []
         self.poi_deviation_pipes = []
-        self.cams_started = mp.Value(c_bool, False)
-        self.increment_trial = mp.Value(c_bool, False)          
+        self.trial_ended_pipes = []
+        self.cams_started = mp.Value(c_bool, False)                  
 
     def start_protocol_interface(self):
+        """Sets up the camera process and pipe system for each 
+        camera.
+
+        """   
+
         print('starting camera processes... ')
         for cam_id in range(self.config['CameraSettings']['num_cams']):
             trigger_parent, trigger_child = mp.Pipe()
             self.cam_trigger_pipes.append(trigger_parent)
             poi_parent, poi_child = mp.Pipe()
             self.poi_deviation_pipes.append(poi_parent)
+            trial_parent, trial_child = mp.Pipe()
+            self.trial_ended_pipes.append(trial_parent)
             self.camera_processes.append(
                 mp.Process(
                     target = self._protocol_process, 
                     args = (
                         cam_id,
                         trigger_child,
-                        poi_child
+                        poi_child,
+                        trial_child
                         )
                     )
                 )
@@ -217,35 +257,58 @@ class CameraInterface:
         sleep(5) #give cameras time to setup       
 
     def stop_interface(self):
+        """Tells the camera processes to shut themselves down, waits
+        for them to exit, then cleans up the pipe system.
+        """
         self.cams_started.value = False
         for proc in self.camera_processes:
             proc.join()
         self.cam_trigger_pipes = []
         self.poi_deviation_pipes = []
-        # self.cams_triggered[:] = [False for cam in self.cams_triggered]
-        # self.poi_deviations[:] = [0 for cam in self.poi_deviations]
+        self.trial_ended_pipes = []
 
     def triggered(self):
+        """Alert camera processes that cameras have been triggered"""
         for pipe in self.cam_trigger_pipes:
-            pipe.send('p')
+            pipe.send(1)
 
     def all_triggerable(self):
+        """Check if camera processes are ready for cameras to be 
+        triggered.
+
+        Returns
+        -------
+        triggerable : bool  
+            True if cameras ready.
+        """
         if all([pipe.poll() for pipe in self.cam_trigger_pipes]):
             for pipe in self.cam_trigger_pipes:
                 pipe.recv()
-            return True
+            triggerable = True
         else: 
-            return False
+            triggerable = False
+        return triggerable
 
     def get_poi_deviation(self):
+        """Check the smallest deviation from baseline of pixels of
+        interest across all cameras.
+
+        Returns
+        -------
+        dev : int
+            The minimum deviation across all cameras.
+        """
         if all([pipe.poll() for pipe in self.poi_deviation_pipes]):
             deviations = [pipe.recv() for pipe in self.poi_deviation_pipes]
-            return min(deviations)
+            dev =  min(deviations)
         else:
-            return 0
+            dev = 0
+        return dev
 
     def trial_ended(self):
-        self.increment_trial.value = True
+        """Alert cameras processes that a trial has ended."""
+        for pipe in self.trial_ended_pipes:
+            pipe.send(1)
 
     def _acquire_baseline(self, cam, cam_id, img, num_imgs, trigger_pipe):
         poi_indices = self.config['CameraSettings']['saved_pois'][cam_id]
@@ -292,7 +355,13 @@ class CameraInterface:
             )
         return dev
 
-    def _protocol_process(self, cam_id, trigger_pipe, poi_deviation_pipe):
+    def _protocol_process(
+        self, 
+        cam_id, 
+        trigger_pipe, 
+        poi_deviation_pipe, 
+        trial_ended_pipe
+        ):
         sleep(2*cam_id) #prevents simultaneous calls to the ximea api
         print('finding camera: ', cam_id)
         cam = xiapi.Camera(dev_id = cam_id)
@@ -357,7 +426,11 @@ class CameraInterface:
                 except Exception as err:
                     print("cam_id: " + str(err))
                     pass
-            elif self.config['Protocol']['type'] == 'TRIALS' and self.increment_trial.value:
+            elif (
+                self.config['Protocol']['type'] == 'TRIALS' and 
+                trial_ended_pipe.poll()
+                ):
+                trial_ended_pipe.recv()
                 ffmpeg_process.stdin.close()
                 ffmpeg_process.wait()
                 ffmpeg_process = None

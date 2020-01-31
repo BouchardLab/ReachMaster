@@ -9,8 +9,6 @@ functions for adding, removing and saving pixels-of-interest
 which are used by the experiment protocols for reach detection.
 
 Todo:
-    * GPU-accelerated video encoding
-    * Remove fps setting? 
     * Automate unit tests
 
 """
@@ -43,8 +41,6 @@ class CameraSettings(tk.Toplevel):
     ----------
     config : dict
         The current configuration settings for the application
-    output_params : dict
-        Video output parameters for WriteGear
     exp_controller : instance
         Serial interface to the experiment microcontroller
     exp_connected : bool 
@@ -73,10 +69,6 @@ class CameraSettings(tk.Toplevel):
     gpo_mode : instance 
         Tkinter StringVar that captures the user-selected camera 
         sync output mode.
-    buffer_dur : instance 
-        Tkinter StringVar that captures the user-selected duration 
-        that should be used by protocols for buffering images in 
-        RAM when real-time encoding is not used. 
     img_width : instance 
         Tkinter StringVar that captures the user-selected image 
         width in pixels. Must be less than your camera's maximum 
@@ -178,8 +170,6 @@ class CameraSettings(tk.Toplevel):
         self.trigger_source.set(self.config['CameraSettings']['trigger_source'])
         self.gpo_mode = tk.StringVar()
         self.gpo_mode.set(self.config['CameraSettings']['gpo_mode'])
-        self.buffer_dur = tk.StringVar()
-        self.buffer_dur.set(str(self.config['ExperimentSettings']['buffer_dur']))
         self.img_width = tk.StringVar()
         self.img_width.set(str(self.config['CameraSettings']['img_width']))
         self.img_height = tk.StringVar()
@@ -319,22 +309,13 @@ class CameraSettings(tk.Toplevel):
         self.gpo_mode_menu.grid(row = 5, column = 1)
         tk.Label(
             self,
-            text = "Image Buffer (sec):", 
-            font = 'Arial 10 bold', 
-            bg = "white",
-            width = 23,
-            anchor = "e"
-            ).grid(row = 6, sticky = 'W')   
-        tk.Entry(self, textvariable = self.buffer_dur, width = 17).grid(row = 6, column = 1)
-        tk.Label(
-            self,
             text = "Image Width (pix):", 
             font = 'Arial 10 bold', 
             bg = "white",
             width = 23,
             anchor = "e"
-            ).grid(row = 7, sticky = 'W')   
-        tk.Entry(self, textvariable = self.img_width, width = 17).grid(row = 7, column = 1)
+            ).grid(row = 6, sticky = 'W')   
+        tk.Entry(self, textvariable = self.img_width, width = 17).grid(row = 6, column = 1)
         tk.Label(
             self,
             text = "Image Height (pix):", 
@@ -342,8 +323,8 @@ class CameraSettings(tk.Toplevel):
             bg = "white",
             width = 23,
             anchor = "e"
-            ).grid(row = 8, sticky = 'W')   
-        tk.Entry(self, textvariable = self.img_height, width = 17).grid(row = 8, column = 1)
+            ).grid(row = 7, sticky = 'W')   
+        tk.Entry(self, textvariable = self.img_height, width = 17).grid(row = 7, column = 1)
         tk.Label(
             self,
             text = "Image X Offest (pix):", 
@@ -351,8 +332,8 @@ class CameraSettings(tk.Toplevel):
             bg = "white",
             width = 23,
             anchor = "e"
-            ).grid(row = 9, sticky = 'W')   
-        tk.Entry(self, textvariable = self.offset_x, width = 17).grid(row = 9, column = 1)
+            ).grid(row = 8, sticky = 'W')   
+        tk.Entry(self, textvariable = self.offset_x, width = 17).grid(row = 8, column = 1)
         tk.Label(
             self,
             text = "Image Y Offset (pix):", 
@@ -360,85 +341,85 @@ class CameraSettings(tk.Toplevel):
             bg = "white",
             width = 23,
             anchor = "e"
-            ).grid(row = 10, sticky = 'W')   
-        tk.Entry(self, textvariable = self.offset_y, width = 17).grid(row = 10, column = 1)
+            ).grid(row = 9, sticky = 'W')   
+        tk.Entry(self, textvariable = self.offset_y, width = 17).grid(row = 9, column = 1)
         tk.Label(
             self,
             text = "Downsampling:", 
             font = 'Arial 10 bold', 
             bg = "white",
             width = 23,
-            anchor = "e").grid(row = 11, sticky = 'W') 
+            anchor = "e").grid(row = 10, sticky = 'W') 
         self.downsampling_menu = tk.OptionMenu(
             self,
             self.downsampling,
             "XI_DWN_1x1",
             "XI_DWN_2x2")
         self.downsampling_menu.configure(width = 12, anchor = "w")
-        self.downsampling_menu.grid(row = 11, column = 1)
+        self.downsampling_menu.grid(row = 10, column = 1)
         tk.Button(
             self,
             text = "Start Streaming",
             font = 'Arial 10 bold',
             width = 14,
             command = self.start_stream_callback
-            ).grid(row = 12, column = 0, sticky = "e")
+            ).grid(row = 11, column = 0, sticky = "e")
         tk.Button(
             self,
             text = "Stop Streaming",
             font = 'Arial 10 bold',
             width = 14,
             command = self.stop_stream_callback
-            ).grid(row = 13, column = 0, sticky = "e")
+            ).grid(row = 12, column = 0, sticky = "e")
         tk.Button(
             self,
             text = "Load POIs",
             font = 'Arial 10 bold',
             width = 14,
             command = self.load_pois_callback
-            ).grid(row = 12, column = 1)
+            ).grid(row = 11, column = 1)
         tk.Button(
             self,
             text = "Save POIs",
             font = 'Arial 10 bold',
             width = 14,
             command = self.save_pois_callback
-            ).grid(row = 13, column = 1)
+            ).grid(row = 12, column = 1)
         tk.Button(
             self,
             text = "Add POIs",
             font = 'Arial 10 bold',
             width = 14,
             command = self.add_pois_callback
-            ).grid(row = 12, column = 2)
+            ).grid(row = 11, column = 2)
         tk.Button(
             self,
             text = "Remove POIs",
             font = 'Arial 10 bold',
             width = 14,
             command = self.remove_pois_callback
-            ).grid(row = 13, column = 2)
+            ).grid(row = 12, column = 2)
         tk.Button(
             self,
             text = "Capture Image",
             font = 'Arial 10 bold',
             width = 14,
             command = self.capture_image_callback
-            ).grid(row = 14, column = 0,sticky = "e")
+            ).grid(row = 13, column = 0,sticky = "e")
         tk.Button(
             self,
             text = "Start Record",
             font = 'Arial 10 bold',
             width = 14,
             command = self.start_rec_callback
-            ).grid(row = 14, column = 1)
+            ).grid(row = 13, column = 1)
         tk.Button(
             self,
             text = "Stop Record",
             font = 'Arial 10 bold',
             width = 14,
             command = self.stop_rec_callback
-            ).grid(row = 14, column = 2)        
+            ).grid(row = 13, column = 2)        
         tk.Label(
             self,
             text = "POI Threshold (stdev):", 
@@ -446,15 +427,15 @@ class CameraSettings(tk.Toplevel):
             bg = "white",
             width = 23,
             anchor = "e"
-            ).grid(row = 15, sticky = 'W')   
-        tk.Entry(self, textvariable = self.poi_threshold, width = 17).grid(row = 15, column = 1)
+            ).grid(row = 14, sticky = 'W')   
+        tk.Entry(self, textvariable = self.poi_threshold, width = 17).grid(row = 14, column = 1)
         tk.Button(
             self,
             text = "Toggle Lights", 
             font = 'Arial 10 bold',
             width = 14, 
             command = self.toggle_lights_callback
-            ).grid(row = 16, column = 1)
+            ).grid(row = 15, column = 1)
 
     # Callbacks -----------------------------------------------------------------------------------
 

@@ -4,7 +4,12 @@ Configurations files are json files that store all the settings
 used in a ReachMaster session. Functions are provided to
 generate default configuration files, as well as to save and 
 load previous configurations. This encourages persistence of 
-settings across experiments.  
+settings across experiments. 
+
+Todo:
+    * Automate unit tests 
+    * Integrate ffmpeg settings
+    * Flesh out field descriptions
 
 """
 
@@ -49,18 +54,10 @@ def default_config():
                                  'offset_y':168,
                                  'downsampling':'XI_DWN_1x1',
                                  'saved_pois':[],
-                                 'poi_threshold':15,
-                                 'output_params': {
-                                                  "-vcodec":"libx264", 
-                                                  "-crf": 28,
-                                                  "-preset":"ultrafast", 
-                                                  "-tune":"zerolatency",
-                                                  "-output_dimensions": [3*688, 688]
-                                                 }                                   
+                                 'poi_threshold':15,                                  
                                  },
            'ExperimentSettings':{
                                  'baseline_dur':5.0,
-                                 'buffer_dur':0.5,
                                  'reach_timeout':4000,
                                  'flush_dur':10000,
                                  'solenoid_open_dur':75,

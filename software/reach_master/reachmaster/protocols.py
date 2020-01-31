@@ -43,40 +43,25 @@ class Protocols(tk.Toplevel):
 
     Attributes
     ----------
+    ready : bool
+        True when it is okay to call the run method.
     config : dict
         The current configuration settings for the application.
-    output_params : dict
-        Video encoding parameters for WriteGear.
     exp_connected : bool
         True when experiment controller interface is activated.
     rob_connected : bool
         True when robot controller interface is activated.
     cams_connected : bool
         True when camera interface is activated.
-    video_open : bool
-        True when a file is open for video encoding.
-    poi_means : list
-        A list of the mean value of each pixel-of-interest for 
-        each camera as measured from the baseline acquisition
-        period. Used for reach detection.
-    poi_stds : list
-        A list of standard deviations for each pixel-of-interest 
-        for each camera as measured from the baseline acquisition
-        period. Used for reach detection.
-    poi_obs : list
-        A list of all pixel-of-interest values from the most 
-        recently captured group of images. Used for reach detection.
-    poi_zscores : list
-        A list of all pixel-of-interest zscores relative to baseline
-        for the most recently captured group of images. Used for 
-        reach detection.
     lights_on : bool
         True if neopixel lights are on.
-    buffer_full : bool
-        True if video buffer is full when `protocol type` is 'TRIALS'
-    poi_deviation : bool
-        True when poi_zscores from all cameras are above the 
-        user-specified threshold.  
+    baseline_acquired : bool
+        True is camera processes have collected all baseline images.
+    reach_detected : bool
+        True if the minimum pixel of interest deviaton across all
+        cameras in greater than the selected threshold.
+    reach_init : int
+        Time at which most recent reach was detected.
     control_message : char
         Character message that is sent to the experiment controller
         according to the communication protocol.
@@ -256,7 +241,7 @@ class Protocols(tk.Toplevel):
         Messages are sent to the experiment controller to signal important events 
         such as reach detections, beginnings/ends of trials, and to initiate robot 
         movement. Responses are read from the experiment controller and saved to 
-        the data output file.   
+        the controller data output file.   
 
         Todo:
             * Functionalize code chunks so logic is clearer and custom protocol types are easier to implement. 
@@ -265,19 +250,16 @@ class Protocols(tk.Toplevel):
         """
         now = str(int(round(time()*1000)))  
         if self.exp_response[3]=='1':
-            # self.cams.triggered() 
+            self.cams.triggered() 
             self.lights_on = 1             
             self.poi_deviation =  self.cams.get_poi_deviation()
-            # while not self.cams.all_triggerable():
-            #     pass
+            while not self.cams.all_triggerable():
+                pass
         else:
             self.lights_on = 0
             self.poi_deviation = 0
         expint.write_message(self.exp_controller, self.control_message) 
-        self.cams.triggered()
         self.exp_response = expint.read_response(self.exp_controller)
-        while not self.cams.all_triggerable():
-            pass 
         self.outputfile.write(
             now + " " + self.exp_response[0:-1:1] + " " + str(self.poi_deviation) + "\n"
             )
@@ -308,13 +290,12 @@ class Protocols(tk.Toplevel):
         """Operations performed for a single iteration of protocol type TRIALS.
 
         If an image is triggered by the experiment controller, reach detection is
-        performed on the images, the images are added/removed to an online buffer, 
-        and encoded to mp4 during the intertrial intertval. For this protocol 
-        type, the lights are turned off during the intertrial interval. Messages 
-        are sent to the experiment controller to signal important events such as 
-        reach detections, beginnings/ends of trials, and to initiate robot 
-        movement. Responses are read from the experiment controller and saved to 
-        the data output file.    
+        performed on the images. For this protocol type, the lights are turned off 
+        during the intertrial interval and a separate video is encoded for each 
+        trial. Messages are sent to the experiment controller to signal important 
+        events such as reach detections, beginnings/ends of trials, and to initiate 
+        robot movement. Responses are read from the experiment controller and saved 
+        to the controller data output file.    
 
         Todo:
             * Functionalize code chunks so logic is clearer and custom protocol types are easier to implement.
@@ -326,13 +307,15 @@ class Protocols(tk.Toplevel):
             self.cams.triggered() 
             self.lights_on = 1             
             self.poi_deviation =  self.cams.get_poi_deviation()
+            while not self.cams.all_triggerable():
+                pass
         else:
             self.lights_on = 0
             self.poi_deviation = 0   
         expint.write_message(self.exp_controller, self.control_message)  
         self.exp_response = expint.read_response(self.exp_controller) 
         self.outputfile.write(
-            now + " " + self.exp_response[0:-2:1] + " " + str(self.poi_deviation) + "\n"
+            now + " " + self.exp_response[0:-1:1] + " " + str(self.poi_deviation) + "\n"
             )
         self.exp_response = self.exp_response.split() 
         if (
@@ -366,7 +349,8 @@ class Protocols(tk.Toplevel):
         CONTINUOUS. In order to add a custom type, developers must 
         write a `run_newtype()` method and add it to the call 
         search here. The run methods for each protocol type are 
-        where all the vital real-time operations are executed.
+        where all the vital real-time operations are executed via 
+        communication with the interface modules.
 
         """
         if self.config['Protocol']['type'] == 'CONTINUOUS':

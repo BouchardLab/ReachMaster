@@ -57,7 +57,7 @@ class ReachMaster:
     exp_control_port : instance
         Tkinter StringVar that captures the user-selected port from 
         the port list for the experiment microcontroller.
-    rob_control_port : insstance 
+    rob_control_port : instance 
         Tkinter StringVar that captures the user-selected port from 
         the port list for the robot microcontroller.
     protocol_list : list(str) 

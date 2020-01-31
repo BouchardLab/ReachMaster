@@ -1,139 +1,92 @@
 {
     "ReachMaster": {
-        "rob_control_port": "/dev/ttyACM1",
         "data_dir": "/home/pns/ReachMaster/software/reach_master",
+        "config_file": "Default",
         "exp_control_port": "/dev/ttyACM0",
+        "rob_control_port": "/dev/ttyACM2",
         "serial_baud": 2000000,
-        "control_timeout": 5,
-        "cfg_file": "Default",
-        "config_file": "/home/pns/ReachMaster/software/reach_master/config/tmp_config.json"
+        "control_timeout": 5
     },
     "CameraSettings": {
-        "saved_pois": [
-            [
-                [
-                    448,
-                    382
-                ],
-                [
-                    491,
-                    317
-                ]
-            ],
-            [
-                [
-                    349,
-                    348
-                ],
-                [
-                    358,
-                    367
-                ]
-            ],
-            [
-                [
-                    267,
-                    349
-                ],
-                [
-                    267,
-                    349
-                ]
-            ]
-        ],
-        "gpo_mode": "XI_GPO_EXPOSURE_ACTIVE",
-        "gpi_selector": "XI_GPI_PORT1",
-        "sensor_feature_value": 1,
-        "gpi_mode": "XI_GPI_TRIGGER",
-        "output_params": {
-            "-crf": 28,
-            "-output_dimensions": [
-                2064,
-                688
-            ],
-            "-tune": "zerolatency",
-            "-vcodec": "libx264",
-            "-preset": "ultrafast"
-        },
-        "self.output_params": [
-            2064,
-            688
-        ],
-        "downsampling": "XI_DWN_1x1",
+        "num_cams": 3,
         "imgdataformat": "XI_RAW8",
-        "img_width": 688,
-        "gpo_selector": "XI_GPO_PORT1",
+        "fps": 200,
+        "exposure": 2000,
+        "gain": 15.0,
+        "sensor_feature_value": 1,
+        "gpi_selector": "XI_GPI_PORT1",
+        "gpi_mode": "XI_GPI_TRIGGER",
         "trigger_source": "XI_TRG_EDGE_RISING",
+        "gpo_selector": "XI_GPO_PORT1",
+        "gpo_mode": "XI_GPO_EXPOSURE_ACTIVE",
+        "img_width": 688,
         "img_height": 688,
         "offset_x": 304,
         "offset_y": 168,
-        "fps": 200,
-        "poi_threshold": 15.0,
-        "exposure": 2000,
-        "gain": 15.0,
-        "num_cams": 3
+        "downsampling": "XI_DWN_1x1",
+        "saved_pois": [],
+        "poi_threshold": 15.0
     },
     "ExperimentSettings": {
-        "reach_timeout": 4000,
-        "solenoid_open_dur": 75,
-        "reach_delay": 100,
-        "flush_dur": 10000,
-        "max_rewards": 3,
-        "lights_on_dur": 5000,
         "baseline_dur": 5.0,
+        "reach_timeout": 4000,
+        "flush_dur": 10000,
+        "solenoid_open_dur": 75,
         "solenoid_bounce_dur": 500,
-        "buffer_dur": 0.5,
         "reward_win_dur": 3000,
-        "lights_off_dur": 3000
-    },
-    "Protocol": {
-        "type": "CONTINUOUS"
+        "max_rewards": 3,
+        "lights_off_dur": 3000,
+        "lights_on_dur": 5000,
+        "reach_delay": 100
     },
     "RobotSettings": {
-        "x_command_pos": "None",
-        "off_dur": 1000,
-        "y_pull_dur": "None",
-        "x_pull_dur": "None",
-        "rew_zone_z_max": 581,
-        "y_push_dur": "None",
-        "command_type": "parametric_sample",
-        "pos": "None",
-        "calibration_file": "/home/pns/ReachMaster/software/reachmaster/data/calibration files/calibrationFile.txt",
-        "reach_dist_max": 40,
-        "ygimbal_yoffset": 100,
-        "z_pull_wt": 1.0,
-        "y_push_wt": 1.0,
-        "zgimbal_to_joint": 47,
-        "z_pull_dur": "None",
-        "y_pull_wt": 1.0,
-        "rew_zone_y_max": 658,
-        "z_origin": 531,
-        "command_set": "None",
+        "calibration_file": null,
+        "dis": null,
+        "pos": null,
+        "x_push_dur": null,
+        "x_pull_dur": null,
+        "y_push_dur": null,
+        "y_pull_dur": null,
+        "z_push_dur": null,
+        "z_pull_dur": null,
+        "command_type": null,
+        "command_set": null,
+        "command_file": null,
+        "x_command_pos": null,
+        "y_command_pos": null,
+        "z_command_pos": null,
+        "r_command_pos": null,
+        "theta_y_command_pos": null,
+        "theta_z_command_pos": null,
         "reach_dist_min": 10,
-        "z_push_wt": 1.0,
-        "rew_zone_y_min": 558,
-        "theta_y_command_pos": "None",
-        "tol": 6.8,
-        "y_origin": 608,
+        "reach_dist_max": 40,
+        "reach_angle_max": 1.0471975511965976,
         "ygimbal_to_joint": 64,
-        "x_origin": 1024,
-        "x_push_wt": 1.0,
-        "y_command_pos": "None",
+        "zgimbal_to_joint": 47,
         "xgimbal_xoffset": 168,
-        "z_command_pos": "None",
-        "period": 125000.0,
-        "x_pull_wt": 1.0,
-        "pos_smoothing": 0.1,
-        "theta_z_command_pos": "None",
-        "rew_zone_x": 1000,
-        "num_tol": 5,
+        "ygimbal_yoffset": 100,
         "zgimbal_zoffset": 117,
-        "reach_angle_max": 1.0471975512,
-        "command_file": "/home/pns/ReachMaster/software/reachmaster/data/command files/0mm.txt",
-        "x_push_dur": "None",
-        "r_command_pos": "None",
+        "x_origin": 1024,
+        "y_origin": 608,
+        "z_origin": 531,
+        "pos_smoothing": 0.1,
+        "tol": 6.8,
+        "period": 125000.0,
+        "off_dur": 1000,
+        "num_tol": 5,
+        "x_push_wt": 1.0,
+        "x_pull_wt": 1.0,
+        "y_push_wt": 1.0,
+        "y_pull_wt": 1.0,
+        "z_push_wt": 1.0,
+        "z_pull_wt": 1.0,
+        "rew_zone_x": 1000,
+        "rew_zone_y_min": 558,
+        "rew_zone_y_max": 658,
         "rew_zone_z_min": 481,
-        "z_push_dur": "None",
-        "dis": "None"
+        "rew_zone_z_max": 581
+    },
+    "Protocol": {
+        "type": "TRIALS"
     }
 }
