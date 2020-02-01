@@ -20,11 +20,9 @@ import tkinter as tk
 import tkinter.messagebox
 import cv2
 import PIL.Image, PIL.ImageTk
-from ximea import xiapi
 import time
 import datetime
 import numpy as np
-import serial
 import os 
 from collections import deque
 import subprocess as sp

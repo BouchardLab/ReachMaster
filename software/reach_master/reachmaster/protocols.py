@@ -21,11 +21,7 @@ import tkinter.messagebox
 from time import time, sleep
 import datetime
 import os 
-from collections import deque
-from vidgear.gears import WriteGear
 import numpy as np
-import serial
-from ximea import xiapi
 
 def list_protocols():
     """Generate a list of the available protocol types. Currently 
