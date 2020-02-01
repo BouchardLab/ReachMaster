@@ -8,6 +8,7 @@ Example:
 
 Todo:
     * Create executable
+    * Automate unit tests
 
 """
 
