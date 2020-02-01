@@ -78,7 +78,8 @@ extensions = [
 #tell autodoc which imports to mock
 autodoc_mock_imports = [
     'serial',
-    'ximea'
+    'ximea',
+    'cv2'
 ]
 
 # Napoleon settings
