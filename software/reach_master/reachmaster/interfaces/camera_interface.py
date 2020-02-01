@@ -5,7 +5,7 @@ encoding and online feature detection class for use by
 protocols. 
 
 Todo:
-    * Automate unit tests
+    * Automated unit tests
     * Fix camera connection bug
     * Integrate ffmpeg settings into configuration file
 
