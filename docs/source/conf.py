@@ -53,7 +53,6 @@ author = 'Brian Gereke'
 version = '0.0.0'
 release = 'alpha'
 
-
 # -- General configuration ---------------------------------------------------
 
 # If your documentation needs a minimal Sphinx version, state it here.
@@ -73,7 +72,13 @@ extensions = [
     'sphinx.ext.mathjax',
     'sphinx.ext.ifconfig',
     'sphinx.ext.githubpages',
-    'sphinx.ext.mathjax',
+    'sphinx.ext.mathjax'
+]
+
+#tell autodoc which imports to mock
+autodoc_mock_imports = [
+    'serial',
+    'ximea'
 ]
 
 # Napoleon settings
