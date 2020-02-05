@@ -1,4 +1,0 @@
-Rig Controllers
-=======================================
-
-Controller power!
