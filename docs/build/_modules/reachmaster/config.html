@@ -159,12 +159,7 @@
 <span class="sd">used in a ReachMaster session. Functions are provided to</span>
 <span class="sd">generate default configuration files, as well as to save and </span>
 <span class="sd">load previous configurations. This encourages persistence of </span>
-<span class="sd">settings across experiments. </span>
-
-<span class="sd">Todo:</span>
-<span class="sd">    * Automate unit tests </span>
-<span class="sd">    * Integrate ffmpeg settings</span>
-<span class="sd">    * Flesh out field descriptions</span>
+<span class="sd">settings across experiments.  </span>
 
 <span class="sd">&quot;&quot;&quot;</span>
 
@@ -209,10 +204,18 @@
                                  <span class="s1">&#39;offset_y&#39;</span><span class="p">:</span><span class="mi">168</span><span class="p">,</span>
                                  <span class="s1">&#39;downsampling&#39;</span><span class="p">:</span><span class="s1">&#39;XI_DWN_1x1&#39;</span><span class="p">,</span>
                                  <span class="s1">&#39;saved_pois&#39;</span><span class="p">:[],</span>
-                                 <span class="s1">&#39;poi_threshold&#39;</span><span class="p">:</span><span class="mi">15</span><span class="p">,</span>                                  
+                                 <span class="s1">&#39;poi_threshold&#39;</span><span class="p">:</span><span class="mi">15</span><span class="p">,</span>
+                                 <span class="s1">&#39;output_params&#39;</span><span class="p">:</span> <span class="p">{</span>
+                                                  <span class="s2">&quot;-vcodec&quot;</span><span class="p">:</span><span class="s2">&quot;libx264&quot;</span><span class="p">,</span> 
+                                                  <span class="s2">&quot;-crf&quot;</span><span class="p">:</span> <span class="mi">28</span><span class="p">,</span>
+                                                  <span class="s2">&quot;-preset&quot;</span><span class="p">:</span><span class="s2">&quot;ultrafast&quot;</span><span class="p">,</span> 
+                                                  <span class="s2">&quot;-tune&quot;</span><span class="p">:</span><span class="s2">&quot;zerolatency&quot;</span><span class="p">,</span>
+                                                  <span class="s2">&quot;-output_dimensions&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mi">3</span><span class="o">*</span><span class="mi">688</span><span class="p">,</span> <span class="mi">688</span><span class="p">]</span>
+                                                 <span class="p">}</span>                                   
                                  <span class="p">},</span>
            <span class="s1">&#39;ExperimentSettings&#39;</span><span class="p">:{</span>
                                  <span class="s1">&#39;baseline_dur&#39;</span><span class="p">:</span><span class="mf">5.0</span><span class="p">,</span>
+                                 <span class="s1">&#39;buffer_dur&#39;</span><span class="p">:</span><span class="mf">0.5</span><span class="p">,</span>
                                  <span class="s1">&#39;reach_timeout&#39;</span><span class="p">:</span><span class="mi">4000</span><span class="p">,</span>
                                  <span class="s1">&#39;flush_dur&#39;</span><span class="p">:</span><span class="mi">10000</span><span class="p">,</span>
                                  <span class="s1">&#39;solenoid_open_dur&#39;</span><span class="p">:</span><span class="mi">75</span><span class="p">,</span>

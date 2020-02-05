@@ -150,8 +150,8 @@ def load_config_commands(rob_controller, config):
     `sample_from_file` generates a sequence of commands by
     sampling rows from the command file with replacement.
     For both of these options, the command file is assumed
-    to have three columns ordered as | `reach distance` | 
-    `azimuth` | `elevation` |. `parametric_sample` does not 
+    to have three columns ordered as `reach distance`, 
+    `azimuth`, `elevation`. `parametric_sample` does not 
     use the command file. Rather, it samples commands 
     uniformly from the `reach volume` determined by the 
     user-selected inverse kinematics parameters. 
