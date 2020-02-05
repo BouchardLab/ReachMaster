@@ -3,7 +3,7 @@
         "data_dir": "/home/pns/ReachMaster/software/reach_master",
         "config_file": "Default",
         "exp_control_port": "/dev/ttyACM0",
-        "rob_control_port": "/dev/ttyACM2",
+        "rob_control_port": "/dev/ttyACM1",
         "serial_baud": 2000000,
         "control_timeout": 5
     },

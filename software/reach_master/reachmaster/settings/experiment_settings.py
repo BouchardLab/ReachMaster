@@ -1,7 +1,8 @@
 """The experiment settings window is opened as a child of the 
 ReachMaster root application. It allows the user to set any
-experiment parameters located on the experiment microcontroller
-(e.g., number/size of rewards, trial delays, etc.).
+experiment parameters required by the experiment 
+microcontroller (e.g., number/size of rewards, trial delays, 
+etc.).
 
 
 Todo:
@@ -15,7 +16,7 @@ import tkinter as tk
 import tkinter.messagebox
 
 class ExperimentSettings(tk.Toplevel):
-    """The primary class for the camera settings window.  
+    """The primary class for the experiment settings window.  
 
     Attributes
     ----------

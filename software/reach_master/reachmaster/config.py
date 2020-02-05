@@ -124,8 +124,9 @@ def default_config():
 def load_config(file_handle):
     """Load a configuration file.
 
-    File typically selected by user from the configuration
-    browser in the root ReachMaster application window.
+    Typically loads a file selected by user from the 
+    configuration browser in the root ReachMaster 
+    application window.
 
     Parameters
     ----------
@@ -166,15 +167,16 @@ def save_config(config):
 def save_tmp(config):
     """Save the configuration to a temp file.
 
-    The global state of ReachMaster is tracked with a temp
+    The global state of ReachMaster is tracked using a temp
     file. Whenever a child window of the main application is
     created or destroyed, the temp file is updated to reflect
     whatever changes in settings may have occurred. If the 
     user forgets to save the configuration file at the end of
-    a session, the temp file can be used as a backup. It is 
+    a session, this temp file can be used for recovery. It is 
     saved to the temp folder in the ReachMaster root directory.
-    **Warning: temp file is reset to defaults as a new session 
-    is started!**
+    **Warning: the temp file is reset to the default 
+    configuration whenever a new instance of ReachMaster is 
+    started!**
 
     Parameters
     ----------

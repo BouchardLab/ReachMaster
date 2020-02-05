@@ -1,11 +1,11 @@
 """The robot settings window is opened as a child of the 
 ReachMaster root application. It allows the user to set any
-parameters located on the robot microcontroller (e.g., 
+parameters required by the robot microcontroller (e.g., 
 position smoothing, valve periods etc.), or having to do 
 with the robot kinematics. It provides options for the user 
 to select previously generated calibration and position
 command files. Soon it will allow users to run a robot 
-calibration from within the ReachMaster application.
+calibration routine from within the ReachMaster application.
 
 Todo:
     * Add labels to specify the microcontroller/kinematics parameters
@@ -26,8 +26,10 @@ class RobotSettings(tk.Toplevel):
     """The primary class for the robot settings window.
 
     Configures and provides window callback methods. Also provides 
-    methods to . The 
-    `on_quit()` method is called prior to application destruction.   
+    methods to select robot calibration files, position command
+    files, as well as methods used to sample positions from the 
+    command file. The `on_quit()` method is called prior to 
+    application destruction.   
 
     Attributes
     ----------
@@ -523,8 +525,8 @@ class RobotSettings(tk.Toplevel):
 
     def run_calibration_callback(self):
         """Not yet implented. Should load the robot calibration script to
-        the robot microcontroller along with any relevant arguments, and 
-        run the calibration."""
+        the robot microcontroller along with any relevant arguments, 
+        run all calibration routines, and produce a calibration file."""
         print('not implemented')
 
     def calibration_browse_callback(self):

@@ -1,12 +1,16 @@
-"""Module that provides a set of functions for interfacing
+"""This module provides a set of functions for interfacing
 with the robot microcontroller. It provides functions to 
 recognize and establish serial connections to the 
-controller, read/write settings, calibration and command
-files. 
+controller, read and write settings, and to load 
+calibration and command files. Soon it will provide 
+methods to load user-selected scripts to/from the
+controller in order to execute various robot calibration 
+routines. 
 
 Todo:
     * Object orient
     * Automate unit tests
+    * Ability to load user-selected controller scipts
 
 """
 
@@ -146,8 +150,8 @@ def load_config_commands(rob_controller, config):
     `sample_from_file` generates a sequence of commands by
     sampling rows from the command file with replacement.
     For both of these options, the command file is assumed
-    to have three columns ordered as `reach distance`, 
-    `azimuth', `elevation`. `parametric_sample` does not 
+    to have three columns ordered as | `reach distance` | 
+    `azimuth` | `elevation` |. `parametric_sample` does not 
     use the command file. Rather, it samples commands 
     uniformly from the `reach volume` determined by the 
     user-selected inverse kinematics parameters. 

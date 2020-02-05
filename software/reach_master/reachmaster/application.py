@@ -4,11 +4,11 @@ experiment and robot controllers, accessing the settings windows,
 basic rig control, as well as selecting and running protocols.
 
 Examples:
-    From command line::
+    From terminal::
 
         $ python application.py
 
-    From python::
+    From python interpreter::
 
         >>> import reachmaster.application
         >>> rm = application.ReachMaster()
