@@ -144,17 +144,18 @@ def load_config_commands(rob_controller, config):
     
     Uses the method determined by the command type 
     selected in the configuration file. Currently, the
-    options are `read_from_file`, `sample_from_file`, or 
-    `parametric_sample`. `read_from_file` takes the 
-    commands directly from the command file. 
-    `sample_from_file` generates a sequence of commands by
-    sampling rows from the command file with replacement.
-    For both of these options, the command file is assumed
-    to have three columns ordered as `reach distance`, 
-    `azimuth`, `elevation`. `parametric_sample` does not 
-    use the command file. Rather, it samples commands 
-    uniformly from the `reach volume` determined by the 
-    user-selected inverse kinematics parameters. 
+    options are read_from_file, sample_from_file, or 
+    parametric_sample. The read_from_file option takes 
+    the commands directly from the command file. The 
+    sample_from_file option generates a sequence of 
+    commands by sampling rows from the command file with 
+    replacement. For both of these options, the command 
+    file is assumed to have three columns ordered as 
+    reach distance, azimuth, elevation. The 
+    parametric_sample option does not use the command 
+    file. Rather, it samples commands uniformly from the 
+    reach volume determined by the user-selected inverse 
+    kinematics parameters. 
 
     Todo:
         * Further functionalize for better clarity.

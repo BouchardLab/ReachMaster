@@ -82,13 +82,14 @@ class RobotSettings(tk.Toplevel):
     command_type : instance
         Tkinter StringVar that captures the user-selected option 
         determining how commands are generated. Can be 
-        'read_from_file', 'sample_from_file', or 'parametric_sample'.
-        'read_from_file' takes the commands directly from the command
-        file. 'sample_from_file' generates a sequence of commands by
-        sampling from the command file with replacement. 
-        'parametric_sample' does not use the command file. Rather, it
-        samples commands uniformly from the `reach volume` determined
-        by user-selected inverse kinematics parameters. 
+        read_from_file, sample_from_file, or parametric_sample. The
+        read_from_file option takes the commands directly from the 
+        command file. The sample_from_file option generates a 
+        sequence of commands by sampling from the command file with 
+        replacement. The parametric_sample option does not use the 
+        command file. Rather, it samples commands uniformly from 
+        the reach volume determined by user-selected inverse 
+        kinematics parameters. 
     (y/z)gimbal_to_joint : instance
         Tkinter StringVar that captures the user-measured 
         center-to-center distance (mm) from an y/z gimbal to its
