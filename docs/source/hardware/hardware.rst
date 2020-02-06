@@ -24,7 +24,12 @@ Robot
 	:align: center
 	:width: 800
 
+The ReachMaster robot is a pneumatically-actuated, passively balanced, parallel robot with two rotational and one translational degrees of freedom (dof). The two rotational dof's are controlled by two low-friction double-acting cylinders each connected to the base in parallel by a 2-dof gimbal. These two actuators are joined in series, by spherical joints, to a third cylinder which controls the translational dof. The translational actuator is also connected to the base by a 2-dof gimabal, and to the robot's handle and reward delivery unit. The reward delivery unit consists of a solenoid-driven liquid delivery spout, an IR beam-based lick detector, and an option LED to provide visual cues. Lastly, fast high resolution position sensing is achieved by low-friction linear potentiometers attached to each of the cylinder rods. All data from the potentiometers, solenoid, LED, and IR sensors are recorded by a SpikeGadgets acquisition system (see below). The robot workspace (shown in red) can be empirically estimated by acquiring potentiometer data from the robot as it explores its full range of motion, passing the trajectory through an analytically-derived forward kinematics transformation, and then fitting a surface to the extrema of the resulting scatter plot (see link_to_code). Similary, command positions can be derived by sampling points from some relevant subspace of the robot workspace (e.g., rodent workspace shown in blue), and then passing those points through an analytically-derived inverse kinematics transformation that returns the corresponding potentiometer values.  
 
+Kinematics
+^^^^^^^^^^
+<figure>
+Make new figure with all relevant kinematic variables labeled. Provide mathematical derivation of forward and inverse kinematics. Link to relevant sections of user interface and data preprocessing codes.
 
 Air Delivery
 ^^^^^^^^^^^^^^
