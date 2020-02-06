@@ -15,15 +15,15 @@ ReachMaster is a pneumatically-actuated robotic system that supports a variety o
    hardware/hardware
    software/software
 
-.. rubric:: References
+References
+==========
 
 **Gereke2019**
     Gereke B.J., Nelson B.R. and Bouchard K.E. A 3-dof pneumatically-actuated robotic system for complex reaching tasks in rodents compatible with electrophysiology. Society for Neuroscience, Chicago, 2019. (manuscript in prep)
 
 
-Indices and tables
-==================
+Indices 
+=======
 
 * :ref:`genindex`
 * :ref:`modindex`
-* :ref:`search`
