@@ -9,7 +9,7 @@ Enclosure
 
 Robot
 -----
-.. image:: /art/rig_overview.png
+.. image:: /art/robot.png
 	:align: center
 
 Air Delivery
@@ -19,12 +19,12 @@ Air Delivery
 
 Actuation
 ^^^^^^^^^^^^^^^^^^^
-.. image:: /art/pneumatic_cylinder.png
+.. image:: /art/pneumatic_cylinder.jpeg
 	:align: center
 
 Position Sensing
 ^^^^^^^^^^^^^^^^
-.. image:: /art/potentiometer.png
+.. image:: /art/potentiometer.jpg
 	:align: center
 
 3D Printed Parts
