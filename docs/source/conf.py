@@ -72,7 +72,8 @@ extensions = [
     'sphinx.ext.mathjax',
     'sphinx.ext.ifconfig',
     'sphinx.ext.githubpages',
-    'sphinx.ext.mathjax'
+    'sphinx.ext.mathjax',
+    'sphinx.ext.autosectionlabel'
 ]
 
 #tell autodoc which imports to mock
