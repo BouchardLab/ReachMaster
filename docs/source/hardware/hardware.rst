@@ -5,28 +5,27 @@ Here you will find a detailed list of parts, build instructions, and discussion 
 Enclosure
 ---------
 .. image:: /art/rat_enclosure_new.png
-
-**Freely Moving**
-   picture
-
-**Confined**
-   picture
+	:align: center
 
 Robot
 -----
-picture of robot
+.. image:: /art/rig_overview.png
+	:align: center
 
 Air Delivery
 ^^^^^^^^^^^^^^
-pictures
+.. image:: /art/compressor_plus_valves.png
+	:align: center
 
 Actuation
 ^^^^^^^^^^^^^^^^^^^
-picture
+.. image:: /art/pneumatic_cylinder.png
+	:align: center
 
 Position Sensing
 ^^^^^^^^^^^^^^^^
-pitcure
+.. image:: /art/potentiometer.png
+	:align: center
 
 3D Printed Parts
 ^^^^^^^^^^^^^^^^
@@ -42,21 +41,21 @@ picture
 
 Cameras
 -------
-picture
-
-Mounting
-^^^^^^^^
+.. image:: /art/cameras.png
+	:align: center
 
 Lighting
 --------
-picture
+.. image:: /art/neopixels.png
+	:align: center
 
 3D Printed Parts
 ^^^^^^^^^^^^^^^^
 
 Reward Delivery
 ---------------
-picture
+.. image:: /art/solenoid.png
+	:align: center
 
 Lick Detection
 --------------
@@ -68,7 +67,7 @@ picture
 
 Build Instructions
 ------------------
-add steps
+coming soon
 
 
 
