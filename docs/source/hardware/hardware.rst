@@ -4,7 +4,7 @@ Here you will find a detailed list of parts, build instructions, and discussion 
 
 Enclosure
 ---------
-.. image:: /art/rat_enclosure_new.png
+.. image:: /art/enclosure.png
 	:align: center
 	:width: 800
 
@@ -63,7 +63,7 @@ Reward Delivery
 ---------------
 .. image:: /art/solenoid.png
 	:align: center
-	:width: 400
+	:width: 250
 
 Lick Detection
 --------------
