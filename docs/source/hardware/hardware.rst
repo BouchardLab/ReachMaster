@@ -61,11 +61,13 @@ Position Sensing
 .. image:: /art/potentiometer.jpg
 	:align: center
 	:width: 400
+
 Add discussion of linear potentiometers and contactless alternatives.
 
 Gimbal 
 ^^^^^^
 picture
+
 Describe each of the 3D printed gimbal pieces.
 
 Handles
@@ -85,6 +87,7 @@ Cameras
 .. image:: /art/cameras.png
 	:align: center
 	:width: 400
+
 Discuss current Ximea XiQ USB3.0 cameras highspeed color cameras, and IR and newer PCIe altenernatives. Lenses and resolution tradeoffs, trigger and synchronization options. Point to SpikeGadgets slack channel for discussion of additional options? Trodes camera module? USB card requirements/limitations.
 
 Lighting
@@ -92,6 +95,7 @@ Lighting
 .. image:: /art/neopixels.png
 	:align: center
 	:width: 400
+
 Discuss neopixels and what you can do with them. Discuss electrical noise issues, IR lighting alternatives, more diffuse lighting alternatives. Point to Whishaw rat pellet reaching chapter for product.
 
 Reward Delivery
@@ -99,6 +103,7 @@ Reward Delivery
 .. image:: /art/solenoid.png
 	:align: center
 	:width: 250
+
 Discuss the Lee solenoids and proper maintainance, other alternatives. Calibration. Link to code and website tutorial.
 
 Lick Detection
@@ -108,12 +113,14 @@ Discuss the IR emitters/receivers, the driver circuit, and other variants. Link 
 
 Data Acquisition
 ----------------
-<SpikeGadgets picture>
+<picture>
+
 Discuss SpikeGadgets and link to thier site. Discuss National Instruments options?
 
 Computers
 ---------
 <picture>
+
 Discuss CPU, motherboard, GPU and USB/PCIe requirements. 
 
 Build Instructions
