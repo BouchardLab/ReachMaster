@@ -1,4 +1,4 @@
-# Software
+# ReachMaster software
 All software packages used to operate the ReachMaster robotic system and run common analyses on the resulting data. 
 
 reach_master - the graphical user interface used to run experiments and collect data
