@@ -1,2 +1,4 @@
-# rat_reaching_hardware
-CAD files for rat reaching robot, rig components, etc.
+# ReachMaster hardware
+Repository of CAD files for ReachMaster robot, peripheral hardware, etc.
+
+Todo: Remove old and/or uneccessary files and organize.

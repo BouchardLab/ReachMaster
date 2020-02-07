@@ -1,2 +1,3 @@
-# ReachMaster
-A pneumatically-actuated robotic system for complex rodent reaching tasks
+# Data wrangling and preprocessing
+Utilities for reading, parsing, and exporting various types of ReachMaster data
+
