@@ -108,8 +108,15 @@ Discuss the Lee solenoids and proper maintainance, other alternatives. Calibrati
 
 Lick Detection
 --------------
-picture
+<picture>
+
 Discuss the IR emitters/receivers, the driver circuit, and other variants. Link to website tutorial(s).
+
+Controllers
+-----------
+<picture>
+
+Discuss Arduino, Teensy, mbed, general requirements, and alternatives.
 
 Data Acquisition
 ----------------
