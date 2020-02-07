@@ -1,0 +1,6 @@
+numpy
+opencv-python
+sphinx
+sphinx-gallery
+sphinx_rtd_theme
+autodoc

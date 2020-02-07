@@ -1,4 +1,7 @@
-Data Preprocessing
+Data Wrangling and Preprocessing
 =======================================
 
-Data processing scripts.
+Trodes to Python
+---------------------------------------
+.. automodule:: trodes_data.readTrodesExtractedDataFile3
+	:members:

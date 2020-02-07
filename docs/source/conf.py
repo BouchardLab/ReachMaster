@@ -1,20 +1,3 @@
-# Configuration file for the Sphinx documentation builder.
-#
-# This file only contains a selection of the most common options. For a full
-# list see the documentation:
-# https://www.sphinx-doc.org/en/master/usage/configuration.html
-
-# -- Path setup --------------------------------------------------------------
-
-# If extensions (or modules to document with autodoc) are in another directory,
-# add these directories to sys.path here. If the directory is relative to the
-# documentation root, use os.path.abspath to make it absolute, like shown here.
-#
-# import os
-# import sys
-# sys.path.insert(0, os.path.abspath('.'))
-
-
 # -- Project information -----------------------------------------------------
 # -*- coding: utf-8 -*-
 #
@@ -24,27 +7,23 @@
 # full list see the documentation:
 # http://www.sphinx-doc.org/en/master/config
 
-# -- Path setup --------------------------------------------------------------
-
-# If extensions (or modules to document with autodoc) are in another directory,
-# add these directories to sys.path here. If the directory is relative to the
-# documentation root, use os.path.abspath to make it absolute, like shown here.
-#
 import os
 import sys
 import sphinx_rtd_theme
 
-# Get the software project root dir
-project_root = os.path.join(os.path.dirname(os.path.dirname(os.getcwd())),"software/reach_master")
-#print(project_root)
+# -- Path setup --------------------------------------------------------------
+
+# Set the software project root dirs
+reach_master_root = os.path.join(os.path.dirname(os.path.dirname(os.getcwd())),"software/reach_master")
+wrangling_preprocessing_root = os.path.join(os.path.dirname(os.path.dirname(os.getcwd())),"software/wrangling_preprocessing")
 
 # Insert the project root dir as the first element in the PYTHONPATH.
 # This lets us ensure that the source package is imported, and that its
 # version is used.
-sys.path.append(project_root)
+sys.path.append(reach_master_root)
+sys.path.append(wrangling_preprocessing_root)
 
 # -- Project information -----------------------------------------------------
-
 project = 'ReachMaster'
 copyright = 'The Regents of the University of California, through Lawrence Berkeley National Laboratory'
 author = 'Brian Gereke'
@@ -54,8 +33,6 @@ version = '0.0.0'
 release = 'alpha'
 
 # -- General configuration ---------------------------------------------------
-
-# If your documentation needs a minimal Sphinx version, state it here.
 
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
@@ -76,16 +53,19 @@ extensions = [
     'sphinx.ext.autosectionlabel'
 ]
 
+#Options for Napolean extension
+napoleon_google_docstring = True
+napoleon_numpy_docstring = True
+
+#Options for todo extension
+todo_include_todos = True
+
 #tell autodoc which imports to mock
 autodoc_mock_imports = [
     'serial',
     'ximea',
     'cv2'
 ]
-
-# Napoleon settings
-napoleon_google_docstring = True
-napoleon_numpy_docstring = True
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
@@ -130,7 +110,3 @@ html_theme_options = {'logo_only': False}
 # html_static_path = ['_static']
 html_static_path = []
 
-# -- Options for todo extension ----------------------------------------------
-
-# If true, `todo` and `todoList` produce output, else they produce nothing.
-todo_include_todos = True

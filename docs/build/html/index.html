@@ -157,7 +157,8 @@
             
   <div class="section" id="reachmaster">
 <h1>ReachMaster<a class="headerlink" href="#reachmaster" title="Permalink to this headline">¶</a></h1>
-<p>ReachMaster is a pneumatically-actuated robotic system that supports a variety of rodent reaching tasks. The robot utilizes a modular design that enables up to 3 degrees of freedom (1 linear + 2 rotational), and is able to accurately and rapidly position rewards within a large workspace in front of freely moving, or restrained animals.</p>
+<p>ReachMaster is a pneumatically-actuated robotic system that supports a variety of rodent reaching tasks. The robot utilizes a modular design that enables up to 3 positional degrees of freedom (1 linear + 2 rotational), and is able to accurately and rapidly position rewards within a large workspace in front of freely moving, or restrained animals.</p>
+<a class="reference internal image-reference" href="_images/robot.png"><img alt="_images/robot.png" class="align-center" src="_images/robot.png" style="width: 800px;" /></a>
 <div class="toctree-wrapper compound">
 <p class="caption"><span class="caption-text">Contents:</span></p>
 <ul>
@@ -165,24 +166,22 @@
 <li class="toctree-l1"><a class="reference internal" href="hardware/hardware.html">Hardware</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="hardware/hardware.html#enclosure">Enclosure</a></li>
 <li class="toctree-l2"><a class="reference internal" href="hardware/hardware.html#robot">Robot</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="hardware/hardware.html#kinematics">Kinematics</a></li>
 <li class="toctree-l3"><a class="reference internal" href="hardware/hardware.html#air-delivery">Air Delivery</a></li>
 <li class="toctree-l3"><a class="reference internal" href="hardware/hardware.html#actuation">Actuation</a></li>
 <li class="toctree-l3"><a class="reference internal" href="hardware/hardware.html#position-sensing">Position Sensing</a></li>
-<li class="toctree-l3"><a class="reference internal" href="hardware/hardware.html#d-printed-parts">3D Printed Parts</a></li>
+<li class="toctree-l3"><a class="reference internal" href="hardware/hardware.html#gimbal">Gimbal</a></li>
 <li class="toctree-l3"><a class="reference internal" href="hardware/hardware.html#handles">Handles</a></li>
 <li class="toctree-l3"><a class="reference internal" href="hardware/hardware.html#mounting">Mounting</a></li>
+<li class="toctree-l3"><a class="reference internal" href="hardware/hardware.html#pressure-sensing">Pressure Sensing</a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="hardware/hardware.html#cameras">Cameras</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="hardware/hardware.html#id1">Mounting</a></li>
-</ul>
-</li>
-<li class="toctree-l2"><a class="reference internal" href="hardware/hardware.html#lighting">Lighting</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="hardware/hardware.html#id2">3D Printed Parts</a></li>
-</ul>
-</li>
+<li class="toctree-l2"><a class="reference internal" href="hardware/hardware.html#cameras">Cameras</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hardware/hardware.html#lighting">Lighting</a></li>
 <li class="toctree-l2"><a class="reference internal" href="hardware/hardware.html#reward-delivery">Reward Delivery</a></li>
 <li class="toctree-l2"><a class="reference internal" href="hardware/hardware.html#lick-detection">Lick Detection</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hardware/hardware.html#controllers">Controllers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hardware/hardware.html#data-acquisition">Data Acquisition</a></li>
 <li class="toctree-l2"><a class="reference internal" href="hardware/hardware.html#computers">Computers</a></li>
 <li class="toctree-l2"><a class="reference internal" href="hardware/hardware.html#build-instructions">Build Instructions</a></li>
 </ul>
@@ -200,7 +199,10 @@
 <li class="toctree-l3"><a class="reference internal" href="software/reach_master/reach_master.html#module-reachmaster.config">Configuration Files</a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="software/wrangling_preprocessing/wrangling_preprocessing.html">Data Preprocessing</a></li>
+<li class="toctree-l2"><a class="reference internal" href="software/wrangling_preprocessing/wrangling_preprocessing.html">Data Wrangling and Preprocessing</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="software/wrangling_preprocessing/wrangling_preprocessing.html#module-trodes_data.readTrodesExtractedDataFile3">Trodes to Python</a></li>
+</ul>
+</li>
 <li class="toctree-l2"><a class="reference internal" href="software/rig_controllers/rig_controllers.html">Rig Controllers</a></li>
 <li class="toctree-l2"><a class="reference internal" href="software/robot_calibration/robot_calibration.html">Robot Calibration</a></li>
 <li class="toctree-l2"><a class="reference internal" href="software/archived/archived.html">Archived</a></li>
@@ -208,18 +210,19 @@
 </li>
 </ul>
 </div>
-<p class="rubric">References</p>
+</div>
+<div class="section" id="references">
+<h1>References<a class="headerlink" href="#references" title="Permalink to this headline">¶</a></h1>
 <dl class="docutils">
 <dt><strong>Gereke2019</strong></dt>
 <dd>Gereke B.J., Nelson B.R. and Bouchard K.E. A 3-dof pneumatically-actuated robotic system for complex reaching tasks in rodents compatible with electrophysiology. Society for Neuroscience, Chicago, 2019. (manuscript in prep)</dd>
 </dl>
 </div>
-<div class="section" id="indices-and-tables">
-<h1>Indices and tables<a class="headerlink" href="#indices-and-tables" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="indices">
+<h1>Indices<a class="headerlink" href="#indices" title="Permalink to this headline">¶</a></h1>
 <ul class="simple">
 <li><a class="reference internal" href="genindex.html"><span class="std std-ref">Index</span></a></li>
 <li><a class="reference internal" href="py-modindex.html"><span class="std std-ref">Module Index</span></a></li>
-<li><a class="reference internal" href="search.html"><span class="std std-ref">Search Page</span></a></li>
 </ul>
 </div>
 
