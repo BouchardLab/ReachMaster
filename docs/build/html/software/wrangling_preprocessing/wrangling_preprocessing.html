@@ -174,6 +174,28 @@
 <span id="trodes-to-python"></span><h2>Trodes to Python<a class="headerlink" href="#module-trodes_data.readTrodesExtractedDataFile3" title="Permalink to this headline">¶</a></h2>
 <p>SpikeGadgets provides this script to import data from Trodes
 to Python. For further documentation, visit <a class="reference external" href="http://spikegadgets.com/software/python_toolbox.html">SpikeGadgets</a> .</p>
+<dl class="function">
+<dt id="trodes_data.readTrodesExtractedDataFile3.readTrodesExtractedDataFile">
+<code class="descclassname">trodes_data.readTrodesExtractedDataFile3.</code><code class="descname">readTrodesExtractedDataFile</code><span class="sig-paren">(</span><em>filename</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/trodes_data/readTrodesExtractedDataFile3.html#readTrodesExtractedDataFile"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#trodes_data.readTrodesExtractedDataFile3.readTrodesExtractedDataFile" title="Permalink to this definition">¶</a></dt>
+<dd><p>Read a DIO or analog Trodes .dat file. These files are
+typically produced after converting the raw .rec files
+using the <cite>exportdio</cite> or <cite>exportanalog</cite> bash scripts
+provided by SpikeGadgets. Visit <a class="reference external" href="http://spikegadgets.com/software/python_toolbox.html">SpikeGadgets</a> for
+more details.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>filename</strong> (<em>str</em>) – Path to file</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><strong>fieldText</strong> – A nested dictionary with the extracted data</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">dict</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
 </div>
 </div>
 

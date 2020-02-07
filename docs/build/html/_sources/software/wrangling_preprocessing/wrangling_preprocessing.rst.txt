@@ -4,3 +4,4 @@ Data Wrangling and Preprocessing
 Trodes to Python
 ---------------------------------------
 .. automodule:: trodes_data.readTrodesExtractedDataFile3
+	:members:
