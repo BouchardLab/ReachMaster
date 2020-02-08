@@ -3,7 +3,7 @@
         "data_dir": "/home/pns/ReachMaster/software/reach_master",
         "config_file": "Default",
         "exp_control_port": "/dev/ttyACM0",
-        "rob_control_port": "/dev/ttyACM1",
+        "rob_control_port": "/dev/ttyACM2",
         "serial_baud": 2000000,
         "control_timeout": 5
     },
@@ -25,7 +25,7 @@
         "offset_y": 168,
         "downsampling": "XI_DWN_1x1",
         "saved_pois": [],
-        "poi_threshold": 15.0
+        "poi_threshold": 15
     },
     "ExperimentSettings": {
         "baseline_dur": 5.0,

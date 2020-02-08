@@ -1,12 +1,30 @@
 Data Wrangling and Preprocessing
 =======================================
 
-Trodes to Python
+Trodes Data
 ---------------------------------------
+Here we go over a collection of moduls for extracting,
+reading, parsing and preprocessing trodes data produced
+by various ReachMaster routines.
+
+Extract trodes data to python
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 .. automodule:: trodes_data.readTrodesExtractedDataFile3
 	:members:
 
-Parsing calibration data
----------------------------------------
+Calibration data parser
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 .. automodule:: trodes_data.calibration_data_parser
 	:members:
+
+Video Data
+---------------------------------------
+
+Controller Data
+---------------------------------------
+
+Config Data
+---------------------------------------
+
+NWB
+---------------------------------------

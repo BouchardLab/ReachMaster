@@ -11,15 +11,15 @@ import subprocess as sp
 
 def _get_trodes_files(data_dir, trodes_name):
 	trodes_files = {
-		'time_file':  data_dir + '/%s/%s.analog/%s.timestamps.dat' % (trodes_name, trodes_name, trodes_name)
-		'x_push_file': data_dir + '/%s/%s.DIO/%s.dio_x_push.dat' % (trodes_name, trodes_name, trodes_name)
-		'x_pull_file': data_dir + '/%s/%s.DIO/%s.dio_x_pull.dat' % (trodes_name, trodes_name, trodes_name)
-		'y_push_file': data_dir + '/%s/%s.DIO/%s.dio_y_push.dat' % (trodes_name, trodes_name, trodes_name)
-		'y_pull_file': data_dir + '/%s/%s.DIO/%s.dio_y_pull.dat' % (trodes_name, trodes_name, trodes_name)
-		'z_push_file': data_dir + '/%s/%s.DIO/%s.dio_z_push.dat' % (trodes_name, trodes_name, trodes_name)
-		'z_pull_file': data_dir + '/%s/%s.DIO/%s.dio_z_pull.dat' % (trodes_name, trodes_name, trodes_name)
-		'x_pot_file': data_dir + '/%s/%s.analog/%s.analog_potX.dat' % (trodes_name, trodes_name, trodes_name)
-		'y_pot_file': data_dir + '/%s/%s.analog/%s.analog_potY.dat' % (trodes_name, trodes_name, trodes_name)
+		'time_file':  data_dir + '/%s/%s.analog/%s.timestamps.dat' % (trodes_name, trodes_name, trodes_name),
+		'x_push_file': data_dir + '/%s/%s.DIO/%s.dio_x_push.dat' % (trodes_name, trodes_name, trodes_name),
+		'x_pull_file': data_dir + '/%s/%s.DIO/%s.dio_x_pull.dat' % (trodes_name, trodes_name, trodes_name),
+		'y_push_file': data_dir + '/%s/%s.DIO/%s.dio_y_push.dat' % (trodes_name, trodes_name, trodes_name),
+		'y_pull_file': data_dir + '/%s/%s.DIO/%s.dio_y_pull.dat' % (trodes_name, trodes_name, trodes_name),
+		'z_push_file': data_dir + '/%s/%s.DIO/%s.dio_z_push.dat' % (trodes_name, trodes_name, trodes_name),
+		'z_pull_file': data_dir + '/%s/%s.DIO/%s.dio_z_pull.dat' % (trodes_name, trodes_name, trodes_name),
+		'x_pot_file': data_dir + '/%s/%s.analog/%s.analog_potX.dat' % (trodes_name, trodes_name, trodes_name),
+		'y_pot_file': data_dir + '/%s/%s.analog/%s.analog_potY.dat' % (trodes_name, trodes_name, trodes_name),
 		'z_pot_file': data_dir + '/%s/%s.analog/%s.analog_potZ.dat' % (trodes_name, trodes_name, trodes_name)
 	}
 	return trodes_files

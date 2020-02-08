@@ -95,10 +95,12 @@
 <li class="toctree-l2"><a class="reference internal" href="../reach_master/reach_master.html">ReachMaster User Interface</a></li>
 <li class="toctree-l2 current"><a class="current reference internal" href="#">Data Wrangling and Preprocessing</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#module-trodes_data.readTrodesExtractedDataFile3">Trodes to Python</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#module-trodes_data.calibration_data_parser">Parsing calibration data</a></li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="../rig_controllers/rig_controllers.html">Rig Controllers</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../robot_calibration/robot_calibration.html">Robot Calibration</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../camera_calibration/camera_calibration.html">Camera Calibration</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../archived/archived.html">Archived</a></li>
 </ul>
 </li>
@@ -191,6 +193,43 @@ more details.</p>
 <tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><strong>fieldText</strong> – A nested dictionary with the extracted data</td>
 </tr>
 <tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">dict</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
+<div class="section" id="module-trodes_data.calibration_data_parser">
+<span id="parsing-calibration-data"></span><h2>Parsing calibration data<a class="headerlink" href="#module-trodes_data.calibration_data_parser" title="Permalink to this headline">¶</a></h2>
+<p>A library for reading, parsing, and preprocessing trodes data
+collected during robot calibration routines.</p>
+<dl class="function">
+<dt id="trodes_data.calibration_data_parser.get_summary_frame">
+<code class="descclassname">trodes_data.calibration_data_parser.</code><code class="descname">get_summary_frame</code><span class="sig-paren">(</span><em>data_dir</em>, <em>trodes_name</em>, <em>sampling_rate=3000</em>, <em>valve_period=0.175</em>, <em>pot_units='cm'</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/trodes_data/calibration_data_parser.html#get_summary_frame"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#trodes_data.calibration_data_parser.get_summary_frame" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generate a data frame that can be modeled for robot calibration.</p>
+<blockquote>
+<div><dl class="docutils">
+<dt>data_dir <span class="classifier-delimiter">:</span> <span class="classifier">str</span></dt>
+<dd>Parent directory where the trodes data lives</dd>
+<dt>trodes_name <span class="classifier-delimiter">:</span> <span class="classifier">str</span></dt>
+<dd>Name of original .rec trodes file</dd>
+<dt>sampling_rate <span class="classifier-delimiter">:</span> <span class="classifier">int</span></dt>
+<dd>Specifying a rate (Hz) lower than the SpikeGadgets MCU clock rate of
+30 kHz will downsample the data and speed up the parsing.</dd>
+<dt>valve_period <span class="classifier-delimiter">:</span> <span class="classifier">float</span></dt>
+<dd>Time (sec) between valve command onsets</dd>
+<dt>pot_units <span class="classifier-delimiter">:</span> <span class="classifier">str</span></dt>
+<dd>Units to return potentiometer recordings. Can be <cite>cm</cite>, <cite>volts</cite>, or
+<cite>bits</cite>.</dd>
+</dl>
+</div></blockquote>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><strong>data_frame</strong> – A pandas data frame</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">type(pandas.DataFrame)</td>
 </tr>
 </tbody>
 </table>
