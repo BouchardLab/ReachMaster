@@ -21,10 +21,10 @@
   
     
       <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
-        <script src="../../../_static/jquery.js"></script>
-        <script src="../../../_static/underscore.js"></script>
-        <script src="../../../_static/doctools.js"></script>
-        <script src="../../../_static/language_data.js"></script>
+        <script type="text/javascript" src="../../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../../_static/language_data.js"></script>
     
     <script type="text/javascript" src="../../../_static/js/theme.js"></script>
 
@@ -156,12 +156,13 @@
 <span></span><span class="sd">&quot;&quot;&quot;This module provides a set of functions for interfacing</span>
 <span class="sd">with the experiment microcontroller. It provides functions</span>
 <span class="sd">to recognize and establish serial connections to the </span>
-<span class="sd">controller, read/write settings, exectute common callbacks,</span>
-<span class="sd">and read/write custom messages. </span>
+<span class="sd">controller, read/write settings, execute common callbacks</span>
+<span class="sd">located in the other modules, and read/write custom messages. </span>
 
 <span class="sd">Todo:</span>
 <span class="sd">    * Object orient</span>
 <span class="sd">    * Automate unit tests</span>
+<span class="sd">    * Limit custom messages by absorbing communication codes from protocols module</span>
 
 <span class="sd">&quot;&quot;&quot;</span>
 
@@ -279,7 +280,7 @@
 
 <div class="viewcode-block" id="deliver_water"><a class="viewcode-back" href="../../../software/reach_master/reach_master.html#reachmaster.interfaces.experiment_interface.deliver_water">[docs]</a><span class="k">def</span> <span class="nf">deliver_water</span><span class="p">(</span><span class="n">exp_controller</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Send a message to experiment controller to open the </span>
-<span class="sd">    reward solenoid for the user-selected duration.</span>
+<span class="sd">    solenoid for the user-selected reward duration.</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
@@ -291,8 +292,7 @@
 
 <div class="viewcode-block" id="flush_water"><a class="viewcode-back" href="../../../software/reach_master/reach_master.html#reachmaster.interfaces.experiment_interface.flush_water">[docs]</a><span class="k">def</span> <span class="nf">flush_water</span><span class="p">(</span><span class="n">exp_controller</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Send a message to experiment controller to opens the </span>
-<span class="sd">    reward solenoid for the flush user-selected flush </span>
-<span class="sd">    duration.</span>
+<span class="sd">    solenoid for the user-selected flush duration.</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>

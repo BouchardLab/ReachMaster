@@ -10,6 +10,7 @@
 import os
 import sys
 import sphinx_rtd_theme
+import numpydoc
 
 # -- Path setup --------------------------------------------------------------
 
@@ -54,7 +55,7 @@ extensions = [
 ]
 
 #Options for Napolean extension
-napoleon_google_docstring = True
+napoleon_google_docstring = False
 napoleon_numpy_docstring = True
 
 #Options for todo extension

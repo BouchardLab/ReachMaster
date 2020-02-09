@@ -21,10 +21,10 @@
   
     
       <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
-        <script src="../../../_static/jquery.js"></script>
-        <script src="../../../_static/underscore.js"></script>
-        <script src="../../../_static/doctools.js"></script>
-        <script src="../../../_static/language_data.js"></script>
+        <script type="text/javascript" src="../../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../../_static/language_data.js"></script>
     
     <script type="text/javascript" src="../../../_static/js/theme.js"></script>
 
@@ -153,22 +153,80 @@
            <div itemprop="articleBody">
             
   <h1>Source code for reachmaster.interfaces.camera_interface</h1><div class="highlight"><pre>
-<span></span><span class="sd">&quot;&quot;&quot;This module provides a set of functions for interfacing</span>
-<span class="sd">with multiple Ximea machine vision USB3.0 cameras via the</span>
-<span class="sd">Ximea API. It provides functions start/stop the cameras </span>
-<span class="sd">using the user-selected settings, and to get images from</span>
-<span class="sd">the cameras. </span>
+<span></span><span class="sd">&quot;&quot;&quot;This module provides a wrapper library for interfacing</span>
+<span class="sd">with Ximea machine vision USB3.0 cameras via the</span>
+<span class="sd">Ximea API. It also provides a high performance video </span>
+<span class="sd">encoding and online feature detection class for use by </span>
+<span class="sd">protocols that require high frame rates. </span>
 
 <span class="sd">Todo:</span>
-<span class="sd">    * Object orient</span>
-<span class="sd">    * GPU-accelerated video encoding</span>
-<span class="sd">    * Automate unit tests</span>
+<span class="sd">    * Automated unit tests</span>
+<span class="sd">    * Fix camera connection bug</span>
+<span class="sd">    * Integrate ffmpeg settings into configuration file</span>
+<span class="sd">    * Create a Video Settings module?</span>
 
 <span class="sd">&quot;&quot;&quot;</span>
 
 <span class="kn">from</span> <span class="nn">ximea</span> <span class="kn">import</span> <span class="n">xiapi</span>
+<span class="kn">import</span> <span class="nn">cv2</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">subprocess</span> <span class="k">as</span> <span class="nn">sp</span>
+<span class="kn">import</span> <span class="nn">multiprocessing</span> <span class="k">as</span> <span class="nn">mp</span>
+<span class="kn">from</span> <span class="nn">ctypes</span> <span class="kn">import</span> <span class="n">c_bool</span>
+<span class="kn">from</span> <span class="nn">time</span> <span class="kn">import</span> <span class="n">time</span><span class="p">,</span> <span class="n">sleep</span>
+<span class="kn">import</span> <span class="nn">datetime</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 
 <span class="c1">#private functions -----------------------------------------------------------------</span>
+
+<span class="k">def</span> <span class="nf">_set_camera</span><span class="p">(</span><span class="n">cam</span><span class="p">,</span> <span class="n">config</span><span class="p">):</span>
+    <span class="n">cam</span><span class="o">.</span><span class="n">set_imgdataformat</span><span class="p">(</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;CameraSettings&#39;</span><span class="p">][</span><span class="s1">&#39;imgdataformat&#39;</span><span class="p">])</span>
+    <span class="n">cam</span><span class="o">.</span><span class="n">set_exposure</span><span class="p">(</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;CameraSettings&#39;</span><span class="p">][</span><span class="s1">&#39;exposure&#39;</span><span class="p">])</span>
+    <span class="n">cam</span><span class="o">.</span><span class="n">set_gain</span><span class="p">(</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;CameraSettings&#39;</span><span class="p">][</span><span class="s1">&#39;gain&#39;</span><span class="p">])</span>
+    <span class="n">cam</span><span class="o">.</span><span class="n">set_sensor_feature_value</span><span class="p">(</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;CameraSettings&#39;</span><span class="p">][</span><span class="s1">&#39;sensor_feature_value&#39;</span><span class="p">])</span>
+    <span class="n">cam</span><span class="o">.</span><span class="n">set_gpi_selector</span><span class="p">(</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;CameraSettings&#39;</span><span class="p">][</span><span class="s1">&#39;gpi_selector&#39;</span><span class="p">])</span>
+    <span class="n">cam</span><span class="o">.</span><span class="n">set_gpi_mode</span><span class="p">(</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;CameraSettings&#39;</span><span class="p">][</span><span class="s1">&#39;gpi_mode&#39;</span><span class="p">])</span>
+    <span class="n">cam</span><span class="o">.</span><span class="n">set_trigger_source</span><span class="p">(</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;CameraSettings&#39;</span><span class="p">][</span><span class="s1">&#39;trigger_source&#39;</span><span class="p">])</span>
+    <span class="n">cam</span><span class="o">.</span><span class="n">set_gpo_selector</span><span class="p">(</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;CameraSettings&#39;</span><span class="p">][</span><span class="s1">&#39;gpo_selector&#39;</span><span class="p">])</span>
+    <span class="n">cam</span><span class="o">.</span><span class="n">set_gpo_mode</span><span class="p">(</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;CameraSettings&#39;</span><span class="p">][</span><span class="s1">&#39;gpo_mode&#39;</span><span class="p">])</span>        
+    <span class="k">if</span> <span class="n">config</span><span class="p">[</span><span class="s1">&#39;CameraSettings&#39;</span><span class="p">][</span><span class="s1">&#39;downsampling&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;XI_DWN_2x2&quot;</span><span class="p">:</span>
+        <span class="n">cam</span><span class="o">.</span><span class="n">set_downsampling</span><span class="p">(</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;CameraSettings&#39;</span><span class="p">][</span><span class="s1">&#39;downsampling&#39;</span><span class="p">])</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">widthIncrement</span> <span class="o">=</span> <span class="n">cam</span><span class="o">.</span><span class="n">get_width_increment</span><span class="p">()</span>
+        <span class="n">heightIncrement</span> <span class="o">=</span> <span class="n">cam</span><span class="o">.</span><span class="n">get_height_increment</span><span class="p">()</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;CameraSettings&#39;</span><span class="p">][</span><span class="s1">&#39;img_width&#39;</span><span class="p">]</span> <span class="o">%</span> <span class="n">widthIncrement</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span>
+                <span class="s2">&quot;Image width not divisible by &quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">widthIncrement</span><span class="p">)</span>
+                <span class="p">)</span>
+            <span class="k">return</span>
+        <span class="k">elif</span> <span class="p">(</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;CameraSettings&#39;</span><span class="p">][</span><span class="s1">&#39;img_height&#39;</span><span class="p">]</span> <span class="o">%</span> <span class="n">heightIncrement</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span>
+                <span class="s2">&quot;Image height not divisible by &quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">heightIncrement</span><span class="p">)</span> 
+                <span class="p">)</span>
+            <span class="k">return</span>
+        <span class="k">elif</span> <span class="p">(</span>
+            <span class="n">config</span><span class="p">[</span><span class="s1">&#39;CameraSettings&#39;</span><span class="p">][</span><span class="s1">&#39;img_width&#39;</span><span class="p">]</span> <span class="o">+</span> 
+            <span class="n">config</span><span class="p">[</span><span class="s1">&#39;CameraSettings&#39;</span><span class="p">][</span><span class="s1">&#39;offset_x&#39;</span><span class="p">]</span>
+            <span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1280</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s2">&quot;Image width + x offset &gt; 1280&quot;</span><span class="p">)</span> 
+            <span class="k">return</span>
+        <span class="k">elif</span> <span class="p">(</span>
+            <span class="n">config</span><span class="p">[</span><span class="s1">&#39;CameraSettings&#39;</span><span class="p">][</span><span class="s1">&#39;img_height&#39;</span><span class="p">]</span> <span class="o">+</span> 
+            <span class="n">config</span><span class="p">[</span><span class="s1">&#39;CameraSettings&#39;</span><span class="p">][</span><span class="s1">&#39;offset_y&#39;</span><span class="p">]</span>
+            <span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1024</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s2">&quot;Image height + y offset &gt; 1024&quot;</span><span class="p">)</span> 
+            <span class="k">return</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">cam</span><span class="o">.</span><span class="n">set_height</span><span class="p">(</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;CameraSettings&#39;</span><span class="p">][</span><span class="s1">&#39;img_height&#39;</span><span class="p">])</span>
+            <span class="n">cam</span><span class="o">.</span><span class="n">set_width</span><span class="p">(</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;CameraSettings&#39;</span><span class="p">][</span><span class="s1">&#39;img_width&#39;</span><span class="p">])</span>
+            <span class="n">cam</span><span class="o">.</span><span class="n">set_offsetX</span><span class="p">(</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;CameraSettings&#39;</span><span class="p">][</span><span class="s1">&#39;offset_x&#39;</span><span class="p">])</span>
+            <span class="n">cam</span><span class="o">.</span><span class="n">set_offsetY</span><span class="p">(</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;CameraSettings&#39;</span><span class="p">][</span><span class="s1">&#39;offset_y&#39;</span><span class="p">])</span>
+    <span class="n">cam</span><span class="o">.</span><span class="n">enable_recent_frame</span><span class="p">()</span>
+
+<span class="k">def</span> <span class="nf">_set_cameras</span><span class="p">(</span><span class="n">cams</span><span class="p">,</span> <span class="n">config</span><span class="p">):</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;CameraSettings&#39;</span><span class="p">][</span><span class="s1">&#39;num_cams&#39;</span><span class="p">]):</span>
+        <span class="nb">print</span><span class="p">((</span><span class="s1">&#39;Setting camera </span><span class="si">%d</span><span class="s1"> ...&#39;</span> <span class="o">%</span><span class="n">i</span><span class="p">))</span>
+        <span class="n">_set_camera</span><span class="p">(</span><span class="n">cams</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">config</span><span class="p">)</span>
 
 <span class="k">def</span> <span class="nf">_open_cameras</span><span class="p">(</span><span class="n">config</span><span class="p">):</span>              
     <span class="n">cams</span> <span class="o">=</span> <span class="p">[]</span>
@@ -177,42 +235,6 @@
         <span class="n">cams</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">xiapi</span><span class="o">.</span><span class="n">Camera</span><span class="p">(</span><span class="n">dev_id</span> <span class="o">=</span> <span class="n">i</span><span class="p">))</span>
         <span class="n">cams</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">open_device</span><span class="p">()</span>     
     <span class="k">return</span> <span class="n">cams</span>
-
-<span class="k">def</span> <span class="nf">_set_cameras</span><span class="p">(</span><span class="n">cams</span><span class="p">,</span> <span class="n">config</span><span class="p">):</span>
-    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;CameraSettings&#39;</span><span class="p">][</span><span class="s1">&#39;num_cams&#39;</span><span class="p">]):</span>
-        <span class="nb">print</span><span class="p">((</span><span class="s1">&#39;Setting camera </span><span class="si">%d</span><span class="s1"> ...&#39;</span> <span class="o">%</span><span class="n">i</span><span class="p">))</span>
-        <span class="n">cams</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">set_imgdataformat</span><span class="p">(</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;CameraSettings&#39;</span><span class="p">][</span><span class="s1">&#39;imgdataformat&#39;</span><span class="p">])</span>
-        <span class="n">cams</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">set_exposure</span><span class="p">(</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;CameraSettings&#39;</span><span class="p">][</span><span class="s1">&#39;exposure&#39;</span><span class="p">])</span>
-        <span class="n">cams</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">set_gain</span><span class="p">(</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;CameraSettings&#39;</span><span class="p">][</span><span class="s1">&#39;gain&#39;</span><span class="p">])</span>
-        <span class="n">cams</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">set_sensor_feature_value</span><span class="p">(</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;CameraSettings&#39;</span><span class="p">][</span><span class="s1">&#39;sensor_feature_value&#39;</span><span class="p">])</span>
-        <span class="n">cams</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">set_gpi_selector</span><span class="p">(</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;CameraSettings&#39;</span><span class="p">][</span><span class="s1">&#39;gpi_selector&#39;</span><span class="p">])</span>
-        <span class="n">cams</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">set_gpi_mode</span><span class="p">(</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;CameraSettings&#39;</span><span class="p">][</span><span class="s1">&#39;gpi_mode&#39;</span><span class="p">])</span>
-        <span class="n">cams</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">set_trigger_source</span><span class="p">(</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;CameraSettings&#39;</span><span class="p">][</span><span class="s1">&#39;trigger_source&#39;</span><span class="p">])</span>
-        <span class="n">cams</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">set_gpo_selector</span><span class="p">(</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;CameraSettings&#39;</span><span class="p">][</span><span class="s1">&#39;gpo_selector&#39;</span><span class="p">])</span>
-        <span class="n">cams</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">set_gpo_mode</span><span class="p">(</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;CameraSettings&#39;</span><span class="p">][</span><span class="s1">&#39;gpo_mode&#39;</span><span class="p">])</span>        
-        <span class="k">if</span> <span class="n">config</span><span class="p">[</span><span class="s1">&#39;CameraSettings&#39;</span><span class="p">][</span><span class="s1">&#39;downsampling&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;XI_DWN_2x2&quot;</span><span class="p">:</span>
-            <span class="n">cams</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">set_downsampling</span><span class="p">(</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;CameraSettings&#39;</span><span class="p">][</span><span class="s1">&#39;downsampling&#39;</span><span class="p">])</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="n">widthIncrement</span> <span class="o">=</span> <span class="n">cams</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">get_width_increment</span><span class="p">()</span>
-            <span class="n">heightIncrement</span> <span class="o">=</span> <span class="n">cams</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">get_height_increment</span><span class="p">()</span>
-            <span class="k">if</span> <span class="p">(</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;CameraSettings&#39;</span><span class="p">][</span><span class="s1">&#39;img_width&#39;</span><span class="p">]</span><span class="o">%</span><span class="n">widthIncrement</span><span class="p">)</span><span class="o">!=</span><span class="mi">0</span><span class="p">:</span>
-                <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s2">&quot;Image width not divisible by &quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">widthIncrement</span><span class="p">))</span>
-                <span class="k">return</span>
-            <span class="k">elif</span> <span class="p">(</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;CameraSettings&#39;</span><span class="p">][</span><span class="s1">&#39;img_height&#39;</span><span class="p">]</span><span class="o">%</span><span class="n">heightIncrement</span><span class="p">)</span><span class="o">!=</span><span class="mi">0</span><span class="p">:</span>
-                <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s2">&quot;Image height not divisible by &quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">heightIncrement</span><span class="p">))</span>
-                <span class="k">return</span>
-            <span class="k">elif</span> <span class="p">(</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;CameraSettings&#39;</span><span class="p">][</span><span class="s1">&#39;img_width&#39;</span><span class="p">]</span><span class="o">+</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;CameraSettings&#39;</span><span class="p">][</span><span class="s1">&#39;offset_x&#39;</span><span class="p">])</span><span class="o">&gt;</span><span class="mi">1280</span><span class="p">:</span>
-                <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s2">&quot;Image width + x offset &gt; 1280&quot;</span><span class="p">)</span> 
-                <span class="k">return</span>
-            <span class="k">elif</span> <span class="p">(</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;CameraSettings&#39;</span><span class="p">][</span><span class="s1">&#39;img_height&#39;</span><span class="p">]</span><span class="o">+</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;CameraSettings&#39;</span><span class="p">][</span><span class="s1">&#39;offset_y&#39;</span><span class="p">])</span><span class="o">&gt;</span><span class="mi">1024</span><span class="p">:</span>
-                <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s2">&quot;Image height + y offset &gt; 1024&quot;</span><span class="p">)</span> 
-                <span class="k">return</span>
-            <span class="k">else</span><span class="p">:</span>
-                <span class="n">cams</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">set_height</span><span class="p">(</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;CameraSettings&#39;</span><span class="p">][</span><span class="s1">&#39;img_height&#39;</span><span class="p">])</span>
-                <span class="n">cams</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">set_width</span><span class="p">(</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;CameraSettings&#39;</span><span class="p">][</span><span class="s1">&#39;img_width&#39;</span><span class="p">])</span>
-                <span class="n">cams</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">set_offsetX</span><span class="p">(</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;CameraSettings&#39;</span><span class="p">][</span><span class="s1">&#39;offset_x&#39;</span><span class="p">])</span>
-                <span class="n">cams</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">set_offsetY</span><span class="p">(</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;CameraSettings&#39;</span><span class="p">][</span><span class="s1">&#39;offset_y&#39;</span><span class="p">])</span>
-        <span class="n">cams</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">enable_recent_frame</span><span class="p">()</span>
 
 <span class="k">def</span> <span class="nf">_start_cameras</span><span class="p">(</span><span class="n">cams</span><span class="p">):</span>
     <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">cams</span><span class="p">)):</span>
@@ -230,7 +252,6 @@
 <span class="sd">        A list of ximea api Camera objects.</span>
 
 <span class="sd">    &quot;&quot;&quot;</span>
-
     <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">cams</span><span class="p">)):</span>
         <span class="nb">print</span><span class="p">((</span><span class="s1">&#39;stopping camera </span><span class="si">%d</span><span class="s1"> ...&#39;</span> <span class="o">%</span><span class="n">i</span><span class="p">))</span>
         <span class="n">cams</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">stop_acquisition</span><span class="p">()</span>
@@ -298,6 +319,309 @@
     <span class="n">npimg</span> <span class="o">=</span> <span class="n">img</span><span class="o">.</span><span class="n">get_image_data_numpy</span><span class="p">()</span>
     <span class="k">return</span> <span class="n">npimg</span></div>
 
+<div class="viewcode-block" id="CameraInterface"><a class="viewcode-back" href="../../../software/reach_master/reach_master.html#reachmaster.interfaces.camera_interface.CameraInterface">[docs]</a><span class="k">class</span> <span class="nc">CameraInterface</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;The primary class for the camera interface module.</span>
+
+<span class="sd">    Creates a multiprocess object that performs gpu-accelerated</span>
+<span class="sd">    video encoding and feature (i.e., reach) detection on </span>
+<span class="sd">    separate processes. Interprocess communication and </span>
+<span class="sd">    synchronization is achieved using pipe messages.   </span>
+
+<span class="sd">    Attributes</span>
+<span class="sd">    ----------</span>
+<span class="sd">    config : dict</span>
+<span class="sd">        The current configuration settings for the application.</span>
+<span class="sd">    ffmpeg_command : list</span>
+<span class="sd">        Arguments to the ffmpeg subprocess for video encoding.</span>
+<span class="sd">    camera_processes : list</span>
+<span class="sd">        List of multiprocessing Process objects. One per camera.</span>
+<span class="sd">    cam_trigger_pripes : list</span>
+<span class="sd">        List of two-way multiprocessing Pipe objects. Allows the</span>
+<span class="sd">        parent process to alert a child camera process that its</span>
+<span class="sd">        camera has been triggered. Allows the camera process to</span>
+<span class="sd">        alert the parent process when it is triggerable (i.e.,</span>
+<span class="sd">        after the most recent image has been encoded).</span>
+<span class="sd">    poi_deviation_pipes : list</span>
+<span class="sd">        List of one-way multiprocessing Pipe objects. Allows a </span>
+<span class="sd">        child camera process to send the parent process the </span>
+<span class="sd">        deviation from baseline of the pixels of interest used</span>
+<span class="sd">        for reach detection.</span>
+<span class="sd">    trial_ended_pipes : list</span>
+<span class="sd">        List of one-way multiprocessing Pipe objects. Allows the</span>
+<span class="sd">        parent process to alert a child camera process when a trial</span>
+<span class="sd">        has ended.</span>
+<span class="sd">    cams_started : &lt;class &#39;multiprocessing.sharedctypes.Synchronized&#39;&gt;  </span>
+<span class="sd">        Boolean multiprocessing shared memory variable. True when</span>
+<span class="sd">        camera processing are running. </span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">config</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">config</span> <span class="o">=</span> <span class="n">config</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ffmpeg_command</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="s1">&#39;ffmpeg&#39;</span><span class="p">,</span> <span class="s1">&#39;-y&#39;</span><span class="p">,</span> 
+        <span class="s1">&#39;-hwaccel&#39;</span><span class="p">,</span> <span class="s1">&#39;cuvid&#39;</span><span class="p">,</span> 
+        <span class="s1">&#39;-f&#39;</span><span class="p">,</span> <span class="s1">&#39;rawvideo&#39;</span><span class="p">,</span>  
+        <span class="s1">&#39;-s&#39;</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;CameraSettings&#39;</span><span class="p">][</span><span class="s1">&#39;img_width&#39;</span><span class="p">])</span> <span class="o">+</span> <span class="s1">&#39;x&#39;</span> <span class="o">+</span> 
+        <span class="nb">str</span><span class="p">(</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;CameraSettings&#39;</span><span class="p">][</span><span class="s1">&#39;img_height&#39;</span><span class="p">]),</span> 
+        <span class="s1">&#39;-pix_fmt&#39;</span><span class="p">,</span> <span class="s1">&#39;bgr24&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;-r&#39;</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;CameraSettings&#39;</span><span class="p">][</span><span class="s1">&#39;fps&#39;</span><span class="p">]),</span> 
+        <span class="s1">&#39;-i&#39;</span><span class="p">,</span> <span class="s1">&#39;-&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;-b:v&#39;</span><span class="p">,</span> <span class="s1">&#39;2M&#39;</span><span class="p">,</span> 
+        <span class="s1">&#39;-maxrate&#39;</span><span class="p">,</span> <span class="s1">&#39;2M&#39;</span><span class="p">,</span> 
+        <span class="s1">&#39;-bufsize&#39;</span><span class="p">,</span> <span class="s1">&#39;1M&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;-c:v&#39;</span><span class="p">,</span> <span class="s1">&#39;h264_nvenc&#39;</span><span class="p">,</span> 
+        <span class="s1">&#39;-preset&#39;</span><span class="p">,</span> <span class="s1">&#39;llhp&#39;</span><span class="p">,</span> 
+        <span class="s1">&#39;-profile:v&#39;</span><span class="p">,</span> <span class="s1">&#39;high&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;-rc&#39;</span><span class="p">,</span> <span class="s1">&#39;cbr&#39;</span><span class="p">,</span> 
+        <span class="s1">&#39;-pix_fmt&#39;</span><span class="p">,</span> <span class="s1">&#39;yuv420p&#39;</span>
+        <span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">camera_processes</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cam_trigger_pipes</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">poi_deviation_pipes</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">trial_ended_pipes</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cams_started</span> <span class="o">=</span> <span class="n">mp</span><span class="o">.</span><span class="n">Value</span><span class="p">(</span><span class="n">c_bool</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>                  
+
+<div class="viewcode-block" id="CameraInterface.start_protocol_interface"><a class="viewcode-back" href="../../../software/reach_master/reach_master.html#reachmaster.interfaces.camera_interface.CameraInterface.start_protocol_interface">[docs]</a>    <span class="k">def</span> <span class="nf">start_protocol_interface</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Sets up the camera process and pipe system for each </span>
+<span class="sd">        camera.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>   
+
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;starting camera processes... &#39;</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">cam_id</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;CameraSettings&#39;</span><span class="p">][</span><span class="s1">&#39;num_cams&#39;</span><span class="p">]):</span>
+            <span class="n">trigger_parent</span><span class="p">,</span> <span class="n">trigger_child</span> <span class="o">=</span> <span class="n">mp</span><span class="o">.</span><span class="n">Pipe</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">cam_trigger_pipes</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">trigger_parent</span><span class="p">)</span>
+            <span class="n">poi_parent</span><span class="p">,</span> <span class="n">poi_child</span> <span class="o">=</span> <span class="n">mp</span><span class="o">.</span><span class="n">Pipe</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">poi_deviation_pipes</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">poi_parent</span><span class="p">)</span>
+            <span class="n">trial_parent</span><span class="p">,</span> <span class="n">trial_child</span> <span class="o">=</span> <span class="n">mp</span><span class="o">.</span><span class="n">Pipe</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">trial_ended_pipes</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">trial_parent</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">camera_processes</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                <span class="n">mp</span><span class="o">.</span><span class="n">Process</span><span class="p">(</span>
+                    <span class="n">target</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_protocol_process</span><span class="p">,</span> 
+                    <span class="n">args</span> <span class="o">=</span> <span class="p">(</span>
+                        <span class="n">cam_id</span><span class="p">,</span>
+                        <span class="n">trigger_child</span><span class="p">,</span>
+                        <span class="n">poi_child</span><span class="p">,</span>
+                        <span class="n">trial_child</span>
+                        <span class="p">)</span>
+                    <span class="p">)</span>
+                <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cams_started</span><span class="o">.</span><span class="n">value</span> <span class="o">=</span> <span class="kc">True</span>   
+        <span class="k">for</span> <span class="n">process</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">camera_processes</span><span class="p">:</span>
+            <span class="n">process</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
+        <span class="n">sleep</span><span class="p">(</span><span class="mi">5</span><span class="p">)</span> <span class="c1">#give cameras time to setup       </span></div>
+
+<div class="viewcode-block" id="CameraInterface.stop_interface"><a class="viewcode-back" href="../../../software/reach_master/reach_master.html#reachmaster.interfaces.camera_interface.CameraInterface.stop_interface">[docs]</a>    <span class="k">def</span> <span class="nf">stop_interface</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Tells the camera processes to shut themselves down, waits</span>
+<span class="sd">        for them to exit, then cleans all the pipes.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cams_started</span><span class="o">.</span><span class="n">value</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="k">for</span> <span class="n">proc</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">camera_processes</span><span class="p">:</span>
+            <span class="n">proc</span><span class="o">.</span><span class="n">join</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cam_trigger_pipes</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">poi_deviation_pipes</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">trial_ended_pipes</span> <span class="o">=</span> <span class="p">[]</span></div>
+
+<div class="viewcode-block" id="CameraInterface.triggered"><a class="viewcode-back" href="../../../software/reach_master/reach_master.html#reachmaster.interfaces.camera_interface.CameraInterface.triggered">[docs]</a>    <span class="k">def</span> <span class="nf">triggered</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Alert camera processes that cameras have been triggered&quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">pipe</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">cam_trigger_pipes</span><span class="p">:</span>
+            <span class="n">pipe</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="CameraInterface.all_triggerable"><a class="viewcode-back" href="../../../software/reach_master/reach_master.html#reachmaster.interfaces.camera_interface.CameraInterface.all_triggerable">[docs]</a>    <span class="k">def</span> <span class="nf">all_triggerable</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Check if camera processes are ready for cameras to be </span>
+<span class="sd">        triggered.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        triggerable : bool  </span>
+<span class="sd">            True if cameras ready.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">all</span><span class="p">([</span><span class="n">pipe</span><span class="o">.</span><span class="n">poll</span><span class="p">()</span> <span class="k">for</span> <span class="n">pipe</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">cam_trigger_pipes</span><span class="p">]):</span>
+            <span class="k">for</span> <span class="n">pipe</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">cam_trigger_pipes</span><span class="p">:</span>
+                <span class="n">pipe</span><span class="o">.</span><span class="n">recv</span><span class="p">()</span>
+            <span class="n">triggerable</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="k">else</span><span class="p">:</span> 
+            <span class="n">triggerable</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="k">return</span> <span class="n">triggerable</span></div>
+
+<div class="viewcode-block" id="CameraInterface.get_poi_deviation"><a class="viewcode-back" href="../../../software/reach_master/reach_master.html#reachmaster.interfaces.camera_interface.CameraInterface.get_poi_deviation">[docs]</a>    <span class="k">def</span> <span class="nf">get_poi_deviation</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Check the smallest deviation from baseline of pixels of</span>
+<span class="sd">        interest across all cameras.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        dev : int</span>
+<span class="sd">            The minimum deviation across all cameras.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">all</span><span class="p">([</span><span class="n">pipe</span><span class="o">.</span><span class="n">poll</span><span class="p">()</span> <span class="k">for</span> <span class="n">pipe</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">poi_deviation_pipes</span><span class="p">]):</span>
+            <span class="n">deviations</span> <span class="o">=</span> <span class="p">[</span><span class="n">pipe</span><span class="o">.</span><span class="n">recv</span><span class="p">()</span> <span class="k">for</span> <span class="n">pipe</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">poi_deviation_pipes</span><span class="p">]</span>
+            <span class="n">dev</span> <span class="o">=</span>  <span class="nb">min</span><span class="p">(</span><span class="n">deviations</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">dev</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">return</span> <span class="n">dev</span></div>
+
+<div class="viewcode-block" id="CameraInterface.trial_ended"><a class="viewcode-back" href="../../../software/reach_master/reach_master.html#reachmaster.interfaces.camera_interface.CameraInterface.trial_ended">[docs]</a>    <span class="k">def</span> <span class="nf">trial_ended</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Alert cameras processes that a trial has ended.&quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">pipe</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">trial_ended_pipes</span><span class="p">:</span>
+            <span class="n">pipe</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span></div>
+
+    <span class="k">def</span> <span class="nf">_acquire_baseline</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cam</span><span class="p">,</span> <span class="n">cam_id</span><span class="p">,</span> <span class="n">img</span><span class="p">,</span> <span class="n">num_imgs</span><span class="p">,</span> <span class="n">trigger_pipe</span><span class="p">):</span>
+        <span class="n">poi_indices</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;CameraSettings&#39;</span><span class="p">][</span><span class="s1">&#39;saved_pois&#39;</span><span class="p">][</span><span class="n">cam_id</span><span class="p">]</span>
+        <span class="n">num_pois</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">poi_indices</span><span class="p">)</span>
+        <span class="n">baseline_pois</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">shape</span> <span class="o">=</span> <span class="p">(</span><span class="n">num_pois</span><span class="p">,</span> <span class="n">num_imgs</span><span class="p">))</span>
+        <span class="n">trigger_pipe</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+        <span class="c1">#acquire baseline images </span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">num_imgs</span><span class="p">):</span>  
+            <span class="k">while</span> <span class="ow">not</span> <span class="n">trigger_pipe</span><span class="o">.</span><span class="n">poll</span><span class="p">():</span>
+                <span class="k">pass</span> 
+            <span class="n">trigger_pipe</span><span class="o">.</span><span class="n">recv</span><span class="p">()</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">cam</span><span class="o">.</span><span class="n">get_image</span><span class="p">(</span><span class="n">img</span><span class="p">,</span> <span class="n">timeout</span> <span class="o">=</span> <span class="mi">2000</span><span class="p">)</span> 
+                <span class="n">trigger_pipe</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="s1">&#39;c&#39;</span><span class="p">)</span> 
+                <span class="n">npimg</span> <span class="o">=</span> <span class="n">img</span><span class="o">.</span><span class="n">get_image_data_numpy</span><span class="p">()</span>   
+                <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">num_pois</span><span class="p">):</span> 
+                    <span class="n">baseline_pois</span><span class="p">[</span><span class="n">j</span><span class="p">,</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">npimg</span><span class="p">[</span>
+                    <span class="n">poi_indices</span><span class="p">[</span><span class="n">j</span><span class="p">][</span><span class="mi">1</span><span class="p">],</span>
+                    <span class="n">poi_indices</span><span class="p">[</span><span class="n">j</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+                    <span class="p">]</span>
+            <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">err</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;error: &quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">cam_id</span><span class="p">))</span>
+                <span class="nb">print</span><span class="p">(</span><span class="n">err</span><span class="p">)</span>
+        <span class="c1">#compute summary stats</span>
+        <span class="n">poi_means</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">baseline_pois</span><span class="p">,</span> <span class="n">axis</span> <span class="o">=</span> <span class="mi">1</span><span class="p">)</span>            
+        <span class="n">poi_std</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">std</span><span class="p">(</span>
+            <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span>
+                <span class="n">np</span><span class="o">.</span><span class="n">square</span><span class="p">(</span>
+                    <span class="n">baseline_pois</span> <span class="o">-</span> <span class="n">poi_means</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">num_pois</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+                    <span class="p">),</span> 
+                <span class="n">axis</span> <span class="o">=</span> <span class="mi">0</span>
+                <span class="p">)</span>
+            <span class="p">)</span>
+        <span class="k">return</span> <span class="n">poi_means</span><span class="p">,</span> <span class="n">poi_std</span>
+
+    <span class="k">def</span> <span class="nf">_estimate_poi_deviation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cam_id</span><span class="p">,</span> <span class="n">npimg</span><span class="p">,</span> <span class="n">poi_means</span><span class="p">,</span> <span class="n">poi_std</span><span class="p">):</span>
+        <span class="n">poi_indices</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;CameraSettings&#39;</span><span class="p">][</span><span class="s1">&#39;saved_pois&#39;</span><span class="p">][</span><span class="n">cam_id</span><span class="p">]</span>
+        <span class="n">num_pois</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">poi_indices</span><span class="p">)</span>
+        <span class="n">poi_obs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">num_pois</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">num_pois</span><span class="p">):</span> 
+            <span class="n">poi_obs</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="n">npimg</span><span class="p">[</span><span class="n">poi_indices</span><span class="p">[</span><span class="n">j</span><span class="p">][</span><span class="mi">1</span><span class="p">],</span> <span class="n">poi_indices</span><span class="p">[</span><span class="n">j</span><span class="p">][</span><span class="mi">0</span><span class="p">]]</span>
+        <span class="n">dev</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span>
+            <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">square</span><span class="p">(</span><span class="n">poi_obs</span> <span class="o">-</span> <span class="n">poi_means</span><span class="p">))</span> <span class="o">/</span> <span class="p">(</span><span class="n">poi_std</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">finfo</span><span class="p">(</span><span class="nb">float</span><span class="p">)</span><span class="o">.</span><span class="n">eps</span><span class="p">)</span>
+            <span class="p">)</span>
+        <span class="k">return</span> <span class="n">dev</span>
+
+    <span class="k">def</span> <span class="nf">_protocol_process</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> 
+        <span class="n">cam_id</span><span class="p">,</span> 
+        <span class="n">trigger_pipe</span><span class="p">,</span> 
+        <span class="n">poi_deviation_pipe</span><span class="p">,</span> 
+        <span class="n">trial_ended_pipe</span>
+        <span class="p">):</span>
+        <span class="n">sleep</span><span class="p">(</span><span class="mi">2</span><span class="o">*</span><span class="n">cam_id</span><span class="p">)</span> <span class="c1">#prevents simultaneous calls to the ximea api</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;finding camera: &#39;</span><span class="p">,</span> <span class="n">cam_id</span><span class="p">)</span>
+        <span class="n">cam</span> <span class="o">=</span> <span class="n">xiapi</span><span class="o">.</span><span class="n">Camera</span><span class="p">(</span><span class="n">dev_id</span> <span class="o">=</span> <span class="n">cam_id</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;opening camera: &#39;</span><span class="p">,</span> <span class="n">cam_id</span><span class="p">)</span>
+        <span class="n">cam</span><span class="o">.</span><span class="n">open_device</span><span class="p">()</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;setting camera: &#39;</span><span class="p">,</span> <span class="n">cam_id</span><span class="p">)</span>
+        <span class="n">_set_camera</span><span class="p">(</span><span class="n">cam</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;starting camera: &#39;</span><span class="p">,</span> <span class="n">cam_id</span><span class="p">)</span>
+        <span class="n">cam</span><span class="o">.</span><span class="n">start_acquisition</span><span class="p">()</span>
+        <span class="n">img</span> <span class="o">=</span> <span class="n">xiapi</span><span class="o">.</span><span class="n">Image</span><span class="p">()</span>
+        <span class="n">num_baseline</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="nb">int</span><span class="p">(</span>
+                <span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">(</span>
+                    <span class="nb">float</span><span class="p">(</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;ExperimentSettings&#39;</span><span class="p">][</span><span class="s1">&#39;baseline_dur&#39;</span><span class="p">]</span>
+                        <span class="p">)</span> <span class="o">*</span> 
+                    <span class="nb">float</span><span class="p">(</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;CameraSettings&#39;</span><span class="p">][</span><span class="s1">&#39;fps&#39;</span><span class="p">]</span>
+                        <span class="p">),</span> 
+                    <span class="n">decimals</span> <span class="o">=</span> <span class="mi">0</span>
+                    <span class="p">)</span>
+                <span class="p">)</span>
+            <span class="p">)</span>
+        <span class="k">if</span> <span class="n">num_baseline</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">poi_means</span><span class="p">,</span> <span class="n">poi_std</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_acquire_baseline</span><span class="p">(</span>
+                <span class="n">cam</span><span class="p">,</span>
+                <span class="n">cam_id</span><span class="p">,</span>
+                <span class="n">img</span><span class="p">,</span>
+                <span class="n">num_baseline</span><span class="p">,</span>
+                <span class="n">trigger_pipe</span>
+                <span class="p">)</span> 
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;Protocol&#39;</span><span class="p">][</span><span class="s1">&#39;type&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;CONTINUOUS&#39;</span><span class="p">:</span>
+            <span class="n">vid_fn</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;ReachMaster&#39;</span><span class="p">][</span><span class="s1">&#39;data_dir&#39;</span><span class="p">]</span> <span class="o">+</span> <span class="s1">&#39;/videos/&#39;</span> <span class="o">+</span>
+                <span class="nb">str</span><span class="p">(</span><span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">())</span> <span class="o">+</span> <span class="s1">&#39;_cam&#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">cam_id</span><span class="p">)</span> <span class="o">+</span> <span class="s1">&#39;.mp4&#39;</span>
+                <span class="p">)</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;Protocol&#39;</span><span class="p">][</span><span class="s1">&#39;type&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;TRIALS&#39;</span><span class="p">:</span>
+            <span class="n">trial_num</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="n">vid_fn</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;ReachMaster&#39;</span><span class="p">][</span><span class="s1">&#39;data_dir&#39;</span><span class="p">]</span> <span class="o">+</span> <span class="s1">&#39;/videos/trial&#39;</span> <span class="o">+</span>
+                <span class="nb">str</span><span class="p">(</span><span class="n">trial_num</span><span class="p">)</span> <span class="o">+</span> <span class="s1">&#39;_cam&#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">cam_id</span><span class="p">)</span> <span class="o">+</span> <span class="s1">&#39;.mp4&#39;</span>
+                <span class="p">)</span>        
+        <span class="bp">self</span><span class="o">.</span><span class="n">ffmpeg_command</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">vid_fn</span><span class="p">)</span>
+        <span class="n">ffmpeg_process</span> <span class="o">=</span> <span class="n">sp</span><span class="o">.</span><span class="n">Popen</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">ffmpeg_command</span><span class="p">,</span> 
+            <span class="n">stdin</span><span class="o">=</span><span class="n">sp</span><span class="o">.</span><span class="n">PIPE</span><span class="p">,</span> 
+            <span class="n">stdout</span><span class="o">=</span><span class="n">sp</span><span class="o">.</span><span class="n">DEVNULL</span><span class="p">,</span> 
+            <span class="n">stderr</span><span class="o">=</span><span class="n">sp</span><span class="o">.</span><span class="n">DEVNULL</span><span class="p">,</span> 
+            <span class="n">bufsize</span><span class="o">=-</span><span class="mi">1</span>
+            <span class="p">)</span>
+        <span class="k">while</span> <span class="bp">self</span><span class="o">.</span><span class="n">cams_started</span><span class="o">.</span><span class="n">value</span> <span class="o">==</span> <span class="kc">True</span><span class="p">:</span>        
+            <span class="k">if</span> <span class="n">trigger_pipe</span><span class="o">.</span><span class="n">poll</span><span class="p">():</span>
+                <span class="n">trigger_pipe</span><span class="o">.</span><span class="n">recv</span><span class="p">()</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">cam</span><span class="o">.</span><span class="n">get_image</span><span class="p">(</span><span class="n">img</span><span class="p">,</span> <span class="n">timeout</span> <span class="o">=</span> <span class="mi">2000</span><span class="p">)</span> 
+                    <span class="n">trigger_pipe</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="s1">&#39;c&#39;</span><span class="p">)</span>
+                    <span class="n">npimg</span> <span class="o">=</span> <span class="n">img</span><span class="o">.</span><span class="n">get_image_data_numpy</span><span class="p">()</span>     
+                    <span class="n">frame</span> <span class="o">=</span> <span class="n">cv2</span><span class="o">.</span><span class="n">cvtColor</span><span class="p">(</span><span class="n">npimg</span><span class="p">,</span> <span class="n">cv2</span><span class="o">.</span><span class="n">COLOR_BAYER_BG2BGR</span><span class="p">)</span>
+                    <span class="n">ffmpeg_process</span><span class="o">.</span><span class="n">stdin</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">frame</span><span class="p">)</span>
+                    <span class="n">dev</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_estimate_poi_deviation</span><span class="p">(</span><span class="n">cam_id</span><span class="p">,</span> <span class="n">npimg</span><span class="p">,</span> <span class="n">poi_means</span><span class="p">,</span> <span class="n">poi_std</span><span class="p">)</span>      
+                    <span class="n">poi_deviation_pipe</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="n">dev</span><span class="p">)</span>
+                <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">err</span><span class="p">:</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;cam_id: &quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">err</span><span class="p">))</span>
+                    <span class="k">pass</span>
+            <span class="k">elif</span> <span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;Protocol&#39;</span><span class="p">][</span><span class="s1">&#39;type&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;TRIALS&#39;</span> <span class="ow">and</span> 
+                <span class="n">trial_ended_pipe</span><span class="o">.</span><span class="n">poll</span><span class="p">()</span>
+                <span class="p">):</span>
+                <span class="n">trial_ended_pipe</span><span class="o">.</span><span class="n">recv</span><span class="p">()</span>
+                <span class="n">ffmpeg_process</span><span class="o">.</span><span class="n">stdin</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+                <span class="n">ffmpeg_process</span><span class="o">.</span><span class="n">wait</span><span class="p">()</span>
+                <span class="n">ffmpeg_process</span> <span class="o">=</span> <span class="kc">None</span>
+                <span class="n">trial_num</span> <span class="o">+=</span> <span class="mi">1</span>
+                <span class="n">vid_fn</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;ReachMaster&#39;</span><span class="p">][</span><span class="s1">&#39;data_dir&#39;</span><span class="p">]</span> <span class="o">+</span> <span class="s1">&#39;/videos/trial&#39;</span> <span class="o">+</span>
+                <span class="nb">str</span><span class="p">(</span><span class="n">trial_num</span><span class="p">)</span> <span class="o">+</span> <span class="s1">&#39;_cam&#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">cam_id</span><span class="p">)</span> <span class="o">+</span> <span class="s1">&#39;.mp4&#39;</span>
+                <span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">ffmpeg_command</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">vid_fn</span>
+                <span class="n">ffmpeg_process</span> <span class="o">=</span> <span class="n">sp</span><span class="o">.</span><span class="n">Popen</span><span class="p">(</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">ffmpeg_command</span><span class="p">,</span> 
+                    <span class="n">stdin</span><span class="o">=</span><span class="n">sp</span><span class="o">.</span><span class="n">PIPE</span><span class="p">,</span> 
+                    <span class="n">stdout</span><span class="o">=</span><span class="n">sp</span><span class="o">.</span><span class="n">DEVNULL</span><span class="p">,</span> 
+                    <span class="n">stderr</span><span class="o">=</span><span class="n">sp</span><span class="o">.</span><span class="n">DEVNULL</span><span class="p">,</span> 
+                    <span class="n">bufsize</span><span class="o">=-</span><span class="mi">1</span>
+                    <span class="p">)</span>
+        <span class="n">cam</span><span class="o">.</span><span class="n">stop_acquisition</span><span class="p">()</span>
+        <span class="n">cam</span><span class="o">.</span><span class="n">close_device</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">ffmpeg_process</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">ffmpeg_process</span><span class="o">.</span><span class="n">stdin</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+            <span class="n">ffmpeg_process</span><span class="o">.</span><span class="n">wait</span><span class="p">()</span>
+            <span class="n">ffmpeg_process</span> <span class="o">=</span> <span class="kc">None</span></div>
+
+<span class="c1"># if __name__ == &#39;__main__&#39;:</span>
+<span class="c1">#     #for debugging purposes only </span>
+<span class="c1">#     ctx = mp.set_start_method(&#39;spawn&#39;)</span>
+<span class="c1">#     config = {</span>
+<span class="c1">#     &#39;CameraSettings&#39;: {</span>
+<span class="c1">#     &#39;num_cams&#39;: 3</span>
+<span class="c1">#     }</span>
+<span class="c1">#     }</span>
+<span class="c1">#     interface = CameraInterface(config)</span>
+<span class="c1">#     interface.start_recording()</span>
+<span class="c1">#     sleep(30)</span>
+<span class="c1">#     interface.stop_recording()</span>
 </pre></div>
 
            </div>

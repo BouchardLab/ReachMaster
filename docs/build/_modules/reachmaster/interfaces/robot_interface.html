@@ -21,10 +21,10 @@
   
     
       <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
-        <script src="../../../_static/jquery.js"></script>
-        <script src="../../../_static/underscore.js"></script>
-        <script src="../../../_static/doctools.js"></script>
-        <script src="../../../_static/language_data.js"></script>
+        <script type="text/javascript" src="../../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../../_static/language_data.js"></script>
     
     <script type="text/javascript" src="../../../_static/js/theme.js"></script>
 
@@ -153,15 +153,19 @@
            <div itemprop="articleBody">
             
   <h1>Source code for reachmaster.interfaces.robot_interface</h1><div class="highlight"><pre>
-<span></span><span class="sd">&quot;&quot;&quot;Module that provides a set of functions for interfacing</span>
+<span></span><span class="sd">&quot;&quot;&quot;This module provides a set of functions for interfacing</span>
 <span class="sd">with the robot microcontroller. It provides functions to </span>
 <span class="sd">recognize and establish serial connections to the </span>
-<span class="sd">controller, read/write settings, calibration and command</span>
-<span class="sd">files. </span>
+<span class="sd">controller, read and write settings, and to load </span>
+<span class="sd">calibration and command files. Soon it will provide </span>
+<span class="sd">methods to load user-selected scripts to/from the</span>
+<span class="sd">controller in order to execute various robot calibration </span>
+<span class="sd">routines. </span>
 
 <span class="sd">Todo:</span>
 <span class="sd">    * Object orient</span>
 <span class="sd">    * Automate unit tests</span>
+<span class="sd">    * Ability to load user-selected controller scipts</span>
 
 <span class="sd">&quot;&quot;&quot;</span>
 
@@ -295,17 +299,18 @@
 <span class="sd">    </span>
 <span class="sd">    Uses the method determined by the command type </span>
 <span class="sd">    selected in the configuration file. Currently, the</span>
-<span class="sd">    options are `read_from_file`, `sample_from_file`, or </span>
-<span class="sd">    `parametric_sample`. `read_from_file` takes the </span>
-<span class="sd">    commands directly from the command file. </span>
-<span class="sd">    `sample_from_file` generates a sequence of commands by</span>
-<span class="sd">    sampling rows from the command file with replacement.</span>
-<span class="sd">    For both of these options, the command file is assumed</span>
-<span class="sd">    to have three columns ordered as `reach distance`, </span>
-<span class="sd">    `azimuth&#39;, `elevation`. `parametric_sample` does not </span>
-<span class="sd">    use the command file. Rather, it samples commands </span>
-<span class="sd">    uniformly from the `reach volume` determined by the </span>
-<span class="sd">    user-selected inverse kinematics parameters. </span>
+<span class="sd">    options are read_from_file, sample_from_file, or </span>
+<span class="sd">    parametric_sample. The read_from_file option takes </span>
+<span class="sd">    the commands directly from the command file. The </span>
+<span class="sd">    sample_from_file option generates a sequence of </span>
+<span class="sd">    commands by sampling rows from the command file with </span>
+<span class="sd">    replacement. For both of these options, the command </span>
+<span class="sd">    file is assumed to have three columns ordered as </span>
+<span class="sd">    reach distance, azimuth, elevation. The </span>
+<span class="sd">    parametric_sample option does not use the command </span>
+<span class="sd">    file. Rather, it samples commands uniformly from the </span>
+<span class="sd">    reach volume determined by the user-selected inverse </span>
+<span class="sd">    kinematics parameters. </span>
 
 <span class="sd">    Todo:</span>
 <span class="sd">        * Further functionalize for better clarity.</span>
@@ -451,7 +456,7 @@
 <span class="sd">        the command values that were loaded.</span>
 
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">_variable_write</span><span class="p">(</span><span class="n">rob_controller</span><span class="p">,</span> <span class="s1">&#39;alpha&#39;</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;RobotSettings&#39;</span><span class="p">][</span><span class="s1">&#39;alpha&#39;</span><span class="p">]))</span>
+    <span class="n">_variable_write</span><span class="p">(</span><span class="n">rob_controller</span><span class="p">,</span> <span class="s1">&#39;pos_smoothing&#39;</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;RobotSettings&#39;</span><span class="p">][</span><span class="s1">&#39;pos_smoothing&#39;</span><span class="p">]))</span>
     <span class="n">_variable_write</span><span class="p">(</span><span class="n">rob_controller</span><span class="p">,</span> <span class="s1">&#39;tol&#39;</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;RobotSettings&#39;</span><span class="p">][</span><span class="s1">&#39;tol&#39;</span><span class="p">]))</span>
     <span class="n">_variable_write</span><span class="p">(</span><span class="n">rob_controller</span><span class="p">,</span> <span class="s1">&#39;period&#39;</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;RobotSettings&#39;</span><span class="p">][</span><span class="s1">&#39;period&#39;</span><span class="p">]))</span>
     <span class="n">_variable_write</span><span class="p">(</span><span class="n">rob_controller</span><span class="p">,</span> <span class="s1">&#39;off_dur&#39;</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;RobotSettings&#39;</span><span class="p">][</span><span class="s1">&#39;off_dur&#39;</span><span class="p">]))</span>
