@@ -8,12 +8,12 @@ reading, parsing and preprocessing trodes data produced
 by various ReachMaster routines.
 
 Extract trodes data to python
----------------------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 .. automodule:: trodes_data.readTrodesExtractedDataFile3
 	:members: 
 
 Calibration data parser
----------------------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 .. automodule:: trodes_data.calibration_data_parser
 	:members:
 
