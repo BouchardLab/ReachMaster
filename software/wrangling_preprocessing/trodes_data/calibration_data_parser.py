@@ -251,15 +251,15 @@ def get_summary_frame(
 	    data_frame['z_displacement'][i] = calibration_data['z_pot'][idx2] - calibration_data['z_pot'][idx1]
 	return data_frame
 
-def get_traces_frame(
-	data_dir, 
-	trodes_name, 
-	sampling_rate = 3000, 
-	valve_period = 0.175,
-	pot_units = 'cm'
-	):
+# def get_traces_frame(
+# 	data_dir, 
+# 	trodes_name, 
+# 	sampling_rate = 3000, 
+# 	valve_period = 0.175,
+# 	pot_units = 'cm'
+# 	):
 
-	return data_frame
+# 	return data_frame
 
 	
 

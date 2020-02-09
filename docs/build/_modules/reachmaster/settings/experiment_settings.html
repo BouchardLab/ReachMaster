@@ -21,10 +21,10 @@
   
     
       <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
-        <script type="text/javascript" src="../../../_static/jquery.js"></script>
-        <script type="text/javascript" src="../../../_static/underscore.js"></script>
-        <script type="text/javascript" src="../../../_static/doctools.js"></script>
-        <script type="text/javascript" src="../../../_static/language_data.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+        <script src="../../../_static/language_data.js"></script>
     
     <script type="text/javascript" src="../../../_static/js/theme.js"></script>
 
@@ -155,9 +155,8 @@
   <h1>Source code for reachmaster.settings.experiment_settings</h1><div class="highlight"><pre>
 <span></span><span class="sd">&quot;&quot;&quot;The experiment settings window is opened as a child of the </span>
 <span class="sd">ReachMaster root application. It allows the user to set any</span>
-<span class="sd">experiment parameters required by the experiment </span>
-<span class="sd">microcontroller (e.g., number/size of rewards, trial delays, </span>
-<span class="sd">etc.).</span>
+<span class="sd">experiment parameters located on the experiment microcontroller</span>
+<span class="sd">(e.g., number/size of rewards, trial delays, etc.).</span>
 
 
 <span class="sd">Todo:</span>
@@ -171,7 +170,7 @@
 <span class="kn">import</span> <span class="nn">tkinter.messagebox</span>
 
 <div class="viewcode-block" id="ExperimentSettings"><a class="viewcode-back" href="../../../software/reach_master/reach_master.html#reachmaster.settings.experiment_settings.ExperimentSettings">[docs]</a><span class="k">class</span> <span class="nc">ExperimentSettings</span><span class="p">(</span><span class="n">tk</span><span class="o">.</span><span class="n">Toplevel</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;The primary class for the experiment settings window.  </span>
+    <span class="sd">&quot;&quot;&quot;The primary class for the camera settings window.  </span>
 
 <span class="sd">    Attributes</span>
 <span class="sd">    ----------</span>

@@ -21,10 +21,10 @@
   
     
       <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
-        <script type="text/javascript" src="../../_static/jquery.js"></script>
-        <script type="text/javascript" src="../../_static/underscore.js"></script>
-        <script type="text/javascript" src="../../_static/doctools.js"></script>
-        <script type="text/javascript" src="../../_static/language_data.js"></script>
+        <script src="../../_static/jquery.js"></script>
+        <script src="../../_static/underscore.js"></script>
+        <script src="../../_static/doctools.js"></script>
+        <script src="../../_static/language_data.js"></script>
     
     <script type="text/javascript" src="../../_static/js/theme.js"></script>
 
@@ -159,12 +159,7 @@
 <span class="sd">used in a ReachMaster session. Functions are provided to</span>
 <span class="sd">generate default configuration files, as well as to save and </span>
 <span class="sd">load previous configurations. This encourages persistence of </span>
-<span class="sd">settings across experiments. </span>
-
-<span class="sd">Todo:</span>
-<span class="sd">    * Automate unit tests </span>
-<span class="sd">    * Integrate ffmpeg settings</span>
-<span class="sd">    * Flesh out field descriptions</span>
+<span class="sd">settings across experiments.  </span>
 
 <span class="sd">&quot;&quot;&quot;</span>
 
@@ -209,10 +204,18 @@
                                  <span class="s1">&#39;offset_y&#39;</span><span class="p">:</span><span class="mi">168</span><span class="p">,</span>
                                  <span class="s1">&#39;downsampling&#39;</span><span class="p">:</span><span class="s1">&#39;XI_DWN_1x1&#39;</span><span class="p">,</span>
                                  <span class="s1">&#39;saved_pois&#39;</span><span class="p">:[],</span>
-                                 <span class="s1">&#39;poi_threshold&#39;</span><span class="p">:</span><span class="mi">15</span><span class="p">,</span>                                  
+                                 <span class="s1">&#39;poi_threshold&#39;</span><span class="p">:</span><span class="mi">15</span><span class="p">,</span>
+                                 <span class="s1">&#39;output_params&#39;</span><span class="p">:</span> <span class="p">{</span>
+                                                  <span class="s2">&quot;-vcodec&quot;</span><span class="p">:</span><span class="s2">&quot;libx264&quot;</span><span class="p">,</span> 
+                                                  <span class="s2">&quot;-crf&quot;</span><span class="p">:</span> <span class="mi">28</span><span class="p">,</span>
+                                                  <span class="s2">&quot;-preset&quot;</span><span class="p">:</span><span class="s2">&quot;ultrafast&quot;</span><span class="p">,</span> 
+                                                  <span class="s2">&quot;-tune&quot;</span><span class="p">:</span><span class="s2">&quot;zerolatency&quot;</span><span class="p">,</span>
+                                                  <span class="s2">&quot;-output_dimensions&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mi">3</span><span class="o">*</span><span class="mi">688</span><span class="p">,</span> <span class="mi">688</span><span class="p">]</span>
+                                                 <span class="p">}</span>                                   
                                  <span class="p">},</span>
            <span class="s1">&#39;ExperimentSettings&#39;</span><span class="p">:{</span>
                                  <span class="s1">&#39;baseline_dur&#39;</span><span class="p">:</span><span class="mf">5.0</span><span class="p">,</span>
+                                 <span class="s1">&#39;buffer_dur&#39;</span><span class="p">:</span><span class="mf">0.5</span><span class="p">,</span>
                                  <span class="s1">&#39;reach_timeout&#39;</span><span class="p">:</span><span class="mi">4000</span><span class="p">,</span>
                                  <span class="s1">&#39;flush_dur&#39;</span><span class="p">:</span><span class="mi">10000</span><span class="p">,</span>
                                  <span class="s1">&#39;solenoid_open_dur&#39;</span><span class="p">:</span><span class="mi">75</span><span class="p">,</span>
@@ -279,9 +282,8 @@
 <div class="viewcode-block" id="load_config"><a class="viewcode-back" href="../../software/reach_master/reach_master.html#reachmaster.config.load_config">[docs]</a><span class="k">def</span> <span class="nf">load_config</span><span class="p">(</span><span class="n">file_handle</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Load a configuration file.</span>
 
-<span class="sd">    Typically loads a file selected by user from the </span>
-<span class="sd">    configuration browser in the root ReachMaster </span>
-<span class="sd">    application window.</span>
+<span class="sd">    File typically selected by user from the configuration</span>
+<span class="sd">    browser in the root ReachMaster application window.</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
@@ -322,16 +324,15 @@
 <div class="viewcode-block" id="save_tmp"><a class="viewcode-back" href="../../software/reach_master/reach_master.html#reachmaster.config.save_tmp">[docs]</a><span class="k">def</span> <span class="nf">save_tmp</span><span class="p">(</span><span class="n">config</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Save the configuration to a temp file.</span>
 
-<span class="sd">    The global state of ReachMaster is tracked using a temp</span>
+<span class="sd">    The global state of ReachMaster is tracked with a temp</span>
 <span class="sd">    file. Whenever a child window of the main application is</span>
 <span class="sd">    created or destroyed, the temp file is updated to reflect</span>
 <span class="sd">    whatever changes in settings may have occurred. If the </span>
 <span class="sd">    user forgets to save the configuration file at the end of</span>
-<span class="sd">    a session, this temp file can be used for recovery. It is </span>
+<span class="sd">    a session, the temp file can be used as a backup. It is </span>
 <span class="sd">    saved to the temp folder in the ReachMaster root directory.</span>
-<span class="sd">    **Warning: the temp file is reset to the default </span>
-<span class="sd">    configuration whenever a new instance of ReachMaster is </span>
-<span class="sd">    started!**</span>
+<span class="sd">    **Warning: temp file is reset to defaults as a new session </span>
+<span class="sd">    is started!**</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
