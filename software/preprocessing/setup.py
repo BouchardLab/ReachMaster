@@ -19,7 +19,7 @@ with open(path.join(here, 'requirements.txt'), encoding='utf-8') as f:
     requirements = f.read().splitlines()
 
 setup(
-    name='wrangling_preprocessing',
+    name='preprocessing',
     version="0.0.1",
     description='process data produced by ReachMaster',
     long_description=long_description,
