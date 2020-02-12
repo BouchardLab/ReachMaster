@@ -24,7 +24,6 @@
         <script type="text/javascript" src="../_static/jquery.js"></script>
         <script type="text/javascript" src="../_static/underscore.js"></script>
         <script type="text/javascript" src="../_static/doctools.js"></script>
-        <script type="text/javascript" src="../_static/language_data.js"></script>
     
     <script type="text/javascript" src="../_static/js/theme.js"></script>
 
@@ -192,14 +191,11 @@
 <span class="k">if</span> <span class="n">sys</span><span class="o">.</span><span class="n">platform</span> <span class="o">==</span> <span class="s2">&quot;win32&quot;</span><span class="p">:</span>
     <span class="c1"># Attempt to configure Tcl/Tk without requiring PATH</span>
     <span class="kn">import</span> <span class="nn">FixTk</span>
-<span class="k">try</span><span class="p">:</span>
-    <span class="kn">import</span> <span class="nn">_tkinter</span>
-<span class="k">except</span> <span class="ne">ImportError</span><span class="p">,</span> <span class="n">msg</span><span class="p">:</span>
-    <span class="k">raise</span> <span class="ne">ImportError</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span> <span class="o">+</span> <span class="s1">&#39;, please install the python-tk package&#39;</span>
+<span class="kn">import</span> <span class="nn">_tkinter</span> <span class="c1"># If this fails your Python may not be configured for Tk</span>
 <span class="n">tkinter</span> <span class="o">=</span> <span class="n">_tkinter</span> <span class="c1"># b/w compat for export</span>
 <span class="n">TclError</span> <span class="o">=</span> <span class="n">_tkinter</span><span class="o">.</span><span class="n">TclError</span>
-<span class="kn">from</span> <span class="nn">types</span> <span class="kn">import</span> <span class="o">*</span>
-<span class="kn">from</span> <span class="nn">Tkconstants</span> <span class="kn">import</span> <span class="o">*</span>
+<span class="kn">from</span> <span class="nn">types</span> <span class="k">import</span> <span class="o">*</span>
+<span class="kn">from</span> <span class="nn">Tkconstants</span> <span class="k">import</span> <span class="o">*</span>
 <span class="kn">import</span> <span class="nn">re</span>
 
 <span class="n">wantobjects</span> <span class="o">=</span> <span class="mi">1</span>
@@ -230,7 +226,7 @@
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="p">(</span><span class="nb">list</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">)):</span>
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">value</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
             <span class="n">value</span> <span class="o">=</span> <span class="n">_stringify</span><span class="p">(</span><span class="n">value</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
-            <span class="k">if</span> <span class="n">_magic_re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="n">value</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">value</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;{&#39;</span><span class="p">:</span>
                 <span class="n">value</span> <span class="o">=</span> <span class="s1">&#39;{</span><span class="si">%s</span><span class="s1">}&#39;</span> <span class="o">%</span> <span class="n">value</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">value</span> <span class="o">=</span> <span class="s1">&#39;{</span><span class="si">%s</span><span class="s1">}&#39;</span> <span class="o">%</span> <span class="n">_join</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
@@ -244,10 +240,7 @@
         <span class="k">elif</span> <span class="n">_magic_re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="n">value</span><span class="p">):</span>
             <span class="c1"># add &#39;\&#39; before special characters and spaces</span>
             <span class="n">value</span> <span class="o">=</span> <span class="n">_magic_re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;</span><span class="se">\\</span><span class="s1">\1&#39;</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
-            <span class="n">value</span> <span class="o">=</span> <span class="n">value</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">,</span> <span class="sa">r</span><span class="s1">&#39;\n&#39;</span><span class="p">)</span>
             <span class="n">value</span> <span class="o">=</span> <span class="n">_space_re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;</span><span class="se">\\</span><span class="s1">\1&#39;</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
-            <span class="k">if</span> <span class="n">value</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;&quot;&#39;</span><span class="p">:</span>
-                <span class="n">value</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="se">\\</span><span class="s1">&#39;</span> <span class="o">+</span> <span class="n">value</span>
         <span class="k">elif</span> <span class="n">value</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;&quot;&#39;</span> <span class="ow">or</span> <span class="n">_space_re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="n">value</span><span class="p">):</span>
             <span class="n">value</span> <span class="o">=</span> <span class="s1">&#39;{</span><span class="si">%s</span><span class="s1">}&#39;</span> <span class="o">%</span> <span class="n">value</span>
     <span class="k">return</span> <span class="n">value</span>
@@ -387,7 +380,7 @@
 <span class="sd">    that constrain the type of the value returned from get().&quot;&quot;&quot;</span>
     <span class="n">_default</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
     <span class="n">_tclCommands</span> <span class="o">=</span> <span class="kc">None</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">master</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">master</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Construct a variable</span>
 
 <span class="sd">        MASTER can be given as master widget.</span>
@@ -411,7 +404,7 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
         <span class="k">elif</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_tk</span><span class="o">.</span><span class="n">getboolean</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_tk</span><span class="o">.</span><span class="n">call</span><span class="p">(</span><span class="s2">&quot;info&quot;</span><span class="p">,</span> <span class="s2">&quot;exists&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_name</span><span class="p">)):</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_default</span><span class="p">)</span>
-    <span class="k">def</span> <span class="fm">__del__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__del__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Unset the variable in Tcl.&quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_tk</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">return</span>
@@ -422,7 +415,7 @@
                 <span class="c1">#print &#39;- Tkinter: deleted command&#39;, name</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">_tk</span><span class="o">.</span><span class="n">deletecommand</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_tclCommands</span> <span class="o">=</span> <span class="kc">None</span>
-    <span class="k">def</span> <span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Return the name of the variable in Tcl.&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_name</span>
     <span class="k">def</span> <span class="nf">set</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
@@ -478,7 +471,7 @@
         <span class="sd">&quot;&quot;&quot;Return all trace callback information.&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="nb">map</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_tk</span><span class="o">.</span><span class="n">splitlist</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_tk</span><span class="o">.</span><span class="n">splitlist</span><span class="p">(</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_tk</span><span class="o">.</span><span class="n">call</span><span class="p">(</span><span class="s2">&quot;trace&quot;</span><span class="p">,</span> <span class="s2">&quot;vinfo&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_name</span><span class="p">)))</span>
-    <span class="k">def</span> <span class="fm">__eq__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__eq__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Comparison for equality (==).</span>
 
 <span class="sd">        Note: if the Variable&#39;s master matters to behavior</span>
@@ -490,7 +483,7 @@
 <span class="k">class</span> <span class="nc">StringVar</span><span class="p">(</span><span class="n">Variable</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Value holder for strings variables.&quot;&quot;&quot;</span>
     <span class="n">_default</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">master</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">master</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Construct a string variable.</span>
 
 <span class="sd">        MASTER can be given as master widget.</span>
@@ -512,7 +505,7 @@
 <span class="k">class</span> <span class="nc">IntVar</span><span class="p">(</span><span class="n">Variable</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Value holder for integer variables.&quot;&quot;&quot;</span>
     <span class="n">_default</span> <span class="o">=</span> <span class="mi">0</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">master</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">master</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Construct an integer variable.</span>
 
 <span class="sd">        MASTER can be given as master widget.</span>
@@ -537,7 +530,7 @@
 <span class="k">class</span> <span class="nc">DoubleVar</span><span class="p">(</span><span class="n">Variable</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Value holder for float variables.&quot;&quot;&quot;</span>
     <span class="n">_default</span> <span class="o">=</span> <span class="mf">0.0</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">master</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">master</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Construct a float variable.</span>
 
 <span class="sd">        MASTER can be given as master widget.</span>
@@ -556,7 +549,7 @@
 <span class="k">class</span> <span class="nc">BooleanVar</span><span class="p">(</span><span class="n">Variable</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Value holder for boolean variables.&quot;&quot;&quot;</span>
     <span class="n">_default</span> <span class="o">=</span> <span class="kc">False</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">master</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">master</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Construct a boolean variable.</span>
 
 <span class="sd">        MASTER can be given as master widget.</span>
@@ -748,7 +741,6 @@
         <span class="k">if</span> <span class="ow">not</span> <span class="n">func</span><span class="p">:</span>
             <span class="c1"># I&#39;d rather use time.sleep(ms*0.001)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">tk</span><span class="o">.</span><span class="n">call</span><span class="p">(</span><span class="s1">&#39;after&#39;</span><span class="p">,</span> <span class="n">ms</span><span class="p">)</span>
-            <span class="k">return</span> <span class="kc">None</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="k">def</span> <span class="nf">callit</span><span class="p">():</span>
                 <span class="k">try</span><span class="p">:</span>
@@ -772,13 +764,11 @@
         <span class="sd">&quot;&quot;&quot;Cancel scheduling of function identified with ID.</span>
 
 <span class="sd">        Identifier returned by after or after_idle must be</span>
-<span class="sd">        given as first parameter.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="nb">id</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;id must be a valid identifier returned from &#39;</span>
-                             <span class="s1">&#39;after or after_idle&#39;</span><span class="p">)</span>
+<span class="sd">        given as first parameter.&quot;&quot;&quot;</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="n">data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">tk</span><span class="o">.</span><span class="n">call</span><span class="p">(</span><span class="s1">&#39;after&#39;</span><span class="p">,</span> <span class="s1">&#39;info&#39;</span><span class="p">,</span> <span class="nb">id</span><span class="p">)</span>
+            <span class="c1"># In Tk 8.3, splitlist returns: (script, type)</span>
+            <span class="c1"># In Tk 8.4, splitlist may return (script, type) or (script,)</span>
             <span class="n">script</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">tk</span><span class="o">.</span><span class="n">splitlist</span><span class="p">(</span><span class="n">data</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">deletecommand</span><span class="p">(</span><span class="n">script</span><span class="p">)</span>
         <span class="k">except</span> <span class="n">TclError</span><span class="p">:</span>
@@ -1498,16 +1488,16 @@
         <span class="sd">&quot;&quot;&quot;Return the resource value for a KEY given as string.&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">tk</span><span class="o">.</span><span class="n">call</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_w</span><span class="p">,</span> <span class="s1">&#39;cget&#39;</span><span class="p">,</span> <span class="s1">&#39;-&#39;</span> <span class="o">+</span> <span class="n">key</span><span class="p">)</span>
     <span class="fm">__getitem__</span> <span class="o">=</span> <span class="n">cget</span>
-    <span class="k">def</span> <span class="fm">__setitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__setitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">configure</span><span class="p">({</span><span class="n">key</span><span class="p">:</span> <span class="n">value</span><span class="p">})</span>
-    <span class="k">def</span> <span class="fm">__contains__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__contains__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
         <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;Tkinter objects don&#39;t support &#39;in&#39; tests.&quot;</span><span class="p">)</span>
     <span class="k">def</span> <span class="nf">keys</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Return a list of all resource names of this widget.&quot;&quot;&quot;</span>
         <span class="n">splitlist</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">tk</span><span class="o">.</span><span class="n">splitlist</span>
         <span class="k">return</span> <span class="p">[</span><span class="n">splitlist</span><span class="p">(</span><span class="n">x</span><span class="p">)[</span><span class="mi">0</span><span class="p">][</span><span class="mi">1</span><span class="p">:]</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span>
                 <span class="n">splitlist</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">tk</span><span class="o">.</span><span class="n">call</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_w</span><span class="p">,</span> <span class="s1">&#39;configure&#39;</span><span class="p">))]</span>
-    <span class="k">def</span> <span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Return the window path name of this widget.&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_w</span>
     <span class="c1"># Pack methods that apply to the master</span>
@@ -1693,12 +1683,12 @@
 <span class="k">class</span> <span class="nc">CallWrapper</span><span class="p">:</span>
     <span class="sd">&quot;&quot;&quot;Internal class. Stores function to call when some user</span>
 <span class="sd">    defined Tcl function is called e.g. after an event occurred.&quot;&quot;&quot;</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">func</span><span class="p">,</span> <span class="n">subst</span><span class="p">,</span> <span class="n">widget</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">func</span><span class="p">,</span> <span class="n">subst</span><span class="p">,</span> <span class="n">widget</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Store FUNC, SUBST and WIDGET as members.&quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">func</span> <span class="o">=</span> <span class="n">func</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">subst</span> <span class="o">=</span> <span class="n">subst</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">widget</span> <span class="o">=</span> <span class="n">widget</span>
-    <span class="k">def</span> <span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Apply first function SUBST to arguments, than FUNC.&quot;&quot;&quot;</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">subst</span><span class="p">:</span>
@@ -1961,7 +1951,7 @@
     <span class="sd">&quot;&quot;&quot;Toplevel widget of Tk which represents mostly the main window</span>
 <span class="sd">    of an application. It has an associated Tcl interpreter.&quot;&quot;&quot;</span>
     <span class="n">_w</span> <span class="o">=</span> <span class="s1">&#39;.&#39;</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">screenName</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">baseName</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">className</span><span class="o">=</span><span class="s1">&#39;Tk&#39;</span><span class="p">,</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">screenName</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">baseName</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">className</span><span class="o">=</span><span class="s1">&#39;Tk&#39;</span><span class="p">,</span>
                  <span class="n">useTk</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">sync</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">use</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Return a new Toplevel widget on screen SCREENNAME. A new Tcl interpreter will</span>
 <span class="sd">        be created. BASENAME will be used for the identification of the profile file (see</span>
@@ -2063,7 +2053,7 @@
         <span class="n">sys</span><span class="o">.</span><span class="n">last_value</span> <span class="o">=</span> <span class="n">val</span>
         <span class="n">sys</span><span class="o">.</span><span class="n">last_traceback</span> <span class="o">=</span> <span class="n">tb</span>
         <span class="n">traceback</span><span class="o">.</span><span class="n">print_exception</span><span class="p">(</span><span class="n">exc</span><span class="p">,</span> <span class="n">val</span><span class="p">,</span> <span class="n">tb</span><span class="p">)</span>
-    <span class="k">def</span> <span class="fm">__getattr__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">attr</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__getattr__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">attr</span><span class="p">):</span>
         <span class="s2">&quot;Delegate attribute access to the interpreter object&quot;</span>
         <span class="k">return</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">tk</span><span class="p">,</span> <span class="n">attr</span><span class="p">)</span>
 
@@ -2242,7 +2232,7 @@
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">master</span><span class="o">.</span><span class="n">children</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">master</span><span class="o">.</span><span class="n">children</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_name</span><span class="p">]</span><span class="o">.</span><span class="n">destroy</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">master</span><span class="o">.</span><span class="n">children</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_name</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">master</span><span class="p">,</span> <span class="n">widgetName</span><span class="p">,</span> <span class="n">cnf</span><span class="o">=</span><span class="p">{},</span> <span class="n">kw</span><span class="o">=</span><span class="p">{},</span> <span class="n">extra</span><span class="o">=</span><span class="p">()):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">master</span><span class="p">,</span> <span class="n">widgetName</span><span class="p">,</span> <span class="n">cnf</span><span class="o">=</span><span class="p">{},</span> <span class="n">kw</span><span class="o">=</span><span class="p">{},</span> <span class="n">extra</span><span class="o">=</span><span class="p">()):</span>
         <span class="sd">&quot;&quot;&quot;Construct a widget with the parent widget MASTER, a name WIDGETNAME</span>
 <span class="sd">        and appropriate options.&quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="n">kw</span><span class="p">:</span>
@@ -2280,7 +2270,7 @@
 
 <span class="k">class</span> <span class="nc">Toplevel</span><span class="p">(</span><span class="n">BaseWidget</span><span class="p">,</span> <span class="n">Wm</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Toplevel widget, e.g. for dialogs.&quot;&quot;&quot;</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">master</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">cnf</span><span class="o">=</span><span class="p">{},</span> <span class="o">**</span><span class="n">kw</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">master</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">cnf</span><span class="o">=</span><span class="p">{},</span> <span class="o">**</span><span class="n">kw</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Construct a toplevel widget with the parent MASTER.</span>
 
 <span class="sd">        Valid resource names: background, bd, bg, borderwidth, class,</span>
@@ -2308,7 +2298,7 @@
 
 <span class="k">class</span> <span class="nc">Button</span><span class="p">(</span><span class="n">Widget</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Button widget.&quot;&quot;&quot;</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">master</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">cnf</span><span class="o">=</span><span class="p">{},</span> <span class="o">**</span><span class="n">kw</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">master</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">cnf</span><span class="o">=</span><span class="p">{},</span> <span class="o">**</span><span class="n">kw</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Construct a button widget with the parent MASTER.</span>
 
 <span class="sd">        STANDARD OPTIONS</span>
@@ -2387,7 +2377,7 @@
 
 <span class="k">class</span> <span class="nc">Canvas</span><span class="p">(</span><span class="n">Widget</span><span class="p">,</span> <span class="n">XView</span><span class="p">,</span> <span class="n">YView</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Canvas widget to display graphical elements like lines or text.&quot;&quot;&quot;</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">master</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">cnf</span><span class="o">=</span><span class="p">{},</span> <span class="o">**</span><span class="n">kw</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">master</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">cnf</span><span class="o">=</span><span class="p">{},</span> <span class="o">**</span><span class="n">kw</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Construct a canvas widget with the parent MASTER.</span>
 
 <span class="sd">        Valid resource names: background, bd, bg, borderwidth, closeenough,</span>
@@ -2628,7 +2618,7 @@
 
 <span class="k">class</span> <span class="nc">Checkbutton</span><span class="p">(</span><span class="n">Widget</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Checkbutton widget which is either in on- or off-state.&quot;&quot;&quot;</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">master</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">cnf</span><span class="o">=</span><span class="p">{},</span> <span class="o">**</span><span class="n">kw</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">master</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">cnf</span><span class="o">=</span><span class="p">{},</span> <span class="o">**</span><span class="n">kw</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Construct a checkbutton widget with the parent MASTER.</span>
 
 <span class="sd">        Valid resource names: activebackground, activeforeground, anchor,</span>
@@ -2657,7 +2647,7 @@
 
 <span class="k">class</span> <span class="nc">Entry</span><span class="p">(</span><span class="n">Widget</span><span class="p">,</span> <span class="n">XView</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Entry widget which allows displaying simple text.&quot;&quot;&quot;</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">master</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">cnf</span><span class="o">=</span><span class="p">{},</span> <span class="o">**</span><span class="n">kw</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">master</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">cnf</span><span class="o">=</span><span class="p">{},</span> <span class="o">**</span><span class="n">kw</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Construct an entry widget with the parent MASTER.</span>
 
 <span class="sd">        Valid resource names: background, bd, bg, borderwidth, cursor,</span>
@@ -2722,7 +2712,7 @@
 
 <span class="k">class</span> <span class="nc">Frame</span><span class="p">(</span><span class="n">Widget</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Frame widget which may contain other widgets and can have a 3D border.&quot;&quot;&quot;</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">master</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">cnf</span><span class="o">=</span><span class="p">{},</span> <span class="o">**</span><span class="n">kw</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">master</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">cnf</span><span class="o">=</span><span class="p">{},</span> <span class="o">**</span><span class="n">kw</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Construct a frame widget with the parent MASTER.</span>
 
 <span class="sd">        Valid resource names: background, bd, bg, borderwidth, class,</span>
@@ -2740,7 +2730,7 @@
 
 <span class="k">class</span> <span class="nc">Label</span><span class="p">(</span><span class="n">Widget</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Label widget which can display text and bitmaps.&quot;&quot;&quot;</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">master</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">cnf</span><span class="o">=</span><span class="p">{},</span> <span class="o">**</span><span class="n">kw</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">master</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">cnf</span><span class="o">=</span><span class="p">{},</span> <span class="o">**</span><span class="n">kw</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Construct a label widget with the parent MASTER.</span>
 
 <span class="sd">        STANDARD OPTIONS</span>
@@ -2762,7 +2752,7 @@
 
 <span class="k">class</span> <span class="nc">Listbox</span><span class="p">(</span><span class="n">Widget</span><span class="p">,</span> <span class="n">XView</span><span class="p">,</span> <span class="n">YView</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Listbox widget which can display a list of strings.&quot;&quot;&quot;</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">master</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">cnf</span><span class="o">=</span><span class="p">{},</span> <span class="o">**</span><span class="n">kw</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">master</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">cnf</span><span class="o">=</span><span class="p">{},</span> <span class="o">**</span><span class="n">kw</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Construct a listbox widget with the parent MASTER.</span>
 
 <span class="sd">        Valid resource names: background, bd, bg, borderwidth, cursor,</span>
@@ -2853,7 +2843,7 @@
 
 <span class="k">class</span> <span class="nc">Menu</span><span class="p">(</span><span class="n">Widget</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Menu widget which allows displaying menu bars, pull-down menus and pop-up menus.&quot;&quot;&quot;</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">master</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">cnf</span><span class="o">=</span><span class="p">{},</span> <span class="o">**</span><span class="n">kw</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">master</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">cnf</span><span class="o">=</span><span class="p">{},</span> <span class="o">**</span><span class="n">kw</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Construct menu widget with the parent MASTER.</span>
 
 <span class="sd">        Valid resource names: activebackground, activeborderwidth,</span>
@@ -2978,17 +2968,17 @@
 
 <span class="k">class</span> <span class="nc">Menubutton</span><span class="p">(</span><span class="n">Widget</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Menubutton widget, obsolete since Tk8.0.&quot;&quot;&quot;</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">master</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">cnf</span><span class="o">=</span><span class="p">{},</span> <span class="o">**</span><span class="n">kw</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">master</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">cnf</span><span class="o">=</span><span class="p">{},</span> <span class="o">**</span><span class="n">kw</span><span class="p">):</span>
         <span class="n">Widget</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">master</span><span class="p">,</span> <span class="s1">&#39;menubutton&#39;</span><span class="p">,</span> <span class="n">cnf</span><span class="p">,</span> <span class="n">kw</span><span class="p">)</span>
 
 <span class="k">class</span> <span class="nc">Message</span><span class="p">(</span><span class="n">Widget</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Message widget to display multiline text. Obsolete since Label does it too.&quot;&quot;&quot;</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">master</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">cnf</span><span class="o">=</span><span class="p">{},</span> <span class="o">**</span><span class="n">kw</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">master</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">cnf</span><span class="o">=</span><span class="p">{},</span> <span class="o">**</span><span class="n">kw</span><span class="p">):</span>
         <span class="n">Widget</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">master</span><span class="p">,</span> <span class="s1">&#39;message&#39;</span><span class="p">,</span> <span class="n">cnf</span><span class="p">,</span> <span class="n">kw</span><span class="p">)</span>
 
 <span class="k">class</span> <span class="nc">Radiobutton</span><span class="p">(</span><span class="n">Widget</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Radiobutton widget which shows only one of several buttons in on-state.&quot;&quot;&quot;</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">master</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">cnf</span><span class="o">=</span><span class="p">{},</span> <span class="o">**</span><span class="n">kw</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">master</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">cnf</span><span class="o">=</span><span class="p">{},</span> <span class="o">**</span><span class="n">kw</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Construct a radiobutton widget with the parent MASTER.</span>
 
 <span class="sd">        Valid resource names: activebackground, activeforeground, anchor,</span>
@@ -3015,7 +3005,7 @@
 
 <span class="k">class</span> <span class="nc">Scale</span><span class="p">(</span><span class="n">Widget</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Scale widget which can display a numerical scale.&quot;&quot;&quot;</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">master</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">cnf</span><span class="o">=</span><span class="p">{},</span> <span class="o">**</span><span class="n">kw</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">master</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">cnf</span><span class="o">=</span><span class="p">{},</span> <span class="o">**</span><span class="n">kw</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Construct a scale widget with the parent MASTER.</span>
 
 <span class="sd">        Valid resource names: activebackground, background, bigincrement, bd,</span>
@@ -3048,7 +3038,7 @@
 
 <span class="k">class</span> <span class="nc">Scrollbar</span><span class="p">(</span><span class="n">Widget</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Scrollbar widget which displays a slider at a certain position.&quot;&quot;&quot;</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">master</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">cnf</span><span class="o">=</span><span class="p">{},</span> <span class="o">**</span><span class="n">kw</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">master</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">cnf</span><span class="o">=</span><span class="p">{},</span> <span class="o">**</span><span class="n">kw</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Construct a scrollbar widget with the parent MASTER.</span>
 
 <span class="sd">        Valid resource names: activebackground, activerelief,</span>
@@ -3088,7 +3078,7 @@
 
 <span class="k">class</span> <span class="nc">Text</span><span class="p">(</span><span class="n">Widget</span><span class="p">,</span> <span class="n">XView</span><span class="p">,</span> <span class="n">YView</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Text widget which can display text in various forms.&quot;&quot;&quot;</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">master</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">cnf</span><span class="o">=</span><span class="p">{},</span> <span class="o">**</span><span class="n">kw</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">master</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">cnf</span><span class="o">=</span><span class="p">{},</span> <span class="o">**</span><span class="n">kw</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Construct a text widget with the parent MASTER.</span>
 
 <span class="sd">        STANDARD OPTIONS</span>
@@ -3416,18 +3406,18 @@
 
 <span class="k">class</span> <span class="nc">_setit</span><span class="p">:</span>
     <span class="sd">&quot;&quot;&quot;Internal class. It wraps the command in the widget OptionMenu.&quot;&quot;&quot;</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">var</span><span class="p">,</span> <span class="n">value</span><span class="p">,</span> <span class="n">callback</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">var</span><span class="p">,</span> <span class="n">value</span><span class="p">,</span> <span class="n">callback</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">__value</span> <span class="o">=</span> <span class="n">value</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">__var</span> <span class="o">=</span> <span class="n">var</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">__callback</span> <span class="o">=</span> <span class="n">callback</span>
-    <span class="k">def</span> <span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">__var</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__value</span><span class="p">)</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">__callback</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">__callback</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__value</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">)</span>
 
 <span class="k">class</span> <span class="nc">OptionMenu</span><span class="p">(</span><span class="n">Menubutton</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;OptionMenu which allows the user to select a value from a menu.&quot;&quot;&quot;</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">master</span><span class="p">,</span> <span class="n">variable</span><span class="p">,</span> <span class="n">value</span><span class="p">,</span> <span class="o">*</span><span class="n">values</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">master</span><span class="p">,</span> <span class="n">variable</span><span class="p">,</span> <span class="n">value</span><span class="p">,</span> <span class="o">*</span><span class="n">values</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Construct an optionmenu widget with the parent MASTER, with</span>
 <span class="sd">        the resource textvariable set to VARIABLE, the initially selected</span>
 <span class="sd">        value VALUE, the other menu values VALUES and an additional</span>
@@ -3452,7 +3442,7 @@
                      <span class="n">command</span><span class="o">=</span><span class="n">_setit</span><span class="p">(</span><span class="n">variable</span><span class="p">,</span> <span class="n">v</span><span class="p">,</span> <span class="n">callback</span><span class="p">))</span>
         <span class="bp">self</span><span class="p">[</span><span class="s2">&quot;menu&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">menu</span>
 
-    <span class="k">def</span> <span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
         <span class="k">if</span> <span class="n">name</span> <span class="o">==</span> <span class="s1">&#39;menu&#39;</span><span class="p">:</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__menu</span>
         <span class="k">return</span> <span class="n">Widget</span><span class="o">.</span><span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span>
@@ -3465,7 +3455,7 @@
 <span class="k">class</span> <span class="nc">Image</span><span class="p">:</span>
     <span class="sd">&quot;&quot;&quot;Base class for images.&quot;&quot;&quot;</span>
     <span class="n">_last_id</span> <span class="o">=</span> <span class="mi">0</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">imgtype</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">cnf</span><span class="o">=</span><span class="p">{},</span> <span class="n">master</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kw</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">imgtype</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">cnf</span><span class="o">=</span><span class="p">{},</span> <span class="n">master</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kw</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">master</span><span class="p">:</span>
             <span class="n">master</span> <span class="o">=</span> <span class="n">_default_root</span>
@@ -3489,17 +3479,17 @@
             <span class="n">options</span> <span class="o">=</span> <span class="n">options</span> <span class="o">+</span> <span class="p">(</span><span class="s1">&#39;-&#39;</span><span class="o">+</span><span class="n">k</span><span class="p">,</span> <span class="n">v</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">tk</span><span class="o">.</span><span class="n">call</span><span class="p">((</span><span class="s1">&#39;image&#39;</span><span class="p">,</span> <span class="s1">&#39;create&#39;</span><span class="p">,</span> <span class="n">imgtype</span><span class="p">,</span> <span class="n">name</span><span class="p">,)</span> <span class="o">+</span> <span class="n">options</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">name</span>
-    <span class="k">def</span> <span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span> <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span>
-    <span class="k">def</span> <span class="fm">__del__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span> <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span>
+    <span class="k">def</span> <span class="nf">__del__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">:</span>
             <span class="k">try</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">tk</span><span class="o">.</span><span class="n">call</span><span class="p">(</span><span class="s1">&#39;image&#39;</span><span class="p">,</span> <span class="s1">&#39;delete&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
             <span class="k">except</span> <span class="n">TclError</span><span class="p">:</span>
                 <span class="c1"># May happen if the root was destroyed</span>
                 <span class="k">pass</span>
-    <span class="k">def</span> <span class="fm">__setitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__setitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">tk</span><span class="o">.</span><span class="n">call</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="s1">&#39;configure&#39;</span><span class="p">,</span> <span class="s1">&#39;-&#39;</span><span class="o">+</span><span class="n">key</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
-    <span class="k">def</span> <span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">tk</span><span class="o">.</span><span class="n">call</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="s1">&#39;configure&#39;</span><span class="p">,</span> <span class="s1">&#39;-&#39;</span><span class="o">+</span><span class="n">key</span><span class="p">)</span>
     <span class="k">def</span> <span class="nf">configure</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kw</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Configure the image.&quot;&quot;&quot;</span>
@@ -3527,8 +3517,8 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">tk</span><span class="o">.</span><span class="n">call</span><span class="p">(</span><span class="s1">&#39;image&#39;</span><span class="p">,</span> <span class="s1">&#39;width&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">))</span>
 
 <span class="k">class</span> <span class="nc">PhotoImage</span><span class="p">(</span><span class="n">Image</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Widget which can display images in PGM, PPM, GIF, PNG format.&quot;&quot;&quot;</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">cnf</span><span class="o">=</span><span class="p">{},</span> <span class="n">master</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kw</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Widget which can display colored images in GIF, PPM/PGM format.&quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">cnf</span><span class="o">=</span><span class="p">{},</span> <span class="n">master</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kw</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Create an image with NAME.</span>
 
 <span class="sd">        Valid resource names: data, format, file, gamma, height, palette,</span>
@@ -3541,7 +3531,7 @@
         <span class="sd">&quot;&quot;&quot;Return the value of OPTION.&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">tk</span><span class="o">.</span><span class="n">call</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="s1">&#39;cget&#39;</span><span class="p">,</span> <span class="s1">&#39;-&#39;</span> <span class="o">+</span> <span class="n">option</span><span class="p">)</span>
     <span class="c1"># XXX config</span>
-    <span class="k">def</span> <span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">tk</span><span class="o">.</span><span class="n">call</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="s1">&#39;cget&#39;</span><span class="p">,</span> <span class="s1">&#39;-&#39;</span> <span class="o">+</span> <span class="n">key</span><span class="p">)</span>
     <span class="c1"># XXX copy -from, -to, ...?</span>
     <span class="k">def</span> <span class="nf">copy</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -3591,8 +3581,8 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">tk</span><span class="o">.</span><span class="n">call</span><span class="p">(</span><span class="n">args</span><span class="p">)</span>
 
 <span class="k">class</span> <span class="nc">BitmapImage</span><span class="p">(</span><span class="n">Image</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Widget which can display images in XBM format.&quot;&quot;&quot;</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">cnf</span><span class="o">=</span><span class="p">{},</span> <span class="n">master</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kw</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Widget which can display a bitmap.&quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">cnf</span><span class="o">=</span><span class="p">{},</span> <span class="n">master</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kw</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Create a bitmap with NAME.</span>
 
 <span class="sd">        Valid resource names: background, data, file, foreground, maskdata, maskfile.&quot;&quot;&quot;</span>
@@ -3607,7 +3597,7 @@
 
 <span class="k">class</span> <span class="nc">Spinbox</span><span class="p">(</span><span class="n">Widget</span><span class="p">,</span> <span class="n">XView</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;spinbox widget.&quot;&quot;&quot;</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">master</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">cnf</span><span class="o">=</span><span class="p">{},</span> <span class="o">**</span><span class="n">kw</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">master</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">cnf</span><span class="o">=</span><span class="p">{},</span> <span class="o">**</span><span class="n">kw</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Construct a spinbox widget with the parent MASTER.</span>
 
 <span class="sd">        STANDARD OPTIONS</span>
@@ -3741,7 +3731,7 @@
 <span class="sd">        select to commands. If the selection isn&#39;t currently in</span>
 <span class="sd">        the spinbox, then a new selection is created to include</span>
 <span class="sd">        the characters between index and the most recent selection</span>
-<span class="sd">        anchor point, inclusive.</span>
+<span class="sd">        anchor point, inclusive. Returns an empty string.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">selection</span><span class="p">(</span><span class="s2">&quot;adjust&quot;</span><span class="p">,</span> <span class="n">index</span><span class="p">)</span>
 
@@ -3749,7 +3739,7 @@
         <span class="sd">&quot;&quot;&quot;Clear the selection</span>
 
 <span class="sd">        If the selection isn&#39;t in this widget then the</span>
-<span class="sd">        command has no effect.</span>
+<span class="sd">        command has no effect. Returns an empty string.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">selection</span><span class="p">(</span><span class="s2">&quot;clear&quot;</span><span class="p">)</span>
 
@@ -3757,15 +3747,15 @@
         <span class="sd">&quot;&quot;&quot;Sets or gets the currently selected element.</span>
 
 <span class="sd">        If a spinbutton element is specified, it will be</span>
-<span class="sd">        displayed depressed.</span>
+<span class="sd">        displayed depressed</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">tk</span><span class="o">.</span><span class="n">call</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_w</span><span class="p">,</span> <span class="s1">&#39;selection&#39;</span><span class="p">,</span> <span class="s1">&#39;element&#39;</span><span class="p">,</span> <span class="n">element</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">selection</span><span class="p">(</span><span class="s2">&quot;element&quot;</span><span class="p">,</span> <span class="n">element</span><span class="p">)</span>
 
 <span class="c1">###########################################################################</span>
 
 <span class="k">class</span> <span class="nc">LabelFrame</span><span class="p">(</span><span class="n">Widget</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;labelframe widget.&quot;&quot;&quot;</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">master</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">cnf</span><span class="o">=</span><span class="p">{},</span> <span class="o">**</span><span class="n">kw</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">master</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">cnf</span><span class="o">=</span><span class="p">{},</span> <span class="o">**</span><span class="n">kw</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Construct a labelframe widget with the parent MASTER.</span>
 
 <span class="sd">        STANDARD OPTIONS</span>
@@ -3787,7 +3777,7 @@
 
 <span class="k">class</span> <span class="nc">PanedWindow</span><span class="p">(</span><span class="n">Widget</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;panedwindow widget.&quot;&quot;&quot;</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">master</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">cnf</span><span class="o">=</span><span class="p">{},</span> <span class="o">**</span><span class="n">kw</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">master</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">cnf</span><span class="o">=</span><span class="p">{},</span> <span class="o">**</span><span class="n">kw</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Construct a panedwindow widget with the parent MASTER.</span>
 
 <span class="sd">        STANDARD OPTIONS</span>
@@ -3977,7 +3967,7 @@
 <span class="c1"># Extensions:</span>
 
 <span class="k">class</span> <span class="nc">Studbutton</span><span class="p">(</span><span class="n">Button</span><span class="p">):</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">master</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">cnf</span><span class="o">=</span><span class="p">{},</span> <span class="o">**</span><span class="n">kw</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">master</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">cnf</span><span class="o">=</span><span class="p">{},</span> <span class="o">**</span><span class="n">kw</span><span class="p">):</span>
         <span class="n">Widget</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">master</span><span class="p">,</span> <span class="s1">&#39;studbutton&#39;</span><span class="p">,</span> <span class="n">cnf</span><span class="p">,</span> <span class="n">kw</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">bind</span><span class="p">(</span><span class="s1">&#39;&lt;Any-Enter&gt;&#39;</span><span class="p">,</span>       <span class="bp">self</span><span class="o">.</span><span class="n">tkButtonEnter</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">bind</span><span class="p">(</span><span class="s1">&#39;&lt;Any-Leave&gt;&#39;</span><span class="p">,</span>       <span class="bp">self</span><span class="o">.</span><span class="n">tkButtonLeave</span><span class="p">)</span>
@@ -3985,7 +3975,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">bind</span><span class="p">(</span><span class="s1">&#39;&lt;ButtonRelease-1&gt;&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">tkButtonUp</span><span class="p">)</span>
 
 <span class="k">class</span> <span class="nc">Tributton</span><span class="p">(</span><span class="n">Button</span><span class="p">):</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">master</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">cnf</span><span class="o">=</span><span class="p">{},</span> <span class="o">**</span><span class="n">kw</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">master</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">cnf</span><span class="o">=</span><span class="p">{},</span> <span class="o">**</span><span class="n">kw</span><span class="p">):</span>
         <span class="n">Widget</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">master</span><span class="p">,</span> <span class="s1">&#39;tributton&#39;</span><span class="p">,</span> <span class="n">cnf</span><span class="p">,</span> <span class="n">kw</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">bind</span><span class="p">(</span><span class="s1">&#39;&lt;Any-Enter&gt;&#39;</span><span class="p">,</span>       <span class="bp">self</span><span class="o">.</span><span class="n">tkButtonEnter</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">bind</span><span class="p">(</span><span class="s1">&#39;&lt;Any-Leave&gt;&#39;</span><span class="p">,</span>       <span class="bp">self</span><span class="o">.</span><span class="n">tkButtonLeave</span><span class="p">)</span>

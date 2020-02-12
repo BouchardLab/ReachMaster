@@ -24,7 +24,6 @@
         <script type="text/javascript" src="../../_static/jquery.js"></script>
         <script type="text/javascript" src="../../_static/underscore.js"></script>
         <script type="text/javascript" src="../../_static/doctools.js"></script>
-        <script type="text/javascript" src="../../_static/language_data.js"></script>
     
     <script type="text/javascript" src="../../_static/js/theme.js"></script>
 
@@ -188,7 +187,7 @@ by various ReachMaster routines.</p>
 to Python. For further documentation, visit <a class="reference external" href="http://spikegadgets.com/software/python_toolbox.html">SpikeGadgets</a> .</p>
 <dl class="function">
 <dt id="trodes_data.readTrodesExtractedDataFile3.readTrodesExtractedDataFile">
-<code class="descclassname">trodes_data.readTrodesExtractedDataFile3.</code><code class="descname">readTrodesExtractedDataFile</code><span class="sig-paren">(</span><em>filename</em><span class="sig-paren">)</span><a class="headerlink" href="#trodes_data.readTrodesExtractedDataFile3.readTrodesExtractedDataFile" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">trodes_data.readTrodesExtractedDataFile3.</code><code class="descname">readTrodesExtractedDataFile</code><span class="sig-paren">(</span><em>filename</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/trodes_data/readTrodesExtractedDataFile3.html#readTrodesExtractedDataFile"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#trodes_data.readTrodesExtractedDataFile3.readTrodesExtractedDataFile" title="Permalink to this definition">¶</a></dt>
 <dd><p>Read a DIO or analog Trodes .dat file. These files are
 typically produced after converting the raw .rec files
 using the <cite>exportdio</cite> or <cite>exportanalog</cite> bash scripts
@@ -214,32 +213,231 @@ more details.</p>
 <p>A library for reading, parsing, and preprocessing trodes data
 collected during robot calibration routines.</p>
 <dl class="function">
-<dt id="trodes_data.calibration_data_parser.get_summary_frame">
-<code class="descclassname">trodes_data.calibration_data_parser.</code><code class="descname">get_summary_frame</code><span class="sig-paren">(</span><em>data_dir</em>, <em>trodes_name</em>, <em>sampling_rate=3000</em>, <em>valve_period=0.175</em>, <em>pot_units='cm'</em><span class="sig-paren">)</span><a class="headerlink" href="#trodes_data.calibration_data_parser.get_summary_frame" title="Permalink to this definition">¶</a></dt>
-<dd><p>Generate a data frame that can be modeled for robot calibration.</p>
-<blockquote>
-<div><dl class="docutils">
-<dt>data_dir <span class="classifier-delimiter">:</span> <span class="classifier">str</span></dt>
-<dd>Parent directory where the trodes data lives</dd>
-<dt>trodes_name <span class="classifier-delimiter">:</span> <span class="classifier">str</span></dt>
-<dd>Name of original .rec trodes file</dd>
-<dt>sampling_rate <span class="classifier-delimiter">:</span> <span class="classifier">int</span></dt>
-<dd>Specifying a rate (Hz) lower than the SpikeGadgets MCU clock rate of
-30 kHz will downsample the data and speed up the parsing.</dd>
-<dt>valve_period <span class="classifier-delimiter">:</span> <span class="classifier">float</span></dt>
-<dd>Time (sec) between valve command onsets</dd>
-<dt>pot_units <span class="classifier-delimiter">:</span> <span class="classifier">str</span></dt>
-<dd>Units to return potentiometer recordings. Can be <cite>cm</cite>, <cite>volts</cite>, or
-<cite>bits</cite>.</dd>
-</dl>
-</div></blockquote>
+<dt id="trodes_data.calibration_data_parser.get_calibration_frame">
+<code class="descclassname">trodes_data.calibration_data_parser.</code><code class="descname">get_calibration_frame</code><span class="sig-paren">(</span><em>data_dir</em>, <em>trodes_name</em>, <em>sampling_rate=3000</em>, <em>valve_period=0.175</em>, <em>pot_units='cm'</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/trodes_data/calibration_data_parser.html#get_calibration_frame"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#trodes_data.calibration_data_parser.get_calibration_frame" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generate a data frame that can be used to estimate calibration parameters.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><strong>data_frame</strong> – A pandas data frame</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>data_dir</strong> (<em>str</em>) – Parent directory where the trodes data lives</li>
+<li><strong>trodes_name</strong> (<em>str</em>) – Name of original .rec trodes file</li>
+<li><strong>sampling_rate</strong> (<em>int</em>) – Specifying a rate (Hz) lower than the SpikeGadgets MCU clock rate of
+30 kHz will downsample the data and speed up the parsing.</li>
+<li><strong>valve_period</strong> (<em>float</em>) – Time (sec) between valve command onsets</li>
+<li><strong>pot_units</strong> (<em>str</em>) – Units to return potentiometer recordings. Can be <cite>cm</cite>, <cite>volts</cite>, or
+<cite>bits</cite>.</li>
+</ul>
+</td>
 </tr>
-<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">type(pandas.DataFrame)</td>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>data_frame</strong> – A pandas data frame with columns <cite>onset_time</cite>, <cite>x_position</cite>,
+<cite>x_duration</cite>, <cite>x_displacement</cite>, <cite>y_position</cite>, <cite>y_duration</cite>,
+<cite>y_displacement</cite>, <cite>z_position</cite>, <cite>z_duration</cite>, and <cite>z_displacement</cite>.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">pandas.core.frame.DataFrame</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="trodes_data.calibration_data_parser.get_trodes_files">
+<code class="descclassname">trodes_data.calibration_data_parser.</code><code class="descname">get_trodes_files</code><span class="sig-paren">(</span><em>data_dir</em>, <em>trodes_name</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/trodes_data/calibration_data_parser.html#get_trodes_files"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#trodes_data.calibration_data_parser.get_trodes_files" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generate names of all the trodes files from a calibration recording.
+Assumes data is saved in the default trodes filesystem and channels are
+named appropriately in the trodes configuration file.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>data_dir</strong> (<em>str</em>) – Parent directory where the trodes data lives</li>
+<li><strong>trodes_name</strong> (<em>str</em>) – Name of original .rec trodes file</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>trodes_files</strong> – The file names for each channel of a calibration recording. More
+specifically, <cite>x_push_file</cite> is the <a href="#id2"><span class="problematic" id="id3">*</span></a>.dat file for the <cite>x</cite> actuator
+<cite>push</cite> valve command recording. Similarly, <cite>y_pot_file</cite> is the
+<a href="#id4"><span class="problematic" id="id5">*</span></a>.dat for the <cite>y</cite> actuator poteniometer recording.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">dict</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="trodes_data.calibration_data_parser.get_valve_transitions">
+<code class="descclassname">trodes_data.calibration_data_parser.</code><code class="descname">get_valve_transitions</code><span class="sig-paren">(</span><em>calibration_data</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/trodes_data/calibration_data_parser.html#get_valve_transitions"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#trodes_data.calibration_data_parser.get_valve_transitions" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get the valve start and stop times.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>calibration_data</strong> (<em>dict</em>) – All of the digital (DIO) and analog data corresponding to the trodes
+files for the a calibration recording. For example, as returned by
+read_data().</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><ul class="simple">
+<li><strong>start_times</strong> (<em>dict</em>) – Times at which each of the valves transitioned from closed to open</li>
+<li><strong>stop_times</strong> (<em>dict</em>) – Times at which each of the valves transitioned from open to closed</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="trodes_data.calibration_data_parser.pots_to_bits">
+<code class="descclassname">trodes_data.calibration_data_parser.</code><code class="descname">pots_to_bits</code><span class="sig-paren">(</span><em>calibration_data</em>, <em>supply_voltage=3.3</em>, <em>controller_max_bits=1023</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/trodes_data/calibration_data_parser.html#pots_to_bits"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#trodes_data.calibration_data_parser.pots_to_bits" title="Permalink to this definition">¶</a></dt>
+<dd><p>Convert the potentiometer data units to microcontroller bits.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>calibration_data</strong> (<em>dict</em>) – All of the digital (DIO) and analog data corresponding to the trodes
+files for the a calibration recording. For example, as returned by
+read_data().</li>
+<li><strong>supply_voltage</strong> (<em>float</em>) – Maximum voltage for the potentiometers</li>
+<li><strong>controller_max_bits</strong> (<em>int</em>) – Maximum bits for the microcontroller</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>calibration_data</strong> – Calibration data with potentiometer data convert to microcontroller
+bits</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">dict</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="trodes_data.calibration_data_parser.pots_to_cm">
+<code class="descclassname">trodes_data.calibration_data_parser.</code><code class="descname">pots_to_cm</code><span class="sig-paren">(</span><em>calibration_data</em>, <em>supply_voltage=3.3</em>, <em>pot_range=5.0</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/trodes_data/calibration_data_parser.html#pots_to_cm"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#trodes_data.calibration_data_parser.pots_to_cm" title="Permalink to this definition">¶</a></dt>
+<dd><p>Convert the potentiometer data units to cm.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>calibration_data</strong> (<em>dict</em>) – All of the digital (DIO) and analog data corresponding to the trodes
+files for the a calibration recording. For example, as returned by
+read_data().</li>
+<li><strong>supply_voltage</strong> (<em>float</em>) – Maximum voltage for the potentiometers</li>
+<li><strong>pot_range</strong> (<em>float</em>) – Potentiometer maximum travel range in cm</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>calibration_data</strong> – Calibration data with potentiometer data convert to cm</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">dict</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="trodes_data.calibration_data_parser.pots_to_volts">
+<code class="descclassname">trodes_data.calibration_data_parser.</code><code class="descname">pots_to_volts</code><span class="sig-paren">(</span><em>calibration_data</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/trodes_data/calibration_data_parser.html#pots_to_volts"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#trodes_data.calibration_data_parser.pots_to_volts" title="Permalink to this definition">¶</a></dt>
+<dd><p>Convert the potentiometer data units to volts.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>calibration_data</strong> (<em>dict</em>) – All of the digital (DIO) and analog data corresponding to the trodes
+files for the a calibration recording. For example, as returned by
+read_data().</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><strong>calibration_data</strong> – Calibration data with potentiometer data convert to volts</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">dict</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="trodes_data.calibration_data_parser.read_data">
+<code class="descclassname">trodes_data.calibration_data_parser.</code><code class="descname">read_data</code><span class="sig-paren">(</span><em>trodes_files</em>, <em>sampling_rate=3000</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/trodes_data/calibration_data_parser.html#read_data"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#trodes_data.calibration_data_parser.read_data" title="Permalink to this definition">¶</a></dt>
+<dd><p>Read all the trodes file data using the SpikeGadgets
+<cite>readTrodesExtractedDataFile</cite> script.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>trodes_files</strong> (<em>dict</em>) – The file names for each channel of a calibration recording. For
+example, as returned by get_trodes_files().</li>
+<li><strong>sampling_rate</strong> (<em>int</em>) – Specifying a rate (Hz) lower than the SpikeGadgets MCU clock rate of
+30 kHz will downsample the data and speed up the parsing.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>calibration_data</strong> – All of the digital (DIO) and analog data corresponding to the trodes
+files for the a calibration recording.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">dict</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="trodes_data.calibration_data_parser.to_numpy">
+<code class="descclassname">trodes_data.calibration_data_parser.</code><code class="descname">to_numpy</code><span class="sig-paren">(</span><em>calibration_data</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/trodes_data/calibration_data_parser.html#to_numpy"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#trodes_data.calibration_data_parser.to_numpy" title="Permalink to this definition">¶</a></dt>
+<dd><p>Convert the calibration data to numpy arrays</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>calibration_data</strong> (<em>dict</em>) – All of the digital (DIO) and analog data corresponding to the trodes
+files for the a calibration recording. For example, as returned by
+read_data().</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><strong>calibration_data</strong> – Numpy-converted calibration data.</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">dict</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="trodes_data.calibration_data_parser.to_seconds">
+<code class="descclassname">trodes_data.calibration_data_parser.</code><code class="descname">to_seconds</code><span class="sig-paren">(</span><em>calibration_data</em>, <em>start_at_zero=True</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/trodes_data/calibration_data_parser.html#to_seconds"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#trodes_data.calibration_data_parser.to_seconds" title="Permalink to this definition">¶</a></dt>
+<dd><p>Convert the calibration data time units to seconds.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>calibration_data</strong> (<em>dict</em>) – All of the digital (DIO) and analog data corresponding to the trodes
+files for the a calibration recording. For example, as returned by
+read_data().</li>
+<li><strong>start_at_zero</strong> (<em>bool</em>) – If True, the start time will be set to 0.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>calibration_data</strong> – Seconds-converted calibration data</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">dict</p>
+</td>
 </tr>
 </tbody>
 </table>

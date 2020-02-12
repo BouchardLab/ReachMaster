@@ -24,7 +24,6 @@
         <script type="text/javascript" src="../../_static/jquery.js"></script>
         <script type="text/javascript" src="../../_static/underscore.js"></script>
         <script type="text/javascript" src="../../_static/doctools.js"></script>
-        <script type="text/javascript" src="../../_static/language_data.js"></script>
     
     <script type="text/javascript" src="../../_static/js/theme.js"></script>
 
@@ -175,18 +174,18 @@
 
 <span class="sd">&quot;&quot;&quot;</span>
 
-<span class="kn">from</span> <span class="nn">.</span> <span class="kn">import</span> <span class="n">config</span> <span class="k">as</span> <span class="n">cfg</span>
-<span class="kn">from</span> <span class="nn">.settings</span> <span class="kn">import</span> <span class="n">camera_settings</span> <span class="k">as</span> <span class="n">camset</span>
-<span class="kn">from</span> <span class="nn">.settings</span> <span class="kn">import</span> <span class="n">experiment_settings</span> <span class="k">as</span> <span class="n">expset</span>
-<span class="kn">from</span> <span class="nn">.settings</span> <span class="kn">import</span> <span class="n">robot_settings</span> <span class="k">as</span> <span class="n">robset</span>
-<span class="kn">from</span> <span class="nn">.interfaces</span> <span class="kn">import</span> <span class="n">experiment_interface</span> <span class="k">as</span> <span class="n">expint</span>
-<span class="kn">from</span> <span class="nn">.interfaces</span> <span class="kn">import</span> <span class="n">robot_interface</span> <span class="k">as</span> <span class="n">robint</span>
-<span class="kn">from</span> <span class="nn">.</span> <span class="kn">import</span> <span class="n">protocols</span>
+<span class="kn">from</span> <span class="nn">.</span> <span class="k">import</span> <span class="n">config</span> <span class="k">as</span> <span class="n">cfg</span>
+<span class="kn">from</span> <span class="nn">.settings</span> <span class="k">import</span> <span class="n">camera_settings</span> <span class="k">as</span> <span class="n">camset</span>
+<span class="kn">from</span> <span class="nn">.settings</span> <span class="k">import</span> <span class="n">experiment_settings</span> <span class="k">as</span> <span class="n">expset</span>
+<span class="kn">from</span> <span class="nn">.settings</span> <span class="k">import</span> <span class="n">robot_settings</span> <span class="k">as</span> <span class="n">robset</span>
+<span class="kn">from</span> <span class="nn">.interfaces</span> <span class="k">import</span> <span class="n">experiment_interface</span> <span class="k">as</span> <span class="n">expint</span>
+<span class="kn">from</span> <span class="nn">.interfaces</span> <span class="k">import</span> <span class="n">robot_interface</span> <span class="k">as</span> <span class="n">robint</span>
+<span class="kn">from</span> <span class="nn">.</span> <span class="k">import</span> <span class="n">protocols</span>
 <span class="kn">import</span> <span class="nn">tkinter</span> <span class="k">as</span> <span class="nn">tk</span> 
 <span class="kn">import</span> <span class="nn">tkinter.filedialog</span>
 <span class="kn">import</span> <span class="nn">tkinter.messagebox</span>
 <span class="kn">import</span> <span class="nn">time</span>
-<span class="kn">from</span> <span class="nn">os</span> <span class="kn">import</span> <span class="n">path</span>
+<span class="kn">from</span> <span class="nn">os</span> <span class="k">import</span> <span class="n">path</span>
 
 <div class="viewcode-block" id="ReachMaster"><a class="viewcode-back" href="../../software/reach_master/reach_master.html#reachmaster.application.ReachMaster">[docs]</a><span class="k">class</span> <span class="nc">ReachMaster</span><span class="p">:</span>
     <span class="sd">&quot;&quot;&quot;The primary class for the root ReachMaster application.</span>
@@ -235,7 +234,7 @@
 
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">window</span> <span class="o">=</span> <span class="n">tk</span><span class="o">.</span><span class="n">Tk</span><span class="p">()</span>        
         <span class="bp">self</span><span class="o">.</span><span class="n">window</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s2">&quot;ReachMaster&quot;</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">window</span><span class="o">.</span><span class="n">configure</span><span class="p">(</span><span class="n">bg</span><span class="o">=</span><span class="s2">&quot;white&quot;</span><span class="p">)</span>

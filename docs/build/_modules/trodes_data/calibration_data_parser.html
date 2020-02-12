@@ -24,7 +24,6 @@
         <script type="text/javascript" src="../../_static/jquery.js"></script>
         <script type="text/javascript" src="../../_static/underscore.js"></script>
         <script type="text/javascript" src="../../_static/doctools.js"></script>
-        <script type="text/javascript" src="../../_static/language_data.js"></script>
     
     <script type="text/javascript" src="../../_static/js/theme.js"></script>
 
@@ -90,6 +89,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../../overview.html">Overview</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../hardware/hardware.html">Hardware</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../software/software.html">Software</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../tutorials/tutorials.html">Tutorials</a></li>
 </ul>
 
             
@@ -159,266 +159,408 @@
 <span class="sd">&quot;&quot;&quot;</span>
 
 <span class="kn">import</span> <span class="nn">os</span>
-<span class="kn">import</span> <span class="nn">readTrodesExtractedDataFile3</span> <span class="k">as</span> <span class="nn">read_trodes</span>
+<span class="kn">from</span> <span class="nn">.</span> <span class="k">import</span> <span class="n">readTrodesExtractedDataFile3</span> <span class="k">as</span> <span class="n">read_trodes</span>
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 <span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
 <span class="kn">import</span> <span class="nn">subprocess</span> <span class="k">as</span> <span class="nn">sp</span> 
 
-<span class="k">def</span> <span class="nf">_get_trodes_files</span><span class="p">(</span><span class="n">data_dir</span><span class="p">,</span> <span class="n">trodes_name</span><span class="p">):</span>
-	<span class="n">trodes_files</span> <span class="o">=</span> <span class="p">{</span>
-		<span class="s1">&#39;time_file&#39;</span><span class="p">:</span>  <span class="n">data_dir</span> <span class="o">+</span> <span class="s1">&#39;/</span><span class="si">%s</span><span class="s1">/</span><span class="si">%s</span><span class="s1">.analog/</span><span class="si">%s</span><span class="s1">.timestamps.dat&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">trodes_name</span><span class="p">,</span> <span class="n">trodes_name</span><span class="p">,</span> <span class="n">trodes_name</span><span class="p">),</span>
-		<span class="s1">&#39;x_push_file&#39;</span><span class="p">:</span> <span class="n">data_dir</span> <span class="o">+</span> <span class="s1">&#39;/</span><span class="si">%s</span><span class="s1">/</span><span class="si">%s</span><span class="s1">.DIO/</span><span class="si">%s</span><span class="s1">.dio_x_push.dat&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">trodes_name</span><span class="p">,</span> <span class="n">trodes_name</span><span class="p">,</span> <span class="n">trodes_name</span><span class="p">),</span>
-		<span class="s1">&#39;x_pull_file&#39;</span><span class="p">:</span> <span class="n">data_dir</span> <span class="o">+</span> <span class="s1">&#39;/</span><span class="si">%s</span><span class="s1">/</span><span class="si">%s</span><span class="s1">.DIO/</span><span class="si">%s</span><span class="s1">.dio_x_pull.dat&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">trodes_name</span><span class="p">,</span> <span class="n">trodes_name</span><span class="p">,</span> <span class="n">trodes_name</span><span class="p">),</span>
-		<span class="s1">&#39;y_push_file&#39;</span><span class="p">:</span> <span class="n">data_dir</span> <span class="o">+</span> <span class="s1">&#39;/</span><span class="si">%s</span><span class="s1">/</span><span class="si">%s</span><span class="s1">.DIO/</span><span class="si">%s</span><span class="s1">.dio_y_push.dat&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">trodes_name</span><span class="p">,</span> <span class="n">trodes_name</span><span class="p">,</span> <span class="n">trodes_name</span><span class="p">),</span>
-		<span class="s1">&#39;y_pull_file&#39;</span><span class="p">:</span> <span class="n">data_dir</span> <span class="o">+</span> <span class="s1">&#39;/</span><span class="si">%s</span><span class="s1">/</span><span class="si">%s</span><span class="s1">.DIO/</span><span class="si">%s</span><span class="s1">.dio_y_pull.dat&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">trodes_name</span><span class="p">,</span> <span class="n">trodes_name</span><span class="p">,</span> <span class="n">trodes_name</span><span class="p">),</span>
-		<span class="s1">&#39;z_push_file&#39;</span><span class="p">:</span> <span class="n">data_dir</span> <span class="o">+</span> <span class="s1">&#39;/</span><span class="si">%s</span><span class="s1">/</span><span class="si">%s</span><span class="s1">.DIO/</span><span class="si">%s</span><span class="s1">.dio_z_push.dat&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">trodes_name</span><span class="p">,</span> <span class="n">trodes_name</span><span class="p">,</span> <span class="n">trodes_name</span><span class="p">),</span>
-		<span class="s1">&#39;z_pull_file&#39;</span><span class="p">:</span> <span class="n">data_dir</span> <span class="o">+</span> <span class="s1">&#39;/</span><span class="si">%s</span><span class="s1">/</span><span class="si">%s</span><span class="s1">.DIO/</span><span class="si">%s</span><span class="s1">.dio_z_pull.dat&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">trodes_name</span><span class="p">,</span> <span class="n">trodes_name</span><span class="p">,</span> <span class="n">trodes_name</span><span class="p">),</span>
-		<span class="s1">&#39;x_pot_file&#39;</span><span class="p">:</span> <span class="n">data_dir</span> <span class="o">+</span> <span class="s1">&#39;/</span><span class="si">%s</span><span class="s1">/</span><span class="si">%s</span><span class="s1">.analog/</span><span class="si">%s</span><span class="s1">.analog_potX.dat&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">trodes_name</span><span class="p">,</span> <span class="n">trodes_name</span><span class="p">,</span> <span class="n">trodes_name</span><span class="p">),</span>
-		<span class="s1">&#39;y_pot_file&#39;</span><span class="p">:</span> <span class="n">data_dir</span> <span class="o">+</span> <span class="s1">&#39;/</span><span class="si">%s</span><span class="s1">/</span><span class="si">%s</span><span class="s1">.analog/</span><span class="si">%s</span><span class="s1">.analog_potY.dat&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">trodes_name</span><span class="p">,</span> <span class="n">trodes_name</span><span class="p">,</span> <span class="n">trodes_name</span><span class="p">),</span>
-		<span class="s1">&#39;z_pot_file&#39;</span><span class="p">:</span> <span class="n">data_dir</span> <span class="o">+</span> <span class="s1">&#39;/</span><span class="si">%s</span><span class="s1">/</span><span class="si">%s</span><span class="s1">.analog/</span><span class="si">%s</span><span class="s1">.analog_potZ.dat&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">trodes_name</span><span class="p">,</span> <span class="n">trodes_name</span><span class="p">,</span> <span class="n">trodes_name</span><span class="p">)</span>
-	<span class="p">}</span>
-	<span class="k">return</span> <span class="n">trodes_files</span>
+<div class="viewcode-block" id="get_trodes_files"><a class="viewcode-back" href="../../software/preprocessing/preprocessing.html#trodes_data.calibration_data_parser.get_trodes_files">[docs]</a><span class="k">def</span> <span class="nf">get_trodes_files</span><span class="p">(</span><span class="n">data_dir</span><span class="p">,</span> <span class="n">trodes_name</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Generate names of all the trodes files from a calibration recording.</span>
+<span class="sd">    Assumes data is saved in the default trodes filesystem and channels are</span>
+<span class="sd">    named appropriately in the trodes configuration file. </span>
 
-<span class="k">def</span> <span class="nf">_read_data</span><span class="p">(</span><span class="n">trodes_files</span><span class="p">,</span> <span class="n">sampling_rate</span> <span class="o">=</span> <span class="mi">3000</span><span class="p">):</span>
-	<span class="n">clockrate</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">float_</span><span class="p">(</span><span class="n">read_trodes</span><span class="o">.</span><span class="n">readTrodesExtractedDataFile</span><span class="p">(</span><span class="n">time_file</span><span class="p">)[</span><span class="s1">&#39;clock rate&#39;</span><span class="p">])</span>
-	<span class="n">ds</span> <span class="o">=</span> <span class="n">clockrate</span> <span class="o">/</span> <span class="n">sampling_rate</span>
-	<span class="n">calibration_data</span> <span class="o">=</span> <span class="p">{</span>
-		<span class="s1">&#39;clockrate&#39;</span><span class="p">:</span> <span class="n">clockrate</span><span class="p">,</span>
-		<span class="s1">&#39;time&#39;</span><span class="p">:</span> <span class="n">read_trodes</span><span class="o">.</span><span class="n">readTrodesExtractedDataFile</span><span class="p">(</span><span class="n">time_file</span><span class="p">)[</span><span class="s1">&#39;data&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">:</span><span class="n">ds</span><span class="p">],</span>
-		<span class="s1">&#39;DIO&#39;</span><span class="p">:</span> <span class="p">{</span>
-			<span class="s1">&#39;x_push&#39;</span><span class="p">:</span> <span class="n">read_trodes</span><span class="o">.</span><span class="n">readTrodesExtractedDataFile</span><span class="p">(</span><span class="n">x_push_file</span><span class="p">)[</span><span class="s1">&#39;data&#39;</span><span class="p">],</span>	
-			<span class="s1">&#39;x_pull&#39;</span><span class="p">:</span> <span class="n">read_trodes</span><span class="o">.</span><span class="n">readTrodesExtractedDataFile</span><span class="p">(</span><span class="n">x_pull_file</span><span class="p">)[</span><span class="s1">&#39;data&#39;</span><span class="p">],</span>
-			<span class="s1">&#39;y_push&#39;</span><span class="p">:</span> <span class="n">read_trodes</span><span class="o">.</span><span class="n">readTrodesExtractedDataFile</span><span class="p">(</span><span class="n">y_push_file</span><span class="p">)[</span><span class="s1">&#39;data&#39;</span><span class="p">],</span>	
-			<span class="s1">&#39;y_pull&#39;</span><span class="p">:</span> <span class="n">read_trodes</span><span class="o">.</span><span class="n">readTrodesExtractedDataFile</span><span class="p">(</span><span class="n">y_pull_file</span><span class="p">)[</span><span class="s1">&#39;data&#39;</span><span class="p">],</span>	
-			<span class="s1">&#39;z_push&#39;</span><span class="p">:</span> <span class="n">read_trodes</span><span class="o">.</span><span class="n">readTrodesExtractedDataFile</span><span class="p">(</span><span class="n">z_push_file</span><span class="p">)[</span><span class="s1">&#39;data&#39;</span><span class="p">],</span>	
-			<span class="s1">&#39;z_pull&#39;</span><span class="p">:</span> <span class="n">read_trodes</span><span class="o">.</span><span class="n">readTrodesExtractedDataFile</span><span class="p">(</span><span class="n">z_pull_file</span><span class="p">)[</span><span class="s1">&#39;data&#39;</span><span class="p">]</span>
-		<span class="p">},</span>
-		<span class="s1">&#39;analog&#39;</span><span class="p">:{</span>
-			<span class="s1">&#39;x_pot&#39;</span><span class="p">:</span> <span class="n">read_trodes</span><span class="o">.</span><span class="n">readTrodesExtractedDataFile</span><span class="p">(</span><span class="n">x_pot_file</span><span class="p">)[</span><span class="s1">&#39;data&#39;</span><span class="p">][</span><span class="s1">&#39;voltage&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">:</span><span class="n">ds</span><span class="p">],</span>
-			<span class="s1">&#39;y_pot&#39;</span><span class="p">:</span> <span class="n">read_trodes</span><span class="o">.</span><span class="n">readTrodesExtractedDataFile</span><span class="p">(</span><span class="n">y_pot_file</span><span class="p">)[</span><span class="s1">&#39;data&#39;</span><span class="p">][</span><span class="s1">&#39;voltage&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">:</span><span class="n">ds</span><span class="p">],</span>
-			<span class="s1">&#39;z_pot&#39;</span><span class="p">:</span> <span class="n">read_trodes</span><span class="o">.</span><span class="n">readTrodesExtractedDataFile</span><span class="p">(</span><span class="n">z_pot_file</span><span class="p">)[</span><span class="s1">&#39;data&#39;</span><span class="p">][</span><span class="s1">&#39;voltage&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">:</span><span class="n">ds</span><span class="p">]</span>
-		<span class="p">}</span>
-	<span class="p">}</span>
-	<span class="k">return</span> <span class="n">calibration_data</span>
-
-<span class="k">def</span> <span class="nf">_to_numpy</span><span class="p">(</span><span class="n">calibration_data</span><span class="p">):</span>
-	<span class="n">calibration_data</span><span class="p">[</span><span class="s1">&#39;time&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span>
-		<span class="p">[</span><span class="n">t</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">calibration_data</span><span class="p">[</span><span class="s1">&#39;time&#39;</span><span class="p">]],</span>
-		<span class="n">dtype</span><span class="o">=</span><span class="s1">&#39;float_&#39;</span>
-		<span class="p">)</span>
-	<span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">calibration_data</span><span class="p">[</span><span class="s1">&#39;DIO&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
-		<span class="n">calibration_data</span><span class="p">[</span><span class="s1">&#39;DIO&#39;</span><span class="p">][</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span>
-			<span class="p">[</span><span class="n">i</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">calibration_data</span><span class="p">[</span><span class="s1">&#39;DIO&#39;</span><span class="p">][</span><span class="n">key</span><span class="p">]],</span>
-			<span class="n">dtype</span><span class="o">=</span><span class="s1">&#39;float_&#39;</span>
-			<span class="p">)</span>	
-	<span class="k">return</span> <span class="n">calibration_data</span>
-
-<span class="k">def</span> <span class="nf">_to_seconds</span><span class="p">(</span><span class="n">calibration_data</span><span class="p">,</span> <span class="n">start_at_zero</span> <span class="o">=</span> <span class="kc">True</span><span class="p">):</span>
-	<span class="k">if</span> <span class="n">start_at_zero</span><span class="p">:</span>
-		<span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">calibration_data</span><span class="p">[</span><span class="s1">&#39;DIO&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
-			<span class="n">calibration_data</span><span class="p">[</span><span class="s1">&#39;DIO&#39;</span><span class="p">][</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
-				<span class="n">calibration_data</span><span class="p">[</span><span class="s1">&#39;DIO&#39;</span><span class="p">][</span><span class="n">key</span><span class="p">]</span> <span class="o">-</span> <span class="n">calibration_data</span><span class="p">[</span><span class="s1">&#39;time&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
-				<span class="p">)</span> <span class="o">/</span>  <span class="n">calibration_data</span><span class="p">[</span><span class="s1">&#39;clockrate&#39;</span><span class="p">]</span>
-		<span class="n">calibration_data</span><span class="p">[</span><span class="s1">&#39;time&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
-			<span class="n">calibration_data</span><span class="p">[</span><span class="s1">&#39;time&#39;</span><span class="p">]</span> <span class="o">-</span> <span class="n">calibration_data</span><span class="p">[</span><span class="s1">&#39;time&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
-			<span class="p">)</span> <span class="o">/</span> <span class="n">calibration_data</span><span class="p">[</span><span class="s1">&#39;clockrate&#39;</span><span class="p">]</span>
-	<span class="k">else</span><span class="p">:</span>
-		<span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">calibration_data</span><span class="p">[</span><span class="s1">&#39;DIO&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
-			<span class="n">calibration_data</span><span class="p">[</span><span class="s1">&#39;DIO&#39;</span><span class="p">][</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">calibration_data</span><span class="p">[</span><span class="s1">&#39;DIO&#39;</span><span class="p">][</span><span class="n">key</span><span class="p">]</span> <span class="o">/</span> <span class="n">calibration_data</span><span class="p">[</span><span class="s1">&#39;clockrate&#39;</span><span class="p">]</span>
-	<span class="k">return</span> <span class="n">calibration_data</span>
-
-<span class="k">def</span> <span class="nf">_pots_to_cm</span><span class="p">(</span><span class="n">calibration_data</span><span class="p">,</span> <span class="n">supply_voltage</span> <span class="o">=</span> <span class="mf">3.3</span><span class="p">,</span> <span class="n">pot_range</span> <span class="o">=</span> <span class="mf">5.0</span><span class="p">):</span>
-	<span class="n">trodes_max_bits</span> <span class="o">=</span> <span class="mf">32767.0</span>
-	<span class="n">trodes_max_volts</span> <span class="o">=</span> <span class="mf">10.0</span>
-	<span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">calibration_data</span><span class="p">[</span><span class="s1">&#39;analog&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
-		<span class="n">calibration_data</span><span class="p">[</span><span class="s1">&#39;analog&#39;</span><span class="p">][</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
-			<span class="n">calibration_data</span><span class="p">[</span><span class="s1">&#39;analog&#39;</span><span class="p">][</span><span class="n">key</span><span class="p">]</span> <span class="o">/</span> <span class="n">trodes_max_bits</span> <span class="o">*</span> <span class="n">trodes_max_volts</span> <span class="o">/</span> <span class="n">supply_voltage</span> <span class="o">*</span> <span class="n">pot_range</span>
-			<span class="p">)</span>
-	<span class="k">return</span> <span class="n">calibration_data</span>
-
-<span class="k">def</span> <span class="nf">_pots_to_volts</span><span class="p">(</span><span class="n">calibration_data</span><span class="p">):</span>
-	<span class="n">trodes_max_bits</span> <span class="o">=</span> <span class="mf">32767.0</span>
-	<span class="n">trodes_max_volts</span> <span class="o">=</span> <span class="mf">10.0</span>
-	<span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">calibration_data</span><span class="p">[</span><span class="s1">&#39;analog&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
-		<span class="n">calibration_data</span><span class="p">[</span><span class="s1">&#39;analog&#39;</span><span class="p">][</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
-			<span class="n">calibration_data</span><span class="p">[</span><span class="s1">&#39;analog&#39;</span><span class="p">][</span><span class="n">key</span><span class="p">]</span> <span class="o">/</span> <span class="n">trodes_max_bits</span> <span class="o">*</span> <span class="n">trodes_max_volts</span> 
-			<span class="p">)</span>
-	<span class="k">return</span> <span class="n">calibration_data</span>
-
-<span class="k">def</span> <span class="nf">_pots_to_bits</span><span class="p">(</span><span class="n">calibration_data</span><span class="p">,</span> <span class="n">supply_voltage</span> <span class="o">=</span> <span class="mf">3.3</span><span class="p">,</span> <span class="n">controller_max_bits</span> <span class="o">=</span> <span class="mi">1023</span><span class="p">):</span>
-	<span class="n">trodes_max_bits</span> <span class="o">=</span> <span class="mf">32767.0</span>
-	<span class="n">trodes_max_volts</span> <span class="o">=</span> <span class="mf">10.0</span>
-	<span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">calibration_data</span><span class="p">[</span><span class="s1">&#39;analog&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
-		<span class="n">calibration_data</span><span class="p">[</span><span class="s1">&#39;analog&#39;</span><span class="p">][</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">(</span>
-			<span class="n">calibration_data</span><span class="p">[</span><span class="s1">&#39;analog&#39;</span><span class="p">][</span><span class="n">key</span><span class="p">]</span> <span class="o">/</span> <span class="n">trodes_max_bits</span> <span class="o">*</span> <span class="n">trodes_max_volts</span> <span class="o">/</span> <span class="n">supply_voltage</span> <span class="o">*</span> <span class="n">controller_max_bits</span>
-			<span class="p">)</span>
-	<span class="k">return</span> <span class="n">calibration_data</span>
-
-<span class="k">def</span> <span class="nf">_get_valve_transitions</span><span class="p">(</span><span class="n">calibration_data</span><span class="p">):</span>
-	<span class="n">start_times</span> <span class="o">=</span> <span class="p">{</span>
-		<span class="s1">&#39;x_push&#39;</span><span class="p">:</span> <span class="n">calibration_data</span><span class="p">[</span><span class="s1">&#39;DIO&#39;</span><span class="p">][</span><span class="s1">&#39;x_push&#39;</span><span class="p">][</span><span class="mi">1</span><span class="p">::</span><span class="mi">2</span><span class="p">],</span>
-		<span class="s1">&#39;x_pull&#39;</span><span class="p">:</span> <span class="n">calibration_data</span><span class="p">[</span><span class="s1">&#39;DIO&#39;</span><span class="p">][</span><span class="s1">&#39;x_pull&#39;</span><span class="p">][</span><span class="mi">1</span><span class="p">::</span><span class="mi">2</span><span class="p">],</span>
-		<span class="s1">&#39;y_push&#39;</span><span class="p">:</span> <span class="n">calibration_data</span><span class="p">[</span><span class="s1">&#39;DIO&#39;</span><span class="p">][</span><span class="s1">&#39;y_push&#39;</span><span class="p">][</span><span class="mi">1</span><span class="p">::</span><span class="mi">2</span><span class="p">],</span>
-		<span class="s1">&#39;y_pull&#39;</span><span class="p">:</span> <span class="n">calibration_data</span><span class="p">[</span><span class="s1">&#39;DIO&#39;</span><span class="p">][</span><span class="s1">&#39;y_pull&#39;</span><span class="p">][</span><span class="mi">1</span><span class="p">::</span><span class="mi">2</span><span class="p">],</span>
-		<span class="s1">&#39;z_push&#39;</span><span class="p">:</span> <span class="n">calibration_data</span><span class="p">[</span><span class="s1">&#39;DIO&#39;</span><span class="p">][</span><span class="s1">&#39;z_push&#39;</span><span class="p">][</span><span class="mi">1</span><span class="p">::</span><span class="mi">2</span><span class="p">],</span>
-		<span class="s1">&#39;z_pull&#39;</span><span class="p">:</span> <span class="n">calibration_data</span><span class="p">[</span><span class="s1">&#39;DIO&#39;</span><span class="p">][</span><span class="s1">&#39;z_pull&#39;</span><span class="p">][</span><span class="mi">1</span><span class="p">::</span><span class="mi">2</span><span class="p">]</span>
-	<span class="p">}</span>
-	<span class="n">stop_times</span> <span class="o">=</span> <span class="p">{</span>
-		<span class="s1">&#39;x_push&#39;</span><span class="p">:</span> <span class="n">calibration_data</span><span class="p">[</span><span class="s1">&#39;DIO&#39;</span><span class="p">][</span><span class="s1">&#39;x_push&#39;</span><span class="p">][</span><span class="mi">2</span><span class="p">::</span><span class="mi">2</span><span class="p">],</span>
-		<span class="s1">&#39;x_pull&#39;</span><span class="p">:</span> <span class="n">calibration_data</span><span class="p">[</span><span class="s1">&#39;DIO&#39;</span><span class="p">][</span><span class="s1">&#39;x_pull&#39;</span><span class="p">][</span><span class="mi">2</span><span class="p">::</span><span class="mi">2</span><span class="p">],</span>
-		<span class="s1">&#39;y_push&#39;</span><span class="p">:</span> <span class="n">calibration_data</span><span class="p">[</span><span class="s1">&#39;DIO&#39;</span><span class="p">][</span><span class="s1">&#39;y_push&#39;</span><span class="p">][</span><span class="mi">2</span><span class="p">::</span><span class="mi">2</span><span class="p">],</span>
-		<span class="s1">&#39;y_pull&#39;</span><span class="p">:</span> <span class="n">calibration_data</span><span class="p">[</span><span class="s1">&#39;DIO&#39;</span><span class="p">][</span><span class="s1">&#39;y_pull&#39;</span><span class="p">][</span><span class="mi">2</span><span class="p">::</span><span class="mi">2</span><span class="p">],</span>
-		<span class="s1">&#39;z_push&#39;</span><span class="p">:</span> <span class="n">calibration_data</span><span class="p">[</span><span class="s1">&#39;DIO&#39;</span><span class="p">][</span><span class="s1">&#39;z_push&#39;</span><span class="p">][</span><span class="mi">2</span><span class="p">::</span><span class="mi">2</span><span class="p">],</span>
-		<span class="s1">&#39;z_pull&#39;</span><span class="p">:</span> <span class="n">calibration_data</span><span class="p">[</span><span class="s1">&#39;DIO&#39;</span><span class="p">][</span><span class="s1">&#39;z_pull&#39;</span><span class="p">][</span><span class="mi">2</span><span class="p">::</span><span class="mi">2</span><span class="p">]</span>
-	<span class="p">}</span>
-	<span class="k">return</span> <span class="n">start_times</span><span class="p">,</span> <span class="n">stop_times</span>
-
-<div class="viewcode-block" id="get_summary_frame"><a class="viewcode-back" href="../../software/wrangling_preprocessing/wrangling_preprocessing.html#trodes_data.calibration_data_parser.get_summary_frame">[docs]</a><span class="k">def</span> <span class="nf">get_summary_frame</span><span class="p">(</span>
-	<span class="n">data_dir</span><span class="p">,</span> 
-	<span class="n">trodes_name</span><span class="p">,</span> 
-	<span class="n">sampling_rate</span> <span class="o">=</span> <span class="mi">3000</span><span class="p">,</span> 
-	<span class="n">valve_period</span> <span class="o">=</span> <span class="mf">0.175</span><span class="p">,</span>
-	<span class="n">pot_units</span> <span class="o">=</span> <span class="s1">&#39;cm&#39;</span>
-	<span class="p">):</span>
-	<span class="sd">&quot;&quot;&quot;Generate a data frame that can be modeled for robot calibration.</span>
-
-<span class="sd">	Parameters</span>
-<span class="sd">	----------</span>
-<span class="sd">	data_dir : str</span>
-<span class="sd">		Parent directory where the trodes data lives</span>
-<span class="sd">	trodes_name : str</span>
-<span class="sd">		Name of original .rec trodes file</span>
-<span class="sd">	sampling_rate : int</span>
-<span class="sd">		Specifying a rate (Hz) lower than the SpikeGadgets MCU clock rate of</span>
-<span class="sd">		30 kHz will downsample the data and speed up the parsing.</span>
-<span class="sd">	valve_period : float</span>
-<span class="sd">		Time (sec) between valve command onsets</span>
-<span class="sd">	pot_units : str</span>
-<span class="sd">		Units to return potentiometer recordings. Can be `cm`, `volts`, or </span>
-<span class="sd">		`bits`.</span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    data_dir : str</span>
+<span class="sd">        Parent directory where the trodes data lives</span>
+<span class="sd">    trodes_name : str</span>
+<span class="sd">        Name of original .rec trodes file</span>
 
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
-<span class="sd">    data_frame : type(pandas.DataFrame)  </span>
-<span class="sd">    	A pandas data frame </span>
+<span class="sd">    trodes_files : dict  </span>
+<span class="sd">        The file names for each channel of a calibration recording. More </span>
+<span class="sd">        specifically, `x_push_file` is the *.dat file for the `x` actuator</span>
+<span class="sd">        `push` valve command recording. Similarly, `y_pot_file` is the </span>
+<span class="sd">        *.dat for the `y` actuator poteniometer recording.  </span>
+<span class="sd">        </span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">trodes_files</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s1">&#39;time_file&#39;</span><span class="p">:</span>  <span class="n">data_dir</span> <span class="o">+</span> <span class="s1">&#39;/</span><span class="si">%s</span><span class="s1">/</span><span class="si">%s</span><span class="s1">.analog/</span><span class="si">%s</span><span class="s1">.timestamps.dat&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">trodes_name</span><span class="p">,</span> <span class="n">trodes_name</span><span class="p">,</span> <span class="n">trodes_name</span><span class="p">),</span>
+        <span class="s1">&#39;x_push_file&#39;</span><span class="p">:</span> <span class="n">data_dir</span> <span class="o">+</span> <span class="s1">&#39;/</span><span class="si">%s</span><span class="s1">/</span><span class="si">%s</span><span class="s1">.DIO/</span><span class="si">%s</span><span class="s1">.dio_xPush.dat&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">trodes_name</span><span class="p">,</span> <span class="n">trodes_name</span><span class="p">,</span> <span class="n">trodes_name</span><span class="p">),</span>
+        <span class="s1">&#39;x_pull_file&#39;</span><span class="p">:</span> <span class="n">data_dir</span> <span class="o">+</span> <span class="s1">&#39;/</span><span class="si">%s</span><span class="s1">/</span><span class="si">%s</span><span class="s1">.DIO/</span><span class="si">%s</span><span class="s1">.dio_xPull.dat&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">trodes_name</span><span class="p">,</span> <span class="n">trodes_name</span><span class="p">,</span> <span class="n">trodes_name</span><span class="p">),</span>
+        <span class="s1">&#39;y_push_file&#39;</span><span class="p">:</span> <span class="n">data_dir</span> <span class="o">+</span> <span class="s1">&#39;/</span><span class="si">%s</span><span class="s1">/</span><span class="si">%s</span><span class="s1">.DIO/</span><span class="si">%s</span><span class="s1">.dio_yPush.dat&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">trodes_name</span><span class="p">,</span> <span class="n">trodes_name</span><span class="p">,</span> <span class="n">trodes_name</span><span class="p">),</span>
+        <span class="s1">&#39;y_pull_file&#39;</span><span class="p">:</span> <span class="n">data_dir</span> <span class="o">+</span> <span class="s1">&#39;/</span><span class="si">%s</span><span class="s1">/</span><span class="si">%s</span><span class="s1">.DIO/</span><span class="si">%s</span><span class="s1">.dio_yPull.dat&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">trodes_name</span><span class="p">,</span> <span class="n">trodes_name</span><span class="p">,</span> <span class="n">trodes_name</span><span class="p">),</span>
+        <span class="s1">&#39;z_push_file&#39;</span><span class="p">:</span> <span class="n">data_dir</span> <span class="o">+</span> <span class="s1">&#39;/</span><span class="si">%s</span><span class="s1">/</span><span class="si">%s</span><span class="s1">.DIO/</span><span class="si">%s</span><span class="s1">.dio_zPush.dat&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">trodes_name</span><span class="p">,</span> <span class="n">trodes_name</span><span class="p">,</span> <span class="n">trodes_name</span><span class="p">),</span>
+        <span class="s1">&#39;z_pull_file&#39;</span><span class="p">:</span> <span class="n">data_dir</span> <span class="o">+</span> <span class="s1">&#39;/</span><span class="si">%s</span><span class="s1">/</span><span class="si">%s</span><span class="s1">.DIO/</span><span class="si">%s</span><span class="s1">.dio_zPull.dat&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">trodes_name</span><span class="p">,</span> <span class="n">trodes_name</span><span class="p">,</span> <span class="n">trodes_name</span><span class="p">),</span>
+        <span class="s1">&#39;x_pot_file&#39;</span><span class="p">:</span> <span class="n">data_dir</span> <span class="o">+</span> <span class="s1">&#39;/</span><span class="si">%s</span><span class="s1">/</span><span class="si">%s</span><span class="s1">.analog/</span><span class="si">%s</span><span class="s1">.analog_potX.dat&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">trodes_name</span><span class="p">,</span> <span class="n">trodes_name</span><span class="p">,</span> <span class="n">trodes_name</span><span class="p">),</span>
+        <span class="s1">&#39;y_pot_file&#39;</span><span class="p">:</span> <span class="n">data_dir</span> <span class="o">+</span> <span class="s1">&#39;/</span><span class="si">%s</span><span class="s1">/</span><span class="si">%s</span><span class="s1">.analog/</span><span class="si">%s</span><span class="s1">.analog_potY.dat&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">trodes_name</span><span class="p">,</span> <span class="n">trodes_name</span><span class="p">,</span> <span class="n">trodes_name</span><span class="p">),</span>
+        <span class="s1">&#39;z_pot_file&#39;</span><span class="p">:</span> <span class="n">data_dir</span> <span class="o">+</span> <span class="s1">&#39;/</span><span class="si">%s</span><span class="s1">/</span><span class="si">%s</span><span class="s1">.analog/</span><span class="si">%s</span><span class="s1">.analog_potZ.dat&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">trodes_name</span><span class="p">,</span> <span class="n">trodes_name</span><span class="p">,</span> <span class="n">trodes_name</span><span class="p">)</span>
+    <span class="p">}</span>
+    <span class="k">return</span> <span class="n">trodes_files</span></div>
+
+<div class="viewcode-block" id="read_data"><a class="viewcode-back" href="../../software/preprocessing/preprocessing.html#trodes_data.calibration_data_parser.read_data">[docs]</a><span class="k">def</span> <span class="nf">read_data</span><span class="p">(</span><span class="n">trodes_files</span><span class="p">,</span> <span class="n">sampling_rate</span> <span class="o">=</span> <span class="mi">3000</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Read all the trodes file data using the SpikeGadgets </span>
+<span class="sd">    `readTrodesExtractedDataFile` script. </span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    trodes_files : dict</span>
+<span class="sd">        The file names for each channel of a calibration recording. For</span>
+<span class="sd">        example, as returned by get_trodes_files(). </span>
+<span class="sd">    sampling_rate : int</span>
+<span class="sd">        Specifying a rate (Hz) lower than the SpikeGadgets MCU clock rate of</span>
+<span class="sd">        30 kHz will downsample the data and speed up the parsing.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    calibration_data : dict  </span>
+<span class="sd">        All of the digital (DIO) and analog data corresponding to the trodes</span>
+<span class="sd">        files for the a calibration recording.</span>
+<span class="sd">        </span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">clockrate</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">float_</span><span class="p">(</span><span class="n">read_trodes</span><span class="o">.</span><span class="n">readTrodesExtractedDataFile</span><span class="p">(</span><span class="n">trodes_files</span><span class="p">[</span><span class="s1">&#39;time_file&#39;</span><span class="p">])[</span><span class="s1">&#39;clock rate&#39;</span><span class="p">])</span>
+    <span class="n">ds</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">clockrate</span> <span class="o">/</span> <span class="n">sampling_rate</span><span class="p">)</span>
+    <span class="n">calibration_data</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s1">&#39;sampling_rate&#39;</span><span class="p">:</span> <span class="n">sampling_rate</span><span class="p">,</span>
+        <span class="s1">&#39;time&#39;</span><span class="p">:</span> <span class="n">read_trodes</span><span class="o">.</span><span class="n">readTrodesExtractedDataFile</span><span class="p">(</span><span class="n">trodes_files</span><span class="p">[</span><span class="s1">&#39;time_file&#39;</span><span class="p">])[</span><span class="s1">&#39;data&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">:</span><span class="n">ds</span><span class="p">],</span>
+        <span class="s1">&#39;DIO&#39;</span><span class="p">:</span> <span class="p">{</span>
+            <span class="s1">&#39;x_push&#39;</span><span class="p">:</span> <span class="n">read_trodes</span><span class="o">.</span><span class="n">readTrodesExtractedDataFile</span><span class="p">(</span><span class="n">trodes_files</span><span class="p">[</span><span class="s1">&#39;x_push_file&#39;</span><span class="p">])[</span><span class="s1">&#39;data&#39;</span><span class="p">],</span> 
+            <span class="s1">&#39;x_pull&#39;</span><span class="p">:</span> <span class="n">read_trodes</span><span class="o">.</span><span class="n">readTrodesExtractedDataFile</span><span class="p">(</span><span class="n">trodes_files</span><span class="p">[</span><span class="s1">&#39;x_pull_file&#39;</span><span class="p">])[</span><span class="s1">&#39;data&#39;</span><span class="p">],</span>
+            <span class="s1">&#39;y_push&#39;</span><span class="p">:</span> <span class="n">read_trodes</span><span class="o">.</span><span class="n">readTrodesExtractedDataFile</span><span class="p">(</span><span class="n">trodes_files</span><span class="p">[</span><span class="s1">&#39;y_push_file&#39;</span><span class="p">])[</span><span class="s1">&#39;data&#39;</span><span class="p">],</span> 
+            <span class="s1">&#39;y_pull&#39;</span><span class="p">:</span> <span class="n">read_trodes</span><span class="o">.</span><span class="n">readTrodesExtractedDataFile</span><span class="p">(</span><span class="n">trodes_files</span><span class="p">[</span><span class="s1">&#39;y_pull_file&#39;</span><span class="p">])[</span><span class="s1">&#39;data&#39;</span><span class="p">],</span> 
+            <span class="s1">&#39;z_push&#39;</span><span class="p">:</span> <span class="n">read_trodes</span><span class="o">.</span><span class="n">readTrodesExtractedDataFile</span><span class="p">(</span><span class="n">trodes_files</span><span class="p">[</span><span class="s1">&#39;z_push_file&#39;</span><span class="p">])[</span><span class="s1">&#39;data&#39;</span><span class="p">],</span> 
+            <span class="s1">&#39;z_pull&#39;</span><span class="p">:</span> <span class="n">read_trodes</span><span class="o">.</span><span class="n">readTrodesExtractedDataFile</span><span class="p">(</span><span class="n">trodes_files</span><span class="p">[</span><span class="s1">&#39;z_pull_file&#39;</span><span class="p">])[</span><span class="s1">&#39;data&#39;</span><span class="p">]</span>
+        <span class="p">},</span>
+        <span class="s1">&#39;analog&#39;</span><span class="p">:{</span>
+            <span class="s1">&#39;x_pot&#39;</span><span class="p">:</span> <span class="n">read_trodes</span><span class="o">.</span><span class="n">readTrodesExtractedDataFile</span><span class="p">(</span><span class="n">trodes_files</span><span class="p">[</span><span class="s1">&#39;x_pot_file&#39;</span><span class="p">])[</span><span class="s1">&#39;data&#39;</span><span class="p">][</span><span class="s1">&#39;voltage&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">:</span><span class="n">ds</span><span class="p">],</span>
+            <span class="s1">&#39;y_pot&#39;</span><span class="p">:</span> <span class="n">read_trodes</span><span class="o">.</span><span class="n">readTrodesExtractedDataFile</span><span class="p">(</span><span class="n">trodes_files</span><span class="p">[</span><span class="s1">&#39;y_pot_file&#39;</span><span class="p">])[</span><span class="s1">&#39;data&#39;</span><span class="p">][</span><span class="s1">&#39;voltage&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">:</span><span class="n">ds</span><span class="p">],</span>
+            <span class="s1">&#39;z_pot&#39;</span><span class="p">:</span> <span class="n">read_trodes</span><span class="o">.</span><span class="n">readTrodesExtractedDataFile</span><span class="p">(</span><span class="n">trodes_files</span><span class="p">[</span><span class="s1">&#39;z_pot_file&#39;</span><span class="p">])[</span><span class="s1">&#39;data&#39;</span><span class="p">][</span><span class="s1">&#39;voltage&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">:</span><span class="n">ds</span><span class="p">]</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+    <span class="k">return</span> <span class="n">calibration_data</span></div>
+
+<div class="viewcode-block" id="to_numpy"><a class="viewcode-back" href="../../software/preprocessing/preprocessing.html#trodes_data.calibration_data_parser.to_numpy">[docs]</a><span class="k">def</span> <span class="nf">to_numpy</span><span class="p">(</span><span class="n">calibration_data</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Convert the calibration data to numpy arrays </span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    calibration_data : dict</span>
+<span class="sd">        All of the digital (DIO) and analog data corresponding to the trodes</span>
+<span class="sd">        files for the a calibration recording. For example, as returned by</span>
+<span class="sd">        read_data(). </span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    calibration_data : dict  </span>
+<span class="sd">        Numpy-converted calibration data.</span>
+<span class="sd">        </span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">calibration_data</span><span class="p">[</span><span class="s1">&#39;time&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span>
+        <span class="p">[</span><span class="n">t</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">calibration_data</span><span class="p">[</span><span class="s1">&#39;time&#39;</span><span class="p">]],</span>
+        <span class="n">dtype</span><span class="o">=</span><span class="s1">&#39;float_&#39;</span>
+        <span class="p">)</span>
+    <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">calibration_data</span><span class="p">[</span><span class="s1">&#39;DIO&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+        <span class="n">calibration_data</span><span class="p">[</span><span class="s1">&#39;DIO&#39;</span><span class="p">][</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span>
+            <span class="p">[</span><span class="n">i</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">calibration_data</span><span class="p">[</span><span class="s1">&#39;DIO&#39;</span><span class="p">][</span><span class="n">key</span><span class="p">]],</span>
+            <span class="n">dtype</span><span class="o">=</span><span class="s1">&#39;float_&#39;</span>
+            <span class="p">)</span>   
+    <span class="k">return</span> <span class="n">calibration_data</span></div>
+
+<div class="viewcode-block" id="to_seconds"><a class="viewcode-back" href="../../software/preprocessing/preprocessing.html#trodes_data.calibration_data_parser.to_seconds">[docs]</a><span class="k">def</span> <span class="nf">to_seconds</span><span class="p">(</span><span class="n">calibration_data</span><span class="p">,</span> <span class="n">start_at_zero</span> <span class="o">=</span> <span class="kc">True</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Convert the calibration data time units to seconds. </span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    calibration_data : dict</span>
+<span class="sd">        All of the digital (DIO) and analog data corresponding to the trodes</span>
+<span class="sd">        files for the a calibration recording. For example, as returned by</span>
+<span class="sd">        read_data(). </span>
+<span class="sd">    start_at_zero : bool</span>
+<span class="sd">        If True, the start time will be set to 0.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    calibration_data : dict  </span>
+<span class="sd">        Seconds-converted calibration data</span>
+<span class="sd">        </span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">start_at_zero</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">calibration_data</span><span class="p">[</span><span class="s1">&#39;DIO&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="n">calibration_data</span><span class="p">[</span><span class="s1">&#39;DIO&#39;</span><span class="p">][</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="n">calibration_data</span><span class="p">[</span><span class="s1">&#39;DIO&#39;</span><span class="p">][</span><span class="n">key</span><span class="p">]</span> <span class="o">-</span> <span class="n">calibration_data</span><span class="p">[</span><span class="s1">&#39;time&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+                <span class="p">)</span> <span class="o">/</span>  <span class="n">calibration_data</span><span class="p">[</span><span class="s1">&#39;clockrate&#39;</span><span class="p">]</span>
+        <span class="n">calibration_data</span><span class="p">[</span><span class="s1">&#39;time&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">calibration_data</span><span class="p">[</span><span class="s1">&#39;time&#39;</span><span class="p">]</span> <span class="o">-</span> <span class="n">calibration_data</span><span class="p">[</span><span class="s1">&#39;time&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+            <span class="p">)</span> <span class="o">/</span> <span class="n">calibration_data</span><span class="p">[</span><span class="s1">&#39;clockrate&#39;</span><span class="p">]</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">calibration_data</span><span class="p">[</span><span class="s1">&#39;DIO&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="n">calibration_data</span><span class="p">[</span><span class="s1">&#39;DIO&#39;</span><span class="p">][</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">calibration_data</span><span class="p">[</span><span class="s1">&#39;DIO&#39;</span><span class="p">][</span><span class="n">key</span><span class="p">]</span> <span class="o">/</span> <span class="n">calibration_data</span><span class="p">[</span><span class="s1">&#39;clockrate&#39;</span><span class="p">]</span>
+    <span class="k">return</span> <span class="n">calibration_data</span></div>
+
+<div class="viewcode-block" id="pots_to_cm"><a class="viewcode-back" href="../../software/preprocessing/preprocessing.html#trodes_data.calibration_data_parser.pots_to_cm">[docs]</a><span class="k">def</span> <span class="nf">pots_to_cm</span><span class="p">(</span><span class="n">calibration_data</span><span class="p">,</span> <span class="n">supply_voltage</span> <span class="o">=</span> <span class="mf">3.3</span><span class="p">,</span> <span class="n">pot_range</span> <span class="o">=</span> <span class="mf">5.0</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Convert the potentiometer data units to cm. </span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    calibration_data : dict</span>
+<span class="sd">        All of the digital (DIO) and analog data corresponding to the trodes</span>
+<span class="sd">        files for the a calibration recording. For example, as returned by</span>
+<span class="sd">        read_data(). </span>
+<span class="sd">    supply_voltage : float</span>
+<span class="sd">        Maximum voltage for the potentiometers</span>
+<span class="sd">    pot_range : float</span>
+<span class="sd">        Potentiometer maximum travel range in cm </span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    calibration_data : dict  </span>
+<span class="sd">        Calibration data with potentiometer data convert to cm</span>
+<span class="sd">        </span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">trodes_max_bits</span> <span class="o">=</span> <span class="mf">32767.0</span>
+    <span class="n">trodes_max_volts</span> <span class="o">=</span> <span class="mf">10.0</span>
+    <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">calibration_data</span><span class="p">[</span><span class="s1">&#39;analog&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+        <span class="n">calibration_data</span><span class="p">[</span><span class="s1">&#39;analog&#39;</span><span class="p">][</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">calibration_data</span><span class="p">[</span><span class="s1">&#39;analog&#39;</span><span class="p">][</span><span class="n">key</span><span class="p">]</span> <span class="o">/</span> <span class="n">trodes_max_bits</span> <span class="o">*</span> <span class="n">trodes_max_volts</span> <span class="o">/</span> <span class="n">supply_voltage</span> <span class="o">*</span> <span class="n">pot_range</span>
+            <span class="p">)</span>
+    <span class="k">return</span> <span class="n">calibration_data</span></div>
+
+<div class="viewcode-block" id="pots_to_volts"><a class="viewcode-back" href="../../software/preprocessing/preprocessing.html#trodes_data.calibration_data_parser.pots_to_volts">[docs]</a><span class="k">def</span> <span class="nf">pots_to_volts</span><span class="p">(</span><span class="n">calibration_data</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Convert the potentiometer data units to volts. </span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    calibration_data : dict</span>
+<span class="sd">        All of the digital (DIO) and analog data corresponding to the trodes</span>
+<span class="sd">        files for the a calibration recording. For example, as returned by</span>
+<span class="sd">        read_data(). </span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    calibration_data : dict  </span>
+<span class="sd">        Calibration data with potentiometer data convert to volts</span>
+<span class="sd">        </span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">trodes_max_bits</span> <span class="o">=</span> <span class="mf">32767.0</span>
+    <span class="n">trodes_max_volts</span> <span class="o">=</span> <span class="mf">10.0</span>
+    <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">calibration_data</span><span class="p">[</span><span class="s1">&#39;analog&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+        <span class="n">calibration_data</span><span class="p">[</span><span class="s1">&#39;analog&#39;</span><span class="p">][</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">calibration_data</span><span class="p">[</span><span class="s1">&#39;analog&#39;</span><span class="p">][</span><span class="n">key</span><span class="p">]</span> <span class="o">/</span> <span class="n">trodes_max_bits</span> <span class="o">*</span> <span class="n">trodes_max_volts</span> 
+            <span class="p">)</span>
+    <span class="k">return</span> <span class="n">calibration_data</span></div>
+
+<div class="viewcode-block" id="pots_to_bits"><a class="viewcode-back" href="../../software/preprocessing/preprocessing.html#trodes_data.calibration_data_parser.pots_to_bits">[docs]</a><span class="k">def</span> <span class="nf">pots_to_bits</span><span class="p">(</span><span class="n">calibration_data</span><span class="p">,</span> <span class="n">supply_voltage</span> <span class="o">=</span> <span class="mf">3.3</span><span class="p">,</span> <span class="n">controller_max_bits</span> <span class="o">=</span> <span class="mi">1023</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Convert the potentiometer data units to microcontroller bits. </span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    calibration_data : dict</span>
+<span class="sd">        All of the digital (DIO) and analog data corresponding to the trodes</span>
+<span class="sd">        files for the a calibration recording. For example, as returned by</span>
+<span class="sd">        read_data(). </span>
+<span class="sd">    supply_voltage : float</span>
+<span class="sd">        Maximum voltage for the potentiometers</span>
+<span class="sd">    controller_max_bits : int</span>
+<span class="sd">        Maximum bits for the microcontroller </span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    calibration_data : dict  </span>
+<span class="sd">        Calibration data with potentiometer data convert to microcontroller </span>
+<span class="sd">        bits</span>
+<span class="sd">        </span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">trodes_max_bits</span> <span class="o">=</span> <span class="mf">32767.0</span>
+    <span class="n">trodes_max_volts</span> <span class="o">=</span> <span class="mf">10.0</span>
+    <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">calibration_data</span><span class="p">[</span><span class="s1">&#39;analog&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+        <span class="n">calibration_data</span><span class="p">[</span><span class="s1">&#39;analog&#39;</span><span class="p">][</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">(</span>
+            <span class="n">calibration_data</span><span class="p">[</span><span class="s1">&#39;analog&#39;</span><span class="p">][</span><span class="n">key</span><span class="p">]</span> <span class="o">/</span> <span class="n">trodes_max_bits</span> <span class="o">*</span> <span class="n">trodes_max_volts</span> <span class="o">/</span> <span class="n">supply_voltage</span> <span class="o">*</span> <span class="n">controller_max_bits</span>
+            <span class="p">)</span>
+    <span class="k">return</span> <span class="n">calibration_data</span></div>
+
+<div class="viewcode-block" id="get_valve_transitions"><a class="viewcode-back" href="../../software/preprocessing/preprocessing.html#trodes_data.calibration_data_parser.get_valve_transitions">[docs]</a><span class="k">def</span> <span class="nf">get_valve_transitions</span><span class="p">(</span><span class="n">calibration_data</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Get the valve start and stop times. </span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    calibration_data : dict</span>
+<span class="sd">        All of the digital (DIO) and analog data corresponding to the trodes</span>
+<span class="sd">        files for the a calibration recording. For example, as returned by</span>
+<span class="sd">        read_data(). </span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    start_times : dict  </span>
+<span class="sd">        Times at which each of the valves transitioned from closed to open</span>
+<span class="sd">    stop_times : dict</span>
+<span class="sd">        Times at which each of the valves transitioned from open to closed</span>
+<span class="sd">        </span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">start_times</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s1">&#39;x_push&#39;</span><span class="p">:</span> <span class="n">calibration_data</span><span class="p">[</span><span class="s1">&#39;DIO&#39;</span><span class="p">][</span><span class="s1">&#39;x_push&#39;</span><span class="p">][</span><span class="mi">1</span><span class="p">::</span><span class="mi">2</span><span class="p">],</span>
+        <span class="s1">&#39;x_pull&#39;</span><span class="p">:</span> <span class="n">calibration_data</span><span class="p">[</span><span class="s1">&#39;DIO&#39;</span><span class="p">][</span><span class="s1">&#39;x_pull&#39;</span><span class="p">][</span><span class="mi">1</span><span class="p">::</span><span class="mi">2</span><span class="p">],</span>
+        <span class="s1">&#39;y_push&#39;</span><span class="p">:</span> <span class="n">calibration_data</span><span class="p">[</span><span class="s1">&#39;DIO&#39;</span><span class="p">][</span><span class="s1">&#39;y_push&#39;</span><span class="p">][</span><span class="mi">1</span><span class="p">::</span><span class="mi">2</span><span class="p">],</span>
+        <span class="s1">&#39;y_pull&#39;</span><span class="p">:</span> <span class="n">calibration_data</span><span class="p">[</span><span class="s1">&#39;DIO&#39;</span><span class="p">][</span><span class="s1">&#39;y_pull&#39;</span><span class="p">][</span><span class="mi">1</span><span class="p">::</span><span class="mi">2</span><span class="p">],</span>
+        <span class="s1">&#39;z_push&#39;</span><span class="p">:</span> <span class="n">calibration_data</span><span class="p">[</span><span class="s1">&#39;DIO&#39;</span><span class="p">][</span><span class="s1">&#39;z_push&#39;</span><span class="p">][</span><span class="mi">1</span><span class="p">::</span><span class="mi">2</span><span class="p">],</span>
+        <span class="s1">&#39;z_pull&#39;</span><span class="p">:</span> <span class="n">calibration_data</span><span class="p">[</span><span class="s1">&#39;DIO&#39;</span><span class="p">][</span><span class="s1">&#39;z_pull&#39;</span><span class="p">][</span><span class="mi">1</span><span class="p">::</span><span class="mi">2</span><span class="p">]</span>
+    <span class="p">}</span>
+    <span class="n">stop_times</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s1">&#39;x_push&#39;</span><span class="p">:</span> <span class="n">calibration_data</span><span class="p">[</span><span class="s1">&#39;DIO&#39;</span><span class="p">][</span><span class="s1">&#39;x_push&#39;</span><span class="p">][</span><span class="mi">2</span><span class="p">::</span><span class="mi">2</span><span class="p">],</span>
+        <span class="s1">&#39;x_pull&#39;</span><span class="p">:</span> <span class="n">calibration_data</span><span class="p">[</span><span class="s1">&#39;DIO&#39;</span><span class="p">][</span><span class="s1">&#39;x_pull&#39;</span><span class="p">][</span><span class="mi">2</span><span class="p">::</span><span class="mi">2</span><span class="p">],</span>
+        <span class="s1">&#39;y_push&#39;</span><span class="p">:</span> <span class="n">calibration_data</span><span class="p">[</span><span class="s1">&#39;DIO&#39;</span><span class="p">][</span><span class="s1">&#39;y_push&#39;</span><span class="p">][</span><span class="mi">2</span><span class="p">::</span><span class="mi">2</span><span class="p">],</span>
+        <span class="s1">&#39;y_pull&#39;</span><span class="p">:</span> <span class="n">calibration_data</span><span class="p">[</span><span class="s1">&#39;DIO&#39;</span><span class="p">][</span><span class="s1">&#39;y_pull&#39;</span><span class="p">][</span><span class="mi">2</span><span class="p">::</span><span class="mi">2</span><span class="p">],</span>
+        <span class="s1">&#39;z_push&#39;</span><span class="p">:</span> <span class="n">calibration_data</span><span class="p">[</span><span class="s1">&#39;DIO&#39;</span><span class="p">][</span><span class="s1">&#39;z_push&#39;</span><span class="p">][</span><span class="mi">2</span><span class="p">::</span><span class="mi">2</span><span class="p">],</span>
+        <span class="s1">&#39;z_pull&#39;</span><span class="p">:</span> <span class="n">calibration_data</span><span class="p">[</span><span class="s1">&#39;DIO&#39;</span><span class="p">][</span><span class="s1">&#39;z_pull&#39;</span><span class="p">][</span><span class="mi">2</span><span class="p">::</span><span class="mi">2</span><span class="p">]</span>
+    <span class="p">}</span>
+    <span class="k">return</span> <span class="n">start_times</span><span class="p">,</span> <span class="n">stop_times</span></div>
+
+<div class="viewcode-block" id="get_calibration_frame"><a class="viewcode-back" href="../../software/preprocessing/preprocessing.html#trodes_data.calibration_data_parser.get_calibration_frame">[docs]</a><span class="k">def</span> <span class="nf">get_calibration_frame</span><span class="p">(</span><span class="n">data_dir</span><span class="p">,</span> <span class="n">trodes_name</span><span class="p">,</span> <span class="n">sampling_rate</span> <span class="o">=</span> <span class="mi">3000</span><span class="p">,</span> <span class="n">valve_period</span> <span class="o">=</span> <span class="mf">0.175</span><span class="p">,</span> <span class="n">pot_units</span> <span class="o">=</span> <span class="s1">&#39;cm&#39;</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Generate a data frame that can be used to estimate calibration parameters.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    data_dir : str</span>
+<span class="sd">        Parent directory where the trodes data lives</span>
+<span class="sd">    trodes_name : str</span>
+<span class="sd">        Name of original .rec trodes file</span>
+<span class="sd">    sampling_rate : int</span>
+<span class="sd">        Specifying a rate (Hz) lower than the SpikeGadgets MCU clock rate of</span>
+<span class="sd">        30 kHz will downsample the data and speed up the parsing.</span>
+<span class="sd">    valve_period : float</span>
+<span class="sd">        Time (sec) between valve command onsets</span>
+<span class="sd">    pot_units : str</span>
+<span class="sd">        Units to return potentiometer recordings. Can be `cm`, `volts`, or </span>
+<span class="sd">        `bits`.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    data_frame : pandas.core.frame.DataFrame  </span>
+<span class="sd">        A pandas data frame with columns `onset_time`, `x_position`, </span>
+<span class="sd">        `x_duration`, `x_displacement`, `y_position`, `y_duration`, </span>
+<span class="sd">        `y_displacement`, `z_position`, `z_duration`, and `z_displacement`.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-	<span class="n">trodes_files</span> <span class="o">=</span> <span class="n">_get_trodes_files</span><span class="p">(</span><span class="n">data_dir</span><span class="p">,</span> <span class="n">trodes_name</span><span class="p">)</span>
-	<span class="n">calibration_data</span> <span class="o">=</span> <span class="n">_read_data</span><span class="p">(</span><span class="n">trodes_files</span><span class="p">,</span> <span class="n">sampling_rate</span><span class="p">)</span>
-	<span class="n">calibration_data</span> <span class="o">=</span> <span class="n">_to_numpy</span><span class="p">(</span><span class="n">calibration_data</span><span class="p">)</span>
-	<span class="n">calibration_data</span> <span class="o">=</span> <span class="n">_to_seconds</span><span class="p">(</span><span class="n">calibration_data</span><span class="p">)</span>
-	<span class="k">if</span> <span class="n">pot_units</span> <span class="o">==</span> <span class="s1">&#39;cm&#39;</span><span class="p">:</span>
-		<span class="n">calibration_data</span> <span class="o">=</span> <span class="n">_pots_to_cm</span><span class="p">(</span><span class="n">calibration_data</span><span class="p">)</span>
-	<span class="k">elif</span> <span class="n">pot_units</span> <span class="o">==</span> <span class="s1">&#39;volts&#39;</span><span class="p">:</span>
-		<span class="n">calibration_data</span> <span class="o">=</span> <span class="n">_pots_to_volts</span><span class="p">(</span><span class="n">calibration_data</span><span class="p">)</span>
-	<span class="k">elif</span> <span class="n">pot_units</span> <span class="o">==</span> <span class="s1">&#39;bits&#39;</span><span class="p">:</span>
-		<span class="n">calibration_data</span> <span class="o">=</span> <span class="n">_pots_to_bits</span><span class="p">(</span><span class="n">calibration_data</span><span class="p">)</span>
-	<span class="n">start_times</span><span class="p">,</span> <span class="n">stop_times</span> <span class="o">=</span> <span class="n">_get_valve_transitions</span><span class="p">(</span><span class="n">calibration_data</span><span class="p">)</span>
-	<span class="n">num_events</span> <span class="o">=</span> <span class="n">start_times</span><span class="p">[</span><span class="s1">&#39;x_push&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">size</span> <span class="o">+</span> <span class="n">start_times</span><span class="p">[</span><span class="s1">&#39;x_pull&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">size</span>
-	<span class="c1">#preallocate data frame</span>
-	<span class="n">data_frame</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span>
-	    <span class="n">data</span> <span class="o">=</span> <span class="p">{</span>
-	    	<span class="s1">&#39;onset_time&#39;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">num_events</span><span class="p">),</span>
-	        <span class="s1">&#39;x_position&#39;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">num_events</span><span class="p">),</span> 
-	        <span class="s1">&#39;x_duration&#39;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">num_events</span><span class="p">),</span> 
-	        <span class="s1">&#39;x_displacement&#39;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">num_events</span><span class="p">),</span>
-	        <span class="s1">&#39;y_position&#39;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">num_events</span><span class="p">),</span> 
-	        <span class="s1">&#39;y_duration&#39;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">num_events</span><span class="p">),</span> 
-	        <span class="s1">&#39;y_displacement&#39;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">num_events</span><span class="p">),</span>
-	        <span class="s1">&#39;z_position&#39;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">num_events</span><span class="p">),</span> 
-	        <span class="s1">&#39;z_duration&#39;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">num_events</span><span class="p">),</span> 
-	        <span class="s1">&#39;z_displacement&#39;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">num_events</span><span class="p">)</span>
-	    <span class="p">}</span>
-	<span class="p">)</span>
-	<span class="c1">#estimate valve open durations</span>
-	<span class="n">durations</span> <span class="o">=</span> <span class="n">start_times</span>
-	<span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">durations</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
-		<span class="n">durations</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">stop_times</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">-</span> <span class="n">start_times</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
-	<span class="c1">#match events based on start times</span>
-	<span class="n">old_x_start</span> <span class="o">=</span> <span class="mi">0</span>
-	<span class="n">old_y_start</span> <span class="o">=</span> <span class="mi">0</span>
-	<span class="n">old_z_start</span> <span class="o">=</span> <span class="mi">0</span>
-	<span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">start_times</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
-		<span class="c1">#lazy hack to make sure min() below always exists</span>
-		<span class="n">np</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">start_times</span><span class="p">[</span><span class="n">key</span><span class="p">],</span> <span class="p">[</span><span class="mi">99999999999999999999</span><span class="p">])</span> 
-	<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">num_events</span><span class="p">):</span>
-		<span class="c1">#determine if x actuator pushed or pulled</span>
-	    <span class="n">x_push_start</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span>
-	    	<span class="n">start_times</span><span class="p">[</span><span class="s1">&#39;x_push&#39;</span><span class="p">][</span><span class="n">start_times</span><span class="p">[</span><span class="s1">&#39;x_push&#39;</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">old_x_start</span><span class="p">]</span>
-	    	<span class="p">)</span>
-	    <span class="n">x_pull_start</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span>
-	    	<span class="n">start_times</span><span class="p">[</span><span class="s1">&#39;x_pull&#39;</span><span class="p">][</span><span class="n">start_times</span><span class="p">[</span><span class="s1">&#39;x_pull&#39;</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">old_x_start</span><span class="p">]</span>
-	    	<span class="p">)</span>
-	    <span class="k">if</span><span class="p">(</span><span class="n">x_push_start</span> <span class="o">&lt;</span> <span class="n">x_pull_start</span><span class="p">):</span> <span class="c1">#event was an x_push</span>
-	        <span class="n">idx1</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span>
-	        		<span class="n">calibration_data</span><span class="p">[</span><span class="s1">&#39;time&#39;</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="n">x_push_start</span>
-	        		<span class="p">))</span>
-	        <span class="n">idx2</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span>
-	        		<span class="n">calibration_data</span><span class="p">[</span><span class="s1">&#39;time&#39;</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="p">(</span>
-	        			<span class="n">calibration_data</span><span class="p">[</span><span class="s1">&#39;time&#39;</span><span class="p">]</span> <span class="o">+</span> <span class="n">valve_period</span>
-	        			<span class="p">)</span>
-	        		<span class="p">))</span>
-	        <span class="n">data_frame</span><span class="p">[</span><span class="s1">&#39;x_duration&#39;</span><span class="p">][</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">durations</span><span class="p">[</span><span class="s1">&#39;x_push&#39;</span><span class="p">][</span><span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">start_times</span><span class="p">[</span><span class="s1">&#39;x_push&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="n">x_push_start</span><span class="p">)]</span>
-	        <span class="n">old_x_start</span> <span class="o">=</span> <span class="n">x_push_start</span>
-	    <span class="k">else</span><span class="p">:</span> <span class="c1">#event was an x_pull</span>
-	        <span class="n">idx1</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span>
-	        		<span class="n">calibration_data</span><span class="p">[</span><span class="s1">&#39;time&#39;</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="n">x_pull_start</span>
-	        		<span class="p">))</span>
-	        <span class="n">idx2</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span>
-	        		<span class="n">calibration_data</span><span class="p">[</span><span class="s1">&#39;time&#39;</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="p">(</span>
-	        			<span class="n">calibration_data</span><span class="p">[</span><span class="s1">&#39;time&#39;</span><span class="p">]</span> <span class="o">+</span> <span class="n">valve_period</span>
-	        			<span class="p">)</span>
-	        		<span class="p">))</span>
-	        <span class="n">data_frame</span><span class="p">[</span><span class="s1">&#39;x_duration&#39;</span><span class="p">][</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span><span class="n">durations</span><span class="p">[</span><span class="s1">&#39;x_pull&#39;</span><span class="p">][</span><span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">start_times</span><span class="p">[</span><span class="s1">&#39;x_pull&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="n">x_pull_start</span><span class="p">)]</span>
-	        <span class="n">old_x_start</span> <span class="o">=</span> <span class="n">x_pull_start</span>
-	    <span class="c1">#determine if y actuator pushed or pulled</span>
-	    <span class="n">y_push_start</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span>
-	    	<span class="n">start_times</span><span class="p">[</span><span class="s1">&#39;y_push&#39;</span><span class="p">][</span><span class="n">start_times</span><span class="p">[</span><span class="s1">&#39;y_push&#39;</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">old_y_start</span><span class="p">]</span>
-	    	<span class="p">)</span>
-	    <span class="n">y_pull_start</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span>
-	    	<span class="n">start_times</span><span class="p">[</span><span class="s1">&#39;y_pull&#39;</span><span class="p">][</span><span class="n">start_times</span><span class="p">[</span><span class="s1">&#39;y_pull&#39;</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">old_y_start</span><span class="p">]</span>
-	    	<span class="p">)</span>
-	    <span class="k">if</span><span class="p">(</span><span class="n">y_push_start</span> <span class="o">&lt;</span> <span class="n">y_pull_start</span><span class="p">):</span> <span class="c1">#event was a y_push</span>
-	        <span class="n">data_frame</span><span class="p">[</span><span class="s1">&#39;y_duration&#39;</span><span class="p">][</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">durations</span><span class="p">[</span><span class="s1">&#39;y_push&#39;</span><span class="p">][</span><span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">start_times</span><span class="p">[</span><span class="s1">&#39;y_push&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="n">y_push_start</span><span class="p">)]</span>
-	        <span class="n">old_y_start</span> <span class="o">=</span> <span class="n">y_push_start</span>
-	    <span class="k">else</span><span class="p">:</span> <span class="c1">#event was a y_pull</span>
-	        <span class="n">data_frame</span><span class="p">[</span><span class="s1">&#39;y_duration&#39;</span><span class="p">][</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span><span class="n">durations</span><span class="p">[</span><span class="s1">&#39;y_pull&#39;</span><span class="p">][</span><span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">start_times</span><span class="p">[</span><span class="s1">&#39;y_pull&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="n">y_pull_start</span><span class="p">)]</span>
-	        <span class="n">old_y_start</span> <span class="o">=</span> <span class="n">y_pull_start</span>
-	    <span class="c1">#determine if z actuator pushed or pulled</span>
-	    <span class="n">z_push_start</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span>
-	    	<span class="n">start_times</span><span class="p">[</span><span class="s1">&#39;z_push&#39;</span><span class="p">][</span><span class="n">start_times</span><span class="p">[</span><span class="s1">&#39;z_push&#39;</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">old_z_start</span><span class="p">]</span>
-	    	<span class="p">)</span>
-	    <span class="n">z_pull_start</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span>
-	    	<span class="n">start_times</span><span class="p">[</span><span class="s1">&#39;z_pull&#39;</span><span class="p">][</span><span class="n">start_times</span><span class="p">[</span><span class="s1">&#39;z_pull&#39;</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">old_z_start</span><span class="p">]</span>
-	    	<span class="p">)</span>
-	    <span class="k">if</span><span class="p">(</span><span class="n">z_push_start</span> <span class="o">&lt;</span> <span class="n">z_pull_start</span><span class="p">):</span> <span class="c1">#event was a z_push</span>
-	        <span class="n">data_frame</span><span class="p">[</span><span class="s1">&#39;z_duration&#39;</span><span class="p">][</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">durations</span><span class="p">[</span><span class="s1">&#39;z_push&#39;</span><span class="p">][</span><span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">start_times</span><span class="p">[</span><span class="s1">&#39;z_push&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="n">z_push_start</span><span class="p">)]</span>
-	        <span class="n">old_z_start</span> <span class="o">=</span> <span class="n">z_push_start</span>
-	    <span class="k">else</span><span class="p">:</span> <span class="c1">#event was a z_pull</span>
-	        <span class="n">data_frame</span><span class="p">[</span><span class="s1">&#39;z_duration&#39;</span><span class="p">][</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span><span class="n">durations</span><span class="p">[</span><span class="s1">&#39;z_pull&#39;</span><span class="p">][</span><span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">start_times</span><span class="p">[</span><span class="s1">&#39;z_pull&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="n">z_pull_start</span><span class="p">)]</span>
-	        <span class="n">old_z_start</span> <span class="o">=</span> <span class="n">z_pull_start</span> 
-	    <span class="n">data_frame</span><span class="p">[</span><span class="s1">&#39;onset_time&#39;</span><span class="p">][</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">calibration_data</span><span class="p">[</span><span class="s1">&#39;time&#39;</span><span class="p">][</span><span class="n">idx1</span><span class="p">]</span>   
-	    <span class="n">data_frame</span><span class="p">[</span><span class="s1">&#39;x_position&#39;</span><span class="p">][</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">calibration_data</span><span class="p">[</span><span class="s1">&#39;x_pot&#39;</span><span class="p">][</span><span class="n">idx1</span><span class="p">]</span>
-	    <span class="n">data_frame</span><span class="p">[</span><span class="s1">&#39;y_position&#39;</span><span class="p">][</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">calibration_data</span><span class="p">[</span><span class="s1">&#39;y_pot&#39;</span><span class="p">][</span><span class="n">idx1</span><span class="p">]</span>
-	    <span class="n">data_frame</span><span class="p">[</span><span class="s1">&#39;z_position&#39;</span><span class="p">][</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">calibration_data</span><span class="p">[</span><span class="s1">&#39;z_pot&#39;</span><span class="p">][</span><span class="n">idx1</span><span class="p">]</span>
-	    <span class="n">data_frame</span><span class="p">[</span><span class="s1">&#39;x_displacement&#39;</span><span class="p">][</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">calibration_data</span><span class="p">[</span><span class="s1">&#39;x_pot&#39;</span><span class="p">][</span><span class="n">idx1</span><span class="p">]</span> <span class="o">-</span> <span class="n">calibration_data</span><span class="p">[</span><span class="s1">&#39;x_pot&#39;</span><span class="p">][</span><span class="n">idx1</span><span class="p">]</span>
-	    <span class="n">data_frame</span><span class="p">[</span><span class="s1">&#39;y_displacement&#39;</span><span class="p">][</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">calibration_data</span><span class="p">[</span><span class="s1">&#39;y_pot&#39;</span><span class="p">][</span><span class="n">idx2</span><span class="p">]</span> <span class="o">-</span> <span class="n">calibration_data</span><span class="p">[</span><span class="s1">&#39;y_pot&#39;</span><span class="p">][</span><span class="n">idx1</span><span class="p">]</span>
-	    <span class="n">data_frame</span><span class="p">[</span><span class="s1">&#39;z_displacement&#39;</span><span class="p">][</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">calibration_data</span><span class="p">[</span><span class="s1">&#39;z_pot&#39;</span><span class="p">][</span><span class="n">idx2</span><span class="p">]</span> <span class="o">-</span> <span class="n">calibration_data</span><span class="p">[</span><span class="s1">&#39;z_pot&#39;</span><span class="p">][</span><span class="n">idx1</span><span class="p">]</span>
-	<span class="k">return</span> <span class="n">data_frame</span></div>
+    <span class="n">trodes_files</span> <span class="o">=</span> <span class="n">get_trodes_files</span><span class="p">(</span><span class="n">data_dir</span><span class="p">,</span> <span class="n">trodes_name</span><span class="p">)</span>
+    <span class="n">calibration_data</span> <span class="o">=</span> <span class="n">read_data</span><span class="p">(</span><span class="n">trodes_files</span><span class="p">,</span> <span class="n">sampling_rate</span><span class="p">)</span>
+    <span class="n">calibration_data</span> <span class="o">=</span> <span class="n">to_numpy</span><span class="p">(</span><span class="n">calibration_data</span><span class="p">)</span>
+    <span class="n">calibration_data</span> <span class="o">=</span> <span class="n">to_seconds</span><span class="p">(</span><span class="n">calibration_data</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">pot_units</span> <span class="o">==</span> <span class="s1">&#39;cm&#39;</span><span class="p">:</span>
+        <span class="n">calibration_data</span> <span class="o">=</span> <span class="n">pots_to_cm</span><span class="p">(</span><span class="n">calibration_data</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">pot_units</span> <span class="o">==</span> <span class="s1">&#39;volts&#39;</span><span class="p">:</span>
+        <span class="n">calibration_data</span> <span class="o">=</span> <span class="n">pots_to_volts</span><span class="p">(</span><span class="n">calibration_data</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">pot_units</span> <span class="o">==</span> <span class="s1">&#39;bits&#39;</span><span class="p">:</span>
+        <span class="n">calibration_data</span> <span class="o">=</span> <span class="n">pots_to_bits</span><span class="p">(</span><span class="n">calibration_data</span><span class="p">)</span>
+    <span class="n">start_times</span><span class="p">,</span> <span class="n">stop_times</span> <span class="o">=</span> <span class="n">get_valve_transitions</span><span class="p">(</span><span class="n">calibration_data</span><span class="p">)</span>
+    <span class="n">num_events</span> <span class="o">=</span> <span class="n">start_times</span><span class="p">[</span><span class="s1">&#39;x_push&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">size</span> <span class="o">+</span> <span class="n">start_times</span><span class="p">[</span><span class="s1">&#39;x_pull&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">size</span>
+    <span class="c1">#preallocate data frame</span>
+    <span class="n">data_frame</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s1">&#39;onset_time&#39;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">num_events</span><span class="p">),</span>
+            <span class="s1">&#39;x_position&#39;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">num_events</span><span class="p">),</span> 
+            <span class="s1">&#39;x_duration&#39;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">num_events</span><span class="p">),</span> 
+            <span class="s1">&#39;x_displacement&#39;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">num_events</span><span class="p">),</span>
+            <span class="s1">&#39;y_position&#39;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">num_events</span><span class="p">),</span> 
+            <span class="s1">&#39;y_duration&#39;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">num_events</span><span class="p">),</span> 
+            <span class="s1">&#39;y_displacement&#39;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">num_events</span><span class="p">),</span>
+            <span class="s1">&#39;z_position&#39;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">num_events</span><span class="p">),</span> 
+            <span class="s1">&#39;z_duration&#39;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">num_events</span><span class="p">),</span> 
+            <span class="s1">&#39;z_displacement&#39;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">num_events</span><span class="p">)</span>
+        <span class="p">}</span>
+    <span class="p">)</span>
+    <span class="c1">#estimate valve open durations</span>
+    <span class="n">durations</span> <span class="o">=</span> <span class="n">start_times</span>
+    <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">durations</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+        <span class="n">durations</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">stop_times</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">-</span> <span class="n">start_times</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
+    <span class="c1">#match events based on start times</span>
+    <span class="n">old_x_start</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">old_y_start</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">old_z_start</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">start_times</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+        <span class="c1">#lazy hack to make sure min() below always exists</span>
+        <span class="n">np</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">start_times</span><span class="p">[</span><span class="n">key</span><span class="p">],</span> <span class="p">[</span><span class="mi">99999999999999999999</span><span class="p">])</span> 
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">num_events</span><span class="p">):</span>
+        <span class="c1">#determine if x actuator pushed or pulled</span>
+        <span class="n">x_push_start</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span>
+            <span class="n">start_times</span><span class="p">[</span><span class="s1">&#39;x_push&#39;</span><span class="p">][</span><span class="n">start_times</span><span class="p">[</span><span class="s1">&#39;x_push&#39;</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">old_x_start</span><span class="p">]</span>
+            <span class="p">)</span>
+        <span class="n">x_pull_start</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span>
+            <span class="n">start_times</span><span class="p">[</span><span class="s1">&#39;x_pull&#39;</span><span class="p">][</span><span class="n">start_times</span><span class="p">[</span><span class="s1">&#39;x_pull&#39;</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">old_x_start</span><span class="p">]</span>
+            <span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="n">start_times</span><span class="p">[</span><span class="s1">&#39;x_push&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">:</span><span class="mi">10</span><span class="p">])</span>
+        <span class="nb">print</span><span class="p">(</span><span class="n">start_times</span><span class="p">[</span><span class="s1">&#39;x_pull&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">:</span><span class="mi">10</span><span class="p">])</span>
+        <span class="nb">print</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">start_times</span><span class="p">[</span><span class="s1">&#39;x_push&#39;</span><span class="p">]))</span>
+        <span class="nb">print</span><span class="p">(</span><span class="n">x_pull_start</span><span class="p">)</span>
+        <span class="k">if</span><span class="p">(</span><span class="n">x_push_start</span> <span class="o">&lt;</span> <span class="n">x_pull_start</span><span class="p">):</span> <span class="c1">#event was an x_push</span>
+            <span class="n">idx1</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span>
+                    <span class="n">calibration_data</span><span class="p">[</span><span class="s1">&#39;time&#39;</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="n">x_push_start</span>
+                    <span class="p">))</span>
+            <span class="n">idx2</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span>
+                    <span class="n">calibration_data</span><span class="p">[</span><span class="s1">&#39;time&#39;</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="p">(</span>
+                        <span class="n">calibration_data</span><span class="p">[</span><span class="s1">&#39;time&#39;</span><span class="p">][</span><span class="n">idx1</span><span class="p">]</span> <span class="o">+</span> <span class="n">valve_period</span>
+                        <span class="p">)</span>
+                    <span class="p">))</span>
+            <span class="n">data_frame</span><span class="p">[</span><span class="s1">&#39;x_duration&#39;</span><span class="p">][</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">durations</span><span class="p">[</span><span class="s1">&#39;x_push&#39;</span><span class="p">][</span><span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">start_times</span><span class="p">[</span><span class="s1">&#39;x_push&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="n">x_push_start</span><span class="p">)]</span>
+            <span class="n">old_x_start</span> <span class="o">=</span> <span class="n">x_push_start</span>
+        <span class="k">else</span><span class="p">:</span> <span class="c1">#event was an x_pull</span>
+            <span class="n">idx1</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span>
+                    <span class="n">calibration_data</span><span class="p">[</span><span class="s1">&#39;time&#39;</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="n">x_pull_start</span>
+                    <span class="p">))</span>
+            <span class="n">idx2</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span>
+                    <span class="n">calibration_data</span><span class="p">[</span><span class="s1">&#39;time&#39;</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="p">(</span>
+                        <span class="n">calibration_data</span><span class="p">[</span><span class="s1">&#39;time&#39;</span><span class="p">][</span><span class="n">idx1</span><span class="p">]</span> <span class="o">+</span> <span class="n">valve_period</span>
+                        <span class="p">)</span>
+                    <span class="p">))</span>
+            <span class="n">data_frame</span><span class="p">[</span><span class="s1">&#39;x_duration&#39;</span><span class="p">][</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span><span class="n">durations</span><span class="p">[</span><span class="s1">&#39;x_pull&#39;</span><span class="p">][</span><span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">start_times</span><span class="p">[</span><span class="s1">&#39;x_pull&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="n">x_pull_start</span><span class="p">)]</span>
+            <span class="n">old_x_start</span> <span class="o">=</span> <span class="n">x_pull_start</span>
+        <span class="c1">#determine if y actuator pushed or pulled</span>
+        <span class="n">y_push_start</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span>
+            <span class="n">start_times</span><span class="p">[</span><span class="s1">&#39;y_push&#39;</span><span class="p">][</span><span class="n">start_times</span><span class="p">[</span><span class="s1">&#39;y_push&#39;</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">old_y_start</span><span class="p">]</span>
+            <span class="p">)</span>
+        <span class="n">y_pull_start</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span>
+            <span class="n">start_times</span><span class="p">[</span><span class="s1">&#39;y_pull&#39;</span><span class="p">][</span><span class="n">start_times</span><span class="p">[</span><span class="s1">&#39;y_pull&#39;</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">old_y_start</span><span class="p">]</span>
+            <span class="p">)</span>
+        <span class="k">if</span><span class="p">(</span><span class="n">y_push_start</span> <span class="o">&lt;</span> <span class="n">y_pull_start</span><span class="p">):</span> <span class="c1">#event was a y_push</span>
+            <span class="n">data_frame</span><span class="p">[</span><span class="s1">&#39;y_duration&#39;</span><span class="p">][</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">durations</span><span class="p">[</span><span class="s1">&#39;y_push&#39;</span><span class="p">][</span><span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">start_times</span><span class="p">[</span><span class="s1">&#39;y_push&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="n">y_push_start</span><span class="p">)]</span>
+            <span class="n">old_y_start</span> <span class="o">=</span> <span class="n">y_push_start</span>
+        <span class="k">else</span><span class="p">:</span> <span class="c1">#event was a y_pull</span>
+            <span class="n">data_frame</span><span class="p">[</span><span class="s1">&#39;y_duration&#39;</span><span class="p">][</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span><span class="n">durations</span><span class="p">[</span><span class="s1">&#39;y_pull&#39;</span><span class="p">][</span><span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">start_times</span><span class="p">[</span><span class="s1">&#39;y_pull&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="n">y_pull_start</span><span class="p">)]</span>
+            <span class="n">old_y_start</span> <span class="o">=</span> <span class="n">y_pull_start</span>
+        <span class="c1">#determine if z actuator pushed or pulled</span>
+        <span class="n">z_push_start</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span>
+            <span class="n">start_times</span><span class="p">[</span><span class="s1">&#39;z_push&#39;</span><span class="p">][</span><span class="n">start_times</span><span class="p">[</span><span class="s1">&#39;z_push&#39;</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">old_z_start</span><span class="p">]</span>
+            <span class="p">)</span>
+        <span class="n">z_pull_start</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span>
+            <span class="n">start_times</span><span class="p">[</span><span class="s1">&#39;z_pull&#39;</span><span class="p">][</span><span class="n">start_times</span><span class="p">[</span><span class="s1">&#39;z_pull&#39;</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">old_z_start</span><span class="p">]</span>
+            <span class="p">)</span>
+        <span class="k">if</span><span class="p">(</span><span class="n">z_push_start</span> <span class="o">&lt;</span> <span class="n">z_pull_start</span><span class="p">):</span> <span class="c1">#event was a z_push</span>
+            <span class="n">data_frame</span><span class="p">[</span><span class="s1">&#39;z_duration&#39;</span><span class="p">][</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">durations</span><span class="p">[</span><span class="s1">&#39;z_push&#39;</span><span class="p">][</span><span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">start_times</span><span class="p">[</span><span class="s1">&#39;z_push&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="n">z_push_start</span><span class="p">)]</span>
+            <span class="n">old_z_start</span> <span class="o">=</span> <span class="n">z_push_start</span>
+        <span class="k">else</span><span class="p">:</span> <span class="c1">#event was a z_pull</span>
+            <span class="n">data_frame</span><span class="p">[</span><span class="s1">&#39;z_duration&#39;</span><span class="p">][</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span><span class="n">durations</span><span class="p">[</span><span class="s1">&#39;z_pull&#39;</span><span class="p">][</span><span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">start_times</span><span class="p">[</span><span class="s1">&#39;z_pull&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="n">z_pull_start</span><span class="p">)]</span>
+            <span class="n">old_z_start</span> <span class="o">=</span> <span class="n">z_pull_start</span> 
+        <span class="n">data_frame</span><span class="p">[</span><span class="s1">&#39;onset_time&#39;</span><span class="p">][</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">calibration_data</span><span class="p">[</span><span class="s1">&#39;time&#39;</span><span class="p">][</span><span class="n">idx1</span><span class="p">]</span>   
+        <span class="n">data_frame</span><span class="p">[</span><span class="s1">&#39;x_position&#39;</span><span class="p">][</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">calibration_data</span><span class="p">[</span><span class="s1">&#39;x_pot&#39;</span><span class="p">][</span><span class="n">idx1</span><span class="p">]</span>
+        <span class="n">data_frame</span><span class="p">[</span><span class="s1">&#39;y_position&#39;</span><span class="p">][</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">calibration_data</span><span class="p">[</span><span class="s1">&#39;y_pot&#39;</span><span class="p">][</span><span class="n">idx1</span><span class="p">]</span>
+        <span class="n">data_frame</span><span class="p">[</span><span class="s1">&#39;z_position&#39;</span><span class="p">][</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">calibration_data</span><span class="p">[</span><span class="s1">&#39;z_pot&#39;</span><span class="p">][</span><span class="n">idx1</span><span class="p">]</span>
+        <span class="n">data_frame</span><span class="p">[</span><span class="s1">&#39;x_displacement&#39;</span><span class="p">][</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">calibration_data</span><span class="p">[</span><span class="s1">&#39;x_pot&#39;</span><span class="p">][</span><span class="n">idx1</span><span class="p">]</span> <span class="o">-</span> <span class="n">calibration_data</span><span class="p">[</span><span class="s1">&#39;x_pot&#39;</span><span class="p">][</span><span class="n">idx1</span><span class="p">]</span>
+        <span class="n">data_frame</span><span class="p">[</span><span class="s1">&#39;y_displacement&#39;</span><span class="p">][</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">calibration_data</span><span class="p">[</span><span class="s1">&#39;y_pot&#39;</span><span class="p">][</span><span class="n">idx2</span><span class="p">]</span> <span class="o">-</span> <span class="n">calibration_data</span><span class="p">[</span><span class="s1">&#39;y_pot&#39;</span><span class="p">][</span><span class="n">idx1</span><span class="p">]</span>
+        <span class="n">data_frame</span><span class="p">[</span><span class="s1">&#39;z_displacement&#39;</span><span class="p">][</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">calibration_data</span><span class="p">[</span><span class="s1">&#39;z_pot&#39;</span><span class="p">][</span><span class="n">idx2</span><span class="p">]</span> <span class="o">-</span> <span class="n">calibration_data</span><span class="p">[</span><span class="s1">&#39;z_pot&#39;</span><span class="p">][</span><span class="n">idx1</span><span class="p">]</span>
+    <span class="k">return</span> <span class="n">data_frame</span></div>
 
-<span class="k">def</span> <span class="nf">get_traces_frame</span><span class="p">(</span>
-	<span class="n">data_dir</span><span class="p">,</span> 
-	<span class="n">trodes_name</span><span class="p">,</span> 
-	<span class="n">sampling_rate</span> <span class="o">=</span> <span class="mi">3000</span><span class="p">,</span> 
-	<span class="n">valve_period</span> <span class="o">=</span> <span class="mf">0.175</span><span class="p">,</span>
-	<span class="n">pot_units</span> <span class="o">=</span> <span class="s1">&#39;cm&#39;</span>
-	<span class="p">):</span>
+<span class="c1"># def get_traces_frame(</span>
+<span class="c1">#   data_dir, </span>
+<span class="c1">#   trodes_name, </span>
+<span class="c1">#   sampling_rate = 3000, </span>
+<span class="c1">#   valve_period = 0.175,</span>
+<span class="c1">#   pot_units = &#39;cm&#39;</span>
+<span class="c1">#   ):</span>
 
-	<span class="k">return</span> <span class="n">data_frame</span>
+<span class="c1">#   return data_frame</span>
 
-	
+    
 
-	
+    
 </pre></div>
 
            </div>
