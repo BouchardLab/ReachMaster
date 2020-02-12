@@ -15,13 +15,13 @@ import sphinx_rtd_theme
 
 # Set the software project root dirs
 reach_master_root = os.path.join(os.path.dirname(os.path.dirname(os.getcwd())),"software/reach_master")
-wrangling_preprocessing_root = os.path.join(os.path.dirname(os.path.dirname(os.getcwd())),"software/wrangling_preprocessing")
+preprocessing_root = os.path.join(os.path.dirname(os.path.dirname(os.getcwd())),"software/preprocessing")
 
 # Insert the project root dir as the first element in the PYTHONPATH.
 # This lets us ensure that the source package is imported, and that its
 # version is used.
 sys.path.append(reach_master_root)
-sys.path.append(wrangling_preprocessing_root)
+sys.path.append(preprocessing_root)
 
 # -- Project information -----------------------------------------------------
 project = 'ReachMaster'

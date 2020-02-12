@@ -1,4 +1,4 @@
-Data Wrangling and Preprocessing
+Data Preprocessing
 =======================================
 
 Trodes Data
@@ -23,7 +23,7 @@ Video Data
 Controller Data
 ---------------------------------------
 
-Config Data
+ReachMaster Configuration Data
 ---------------------------------------
 
 NWB

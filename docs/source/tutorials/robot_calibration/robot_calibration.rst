@@ -1,4 +1,4 @@
-Camera Calibration
+Robot Calibration
 =======================================
 
-How to calibrate.
+

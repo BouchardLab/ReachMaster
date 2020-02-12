@@ -14,6 +14,7 @@ ReachMaster is a pneumatically-actuated robotic system that supports a variety o
    overview
    hardware/hardware
    software/software
+   tutorials/tutorials
 
 References
 ==========

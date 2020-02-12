@@ -1,0 +1,313 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Data Preprocessing &mdash; ReachMaster alpha documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../_static/language_data.js"></script>
+    
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="Rig Controllers" href="../rig_controllers/rig_controllers.html" />
+    <link rel="prev" title="ReachMaster User Interface" href="../reach_master/reach_master.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../index.html" class="icon icon-home"> ReachMaster
+          
+
+          
+            
+            <img src="../../_static/splinter.png" class="logo" alt="Logo"/>
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.0.0
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../overview.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../hardware/hardware.html">Hardware</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../software.html">Software</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../reach_master/reach_master.html">ReachMaster User Interface</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Data Preprocessing</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#trodes-data">Trodes Data</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#module-trodes_data.readTrodesExtractedDataFile3">Extract trodes data to python</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#module-trodes_data.calibration_data_parser">Calibration data parser</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#video-data">Video Data</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#controller-data">Controller Data</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#reachmaster-configuration-data">ReachMaster Configuration Data</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nwb">NWB</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../rig_controllers/rig_controllers.html">Rig Controllers</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../tutorials/tutorials.html">Tutorials</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">ReachMaster</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../software.html">Software</a> &raquo;</li>
+        
+      <li>Data Preprocessing</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="../../_sources/software/preprocessing/preprocessing.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="data-preprocessing">
+<h1>Data Preprocessing<a class="headerlink" href="#data-preprocessing" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="trodes-data">
+<h2>Trodes Data<a class="headerlink" href="#trodes-data" title="Permalink to this headline">¶</a></h2>
+<p>Here we go over a collection of modules for extracting,
+reading, parsing and preprocessing trodes data produced
+by various ReachMaster routines.</p>
+<div class="section" id="module-trodes_data.readTrodesExtractedDataFile3">
+<span id="extract-trodes-data-to-python"></span><h3>Extract trodes data to python<a class="headerlink" href="#module-trodes_data.readTrodesExtractedDataFile3" title="Permalink to this headline">¶</a></h3>
+<p>SpikeGadgets provides this script to import data from Trodes
+to Python. For further documentation, visit <a class="reference external" href="http://spikegadgets.com/software/python_toolbox.html">SpikeGadgets</a> .</p>
+<dl class="function">
+<dt id="trodes_data.readTrodesExtractedDataFile3.readTrodesExtractedDataFile">
+<code class="descclassname">trodes_data.readTrodesExtractedDataFile3.</code><code class="descname">readTrodesExtractedDataFile</code><span class="sig-paren">(</span><em>filename</em><span class="sig-paren">)</span><a class="headerlink" href="#trodes_data.readTrodesExtractedDataFile3.readTrodesExtractedDataFile" title="Permalink to this definition">¶</a></dt>
+<dd><p>Read a DIO or analog Trodes .dat file. These files are
+typically produced after converting the raw .rec files
+using the <cite>exportdio</cite> or <cite>exportanalog</cite> bash scripts
+provided by SpikeGadgets. Visit <a class="reference external" href="http://spikegadgets.com/software/python_toolbox.html">SpikeGadgets</a> for
+more details.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>filename</strong> (<em>str</em>) – Path to file</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><strong>fieldText</strong> – A nested dictionary with the extracted data</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">dict</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
+<div class="section" id="module-trodes_data.calibration_data_parser">
+<span id="calibration-data-parser"></span><h3>Calibration data parser<a class="headerlink" href="#module-trodes_data.calibration_data_parser" title="Permalink to this headline">¶</a></h3>
+<p>A library for reading, parsing, and preprocessing trodes data
+collected during robot calibration routines.</p>
+<dl class="function">
+<dt id="trodes_data.calibration_data_parser.get_summary_frame">
+<code class="descclassname">trodes_data.calibration_data_parser.</code><code class="descname">get_summary_frame</code><span class="sig-paren">(</span><em>data_dir</em>, <em>trodes_name</em>, <em>sampling_rate=3000</em>, <em>valve_period=0.175</em>, <em>pot_units='cm'</em><span class="sig-paren">)</span><a class="headerlink" href="#trodes_data.calibration_data_parser.get_summary_frame" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generate a data frame that can be modeled for robot calibration.</p>
+<blockquote>
+<div><dl class="docutils">
+<dt>data_dir <span class="classifier-delimiter">:</span> <span class="classifier">str</span></dt>
+<dd>Parent directory where the trodes data lives</dd>
+<dt>trodes_name <span class="classifier-delimiter">:</span> <span class="classifier">str</span></dt>
+<dd>Name of original .rec trodes file</dd>
+<dt>sampling_rate <span class="classifier-delimiter">:</span> <span class="classifier">int</span></dt>
+<dd>Specifying a rate (Hz) lower than the SpikeGadgets MCU clock rate of
+30 kHz will downsample the data and speed up the parsing.</dd>
+<dt>valve_period <span class="classifier-delimiter">:</span> <span class="classifier">float</span></dt>
+<dd>Time (sec) between valve command onsets</dd>
+<dt>pot_units <span class="classifier-delimiter">:</span> <span class="classifier">str</span></dt>
+<dd>Units to return potentiometer recordings. Can be <cite>cm</cite>, <cite>volts</cite>, or
+<cite>bits</cite>.</dd>
+</dl>
+</div></blockquote>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><strong>data_frame</strong> – A pandas data frame</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">type(pandas.DataFrame)</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
+</div>
+<div class="section" id="video-data">
+<h2>Video Data<a class="headerlink" href="#video-data" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="controller-data">
+<h2>Controller Data<a class="headerlink" href="#controller-data" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="reachmaster-configuration-data">
+<h2>ReachMaster Configuration Data<a class="headerlink" href="#reachmaster-configuration-data" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="nwb">
+<h2>NWB<a class="headerlink" href="#nwb" title="Permalink to this headline">¶</a></h2>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="../rig_controllers/rig_controllers.html" class="btn btn-neutral float-right" title="Rig Controllers" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="../reach_master/reach_master.html" class="btn btn-neutral float-left" title="ReachMaster User Interface" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright The Regents of the University of California, through Lawrence Berkeley National Laboratory
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>
