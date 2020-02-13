@@ -5,7 +5,7 @@ trodes_data - includes all data recorded by the SpikeGadgets acquisition system 
 
 video_data - includes all multi-camera video data and iamges taken during experiments, camera calibration, etc.
 
-controller_data - data collected from the controllers (i.e., vis serial communication) during experiments
+controller_data - data collected from the controllers (i.e., via serial communication) during experiments
 
 config_data - metadata provided by the ReachMaster configuration files
 

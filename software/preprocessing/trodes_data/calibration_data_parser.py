@@ -55,7 +55,7 @@ def read_data(trodes_files, sampling_rate = 3000):
         example, as returned by get_trodes_files(). 
     sampling_rate : int
         Specifying a rate (Hz) lower than the SpikeGadgets MCU clock rate of
-        30 kHz will downsample the data and speed up the parsing.
+        30 kHz will downsample the data to speed up parsing.
 
     Returns
     -------
@@ -67,7 +67,7 @@ def read_data(trodes_files, sampling_rate = 3000):
     clockrate = np.float_(read_trodes.readTrodesExtractedDataFile(trodes_files['time_file'])['clock rate'])
     ds = int(clockrate / sampling_rate)
     calibration_data = {
-        'sampling_rate': sampling_rate,
+        'clockrate': clockrate,
         'time': read_trodes.readTrodesExtractedDataFile(trodes_files['time_file'])['data'][0:-1:ds],
         'DIO': {
             'x_push': read_trodes.readTrodesExtractedDataFile(trodes_files['x_push_file'])['data'], 
@@ -141,6 +141,7 @@ def to_seconds(calibration_data, start_at_zero = True):
     else:
         for key in calibration_data['DIO'].keys():
             calibration_data['DIO'][key] = calibration_data['DIO'][key] / calibration_data['clockrate']
+        calibration_data['time'] = calibration_data['time'] / calibration_data['clockrate']
     return calibration_data
 
 def pots_to_cm(calibration_data, supply_voltage = 3.3, pot_range = 5.0):
@@ -261,7 +262,11 @@ def get_valve_transitions(calibration_data):
     return start_times, stop_times
 
 def get_calibration_frame(data_dir, trodes_name, sampling_rate = 3000, valve_period = 0.175, pot_units = 'cm'):
-    """Generate a data frame that can be used to estimate calibration parameters.
+    """Generate a data frame for estimating robot calibration parameters.
+    State variables include the starting positions and valve open
+    durations for each actuator, and the response variable is 
+    displacement. By convention, durations and displacements are assumed 
+    to be negative for the pull valves.
 
     Parameters
     ----------
@@ -281,11 +286,11 @@ def get_calibration_frame(data_dir, trodes_name, sampling_rate = 3000, valve_per
     Returns
     -------
     data_frame : pandas.core.frame.DataFrame  
-        A pandas data frame with columns `onset_time`, `x_position`, 
+        A pandas data frame with columns `start_time`, `x_position`, 
         `x_duration`, `x_displacement`, `y_position`, `y_duration`, 
         `y_displacement`, `z_position`, `z_duration`, and `z_displacement`.
-    """
 
+    """
     trodes_files = get_trodes_files(data_dir, trodes_name)
     calibration_data = read_data(trodes_files, sampling_rate)
     calibration_data = to_numpy(calibration_data)
@@ -298,99 +303,60 @@ def get_calibration_frame(data_dir, trodes_name, sampling_rate = 3000, valve_per
         calibration_data = pots_to_bits(calibration_data)
     start_times, stop_times = get_valve_transitions(calibration_data)
     num_events = start_times['x_push'].size + start_times['x_pull'].size
-    #preallocate data frame
+    #sort start times
+    x_start_times = np.concatenate([start_times['x_push'], start_times['x_pull']])
+    y_start_times = np.concatenate([start_times['y_push'], start_times['y_pull']])
+    z_start_times = np.concatenate([start_times['z_push'], start_times['z_pull']])
+    x_order = np.argsort(x_start_times)
+    y_order = np.argsort(y_start_times)
+    z_order = np.argsort(z_start_times)
+    #initialize data frame
     data_frame = pd.DataFrame(
         data = {
-            'onset_time': np.zeros(num_events),
+            'start_time': x_start_times[x_order],
             'x_position': np.zeros(num_events), 
-            'x_duration': np.zeros(num_events), 
+            'x_duration': np.concatenate([
+                stop_times['x_push'] - start_times['x_push'], 
+                start_times['x_pull'] - stop_times['x_pull'] #sign convention
+                ])[x_order], 
             'x_displacement': np.zeros(num_events),
-            'y_position': np.zeros(num_events), 
-            'y_duration': np.zeros(num_events), 
+            'y_position': np.zeros(num_events),  
+            'y_duration': np.concatenate([
+                stop_times['y_push'] - start_times['y_push'], 
+                start_times['y_pull'] - stop_times['y_pull'] #sign convention
+                ])[y_order], 
             'y_displacement': np.zeros(num_events),
-            'z_position': np.zeros(num_events), 
-            'z_duration': np.zeros(num_events), 
+            'z_position': np.zeros(num_events),  
+            'z_duration': np.concatenate([
+                stop_times['z_push'] - start_times['z_push'], 
+                start_times['z_pull'] - stop_times['z_pull'] #sign convention
+                ])[z_order], 
             'z_displacement': np.zeros(num_events)
         }
     )
-    #estimate valve open durations
-    durations = start_times
-    for key in durations.keys():
-        durations[key] = stop_times[key] - start_times[key]
-    #match events based on start times
-    old_x_start = 0
-    old_y_start = 0
-    old_z_start = 0
-    for key in start_times.keys():
-        #lazy hack to make sure min() below always exists
-        np.append(start_times[key], [99999999999999999999]) 
+    #estimate positions and displacements
+    start_time = data_frame['start_time']
+    start_indices = np.zeros(num_events)
     for i in range(num_events):
-        #determine if x actuator pushed or pulled
-        x_push_start = np.min(
-            start_times['x_push'][start_times['x_push'] > old_x_start]
+        start_indices[i] = np.argmin(
+            np.abs(calibration_data['time'] - start_time[i])
             )
-        x_pull_start = np.min(
-            start_times['x_pull'][start_times['x_pull'] > old_x_start]
-            )
-        print(start_times['x_push'][0:10])
-        print(start_times['x_pull'][0:10])
-        print(np.min(start_times['x_push']))
-        print(x_pull_start)
-        if(x_push_start < x_pull_start): #event was an x_push
-            idx1 = np.min(np.where(
-                    calibration_data['time'] >= x_push_start
-                    ))
-            idx2 = np.min(np.where(
-                    calibration_data['time'] >= (
-                        calibration_data['time'][idx1] + valve_period
-                        )
-                    ))
-            data_frame['x_duration'][i] = durations['x_push'][np.where(start_times['x_push'] == x_push_start)]
-            old_x_start = x_push_start
-        else: #event was an x_pull
-            idx1 = np.min(np.where(
-                    calibration_data['time'] >= x_pull_start
-                    ))
-            idx2 = np.min(np.where(
-                    calibration_data['time'] >= (
-                        calibration_data['time'][idx1] + valve_period
-                        )
-                    ))
-            data_frame['x_duration'][i] = -durations['x_pull'][np.where(start_times['x_pull'] == x_pull_start)]
-            old_x_start = x_pull_start
-        #determine if y actuator pushed or pulled
-        y_push_start = np.min(
-            start_times['y_push'][start_times['y_push'] > old_y_start]
-            )
-        y_pull_start = np.min(
-            start_times['y_pull'][start_times['y_pull'] > old_y_start]
-            )
-        if(y_push_start < y_pull_start): #event was a y_push
-            data_frame['y_duration'][i] = durations['y_push'][np.where(start_times['y_push'] == y_push_start)]
-            old_y_start = y_push_start
-        else: #event was a y_pull
-            data_frame['y_duration'][i] = -durations['y_pull'][np.where(start_times['y_pull'] == y_pull_start)]
-            old_y_start = y_pull_start
-        #determine if z actuator pushed or pulled
-        z_push_start = np.min(
-            start_times['z_push'][start_times['z_push'] > old_z_start]
-            )
-        z_pull_start = np.min(
-            start_times['z_pull'][start_times['z_pull'] > old_z_start]
-            )
-        if(z_push_start < z_pull_start): #event was a z_push
-            data_frame['z_duration'][i] = durations['z_push'][np.where(start_times['z_push'] == z_push_start)]
-            old_z_start = z_push_start
-        else: #event was a z_pull
-            data_frame['z_duration'][i] = -durations['z_pull'][np.where(start_times['z_pull'] == z_pull_start)]
-            old_z_start = z_pull_start 
-        data_frame['onset_time'][i] = calibration_data['time'][idx1]   
-        data_frame['x_position'][i] = calibration_data['x_pot'][idx1]
-        data_frame['y_position'][i] = calibration_data['y_pot'][idx1]
-        data_frame['z_position'][i] = calibration_data['z_pot'][idx1]
-        data_frame['x_displacement'][i] = calibration_data['x_pot'][idx1] - calibration_data['x_pot'][idx1]
-        data_frame['y_displacement'][i] = calibration_data['y_pot'][idx2] - calibration_data['y_pot'][idx1]
-        data_frame['z_displacement'][i] = calibration_data['z_pot'][idx2] - calibration_data['z_pot'][idx1]
+    stop_indices = start_indices + int(valve_period * sampling_rate)
+    data_frame['x_position'] = calibration_data['analog']['x_pot'][start_indices]
+    data_frame['y_position'] = calibration_data['analog']['y_pot'][start_indices]
+    data_frame['z_position'] = calibration_data['analog']['z_pot'][start_indices]
+    data_frame['x_displacement'] = (
+        calibration_data['analog']['x_pot'][stop_indices] - 
+        calibration_data['analog']['x_pot'][start_indices]
+        )
+    data_frame['y_displacement'] = (
+        calibration_data['analog']['y_pot'][stop_indices] - 
+        calibration_data['analog']['y_pot'][start_indices]
+        )
+    data_frame['z_displacement'] = (
+        calibration_data['analog']['z_pot'][stop_indices] - 
+        calibration_data['analog']['z_pot'][start_indices]
+        )
     return data_frame
 
 # def get_traces_frame(
