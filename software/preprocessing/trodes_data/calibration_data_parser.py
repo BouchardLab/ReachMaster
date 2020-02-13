@@ -335,12 +335,7 @@ def get_calibration_frame(data_dir, trodes_name, sampling_rate = 3000, valve_per
         }
     )
     #estimate positions and displacements
-    start_time = data_frame['start_time']
-    start_indices = np.zeros(num_events)
-    for i in range(num_events):
-        start_indices[i] = np.argmin(
-            np.abs(calibration_data['time'] - start_time[i])
-            )
+    start_indices = np.searchsorted(calibration_data['time'], data_frame['start_time'])
     stop_indices = start_indices + int(valve_period * sampling_rate)
     data_frame['x_position'] = calibration_data['analog']['x_pot'][start_indices]
     data_frame['y_position'] = calibration_data['analog']['y_pot'][start_indices]
