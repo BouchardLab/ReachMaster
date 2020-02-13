@@ -261,12 +261,12 @@ def get_valve_transitions(calibration_data):
     }
     return start_times, stop_times
 
-def get_calibration_frame(data_dir, trodes_name, sampling_rate = 3000, valve_period = 0.175, pot_units = 'cm'):
+def get_calibration_frame(data_dir, trodes_name, sampling_rate = 3000, pot_units = 'cm'):
     """Generate a data frame for estimating robot calibration parameters.
     State variables include the starting positions and valve open
-    durations for each actuator, and the response variable is 
-    displacement. By convention, durations and displacements are assumed 
-    to be negative for the pull valves.
+    durations for each actuator. The response variable is displacement. 
+    Durations and displacements are assumed to be negative for the pull 
+    valves by convention.
 
     Parameters
     ----------
@@ -277,8 +277,6 @@ def get_calibration_frame(data_dir, trodes_name, sampling_rate = 3000, valve_per
     sampling_rate : int
         Specifying a rate (Hz) lower than the SpikeGadgets MCU clock rate of
         30 kHz will downsample the data and speed up the parsing.
-    valve_period : float
-        Time (sec) between valve command onsets
     pot_units : str
         Units to return potentiometer recordings. Can be `cm`, `volts`, or 
         `bits`.
@@ -310,59 +308,185 @@ def get_calibration_frame(data_dir, trodes_name, sampling_rate = 3000, valve_per
     x_order = np.argsort(x_start_times)
     y_order = np.argsort(y_start_times)
     z_order = np.argsort(z_start_times)
-    #initialize data frame
+    #estimate valve period
+    valve_period = np.median(np.diff(x_start_times[x_order]))
+    #match start times to position indices
+    start_indices = np.searchsorted(calibration_data['time'], x_start_times[x_order])
+    stop_indices = start_indices + int(valve_period * sampling_rate)
+    #make data frame
     data_frame = pd.DataFrame(
         data = {
             'start_time': x_start_times[x_order],
-            'x_position': np.zeros(num_events), 
+            'x_position': calibration_data['analog']['x_pot'][start_indices], 
             'x_duration': np.concatenate([
                 stop_times['x_push'] - start_times['x_push'], 
                 start_times['x_pull'] - stop_times['x_pull'] #sign convention
                 ])[x_order], 
-            'x_displacement': np.zeros(num_events),
-            'y_position': np.zeros(num_events),  
+            'x_displacement': (
+                calibration_data['analog']['x_pot'][stop_indices] - 
+                calibration_data['analog']['x_pot'][start_indices]
+                ),
+            'y_position': calibration_data['analog']['y_pot'][start_indices],  
             'y_duration': np.concatenate([
                 stop_times['y_push'] - start_times['y_push'], 
                 start_times['y_pull'] - stop_times['y_pull'] #sign convention
                 ])[y_order], 
-            'y_displacement': np.zeros(num_events),
-            'z_position': np.zeros(num_events),  
+            'y_displacement': (
+                calibration_data['analog']['y_pot'][stop_indices] - 
+                calibration_data['analog']['y_pot'][start_indices]
+                ),
+            'z_position': calibration_data['analog']['z_pot'][start_indices],  
             'z_duration': np.concatenate([
                 stop_times['z_push'] - start_times['z_push'], 
                 start_times['z_pull'] - stop_times['z_pull'] #sign convention
                 ])[z_order], 
-            'z_displacement': np.zeros(num_events)
+            'z_displacement': (
+                calibration_data['analog']['z_pot'][stop_indices] - 
+                calibration_data['analog']['z_pot'][start_indices]
+                )
         }
     )
-    #estimate positions and displacements
-    start_indices = np.searchsorted(calibration_data['time'], data_frame['start_time'])
-    stop_indices = start_indices + int(valve_period * sampling_rate)
-    data_frame['x_position'] = calibration_data['analog']['x_pot'][start_indices]
-    data_frame['y_position'] = calibration_data['analog']['y_pot'][start_indices]
-    data_frame['z_position'] = calibration_data['analog']['z_pot'][start_indices]
-    data_frame['x_displacement'] = (
-        calibration_data['analog']['x_pot'][stop_indices] - 
-        calibration_data['analog']['x_pot'][start_indices]
-        )
-    data_frame['y_displacement'] = (
-        calibration_data['analog']['y_pot'][stop_indices] - 
-        calibration_data['analog']['y_pot'][start_indices]
-        )
-    data_frame['z_displacement'] = (
-        calibration_data['analog']['z_pot'][stop_indices] - 
-        calibration_data['analog']['z_pot'][start_indices]
-        )
     return data_frame
 
-# def get_traces_frame(
-#   data_dir, 
-#   trodes_name, 
-#   sampling_rate = 3000, 
-#   valve_period = 0.175,
-#   pot_units = 'cm'
-#   ):
+def get_traces_frame(data_dir, trodes_name, sampling_rate = 3000, pot_units = 'cm'):
+    """Generate a data frame containing the position trajectories of
+    each actuator in response to each of the valve duration commands. 
+    Similar to get_calibration_frame(), but returns the entire 
+    trajectory instead of just the starting positions and 
+    displacements.
 
-#   return data_frame
+    Parameters
+    ----------
+    data_dir : str
+        Parent directory where the trodes data lives
+    trodes_name : str
+        Name of original .rec trodes file
+    sampling_rate : int
+        Specifying a rate (Hz) lower than the SpikeGadgets MCU clock rate of
+        30 kHz will downsample the data, speed up parsing, and return
+        a smaller data frame.
+    pot_units : str
+        Units to return potentiometer recordings. Can be `cm`, `volts`, or 
+        `bits`.
+
+    Returns
+    -------
+    data_frame : pandas.core.frame.DataFrame  
+        A pandas data frame with columns `trace_time`, `start_time`, 
+        `x_start_position`, `x_duration`, `x_displacement`, 
+        `y_start_position`, `y_duration`, `y_displacement`,
+        `z_start_position`, `z_duration`, and `z_displacement`. 
+
+    """
+    trodes_files = get_trodes_files(data_dir, trodes_name)
+    calibration_data = read_data(trodes_files, sampling_rate)
+    calibration_data = to_numpy(calibration_data)
+    calibration_data = to_seconds(calibration_data)
+    if pot_units == 'cm':
+        calibration_data = pots_to_cm(calibration_data)
+    elif pot_units == 'volts':
+        calibration_data = pots_to_volts(calibration_data)
+    elif pot_units == 'bits':
+        calibration_data = pots_to_bits(calibration_data)
+    start_times, stop_times = get_valve_transitions(calibration_data)
+    num_events = start_times['x_push'].size + start_times['x_pull'].size
+    #sort start times
+    x_start_times = np.concatenate([start_times['x_push'], start_times['x_pull']])
+    y_start_times = np.concatenate([start_times['y_push'], start_times['y_pull']])
+    z_start_times = np.concatenate([start_times['z_push'], start_times['z_pull']])
+    x_order = np.argsort(x_start_times)
+    y_order = np.argsort(y_start_times)
+    z_order = np.argsort(z_start_times)
+    #estimate valve period
+    valve_period = np.median(np.diff(x_start_times[x_order]))
+    #estimate trace start times  
+    start_indices = np.searchsorted(calibration_data['time'], x_start_times[x_order])
+    trace_start_times = calibration_data['time'][start_indices]
+    #estimate trace durations
+    x_durations = np.concatenate([
+        stop_times['x_push'] - start_times['x_push'], 
+        start_times['x_pull'] - stop_times['x_pull'] #sign convention
+        ])[x_order]     
+    y_durations = np.concatenate([
+        stop_times['y_push'] - start_times['y_push'], 
+        start_times['y_pull'] - stop_times['y_pull'] #sign convention
+        ])[y_order]    
+    z_durations = np.concatenate([
+        stop_times['z_push'] - start_times['z_push'], 
+        start_times['z_pull'] - stop_times['z_pull'] #sign convention
+        ])[z_order]    
+    #initialize data frame
+    num_rows = start_indices[-1] + int(valve_period*sampling_rate) - start_indices[0]
+    time_window = np.arange(start_indices[0], start_indices[-1] + int(valve_period * sampling_rate))
+    data_frame = pd.DataFrame(
+        data = {
+            'trace_time': calibration_data['time'][time_window],
+            'start_time': np.zeros(num_rows), 
+            'x_start_position': np.zeros(num_rows),
+            'y_start_position': np.zeros(num_rows),
+            'z_start_position': np.zeros(num_rows),
+            'x_duration': np.zeros(num_rows),
+            'y_duration': np.zeros(num_rows),
+            'z_duration': np.zeros(num_rows),
+            'x_displacement': calibration_data['analog']['x_pot'][time_window],    
+            'y_displacement': calibration_data['analog']['y_pot'][time_window],                    
+            'z_displacement': calibration_data['analog']['z_pot'][time_window]
+        }
+    )
+    #fill in data frame an event at a time
+    #currently slow, need to vectorize/optimize
+    start_indices = start_indices - start_indices[0]
+    for event in range(num_events-1):
+        print(str(event) + ' of ' + str(num_events))
+        data_frame['start_time'][start_indices[event]:start_indices[event+1]] = (
+            trace_start_times[event]
+            )
+        data_frame['x_duration'][start_indices[event]:start_indices[event+1]] = (
+            x_durations[event]
+            )
+        data_frame['x_start_position'][start_indices[event]:start_indices[event+1]] = (
+            data_frame['x_displacement'][start_indices[event]]
+            )
+        data_frame['y_duration'][start_indices[event]:start_indices[event+1]] = (
+            y_durations[event]
+            )
+        data_frame['y_start_position'][start_indices[event]:start_indices[event+1]] = (
+            data_frame['y_displacement'][start_indices[event]]
+            )
+        data_frame['z_duration'][start_indices[event]:start_indices[event+1]] = (
+            z_durations[event]
+            )
+        data_frame['z_start_position'][start_indices[event]:start_indices[event+1]] = (
+            data_frame['z_displacement'][start_indices[event]]
+            )
+    data_frame['start_time'][start_indices[-1]:-1] = (
+            trace_start_times[-1]
+            )
+    data_frame['x_duration'][start_indices[-1]:-1] = (
+        x_durations[-1]
+        )
+    data_frame['x_start_position'][start_indices[-1]:-1] = (
+        data_frame['x_displacement'][start_indices[-1]]
+        )
+    data_frame['y_duration'][start_indices[-1]:-1] = (
+        y_durations[-1]
+        )
+    data_frame['y_start_position'][start_indices[-1]:-1] = (
+        data_frame['y_displacement'][start_indices[-1]]
+        )
+    data_frame['z_duration'][start_indices[-1]:-1] = (
+        z_durations[-1]
+        )
+    data_frame['z_start_position'][start_indices[-1]:-1] = (
+        data_frame['z_displacement'][start_indices[-1]]
+        )
+    #adjust trace time
+    data_frame['trace_time'] -= data_frame['start_time']
+    #adjust displacements
+    data_frame['x_displacement'] -= data_frame['x_start_position']
+    data_frame['y_displacement'] -= data_frame['y_start_position']
+    data_frame['z_displacement'] -= data_frame['z_start_position']
+    return data_frame
 
     
 
