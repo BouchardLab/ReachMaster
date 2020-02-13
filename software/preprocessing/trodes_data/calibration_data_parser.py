@@ -1,4 +1,4 @@
-"""A library for reading, parsing, and preprocessing trodes data 
+"""A module for reading, parsing, and preprocessing trodes data 
 collected during robot calibration routines.
 
 """
