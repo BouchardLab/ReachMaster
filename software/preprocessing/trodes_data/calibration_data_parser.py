@@ -8,6 +8,7 @@ from . import readTrodesExtractedDataFile3 as read_trodes
 import numpy as np
 import pandas as pd
 import subprocess as sp 
+import scipy.signal as sig
 
 def get_trodes_files(data_dir, trodes_name):
     """Generate names of all the trodes files from a calibration recording.
@@ -68,7 +69,11 @@ def read_data(trodes_files, sampling_rate = 3000):
     ds = int(clockrate / sampling_rate)
     calibration_data = {
         'clockrate': clockrate,
-        'time': read_trodes.readTrodesExtractedDataFile(trodes_files['time_file'])['data'][0:-1:ds],
+        'sampling_rate': sampling_rate,
+        'time': {
+            'units': 'samples',
+            'time': read_trodes.readTrodesExtractedDataFile(trodes_files['time_file'])['data'][0:-1:ds]
+            },
         'DIO': {
             'x_push': read_trodes.readTrodesExtractedDataFile(trodes_files['x_push_file'])['data'], 
             'x_pull': read_trodes.readTrodesExtractedDataFile(trodes_files['x_pull_file'])['data'],
@@ -101,8 +106,8 @@ def to_numpy(calibration_data):
         Numpy-converted calibration data.
         
     """
-    calibration_data['time'] = np.array(
-        [t[0] for t in calibration_data['time']],
+    calibration_data['time']['time'] = np.array(
+        [t[0] for t in calibration_data['time']['time']],
         dtype='float_'
         )
     for key in calibration_data['DIO'].keys():
@@ -130,18 +135,21 @@ def to_seconds(calibration_data, start_at_zero = True):
         Seconds-converted calibration data
         
     """
-    if start_at_zero:
-        for key in calibration_data['DIO'].keys():
-            calibration_data['DIO'][key] = (
-                calibration_data['DIO'][key] - calibration_data['time'][0]
-                ) /  calibration_data['clockrate']
-        calibration_data['time'] = (
-            calibration_data['time'] - calibration_data['time'][0]
-            ) / calibration_data['clockrate']
+    if calibration_data['time']['units'] is not 'seconds':
+        if start_at_zero:
+            for key in calibration_data['DIO'].keys():
+                calibration_data['DIO'][key] = (
+                    calibration_data['DIO'][key] - calibration_data['time']['time'][0]
+                    ) /  calibration_data['clockrate']
+            calibration_data['time']['time'] = (
+                calibration_data['time']['time'] - calibration_data['time']['time'][0]
+                ) / calibration_data['clockrate']
+        else:
+            for key in calibration_data['DIO'].keys():
+                calibration_data['DIO'][key] = calibration_data['DIO'][key] / calibration_data['clockrate']
+            calibration_data['time']['time'] = calibration_data['time']['time'] / calibration_data['clockrate']
     else:
-        for key in calibration_data['DIO'].keys():
-            calibration_data['DIO'][key] = calibration_data['DIO'][key] / calibration_data['clockrate']
-        calibration_data['time'] = calibration_data['time'] / calibration_data['clockrate']
+        pass
     return calibration_data
 
 def pots_to_cm(calibration_data, supply_voltage = 3.3, pot_range = 5.0):
@@ -170,6 +178,32 @@ def pots_to_cm(calibration_data, supply_voltage = 3.3, pot_range = 5.0):
         calibration_data['analog'][key] = (
             calibration_data['analog'][key] / trodes_max_bits * trodes_max_volts / supply_voltage * pot_range
             )
+    return calibration_data
+
+def median_filter_pots(calibration_data, width):
+    """Apply a median filter to the potentiometer series. 
+
+    Parameters
+    ----------
+    calibration_data : dict
+        All of the digital (DIO) and analog data corresponding to the trodes
+        files for the a calibration recording. For example, as returned by
+        read_data().
+    width : int
+        Width (in samples) of window used for median filter.
+
+    Returns
+    -------
+    calibration_data : dict  
+        Calibration data with median-filtered potentiometers
+        
+    """
+    #convert width units to samples
+    if width == 0:
+        pass
+    else:
+        for key in calibration_data['analog'].keys():
+            calibration_data['analog'][key] = sig.medfilt(calibration_data['analog'][key], width)
     return calibration_data
 
 def pots_to_volts(calibration_data):
@@ -221,7 +255,8 @@ def pots_to_bits(calibration_data, supply_voltage = 3.3, controller_max_bits = 1
     trodes_max_volts = 10.0
     for key in calibration_data['analog'].keys():
         calibration_data['analog'][key] = np.round(
-            calibration_data['analog'][key] / trodes_max_bits * trodes_max_volts / supply_voltage * controller_max_bits
+            calibration_data['analog'][key] / trodes_max_bits * trodes_max_volts / 
+            supply_voltage * controller_max_bits
             )
     return calibration_data
 
@@ -261,7 +296,13 @@ def get_valve_transitions(calibration_data):
     }
     return start_times, stop_times
 
-def get_calibration_frame(data_dir, trodes_name, sampling_rate = 3000, pot_units = 'cm'):
+def get_calibration_frame(
+    data_dir, 
+    trodes_name, 
+    sampling_rate = 3000, 
+    medfilter_width = 10, 
+    pot_units = 'cm'
+    ):
     """Generate a data frame for estimating robot calibration parameters.
     State variables include the starting positions and valve open
     durations for each actuator. The response variable is displacement. 
@@ -277,6 +318,9 @@ def get_calibration_frame(data_dir, trodes_name, sampling_rate = 3000, pot_units
     sampling_rate : int
         Specifying a rate (Hz) lower than the SpikeGadgets MCU clock rate of
         30 kHz will downsample the data and speed up the parsing.
+    medfilter_width : int
+        Width, in samples, of the median fitler applied to the potentiometer
+        recordings.
     pot_units : str
         Units to return potentiometer recordings. Can be `cm`, `volts`, or 
         `bits`.
@@ -292,6 +336,7 @@ def get_calibration_frame(data_dir, trodes_name, sampling_rate = 3000, pot_units
     trodes_files = get_trodes_files(data_dir, trodes_name)
     calibration_data = read_data(trodes_files, sampling_rate)
     calibration_data = to_numpy(calibration_data)
+    calibration_data = median_filter_pots(calibration_data, width = medfilter_width)
     calibration_data = to_seconds(calibration_data)
     if pot_units == 'cm':
         calibration_data = pots_to_cm(calibration_data)
@@ -311,7 +356,7 @@ def get_calibration_frame(data_dir, trodes_name, sampling_rate = 3000, pot_units
     #estimate valve period
     valve_period = np.median(np.diff(x_start_times[x_order]))
     #match start times to position indices
-    start_indices = np.searchsorted(calibration_data['time'], x_start_times[x_order])
+    start_indices = np.searchsorted(calibration_data['time']['time'], x_start_times[x_order])
     stop_indices = start_indices + int(valve_period * sampling_rate)
     #make data frame
     data_frame = pd.DataFrame(
@@ -348,7 +393,13 @@ def get_calibration_frame(data_dir, trodes_name, sampling_rate = 3000, pot_units
     )
     return data_frame
 
-def get_traces_frame(data_dir, trodes_name, sampling_rate = 3000, pot_units = 'cm'):
+def get_traces_frame(
+    data_dir, 
+    trodes_name, 
+    sampling_rate = 3000,
+    medfilter_width = 10, 
+    pot_units = 'cm'
+    ):
     """Generate a data frame containing the position trajectories of
     each actuator in response to each of the valve duration commands. 
     Similar to get_calibration_frame(), but returns the entire 
@@ -365,6 +416,9 @@ def get_traces_frame(data_dir, trodes_name, sampling_rate = 3000, pot_units = 'c
         Specifying a rate (Hz) lower than the SpikeGadgets MCU clock rate of
         30 kHz will downsample the data, speed up parsing, and return
         a smaller data frame.
+    medfilter_width : int
+        Width, in samples, of the median fitler applied to the potentiometer
+        recordings.
     pot_units : str
         Units to return potentiometer recordings. Can be `cm`, `volts`, or 
         `bits`.
@@ -381,6 +435,7 @@ def get_traces_frame(data_dir, trodes_name, sampling_rate = 3000, pot_units = 'c
     trodes_files = get_trodes_files(data_dir, trodes_name)
     calibration_data = read_data(trodes_files, sampling_rate)
     calibration_data = to_numpy(calibration_data)
+    calibration_data = median_filter_pots(calibration_data, width = medfilter_width)
     calibration_data = to_seconds(calibration_data)
     if pot_units == 'cm':
         calibration_data = pots_to_cm(calibration_data)
@@ -400,8 +455,8 @@ def get_traces_frame(data_dir, trodes_name, sampling_rate = 3000, pot_units = 'c
     #estimate valve period
     valve_period = np.median(np.diff(x_start_times[x_order]))
     #estimate trace start times  
-    start_indices = np.searchsorted(calibration_data['time'], x_start_times[x_order])
-    trace_start_times = calibration_data['time'][start_indices]
+    start_indices = np.searchsorted(calibration_data['time']['time'], x_start_times[x_order])
+    trace_start_times = calibration_data['time']['time'][start_indices]
     #estimate trace durations
     x_durations = np.concatenate([
         stop_times['x_push'] - start_times['x_push'], 
@@ -420,7 +475,7 @@ def get_traces_frame(data_dir, trodes_name, sampling_rate = 3000, pot_units = 'c
     time_window = np.arange(start_indices[0], start_indices[-1] + int(valve_period * sampling_rate))
     data_frame = pd.DataFrame(
         data = {
-            'trace_time': calibration_data['time'][time_window],
+            'trace_time': calibration_data['time']['time'][time_window],
             'start_time': np.zeros(num_rows), 
             'x_start_position': np.zeros(num_rows),
             'y_start_position': np.zeros(num_rows),

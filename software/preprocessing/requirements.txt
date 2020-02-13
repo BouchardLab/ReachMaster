@@ -1,5 +1,6 @@
 numpy
 pandas
+scipy
 sphinx
 sphinx-gallery
 sphinx_rtd_theme
