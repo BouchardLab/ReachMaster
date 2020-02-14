@@ -8,7 +8,7 @@ from . import readTrodesExtractedDataFile3 as read_trodes
 import numpy as np
 import pandas as pd
 import subprocess as sp 
-import scipy.signal as sig
+from scipy import ndimage
 
 def get_trodes_files(data_dir, trodes_name):
     """Generate names of all the trodes files from a calibration recording.
@@ -190,7 +190,8 @@ def median_filter_pots(calibration_data, width):
         files for the a calibration recording. For example, as returned by
         read_data().
     width : int
-        Width (in samples) of window used for median filter.
+        Width (in samples) of window used for median filter. Should be odd.
+        If not, one is added.
 
     Returns
     -------
@@ -201,9 +202,13 @@ def median_filter_pots(calibration_data, width):
     #convert width units to samples
     if width == 0:
         pass
+    elif (width % 2) != 0:
+        width += 1 
     else:
         for key in calibration_data['analog'].keys():
-            calibration_data['analog'][key] = sig.medfilt(calibration_data['analog'][key], width)
+            calibration_data['analog'][key] = ndimage.median_filter(
+                calibration_data['analog'][key], size = (width)
+                )
     return calibration_data
 
 def pots_to_volts(calibration_data):
@@ -300,7 +305,7 @@ def get_calibration_frame(
     data_dir, 
     trodes_name, 
     sampling_rate = 3000, 
-    medfilter_width = 10, 
+    medfilter_width = 11, 
     pot_units = 'cm'
     ):
     """Generate a data frame for estimating robot calibration parameters.
@@ -365,7 +370,7 @@ def get_calibration_frame(
             'x_position': calibration_data['analog']['x_pot'][start_indices], 
             'x_duration': np.concatenate([
                 stop_times['x_push'] - start_times['x_push'], 
-                start_times['x_pull'] - stop_times['x_pull'] #sign convention
+                start_times['x_pull'] - stop_times['x_pull'] #scipy.ndimagen convention
                 ])[x_order], 
             'x_displacement': (
                 calibration_data['analog']['x_pot'][stop_indices] - 
@@ -374,7 +379,7 @@ def get_calibration_frame(
             'y_position': calibration_data['analog']['y_pot'][start_indices],  
             'y_duration': np.concatenate([
                 stop_times['y_push'] - start_times['y_push'], 
-                start_times['y_pull'] - stop_times['y_pull'] #sign convention
+                start_times['y_pull'] - stop_times['y_pull'] #scipy.ndimagen convention
                 ])[y_order], 
             'y_displacement': (
                 calibration_data['analog']['y_pot'][stop_indices] - 
@@ -383,7 +388,7 @@ def get_calibration_frame(
             'z_position': calibration_data['analog']['z_pot'][start_indices],  
             'z_duration': np.concatenate([
                 stop_times['z_push'] - start_times['z_push'], 
-                start_times['z_pull'] - stop_times['z_pull'] #sign convention
+                start_times['z_pull'] - stop_times['z_pull'] #scipy.ndimagen convention
                 ])[z_order], 
             'z_displacement': (
                 calibration_data['analog']['z_pot'][stop_indices] - 
@@ -397,7 +402,7 @@ def get_traces_frame(
     data_dir, 
     trodes_name, 
     sampling_rate = 3000,
-    medfilter_width = 10, 
+    medfilter_width = 11, 
     pot_units = 'cm'
     ):
     """Generate a data frame containing the position trajectories of
@@ -460,15 +465,15 @@ def get_traces_frame(
     #estimate trace durations
     x_durations = np.concatenate([
         stop_times['x_push'] - start_times['x_push'], 
-        start_times['x_pull'] - stop_times['x_pull'] #sign convention
+        start_times['x_pull'] - stop_times['x_pull'] #scipy.ndimagen convention
         ])[x_order]     
     y_durations = np.concatenate([
         stop_times['y_push'] - start_times['y_push'], 
-        start_times['y_pull'] - stop_times['y_pull'] #sign convention
+        start_times['y_pull'] - stop_times['y_pull'] #scipy.ndimagen convention
         ])[y_order]    
     z_durations = np.concatenate([
         stop_times['z_push'] - start_times['z_push'], 
-        start_times['z_pull'] - stop_times['z_pull'] #sign convention
+        start_times['z_pull'] - stop_times['z_pull'] #scipy.ndimagen convention
         ])[z_order]    
     #initialize data frame
     num_rows = start_indices[-1] + int(valve_period*sampling_rate) - start_indices[0]
