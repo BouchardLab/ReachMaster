@@ -180,7 +180,7 @@ class CameraInterface:
         Arguments to the ffmpeg subprocess for video encoding.
     camera_processes : list
         List of multiprocessing Process objects. One per camera.
-    cam_trigger_pripes : list
+    cam_trigger_pipes : list
         List of two-way multiprocessing Pipe objects. Allows the
         parent process to alert a child camera process that its
         camera has been triggered. Allows the camera process to
