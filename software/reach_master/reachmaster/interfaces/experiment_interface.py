@@ -1,12 +1,13 @@
 """This module provides a set of functions for interfacing
 with the experiment microcontroller. It provides functions
 to recognize and establish serial connections to the 
-controller, read/write settings, exectute common callbacks,
-and read/write custom messages. 
+controller, read/write settings, execute common callbacks
+located in the other modules, and read/write custom messages. 
 
 Todo:
     * Object orient
     * Automate unit tests
+    * Limit custom messages by absorbing communication codes from protocols module
 
 """
 
@@ -124,7 +125,7 @@ def toggle_lights(exp_controller):
 
 def deliver_water(exp_controller):
     """Send a message to experiment controller to open the 
-    reward solenoid for the user-selected duration.
+    solenoid for the user-selected reward duration.
 
     Parameters
     ----------
@@ -136,8 +137,7 @@ def deliver_water(exp_controller):
 
 def flush_water(exp_controller):
     """Send a message to experiment controller to opens the 
-    reward solenoid for the flush user-selected flush 
-    duration.
+    solenoid for the user-selected flush duration.
 
     Parameters
     ----------

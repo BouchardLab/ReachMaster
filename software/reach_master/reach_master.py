@@ -2,12 +2,13 @@
 control and run experiments.
 
 Example:
-    From command line::
+    From terminal::
 
         $ python reach_master.py
 
 Todo:
     * Create executable
+    * Automate unit tests
 
 """
 

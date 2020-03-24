@@ -25,7 +25,6 @@
         <script type="text/javascript" src="_static/jquery.js"></script>
         <script type="text/javascript" src="_static/underscore.js"></script>
         <script type="text/javascript" src="_static/doctools.js"></script>
-        <script type="text/javascript" src="_static/language_data.js"></script>
     
     <script type="text/javascript" src="_static/js/theme.js"></script>
 
@@ -91,6 +90,7 @@
 <li class="toctree-l1"><a class="reference internal" href="overview.html">Overview</a></li>
 <li class="toctree-l1"><a class="reference internal" href="hardware/hardware.html">Hardware</a></li>
 <li class="toctree-l1"><a class="reference internal" href="software/software.html">Software</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tutorials/tutorials.html">Tutorials</a></li>
 </ul>
 
             
@@ -343,18 +343,24 @@
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="software/reach_master/reach_master.html#reachmaster.settings.camera_settings.CameraSettings.gain">gain (reachmaster.settings.camera_settings.CameraSettings attribute)</a>
 </li>
+      <li><a href="software/preprocessing/preprocessing.html#trodes_data.calibration_data_parser.get_calibration_frame">get_calibration_frame() (in module trodes_data.calibration_data_parser)</a>
+</li>
       <li><a href="software/reach_master/reach_master.html#reachmaster.interfaces.camera_interface.get_npimage">get_npimage() (in module reachmaster.interfaces.camera_interface)</a>
 </li>
       <li><a href="software/reach_master/reach_master.html#reachmaster.interfaces.camera_interface.CameraInterface.get_poi_deviation">get_poi_deviation() (reachmaster.interfaces.camera_interface.CameraInterface method)</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="software/reach_master/reach_master.html#reachmaster.interfaces.experiment_interface.get_ports">get_ports() (in module reachmaster.interfaces.experiment_interface)</a>
 
       <ul>
         <li><a href="software/reach_master/reach_master.html#reachmaster.interfaces.robot_interface.get_ports">(in module reachmaster.interfaces.robot_interface)</a>
 </li>
       </ul></li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="software/preprocessing/preprocessing.html#trodes_data.calibration_data_parser.get_trodes_files">get_trodes_files() (in module trodes_data.calibration_data_parser)</a>
+</li>
+      <li><a href="software/preprocessing/preprocessing.html#trodes_data.calibration_data_parser.get_valve_transitions">get_valve_transitions() (in module trodes_data.calibration_data_parser)</a>
+</li>
       <li><a href="software/reach_master/reach_master.html#reachmaster.settings.camera_settings.CameraSettings.gpi_mode">gpi_mode (reachmaster.settings.camera_settings.CameraSettings attribute)</a>
 </li>
       <li><a href="software/reach_master/reach_master.html#reachmaster.settings.camera_settings.CameraSettings.gpo_mode">gpo_mode (reachmaster.settings.camera_settings.CameraSettings attribute)</a>
@@ -463,9 +469,15 @@
 </li>
       <li><a href="software/reach_master/reach_master.html#reachmaster.application.ReachMaster.port_list">port_list (reachmaster.application.ReachMaster attribute)</a>
 </li>
+      <li><a href="software/reach_master/reach_master.html#reachmaster.settings.robot_settings.RobotSettings.pos_smoothing">pos_smoothing (reachmaster.settings.robot_settings.RobotSettings attribute)</a>
+</li>
+      <li><a href="software/preprocessing/preprocessing.html#trodes_data.calibration_data_parser.pots_to_bits">pots_to_bits() (in module trodes_data.calibration_data_parser)</a>
+</li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="software/reach_master/reach_master.html#reachmaster.settings.robot_settings.RobotSettings.pos_smoothing">pos_smoothing (reachmaster.settings.robot_settings.RobotSettings attribute)</a>
+      <li><a href="software/preprocessing/preprocessing.html#trodes_data.calibration_data_parser.pots_to_cm">pots_to_cm() (in module trodes_data.calibration_data_parser)</a>
+</li>
+      <li><a href="software/preprocessing/preprocessing.html#trodes_data.calibration_data_parser.pots_to_volts">pots_to_volts() (in module trodes_data.calibration_data_parser)</a>
 </li>
       <li><a href="software/reach_master/reach_master.html#reachmaster.application.ReachMaster.protocol">protocol (reachmaster.application.ReachMaster attribute)</a>
 </li>
@@ -513,14 +525,18 @@
 </li>
       <li><a href="software/reach_master/reach_master.html#module-reachmaster.settings.robot_settings">reachmaster.settings.robot_settings (module)</a>
 </li>
+      <li><a href="software/preprocessing/preprocessing.html#trodes_data.calibration_data_parser.read_data">read_data() (in module trodes_data.calibration_data_parser)</a>
+</li>
       <li><a href="software/reach_master/reach_master.html#reachmaster.interfaces.experiment_interface.read_response">read_response() (in module reachmaster.interfaces.experiment_interface)</a>
+</li>
+      <li><a href="software/preprocessing/preprocessing.html#trodes_data.readTrodesExtractedDataFile3.readTrodesExtractedDataFile">readTrodesExtractedDataFile() (in module trodes_data.readTrodesExtractedDataFile3)</a>
 </li>
       <li><a href="software/reach_master/reach_master.html#reachmaster.protocols.Protocols.ready">ready (reachmaster.protocols.Protocols attribute)</a>
 </li>
-      <li><a href="software/reach_master/reach_master.html#reachmaster.settings.camera_settings.CameraSettings.record">record (reachmaster.settings.camera_settings.CameraSettings attribute)</a>
-</li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="software/reach_master/reach_master.html#reachmaster.settings.camera_settings.CameraSettings.record">record (reachmaster.settings.camera_settings.CameraSettings attribute)</a>
+</li>
       <li><a href="software/reach_master/reach_master.html#reachmaster.settings.camera_settings.CameraSettings.remove_pois">remove_pois (reachmaster.settings.camera_settings.CameraSettings attribute)</a>
 </li>
       <li><a href="software/reach_master/reach_master.html#reachmaster.settings.camera_settings.CameraSettings.remove_pois_callback">remove_pois_callback() (reachmaster.settings.camera_settings.CameraSettings method)</a>
@@ -625,6 +641,10 @@
 <h2 id="T">T</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="software/preprocessing/preprocessing.html#trodes_data.calibration_data_parser.to_numpy">to_numpy() (in module trodes_data.calibration_data_parser)</a>
+</li>
+      <li><a href="software/preprocessing/preprocessing.html#trodes_data.calibration_data_parser.to_seconds">to_seconds() (in module trodes_data.calibration_data_parser)</a>
+</li>
       <li><a href="software/reach_master/reach_master.html#reachmaster.interfaces.experiment_interface.toggle_led">toggle_led() (in module reachmaster.interfaces.experiment_interface)</a>
 </li>
       <li><a href="software/reach_master/reach_master.html#reachmaster.application.ReachMaster.toggle_led_callback">toggle_led_callback() (reachmaster.application.ReachMaster method)</a>
@@ -656,6 +676,10 @@
       <li><a href="software/reach_master/reach_master.html#reachmaster.settings.camera_settings.CameraSettings.trigger_source">trigger_source (reachmaster.settings.camera_settings.CameraSettings attribute)</a>
 </li>
       <li><a href="software/reach_master/reach_master.html#reachmaster.interfaces.camera_interface.CameraInterface.triggered">triggered() (reachmaster.interfaces.camera_interface.CameraInterface method)</a>
+</li>
+      <li><a href="software/preprocessing/preprocessing.html#module-trodes_data.calibration_data_parser">trodes_data.calibration_data_parser (module)</a>
+</li>
+      <li><a href="software/preprocessing/preprocessing.html#module-trodes_data.readTrodesExtractedDataFile3">trodes_data.readTrodesExtractedDataFile3 (module)</a>
 </li>
   </ul></td>
 </tr></table>

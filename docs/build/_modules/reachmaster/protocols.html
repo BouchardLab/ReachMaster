@@ -24,7 +24,6 @@
         <script type="text/javascript" src="../../_static/jquery.js"></script>
         <script type="text/javascript" src="../../_static/underscore.js"></script>
         <script type="text/javascript" src="../../_static/doctools.js"></script>
-        <script type="text/javascript" src="../../_static/language_data.js"></script>
     
     <script type="text/javascript" src="../../_static/js/theme.js"></script>
 
@@ -90,6 +89,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../../overview.html">Overview</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../hardware/hardware.html">Hardware</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../software/software.html">Software</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../tutorials/tutorials.html">Tutorials</a></li>
 </ul>
 
             
@@ -161,40 +161,38 @@
 
 <span class="sd">Todo:</span>
 <span class="sd">    * Keep adding new protocol types</span>
-<span class="sd">    * GPU-accelerated video encoding</span>
 <span class="sd">    * Automate unit tests</span>
 
 <span class="sd">&quot;&quot;&quot;</span>
 
-<span class="kn">from</span> <span class="nn">.</span> <span class="kn">import</span> <span class="n">config</span>
-<span class="kn">from</span> <span class="nn">.interfaces</span> <span class="kn">import</span> <span class="n">camera_interface</span> <span class="k">as</span> <span class="n">camint</span>
-<span class="kn">from</span> <span class="nn">.interfaces</span> <span class="kn">import</span> <span class="n">robot_interface</span> <span class="k">as</span> <span class="n">robint</span>
-<span class="kn">from</span> <span class="nn">.interfaces</span> <span class="kn">import</span> <span class="n">experiment_interface</span> <span class="k">as</span> <span class="n">expint</span>
+<span class="kn">from</span> <span class="nn">.</span> <span class="k">import</span> <span class="n">config</span>
+<span class="kn">from</span> <span class="nn">.interfaces</span> <span class="k">import</span> <span class="n">camera_interface</span> <span class="k">as</span> <span class="n">camint</span>
+<span class="kn">from</span> <span class="nn">.interfaces</span> <span class="k">import</span> <span class="n">robot_interface</span> <span class="k">as</span> <span class="n">robint</span>
+<span class="kn">from</span> <span class="nn">.interfaces</span> <span class="k">import</span> <span class="n">experiment_interface</span> <span class="k">as</span> <span class="n">expint</span>
 <span class="kn">import</span> <span class="nn">tkinter</span> <span class="k">as</span> <span class="nn">tk</span> 
 <span class="kn">import</span> <span class="nn">tkinter.filedialog</span>
 <span class="kn">import</span> <span class="nn">tkinter.messagebox</span>
-<span class="kn">from</span> <span class="nn">time</span> <span class="kn">import</span> <span class="n">time</span><span class="p">,</span> <span class="n">sleep</span>
+<span class="kn">from</span> <span class="nn">time</span> <span class="k">import</span> <span class="n">time</span><span class="p">,</span> <span class="n">sleep</span>
 <span class="kn">import</span> <span class="nn">datetime</span>
 <span class="kn">import</span> <span class="nn">os</span> 
-<span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">deque</span>
-<span class="kn">from</span> <span class="nn">vidgear.gears</span> <span class="kn">import</span> <span class="n">WriteGear</span>
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
-<span class="kn">import</span> <span class="nn">serial</span>
-<span class="kn">from</span> <span class="nn">ximea</span> <span class="kn">import</span> <span class="n">xiapi</span>
 
 <span class="k">def</span> <span class="nf">list_protocols</span><span class="p">():</span>
     <span class="sd">&quot;&quot;&quot;Generate a list of the available protocol types. Currently </span>
 <span class="sd">    limited to &#39;TRIALS&#39; and &#39;CONTINUOUS&#39;.&quot;&quot;&quot;</span>
-    <span class="n">protocol_list</span> <span class="o">=</span> <span class="nb">list</span><span class="p">([</span><span class="s2">&quot;TRIALS&quot;</span><span class="p">,</span><span class="s2">&quot;CONTINUOUS&quot;</span><span class="p">])</span>
+    <span class="n">protocol_list</span> <span class="o">=</span> <span class="nb">list</span><span class="p">([</span><span class="s1">&#39;TRIALS&#39;</span><span class="p">,</span><span class="s1">&#39;CONTINUOUS&#39;</span><span class="p">])</span>
     <span class="k">return</span> <span class="n">protocol_list</span>
 
 <div class="viewcode-block" id="Protocols"><a class="viewcode-back" href="../../software/reach_master/reach_master.html#reachmaster.protocols.Protocols">[docs]</a><span class="k">class</span> <span class="nc">Protocols</span><span class="p">(</span><span class="n">tk</span><span class="o">.</span><span class="n">Toplevel</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;The primary class for the protocol window.</span>
 
 <span class="sd">    Configures and provides window callback methods. Also provides </span>
-<span class="sd">    special `run` methods that implement each of the protocol types. </span>
-<span class="sd">    Protocol types also has special `on_quit()` methods that are </span>
-<span class="sd">    called prior to application destruction.   </span>
+<span class="sd">    special `run` methods that implement each of the protocol types.</span>
+<span class="sd">    The run methods work in concert with the interface modules and</span>
+<span class="sd">    microntroller scripts to implement the event logic required by</span>
+<span class="sd">    a specific experiment. If an experiment requires a new protocol</span>
+<span class="sd">    type that is not currently available, implementing a new run </span>
+<span class="sd">    method will often be a good place to start.      </span>
 
 <span class="sd">    Attributes</span>
 <span class="sd">    ----------</span>
@@ -227,7 +225,7 @@
 
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parent</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parent</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">ready</span> <span class="o">=</span> <span class="kc">False</span>
         <span class="c1">#create window</span>
         <span class="n">tk</span><span class="o">.</span><span class="n">Toplevel</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parent</span><span class="p">)</span>

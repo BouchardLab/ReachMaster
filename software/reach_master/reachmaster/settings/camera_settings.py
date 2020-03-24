@@ -1,12 +1,15 @@
 """The camera settings window is opened as a child of the 
-ReachMaster root application. It provides functionality for 
-specifying the number of cameras, setting their intrinsic 
-parameters (e.g., exposure, gain, triggers, etc.), and data 
-output parameters (e.g., cropping, pixel resolution, etc.). It 
-provides functions to capture images and record videos which can
-be useful for post-hoc camera calibration. It also provides 
-functions for adding, removing and saving pixels-of-interest 
-which are used by the experiment protocols for reach detection.
+ReachMaster root application. It is designed, mainly to 
+specify settings required by Ximea USB3.0 cameras via the 
+camera interface module and the Ximea API. It provides 
+functionality for specifying the number of cameras, setting 
+their intrinsic parameters (e.g., exposure, gain, triggers, 
+etc.), and data output parameters (e.g., cropping, pixel 
+resolution, etc.). It provides functions to capture images 
+and record videos which can be used by post-hoc camera 
+calibration rotuines. It also provides functions for adding, 
+removing and saving pixels-of-interest which are used by 
+the experiment protocols for reach detection.
 
 Todo:
     * Automate unit tests
@@ -20,11 +23,9 @@ import tkinter as tk
 import tkinter.messagebox
 import cv2
 import PIL.Image, PIL.ImageTk
-from ximea import xiapi
 import time
 import datetime
 import numpy as np
-import serial
 import os 
 from collections import deque
 import subprocess as sp
@@ -42,7 +43,8 @@ class CameraSettings(tk.Toplevel):
     config : dict
         The current configuration settings for the application
     exp_controller : instance
-        Serial interface to the experiment microcontroller
+        Serial interface to the experiment microcontroller which
+        is used to trigger the cameras
     exp_connected : bool 
         True if the experiment interface is active
     num_cams : instance

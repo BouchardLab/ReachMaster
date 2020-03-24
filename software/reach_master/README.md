@@ -1,2 +1,3 @@
-# ReachMaster
-A pneumatically-actuated robotic system for complex rodent reaching tasks
+# ReachMaster graphical user interface
+Used to run experiments, collect data, and perform other common tasks with the ReachMaster robotic system
+

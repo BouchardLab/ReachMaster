@@ -1,0 +1,342 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>reachmaster.interfaces.camera_interface &mdash; ReachMaster alpha documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+        <script src="../../../_static/language_data.js"></script>
+    
+    <script type="text/javascript" src="../../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../../index.html" class="icon icon-home"> ReachMaster
+          
+
+          
+            
+            <img src="../../../_static/splinter.png" class="logo" alt="Logo"/>
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.0.0
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../overview.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../hardware/hardware.html">Hardware</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../software/software.html">Software</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">ReachMaster</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../../index.html">Module code</a> &raquo;</li>
+        
+      <li>reachmaster.interfaces.camera_interface</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for reachmaster.interfaces.camera_interface</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;This module provides a set of functions for interfacing</span>
+<span class="sd">with multiple Ximea machine vision USB3.0 cameras via the</span>
+<span class="sd">Ximea API. It provides functions start/stop the cameras </span>
+<span class="sd">using the user-selected settings, and to get images from</span>
+<span class="sd">the cameras. </span>
+
+<span class="sd">Todo:</span>
+<span class="sd">    * Object orient</span>
+<span class="sd">    * GPU-accelerated video encoding</span>
+<span class="sd">    * Automate unit tests</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">from</span> <span class="nn">ximea</span> <span class="kn">import</span> <span class="n">xiapi</span>
+
+<span class="c1">#private functions -----------------------------------------------------------------</span>
+
+<span class="k">def</span> <span class="nf">_open_cameras</span><span class="p">(</span><span class="n">config</span><span class="p">):</span>              
+    <span class="n">cams</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;CameraSettings&#39;</span><span class="p">][</span><span class="s1">&#39;num_cams&#39;</span><span class="p">]):</span>
+        <span class="nb">print</span><span class="p">((</span><span class="s1">&#39;loading camera </span><span class="si">%s</span><span class="s1"> ...&#39;</span> <span class="o">%</span><span class="p">(</span><span class="n">i</span><span class="p">)))</span>
+        <span class="n">cams</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">xiapi</span><span class="o">.</span><span class="n">Camera</span><span class="p">(</span><span class="n">dev_id</span> <span class="o">=</span> <span class="n">i</span><span class="p">))</span>
+        <span class="n">cams</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">open_device</span><span class="p">()</span>     
+    <span class="k">return</span> <span class="n">cams</span>
+
+<span class="k">def</span> <span class="nf">_set_cameras</span><span class="p">(</span><span class="n">cams</span><span class="p">,</span> <span class="n">config</span><span class="p">):</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;CameraSettings&#39;</span><span class="p">][</span><span class="s1">&#39;num_cams&#39;</span><span class="p">]):</span>
+        <span class="nb">print</span><span class="p">((</span><span class="s1">&#39;Setting camera </span><span class="si">%d</span><span class="s1"> ...&#39;</span> <span class="o">%</span><span class="n">i</span><span class="p">))</span>
+        <span class="n">cams</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">set_imgdataformat</span><span class="p">(</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;CameraSettings&#39;</span><span class="p">][</span><span class="s1">&#39;imgdataformat&#39;</span><span class="p">])</span>
+        <span class="n">cams</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">set_exposure</span><span class="p">(</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;CameraSettings&#39;</span><span class="p">][</span><span class="s1">&#39;exposure&#39;</span><span class="p">])</span>
+        <span class="n">cams</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">set_gain</span><span class="p">(</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;CameraSettings&#39;</span><span class="p">][</span><span class="s1">&#39;gain&#39;</span><span class="p">])</span>
+        <span class="n">cams</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">set_sensor_feature_value</span><span class="p">(</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;CameraSettings&#39;</span><span class="p">][</span><span class="s1">&#39;sensor_feature_value&#39;</span><span class="p">])</span>
+        <span class="n">cams</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">set_gpi_selector</span><span class="p">(</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;CameraSettings&#39;</span><span class="p">][</span><span class="s1">&#39;gpi_selector&#39;</span><span class="p">])</span>
+        <span class="n">cams</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">set_gpi_mode</span><span class="p">(</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;CameraSettings&#39;</span><span class="p">][</span><span class="s1">&#39;gpi_mode&#39;</span><span class="p">])</span>
+        <span class="n">cams</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">set_trigger_source</span><span class="p">(</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;CameraSettings&#39;</span><span class="p">][</span><span class="s1">&#39;trigger_source&#39;</span><span class="p">])</span>
+        <span class="n">cams</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">set_gpo_selector</span><span class="p">(</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;CameraSettings&#39;</span><span class="p">][</span><span class="s1">&#39;gpo_selector&#39;</span><span class="p">])</span>
+        <span class="n">cams</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">set_gpo_mode</span><span class="p">(</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;CameraSettings&#39;</span><span class="p">][</span><span class="s1">&#39;gpo_mode&#39;</span><span class="p">])</span>        
+        <span class="k">if</span> <span class="n">config</span><span class="p">[</span><span class="s1">&#39;CameraSettings&#39;</span><span class="p">][</span><span class="s1">&#39;downsampling&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;XI_DWN_2x2&quot;</span><span class="p">:</span>
+            <span class="n">cams</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">set_downsampling</span><span class="p">(</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;CameraSettings&#39;</span><span class="p">][</span><span class="s1">&#39;downsampling&#39;</span><span class="p">])</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">widthIncrement</span> <span class="o">=</span> <span class="n">cams</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">get_width_increment</span><span class="p">()</span>
+            <span class="n">heightIncrement</span> <span class="o">=</span> <span class="n">cams</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">get_height_increment</span><span class="p">()</span>
+            <span class="k">if</span> <span class="p">(</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;CameraSettings&#39;</span><span class="p">][</span><span class="s1">&#39;img_width&#39;</span><span class="p">]</span><span class="o">%</span><span class="n">widthIncrement</span><span class="p">)</span><span class="o">!=</span><span class="mi">0</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s2">&quot;Image width not divisible by &quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">widthIncrement</span><span class="p">))</span>
+                <span class="k">return</span>
+            <span class="k">elif</span> <span class="p">(</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;CameraSettings&#39;</span><span class="p">][</span><span class="s1">&#39;img_height&#39;</span><span class="p">]</span><span class="o">%</span><span class="n">heightIncrement</span><span class="p">)</span><span class="o">!=</span><span class="mi">0</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s2">&quot;Image height not divisible by &quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">heightIncrement</span><span class="p">))</span>
+                <span class="k">return</span>
+            <span class="k">elif</span> <span class="p">(</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;CameraSettings&#39;</span><span class="p">][</span><span class="s1">&#39;img_width&#39;</span><span class="p">]</span><span class="o">+</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;CameraSettings&#39;</span><span class="p">][</span><span class="s1">&#39;offset_x&#39;</span><span class="p">])</span><span class="o">&gt;</span><span class="mi">1280</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s2">&quot;Image width + x offset &gt; 1280&quot;</span><span class="p">)</span> 
+                <span class="k">return</span>
+            <span class="k">elif</span> <span class="p">(</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;CameraSettings&#39;</span><span class="p">][</span><span class="s1">&#39;img_height&#39;</span><span class="p">]</span><span class="o">+</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;CameraSettings&#39;</span><span class="p">][</span><span class="s1">&#39;offset_y&#39;</span><span class="p">])</span><span class="o">&gt;</span><span class="mi">1024</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s2">&quot;Image height + y offset &gt; 1024&quot;</span><span class="p">)</span> 
+                <span class="k">return</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">cams</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">set_height</span><span class="p">(</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;CameraSettings&#39;</span><span class="p">][</span><span class="s1">&#39;img_height&#39;</span><span class="p">])</span>
+                <span class="n">cams</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">set_width</span><span class="p">(</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;CameraSettings&#39;</span><span class="p">][</span><span class="s1">&#39;img_width&#39;</span><span class="p">])</span>
+                <span class="n">cams</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">set_offsetX</span><span class="p">(</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;CameraSettings&#39;</span><span class="p">][</span><span class="s1">&#39;offset_x&#39;</span><span class="p">])</span>
+                <span class="n">cams</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">set_offsetY</span><span class="p">(</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;CameraSettings&#39;</span><span class="p">][</span><span class="s1">&#39;offset_y&#39;</span><span class="p">])</span>
+        <span class="n">cams</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">enable_recent_frame</span><span class="p">()</span>
+
+<span class="k">def</span> <span class="nf">_start_cameras</span><span class="p">(</span><span class="n">cams</span><span class="p">):</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">cams</span><span class="p">)):</span>
+        <span class="nb">print</span><span class="p">((</span><span class="s1">&#39;Starting camera </span><span class="si">%d</span><span class="s1"> ...&#39;</span> <span class="o">%</span><span class="n">i</span><span class="p">))</span>
+        <span class="n">cams</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">start_acquisition</span><span class="p">()</span>
+
+<span class="c1">#public functions -----------------------------------------------------------------</span>
+
+<div class="viewcode-block" id="stop_interface"><a class="viewcode-back" href="../../../software/reach_master/reach_master.html#reachmaster.interfaces.camera_interface.stop_interface">[docs]</a><span class="k">def</span> <span class="nf">stop_interface</span><span class="p">(</span><span class="n">cams</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Stop image acquisition and close all cameras.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    cams : list</span>
+<span class="sd">        A list of ximea api Camera objects.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">cams</span><span class="p">)):</span>
+        <span class="nb">print</span><span class="p">((</span><span class="s1">&#39;stopping camera </span><span class="si">%d</span><span class="s1"> ...&#39;</span> <span class="o">%</span><span class="n">i</span><span class="p">))</span>
+        <span class="n">cams</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">stop_acquisition</span><span class="p">()</span>
+        <span class="n">cams</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">close_device</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="start_interface"><a class="viewcode-back" href="../../../software/reach_master/reach_master.html#reachmaster.interfaces.camera_interface.start_interface">[docs]</a><span class="k">def</span> <span class="nf">start_interface</span><span class="p">(</span><span class="n">config</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Open all cameras, loads user-selected settings, and</span>
+<span class="sd">    starts image acquisition.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    config : dict</span>
+<span class="sd">        The currently loaded configuration file.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    cams : list</span>
+<span class="sd">        A list of ximea api Camera objects.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">cams</span> <span class="o">=</span> <span class="n">_open_cameras</span><span class="p">(</span><span class="n">config</span><span class="p">)</span>
+    <span class="n">_set_cameras</span><span class="p">(</span><span class="n">cams</span><span class="p">,</span> <span class="n">config</span><span class="p">)</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">_start_cameras</span><span class="p">(</span><span class="n">cams</span><span class="p">)</span>     
+    <span class="k">except</span> <span class="n">xiapi</span><span class="o">.</span><span class="n">Xi_error</span> <span class="k">as</span> <span class="n">err</span><span class="p">:</span>
+        <span class="n">expActive</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="n">stop_interface</span><span class="p">(</span><span class="n">cams</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">err</span><span class="o">.</span><span class="n">status</span> <span class="o">==</span> <span class="mi">10</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s2">&quot;No image triggers detected.&quot;</span><span class="p">)</span>
+            <span class="k">return</span>
+        <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="n">err</span><span class="p">)</span>   
+    <span class="k">return</span> <span class="n">cams</span></div>
+
+<div class="viewcode-block" id="init_image"><a class="viewcode-back" href="../../../software/reach_master/reach_master.html#reachmaster.interfaces.camera_interface.init_image">[docs]</a><span class="k">def</span> <span class="nf">init_image</span><span class="p">():</span>
+    <span class="sd">&quot;&quot;&quot;Initialize a ximea container object to store images.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    img : ximea.xiapi.Image</span>
+<span class="sd">        A ximea api Image container object</span>
+
+<span class="sd">    &quot;&quot;&quot;</span> 
+    <span class="n">img</span> <span class="o">=</span> <span class="n">xiapi</span><span class="o">.</span><span class="n">Image</span><span class="p">()</span>
+    <span class="k">return</span> <span class="n">img</span></div>
+
+<div class="viewcode-block" id="get_npimage"><a class="viewcode-back" href="../../../software/reach_master/reach_master.html#reachmaster.interfaces.camera_interface.get_npimage">[docs]</a><span class="k">def</span> <span class="nf">get_npimage</span><span class="p">(</span><span class="n">cam</span><span class="p">,</span> <span class="n">img</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Get the most recent image from a camera as a numpy </span>
+<span class="sd">    array.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    cam : ximea.xiapi.Camera</span>
+<span class="sd">        A ximea api Camera object.</span>
+<span class="sd">    img : ximea.xiapi.Image</span>
+<span class="sd">        A ximea api Image container object</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    npimg : numpy.ndarray</span>
+<span class="sd">        The most recently acquired image from the camera </span>
+<span class="sd">        as a numpy array.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">cam</span><span class="o">.</span><span class="n">get_image</span><span class="p">(</span><span class="n">img</span><span class="p">,</span> <span class="n">timeout</span> <span class="o">=</span> <span class="mi">2000</span><span class="p">)</span>                  
+    <span class="n">npimg</span> <span class="o">=</span> <span class="n">img</span><span class="o">.</span><span class="n">get_image_data_numpy</span><span class="p">()</span>
+    <span class="k">return</span> <span class="n">npimg</span></div>
+
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright The Regents of the University of California, through Lawrence Berkeley National Laboratory
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

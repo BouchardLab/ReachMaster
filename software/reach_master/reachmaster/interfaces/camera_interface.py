@@ -2,12 +2,13 @@
 with Ximea machine vision USB3.0 cameras via the
 Ximea API. It also provides a high performance video 
 encoding and online feature detection class for use by 
-protocols. 
+protocols that require high frame rates. 
 
 Todo:
-    * Automate unit tests
+    * Automated unit tests
     * Fix camera connection bug
     * Integrate ffmpeg settings into configuration file
+    * Create a Video Settings module?
 
 """
 
@@ -168,7 +169,7 @@ class CameraInterface:
 
     Creates a multiprocess object that performs gpu-accelerated
     video encoding and feature (i.e., reach) detection on 
-    separate processes. Interprocess communincation and 
+    separate processes. Interprocess communication and 
     synchronization is achieved using pipe messages.   
 
     Attributes
@@ -179,7 +180,7 @@ class CameraInterface:
         Arguments to the ffmpeg subprocess for video encoding.
     camera_processes : list
         List of multiprocessing Process objects. One per camera.
-    cam_trigger_pripes : list
+    cam_trigger_pipes : list
         List of two-way multiprocessing Pipe objects. Allows the
         parent process to alert a child camera process that its
         camera has been triggered. Allows the camera process to
@@ -258,7 +259,7 @@ class CameraInterface:
 
     def stop_interface(self):
         """Tells the camera processes to shut themselves down, waits
-        for them to exit, then cleans up the pipe system.
+        for them to exit, then cleans all the pipes.
         """
         self.cams_started.value = False
         for proc in self.camera_processes:

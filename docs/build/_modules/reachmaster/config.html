@@ -24,7 +24,6 @@
         <script type="text/javascript" src="../../_static/jquery.js"></script>
         <script type="text/javascript" src="../../_static/underscore.js"></script>
         <script type="text/javascript" src="../../_static/doctools.js"></script>
-        <script type="text/javascript" src="../../_static/language_data.js"></script>
     
     <script type="text/javascript" src="../../_static/js/theme.js"></script>
 
@@ -90,6 +89,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../../overview.html">Overview</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../hardware/hardware.html">Hardware</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../software/software.html">Software</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../tutorials/tutorials.html">Tutorials</a></li>
 </ul>
 
             
@@ -279,8 +279,9 @@
 <div class="viewcode-block" id="load_config"><a class="viewcode-back" href="../../software/reach_master/reach_master.html#reachmaster.config.load_config">[docs]</a><span class="k">def</span> <span class="nf">load_config</span><span class="p">(</span><span class="n">file_handle</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Load a configuration file.</span>
 
-<span class="sd">    File typically selected by user from the configuration</span>
-<span class="sd">    browser in the root ReachMaster application window.</span>
+<span class="sd">    Typically loads a file selected by user from the </span>
+<span class="sd">    configuration browser in the root ReachMaster </span>
+<span class="sd">    application window.</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
@@ -321,15 +322,16 @@
 <div class="viewcode-block" id="save_tmp"><a class="viewcode-back" href="../../software/reach_master/reach_master.html#reachmaster.config.save_tmp">[docs]</a><span class="k">def</span> <span class="nf">save_tmp</span><span class="p">(</span><span class="n">config</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Save the configuration to a temp file.</span>
 
-<span class="sd">    The global state of ReachMaster is tracked with a temp</span>
+<span class="sd">    The global state of ReachMaster is tracked using a temp</span>
 <span class="sd">    file. Whenever a child window of the main application is</span>
 <span class="sd">    created or destroyed, the temp file is updated to reflect</span>
 <span class="sd">    whatever changes in settings may have occurred. If the </span>
 <span class="sd">    user forgets to save the configuration file at the end of</span>
-<span class="sd">    a session, the temp file can be used as a backup. It is </span>
+<span class="sd">    a session, this temp file can be used for recovery. It is </span>
 <span class="sd">    saved to the temp folder in the ReachMaster root directory.</span>
-<span class="sd">    **Warning: temp file is reset to defaults as a new session </span>
-<span class="sd">    is started!**</span>
+<span class="sd">    **Warning: the temp file is reset to the default </span>
+<span class="sd">    configuration whenever a new instance of ReachMaster is </span>
+<span class="sd">    started!**</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>

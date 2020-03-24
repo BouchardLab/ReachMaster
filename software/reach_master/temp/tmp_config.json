@@ -25,7 +25,7 @@
         "offset_y": 168,
         "downsampling": "XI_DWN_1x1",
         "saved_pois": [],
-        "poi_threshold": 15.0
+        "poi_threshold": 15
     },
     "ExperimentSettings": {
         "baseline_dur": 5.0,

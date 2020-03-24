@@ -6,7 +6,6 @@ delivery, toggling lights, etc.).
 
 Todo:
     * Keep adding new protocol types
-    * GPU-accelerated video encoding
     * Automate unit tests
 
 """
@@ -21,25 +20,24 @@ import tkinter.messagebox
 from time import time, sleep
 import datetime
 import os 
-from collections import deque
-from vidgear.gears import WriteGear
 import numpy as np
-import serial
-from ximea import xiapi
 
 def list_protocols():
     """Generate a list of the available protocol types. Currently 
     limited to 'TRIALS' and 'CONTINUOUS'."""
-    protocol_list = list(["TRIALS","CONTINUOUS"])
+    protocol_list = list(['TRIALS','CONTINUOUS'])
     return protocol_list
 
 class Protocols(tk.Toplevel):
     """The primary class for the protocol window.
 
     Configures and provides window callback methods. Also provides 
-    special `run` methods that implement each of the protocol types. 
-    Protocol types also has special `on_quit()` methods that are 
-    called prior to application destruction.   
+    special `run` methods that implement each of the protocol types.
+    The run methods work in concert with the interface modules and
+    microntroller scripts to implement the event logic required by
+    a specific experiment. If an experiment requires a new protocol
+    type that is not currently available, implementing a new run 
+    method will often be a good place to start.      
 
     Attributes
     ----------

@@ -24,7 +24,6 @@
         <script type="text/javascript" src="../../../_static/jquery.js"></script>
         <script type="text/javascript" src="../../../_static/underscore.js"></script>
         <script type="text/javascript" src="../../../_static/doctools.js"></script>
-        <script type="text/javascript" src="../../../_static/language_data.js"></script>
     
     <script type="text/javascript" src="../../../_static/js/theme.js"></script>
 
@@ -90,6 +89,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../overview.html">Overview</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../hardware/hardware.html">Hardware</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../software/software.html">Software</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../tutorials/tutorials.html">Tutorials</a></li>
 </ul>
 
             
@@ -155,12 +155,12 @@
   <h1>Source code for reachmaster.settings.robot_settings</h1><div class="highlight"><pre>
 <span></span><span class="sd">&quot;&quot;&quot;The robot settings window is opened as a child of the </span>
 <span class="sd">ReachMaster root application. It allows the user to set any</span>
-<span class="sd">parameters located on the robot microcontroller (e.g., </span>
+<span class="sd">parameters required by the robot microcontroller (e.g., </span>
 <span class="sd">position smoothing, valve periods etc.), or having to do </span>
 <span class="sd">with the robot kinematics. It provides options for the user </span>
 <span class="sd">to select previously generated calibration and position</span>
 <span class="sd">command files. Soon it will allow users to run a robot </span>
-<span class="sd">calibration from within the ReachMaster application.</span>
+<span class="sd">calibration routine from within the ReachMaster application.</span>
 
 <span class="sd">Todo:</span>
 <span class="sd">    * Add labels to specify the microcontroller/kinematics parameters</span>
@@ -170,7 +170,7 @@
 
 <span class="sd">&quot;&quot;&quot;</span>
 
-<span class="kn">from</span> <span class="nn">..</span> <span class="kn">import</span> <span class="n">config</span>
+<span class="kn">from</span> <span class="nn">..</span> <span class="k">import</span> <span class="n">config</span>
 <span class="kn">import</span> <span class="nn">tkinter</span> <span class="k">as</span> <span class="nn">tk</span> 
 <span class="kn">import</span> <span class="nn">tkinter.filedialog</span>
 <span class="kn">import</span> <span class="nn">tkinter.messagebox</span>
@@ -181,8 +181,10 @@
     <span class="sd">&quot;&quot;&quot;The primary class for the robot settings window.</span>
 
 <span class="sd">    Configures and provides window callback methods. Also provides </span>
-<span class="sd">    methods to . The </span>
-<span class="sd">    `on_quit()` method is called prior to application destruction.   </span>
+<span class="sd">    methods to select robot calibration files, position command</span>
+<span class="sd">    files, as well as methods used to sample positions from the </span>
+<span class="sd">    command file. The `on_quit()` method is called prior to </span>
+<span class="sd">    application destruction.   </span>
 
 <span class="sd">    Attributes</span>
 <span class="sd">    ----------</span>
@@ -235,13 +237,14 @@
 <span class="sd">    command_type : instance</span>
 <span class="sd">        Tkinter StringVar that captures the user-selected option </span>
 <span class="sd">        determining how commands are generated. Can be </span>
-<span class="sd">        &#39;read_from_file&#39;, &#39;sample_from_file&#39;, or &#39;parametric_sample&#39;.</span>
-<span class="sd">        &#39;read_from_file&#39; takes the commands directly from the command</span>
-<span class="sd">        file. &#39;sample_from_file&#39; generates a sequence of commands by</span>
-<span class="sd">        sampling from the command file with replacement. </span>
-<span class="sd">        &#39;parametric_sample&#39; does not use the command file. Rather, it</span>
-<span class="sd">        samples commands uniformly from the `reach volume` determined</span>
-<span class="sd">        by user-selected inverse kinematics parameters. </span>
+<span class="sd">        read_from_file, sample_from_file, or parametric_sample. The</span>
+<span class="sd">        read_from_file option takes the commands directly from the </span>
+<span class="sd">        command file. The sample_from_file option generates a </span>
+<span class="sd">        sequence of commands by sampling from the command file with </span>
+<span class="sd">        replacement. The parametric_sample option does not use the </span>
+<span class="sd">        command file. Rather, it samples commands uniformly from </span>
+<span class="sd">        the reach volume determined by user-selected inverse </span>
+<span class="sd">        kinematics parameters. </span>
 <span class="sd">    (y/z)gimbal_to_joint : instance</span>
 <span class="sd">        Tkinter StringVar that captures the user-measured </span>
 <span class="sd">        center-to-center distance (mm) from an y/z gimbal to its</span>
@@ -262,7 +265,7 @@
 
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parent</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parent</span><span class="p">):</span>
         <span class="c1">#create window</span>
         <span class="n">tk</span><span class="o">.</span><span class="n">Toplevel</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parent</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">transient</span><span class="p">(</span><span class="n">parent</span><span class="p">)</span> 
@@ -678,8 +681,8 @@
 
 <div class="viewcode-block" id="RobotSettings.run_calibration_callback"><a class="viewcode-back" href="../../../software/reach_master/reach_master.html#reachmaster.settings.robot_settings.RobotSettings.run_calibration_callback">[docs]</a>    <span class="k">def</span> <span class="nf">run_calibration_callback</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Not yet implented. Should load the robot calibration script to</span>
-<span class="sd">        the robot microcontroller along with any relevant arguments, and </span>
-<span class="sd">        run the calibration.&quot;&quot;&quot;</span>
+<span class="sd">        the robot microcontroller along with any relevant arguments, </span>
+<span class="sd">        run all calibration routines, and produce a calibration file.&quot;&quot;&quot;</span>
         <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;not implemented&#39;</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="RobotSettings.calibration_browse_callback"><a class="viewcode-back" href="../../../software/reach_master/reach_master.html#reachmaster.settings.robot_settings.RobotSettings.calibration_browse_callback">[docs]</a>    <span class="k">def</span> <span class="nf">calibration_browse_callback</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>

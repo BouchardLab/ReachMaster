@@ -1,0 +1,5 @@
+3DX_Ruland_Supplier: Ruland
+3DX_Ruland_Manufacturer: Ruland
+3DX_Ruland_Part Number: OF-MCL-16-A
+3DX_Ruland_Description: Shaft Collar, OD Flats and Holes, One-Piece, Bore 16mm, OD 34mm, W 13mm, Screw M5x16, 2024 Aluminum, COO USA
+3DX_Ruland_Note: 

@@ -1,0 +1,5 @@
+3DX_Ruland_Supplier: Ruland
+3DX_Ruland_Manufacturer: Ruland
+3DX_Ruland_Part Number: OH-MCL-12-A
+3DX_Ruland_Description: Shaft Collar, OD Holes, One-Piece, Bore 12mm, OD 28mm, W 11mm, Screw M4x12, 2024 Aluminum, COO USA
+3DX_Ruland_Note: 

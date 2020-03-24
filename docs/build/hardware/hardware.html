@@ -24,7 +24,6 @@
         <script type="text/javascript" src="../_static/jquery.js"></script>
         <script type="text/javascript" src="../_static/underscore.js"></script>
         <script type="text/javascript" src="../_static/doctools.js"></script>
-        <script type="text/javascript" src="../_static/language_data.js"></script>
     
     <script type="text/javascript" src="../_static/js/theme.js"></script>
 
@@ -93,29 +92,28 @@
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Hardware</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#enclosure">Enclosure</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#robot">Robot</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#kinematics">Kinematics</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#air-delivery">Air Delivery</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#actuation">Actuation</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#position-sensing">Position Sensing</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#d-printed-parts">3D Printed Parts</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#gimbal">Gimbal</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#handles">Handles</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#mounting">Mounting</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#pressure-sensing">Pressure Sensing</a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="#cameras">Cameras</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="#id1">Mounting</a></li>
-</ul>
-</li>
-<li class="toctree-l2"><a class="reference internal" href="#lighting">Lighting</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="#id2">3D Printed Parts</a></li>
-</ul>
-</li>
+<li class="toctree-l2"><a class="reference internal" href="#cameras">Cameras</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#lighting">Lighting</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#reward-delivery">Reward Delivery</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#lick-detection">Lick Detection</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#controllers">Controllers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#data-acquisition">Data Acquisition</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#computers">Computers</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#build-instructions">Build Instructions</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="../software/software.html">Software</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/tutorials.html">Tutorials</a></li>
 </ul>
 
             
@@ -185,71 +183,97 @@
 <p>Here you will find a detailed list of parts, build instructions, and discussion of alternative design choices.</p>
 <div class="section" id="enclosure">
 <h2>Enclosure<a class="headerlink" href="#enclosure" title="Permalink to this headline">¶</a></h2>
-<img alt="../_images/rat_enclosure_new.png" src="../_images/rat_enclosure_new.png" />
-<dl class="docutils">
-<dt><strong>Freely Moving</strong></dt>
-<dd>picture</dd>
-<dt><strong>Confined</strong></dt>
-<dd>picture</dd>
-</dl>
+<a class="reference internal image-reference" href="../_images/enclosure.png"><img alt="../_images/enclosure.png" class="align-center" src="../_images/enclosure.png" style="width: 800px;" /></a>
+<p>The enclosure houses the experiments and is made up of two compartments. The leftmost is a behavioral compartment which houses the animals. The rightmost is a hardware compartment which houses the robot and other peripheral devices (i.e., lights, solenoid, etc.). The CAD assembly for the enclosure is on <a class="reference external" href="https://github.com/BouchardLab/ReachMaster/blob/master/hardware/designs/rat_enclosure.iam">our github</a> .</p>
+<p>The entire assembly is constructed from extruded aluminum (i.e., 80/20) and fastened using mostly anchor fasteners. This offers a high degree of modularity and adjustability. For example, the relative positioning of the animal and robot can be easily adjusted, and there are many options for connecting or removing peripheral hardware. 80/20 is pretty straightforward to work with; however, it is highly recommended to go over the company’s many tips and tutorials:</p>
+<p><a class="reference external" href="https://8020.net/product-basics">https://8020.net/product-basics</a></p>
+<p>The behavioral compartment is relatively large at 26”x26”x52” (lwh). These dimensions were chosen with a range of <cite>in vivo</cite> neurophysiology experiments in mind. For example, the base dimensions are suitable for free-foraging hippocampal place cell or entorhinal grid cell experiments. The height was chosen so that a recording tether could reach all corners of the compartment without causing too much strain on the animal’s head.</p>
+<p>Currently, the enclosure has two primary configurations: one for freely behaving animals, and a second for restrained animals. The configuration shown in the image above corresponds to the restrained condition. In that case, the body and/or head retraining device is merely placed inside the behavioral compartment, and the animal is given unimpeded access to the robot. In the free-moving condition, a plexiglass wall is inserted between the behavioral and hardware compartments. The animals is then allowed to freely explore the behavioral compartment and must reach through a slot in the plexiglass in order to interact with the robot.</p>
 </div>
 <div class="section" id="robot">
 <h2>Robot<a class="headerlink" href="#robot" title="Permalink to this headline">¶</a></h2>
-<p>picture of robot</p>
+<a class="reference internal image-reference" href="../_images/robot.png"><img alt="../_images/robot.png" class="align-center" src="../_images/robot.png" style="width: 800px;" /></a>
+<p>The ReachMaster robot is a pneumatically-actuated, passively balanced, parallel robot with two rotational and one translational degrees of freedom (dof). The two rotational dof’s are controlled by two low-friction double-acting cylinders (<a class="reference internal" href="#actuation"><span class="std std-ref">Actuation</span></a>) each connected to the base (<a class="reference internal" href="#mounting"><span class="std std-ref">Mounting</span></a>) in parallel by a 2-dof gimbal (<a class="reference internal" href="#gimbal"><span class="std std-ref">Gimbal</span></a>). These two actuators are joined in series, by spherical joints, to a third cylinder which controls the translational dof. The translational actuator is also connected to the base by a 2-dof gimabal, and to the robot’s handle (<a class="reference internal" href="#handles"><span class="std std-ref">Handles</span></a>) and reward delivery unit (<a class="reference internal" href="#reward-delivery"><span class="std std-ref">Reward Delivery</span></a>). The reward delivery unit consists of a solenoid-driven liquid delivery spout, an IR beam-based lick detector (<a class="reference internal" href="#lick-detection"><span class="std std-ref">Lick Detection</span></a>), and an option LED to provide visual cues. Lastly, fast high resolution position sensing is achieved by low-friction linear potentiometers (<a class="reference internal" href="#position-sensing"><span class="std std-ref">Position Sensing</span></a>) attached to each of the cylinder rods. All data from the potentiometers, solenoid, LED, and IR sensors is recorded by a SpikeGadgets acquisition system (<a class="reference internal" href="#data-acquisition"><span class="std std-ref">Data Acquisition</span></a>).</p>
+<p>The robot workspace (shown in red) can be empirically estimated by acquiring potentiometer data from the robot as it explores its full range of motion, passing the trajectory through an analytically-derived forward kinematics transformation (<a class="reference internal" href="#kinematics"><span class="std std-ref">Kinematics</span></a>), and then fitting a surface to the extrema of the resulting scatter plot (see link_to_code). Similary, command positions can be derived by sampling points from a relevant subspace of the robot workspace (e.g., the rodent workspace shown in blue), and then passing those points through an analytically-derived inverse kinematics transformation that returns the corresponding potentiometer values.</p>
+<div class="section" id="kinematics">
+<h3>Kinematics<a class="headerlink" href="#kinematics" title="Permalink to this headline">¶</a></h3>
+<p>&lt;figure&gt;</p>
+<p>Make new figure with all relevant kinematic variables labeled. Provide mathematical derivation of forward and inverse kinematics. Link to relevant sections of user interface and data preprocessing codes.</p>
+<p>&lt;link_to_forward_kinematics_code&gt;</p>
+<p>Link to inverse kinematics code:</p>
+<p><a class="reference internal" href="../software/reach_master/reach_master.html#reachmaster.interfaces.robot_interface.load_config_commands" title="reachmaster.interfaces.robot_interface.load_config_commands"><code class="xref py py-func docutils literal notranslate"><span class="pre">reachmaster.interfaces.robot_interface.load_config_commands()</span></code></a></p>
+</div>
 <div class="section" id="air-delivery">
 <h3>Air Delivery<a class="headerlink" href="#air-delivery" title="Permalink to this headline">¶</a></h3>
-<p>pictures</p>
+<a class="reference internal image-reference" href="../_images/compressor_plus_valves.png"><img alt="../_images/compressor_plus_valves.png" class="align-center" src="../_images/compressor_plus_valves.png" style="width: 400px;" /></a>
+<p>Add discussion of compressor(s), manifold(s), valve(s), vents, circuit(s), tubing, etc.</p>
 </div>
 <div class="section" id="actuation">
 <h3>Actuation<a class="headerlink" href="#actuation" title="Permalink to this headline">¶</a></h3>
-<p>picture</p>
+<a class="reference internal image-reference" href="../_images/pneumatic_cylinder.jpeg"><img alt="../_images/pneumatic_cylinder.jpeg" class="align-center" src="../_images/pneumatic_cylinder.jpeg" style="width: 400px;" /></a>
+<p>Add discussion of our current SMC cylinders, and Airpel as an alternative.</p>
 </div>
 <div class="section" id="position-sensing">
 <h3>Position Sensing<a class="headerlink" href="#position-sensing" title="Permalink to this headline">¶</a></h3>
-<p>pitcure</p>
+<a class="reference internal image-reference" href="../_images/potentiometer.jpg"><img alt="../_images/potentiometer.jpg" class="align-center" src="../_images/potentiometer.jpg" style="width: 400px;" /></a>
+<p>Add discussion of linear potentiometers and contactless alternatives.</p>
 </div>
-<div class="section" id="d-printed-parts">
-<h3>3D Printed Parts<a class="headerlink" href="#d-printed-parts" title="Permalink to this headline">¶</a></h3>
+<div class="section" id="gimbal">
+<h3>Gimbal<a class="headerlink" href="#gimbal" title="Permalink to this headline">¶</a></h3>
 <p>picture</p>
+<p>Describe each of the 3D printed gimbal pieces.</p>
 </div>
 <div class="section" id="handles">
 <h3>Handles<a class="headerlink" href="#handles" title="Permalink to this headline">¶</a></h3>
-<p>pictures</p>
+<p>Discuss various handles types, threading and weight requirements.</p>
 </div>
 <div class="section" id="mounting">
 <h3>Mounting<a class="headerlink" href="#mounting" title="Permalink to this headline">¶</a></h3>
-<p>picture</p>
+<p>Discuss mounting issues with the base plate and other Thor Labs components.</p>
+</div>
+<div class="section" id="pressure-sensing">
+<h3>Pressure Sensing<a class="headerlink" href="#pressure-sensing" title="Permalink to this headline">¶</a></h3>
+<p>Discuss pressure sensors. Link to Todorov PID paper</p>
 </div>
 </div>
 <div class="section" id="cameras">
 <h2>Cameras<a class="headerlink" href="#cameras" title="Permalink to this headline">¶</a></h2>
-<p>picture</p>
-<div class="section" id="id1">
-<h3>Mounting<a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h3>
-</div>
+<a class="reference internal image-reference" href="../_images/cameras.png"><img alt="../_images/cameras.png" class="align-center" src="../_images/cameras.png" style="width: 400px;" /></a>
+<p>Discuss current Ximea XiQ USB3.0 cameras highspeed color cameras, and IR and newer PCIe altenernatives. Lenses and resolution tradeoffs, trigger and synchronization options. Point to SpikeGadgets slack channel for discussion of additional options? Trodes camera module? USB card requirements/limitations.</p>
 </div>
 <div class="section" id="lighting">
 <h2>Lighting<a class="headerlink" href="#lighting" title="Permalink to this headline">¶</a></h2>
-<p>picture</p>
-<div class="section" id="id2">
-<h3>3D Printed Parts<a class="headerlink" href="#id2" title="Permalink to this headline">¶</a></h3>
-</div>
+<a class="reference internal image-reference" href="../_images/neopixels.png"><img alt="../_images/neopixels.png" class="align-center" src="../_images/neopixels.png" style="width: 400px;" /></a>
+<p>Discuss neopixels and what you can do with them. Discuss electrical noise issues, IR lighting alternatives, more diffuse lighting alternatives. Point to Whishaw rat pellet reaching chapter for product.</p>
 </div>
 <div class="section" id="reward-delivery">
 <h2>Reward Delivery<a class="headerlink" href="#reward-delivery" title="Permalink to this headline">¶</a></h2>
-<p>picture</p>
+<a class="reference internal image-reference" href="../_images/solenoid.png"><img alt="../_images/solenoid.png" class="align-center" src="../_images/solenoid.png" style="width: 250px;" /></a>
+<p>Discuss the Lee solenoids and proper maintainance, other alternatives. Calibration. Link to code and website tutorial.</p>
 </div>
 <div class="section" id="lick-detection">
 <h2>Lick Detection<a class="headerlink" href="#lick-detection" title="Permalink to this headline">¶</a></h2>
-<p>picture</p>
+<p>&lt;picture&gt;</p>
+<p>Discuss the IR emitters/receivers, the driver circuit, and other variants. Link to website tutorial(s).</p>
+</div>
+<div class="section" id="controllers">
+<h2>Controllers<a class="headerlink" href="#controllers" title="Permalink to this headline">¶</a></h2>
+<p>&lt;picture&gt;</p>
+<p>Discuss Arduino, Teensy, mbed, general requirements, and alternatives.</p>
+</div>
+<div class="section" id="data-acquisition">
+<h2>Data Acquisition<a class="headerlink" href="#data-acquisition" title="Permalink to this headline">¶</a></h2>
+<p>&lt;picture&gt;</p>
+<p>Discuss SpikeGadgets and link to thier site. Discuss National Instruments options?</p>
 </div>
 <div class="section" id="computers">
 <h2>Computers<a class="headerlink" href="#computers" title="Permalink to this headline">¶</a></h2>
-<p>picture</p>
+<p>&lt;picture&gt;</p>
+<p>Discuss CPU, motherboard, GPU and USB/PCIe requirements.</p>
 </div>
 <div class="section" id="build-instructions">
 <h2>Build Instructions<a class="headerlink" href="#build-instructions" title="Permalink to this headline">¶</a></h2>
-<p>add steps</p>
+<p>coming soon</p>
 </div>
 </div>
 

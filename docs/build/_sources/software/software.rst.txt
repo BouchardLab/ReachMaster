@@ -5,7 +5,5 @@ Software
     :maxdepth: 2
     
     reach_master/reach_master
-    wrangling_preprocessing/wrangling_preprocessing
+    preprocessing/preprocessing
     rig_controllers/rig_controllers
-    robot_calibration/robot_calibration
-    archived/archived

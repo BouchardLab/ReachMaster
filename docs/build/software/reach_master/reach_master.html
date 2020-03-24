@@ -24,7 +24,6 @@
         <script type="text/javascript" src="../../_static/jquery.js"></script>
         <script type="text/javascript" src="../../_static/underscore.js"></script>
         <script type="text/javascript" src="../../_static/doctools.js"></script>
-        <script type="text/javascript" src="../../_static/language_data.js"></script>
     
     <script type="text/javascript" src="../../_static/js/theme.js"></script>
 
@@ -35,7 +34,7 @@
   <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" />
-    <link rel="next" title="Data Preprocessing" href="../wrangling_preprocessing/wrangling_preprocessing.html" />
+    <link rel="next" title="Data Preprocessing" href="../preprocessing/preprocessing.html" />
     <link rel="prev" title="Software" href="../software.html" /> 
 </head>
 
@@ -104,12 +103,11 @@
 <li class="toctree-l3"><a class="reference internal" href="#module-reachmaster.config">Configuration Files</a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="../wrangling_preprocessing/wrangling_preprocessing.html">Data Preprocessing</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../preprocessing/preprocessing.html">Data Preprocessing</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../rig_controllers/rig_controllers.html">Rig Controllers</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../robot_calibration/robot_calibration.html">Robot Calibration</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../archived/archived.html">Archived</a></li>
 </ul>
 </li>
+<li class="toctree-l1"><a class="reference internal" href="../../tutorials/tutorials.html">Tutorials</a></li>
 </ul>
 
             
@@ -180,17 +178,20 @@
 <span id="reachmaster-user-interface"></span><h1>ReachMaster User Interface<a class="headerlink" href="#module-reach_master" title="Permalink to this headline">¶</a></h1>
 <p>The primary graphical user interface used to
 control and run experiments.</p>
-<p class="rubric">Example</p>
-<p>From command line:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ python reach_master.py
+<dl class="docutils">
+<dt>Example:</dt>
+<dd><p class="first">From terminal:</p>
+<div class="last highlight-default notranslate"><div class="highlight"><pre><span></span>$ python reach_master.py
 </pre></div>
 </div>
-<div class="admonition-todo admonition" id="index-0">
-<p class="first admonition-title">Todo</p>
-<ul class="last simple">
+</dd>
+<dt>Todo:</dt>
+<dd><ul class="first last simple">
 <li>Create executable</li>
+<li>Automate unit tests</li>
 </ul>
-</div>
+</dd>
+</dl>
 <div class="section" id="root-application-window">
 <h2>Root Application Window<a class="headerlink" href="#root-application-window" title="Permalink to this headline">¶</a></h2>
 <img alt="../../_images/root_application.png" class="align-center" src="../../_images/root_application.png" />
@@ -198,23 +199,25 @@ control and run experiments.</p>
 data output directory, a configuration file, connecting to the
 experiment and robot controllers, accessing the settings windows,
 basic rig control, as well as selecting and running protocols.</p>
-<p class="rubric">Examples</p>
-<p>From command line:</p>
+<dl class="docutils">
+<dt>Examples:</dt>
+<dd><p class="first">From terminal:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ python application.py
 </pre></div>
 </div>
-<p>From python:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">reachmaster.application</span>
+<p>From python interpreter:</p>
+<div class="last highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">reachmaster.application</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">rm</span> <span class="o">=</span> <span class="n">application</span><span class="o">.</span><span class="n">ReachMaster</span><span class="p">()</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">rm</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
 </pre></div>
 </div>
-<div class="admonition-todo admonition" id="index-1">
-<p class="first admonition-title">Todo</p>
-<ul class="last simple">
+</dd>
+<dt>Todo:</dt>
+<dd><ul class="first last simple">
 <li>Automated unit tests</li>
 </ul>
-</div>
+</dd>
+</dl>
 <dl class="class">
 <dt id="reachmaster.application.ReachMaster">
 <em class="property">class </em><code class="descclassname">reachmaster.application.</code><code class="descname">ReachMaster</code><a class="reference internal" href="../../_modules/reachmaster/application.html#ReachMaster"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#reachmaster.application.ReachMaster" title="Permalink to this definition">¶</a></dt>
@@ -542,20 +545,24 @@ selected port.</p>
 <h2>Camera Settings<a class="headerlink" href="#camera-settings" title="Permalink to this headline">¶</a></h2>
 <img alt="../../_images/camera_settings.png" class="align-center" src="../../_images/camera_settings.png" />
 <span class="target" id="module-reachmaster.settings.camera_settings"></span><p>The camera settings window is opened as a child of the
-ReachMaster root application. It provides functionality for
-specifying the number of cameras, setting their intrinsic
-parameters (e.g., exposure, gain, triggers, etc.), and data
-output parameters (e.g., cropping, pixel resolution, etc.). It
-provides functions to capture images and record videos which can
-be useful for post-hoc camera calibration. It also provides
-functions for adding, removing and saving pixels-of-interest
-which are used by the experiment protocols for reach detection.</p>
-<div class="admonition-todo admonition" id="index-2">
-<p class="first admonition-title">Todo</p>
-<ul class="last simple">
+ReachMaster root application. It is designed, mainly to
+specify settings required by Ximea USB3.0 cameras via the
+camera interface module and the Ximea API. It provides
+functionality for specifying the number of cameras, setting
+their intrinsic parameters (e.g., exposure, gain, triggers,
+etc.), and data output parameters (e.g., cropping, pixel
+resolution, etc.). It provides functions to capture images
+and record videos which can be used by post-hoc camera
+calibration rotuines. It also provides functions for adding,
+removing and saving pixels-of-interest which are used by
+the experiment protocols for reach detection.</p>
+<dl class="docutils">
+<dt>Todo:</dt>
+<dd><ul class="first last simple">
 <li>Automate unit tests</li>
 </ul>
-</div>
+</dd>
+</dl>
 <dl class="class">
 <dt id="reachmaster.settings.camera_settings.CameraSettings">
 <em class="property">class </em><code class="descclassname">reachmaster.settings.camera_settings.</code><code class="descname">CameraSettings</code><span class="sig-paren">(</span><em>parent</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/reachmaster/settings/camera_settings.html#CameraSettings"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#reachmaster.settings.camera_settings.CameraSettings" title="Permalink to this definition">¶</a></dt>
@@ -581,7 +588,8 @@ used for post hoc analyses (e.g., camera calibration). The
 <dl class="attribute">
 <dt id="reachmaster.settings.camera_settings.CameraSettings.exp_controller">
 <code class="descname">exp_controller</code><a class="headerlink" href="#reachmaster.settings.camera_settings.CameraSettings.exp_controller" title="Permalink to this definition">¶</a></dt>
-<dd><p>Serial interface to the experiment microcontroller</p>
+<dd><p>Serial interface to the experiment microcontroller which
+is used to trigger the cameras</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -1045,19 +1053,21 @@ recording a video.</p>
 <img alt="../../_images/experiment_settings.png" class="align-center" src="../../_images/experiment_settings.png" />
 <span class="target" id="module-reachmaster.settings.experiment_settings"></span><p>The experiment settings window is opened as a child of the
 ReachMaster root application. It allows the user to set any
-experiment parameters located on the experiment microcontroller
-(e.g., number/size of rewards, trial delays, etc.).</p>
-<div class="admonition-todo admonition" id="index-3">
-<p class="first admonition-title">Todo</p>
-<ul class="last simple">
+experiment parameters required by the experiment
+microcontroller (e.g., number/size of rewards, trial delays,
+etc.).</p>
+<dl class="docutils">
+<dt>Todo:</dt>
+<dd><ul class="first last simple">
 <li>Move protocol type options here?</li>
 <li>Automate unit tests</li>
 </ul>
-</div>
+</dd>
+</dl>
 <dl class="class">
 <dt id="reachmaster.settings.experiment_settings.ExperimentSettings">
 <em class="property">class </em><code class="descclassname">reachmaster.settings.experiment_settings.</code><code class="descname">ExperimentSettings</code><span class="sig-paren">(</span><em>parent</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/reachmaster/settings/experiment_settings.html#ExperimentSettings"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#reachmaster.settings.experiment_settings.ExperimentSettings" title="Permalink to this definition">¶</a></dt>
-<dd><p>The primary class for the camera settings window.</p>
+<dd><p>The primary class for the experiment settings window.</p>
 <dl class="attribute">
 <dt id="reachmaster.settings.experiment_settings.ExperimentSettings.config">
 <code class="descname">config</code><a class="headerlink" href="#reachmaster.settings.experiment_settings.ExperimentSettings.config" title="Permalink to this definition">¶</a></dt>
@@ -1223,28 +1233,31 @@ to reflect the change in settings.</p>
 <img alt="../../_images/robot_settings.png" class="align-center" src="../../_images/robot_settings.png" />
 <span class="target" id="module-reachmaster.settings.robot_settings"></span><p>The robot settings window is opened as a child of the
 ReachMaster root application. It allows the user to set any
-parameters located on the robot microcontroller (e.g.,
+parameters required by the robot microcontroller (e.g.,
 position smoothing, valve periods etc.), or having to do
 with the robot kinematics. It provides options for the user
 to select previously generated calibration and position
 command files. Soon it will allow users to run a robot
-calibration from within the ReachMaster application.</p>
-<div class="admonition-todo admonition" id="index-4">
-<p class="first admonition-title">Todo</p>
-<ul class="last simple">
+calibration routine from within the ReachMaster application.</p>
+<dl class="docutils">
+<dt>Todo:</dt>
+<dd><ul class="first last simple">
 <li>Add labels to specify the microcontroller/kinematics parameters</li>
 <li>Run calibration callback</li>
 <li>Re-add load calibration callback?</li>
 <li>Automate unit tests</li>
 </ul>
-</div>
+</dd>
+</dl>
 <dl class="class">
 <dt id="reachmaster.settings.robot_settings.RobotSettings">
 <em class="property">class </em><code class="descclassname">reachmaster.settings.robot_settings.</code><code class="descname">RobotSettings</code><span class="sig-paren">(</span><em>parent</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/reachmaster/settings/robot_settings.html#RobotSettings"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#reachmaster.settings.robot_settings.RobotSettings" title="Permalink to this definition">¶</a></dt>
 <dd><p>The primary class for the robot settings window.</p>
 <p>Configures and provides window callback methods. Also provides
-methods to . The
-<cite>on_quit()</cite> method is called prior to application destruction.</p>
+methods to select robot calibration files, position command
+files, as well as methods used to sample positions from the
+command file. The <cite>on_quit()</cite> method is called prior to
+application destruction.</p>
 <dl class="attribute">
 <dt id="reachmaster.settings.robot_settings.RobotSettings.config">
 <code class="descname">config</code><a class="headerlink" href="#reachmaster.settings.robot_settings.RobotSettings.config" title="Permalink to this definition">¶</a></dt>
@@ -1428,13 +1441,14 @@ command file.</p>
 <code class="descname">command_type</code><a class="headerlink" href="#reachmaster.settings.robot_settings.RobotSettings.command_type" title="Permalink to this definition">¶</a></dt>
 <dd><p>Tkinter StringVar that captures the user-selected option
 determining how commands are generated. Can be
-‘read_from_file’, ‘sample_from_file’, or ‘parametric_sample’.
-‘read_from_file’ takes the commands directly from the command
-file. ‘sample_from_file’ generates a sequence of commands by
-sampling from the command file with replacement.
-‘parametric_sample’ does not use the command file. Rather, it
-samples commands uniformly from the <cite>reach volume</cite> determined
-by user-selected inverse kinematics parameters.</p>
+read_from_file, sample_from_file, or parametric_sample. The
+read_from_file option takes the commands directly from the
+command file. The sample_from_file option generates a
+sequence of commands by sampling from the command file with
+replacement. The parametric_sample option does not use the
+command file. Rather, it samples commands uniformly from
+the reach volume determined by user-selected inverse
+kinematics parameters.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -1548,8 +1562,8 @@ to reflect the change in settings.</p>
 <dt id="reachmaster.settings.robot_settings.RobotSettings.run_calibration_callback">
 <code class="descname">run_calibration_callback</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/reachmaster/settings/robot_settings.html#RobotSettings.run_calibration_callback"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#reachmaster.settings.robot_settings.RobotSettings.run_calibration_callback" title="Permalink to this definition">¶</a></dt>
 <dd><p>Not yet implented. Should load the robot calibration script to
-the robot microcontroller along with any relevant arguments, and
-run the calibration.</p>
+the robot microcontroller along with any relevant arguments,
+run all calibration routines, and produce a calibration file.</p>
 </dd></dl>
 
 </dd></dl>
@@ -1563,22 +1577,25 @@ ReachMaster root application whenever a protocol is run. It
 provides basic functionality for interacting with the rig
 while an experiment is running (e.g., for manual reward
 delivery, toggling lights, etc.).</p>
-<div class="admonition-todo admonition" id="index-5">
-<p class="first admonition-title">Todo</p>
-<ul class="last simple">
+<dl class="docutils">
+<dt>Todo:</dt>
+<dd><ul class="first last simple">
 <li>Keep adding new protocol types</li>
-<li>GPU-accelerated video encoding</li>
 <li>Automate unit tests</li>
 </ul>
-</div>
+</dd>
+</dl>
 <dl class="class">
 <dt id="reachmaster.protocols.Protocols">
 <em class="property">class </em><code class="descclassname">reachmaster.protocols.</code><code class="descname">Protocols</code><span class="sig-paren">(</span><em>parent</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/reachmaster/protocols.html#Protocols"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#reachmaster.protocols.Protocols" title="Permalink to this definition">¶</a></dt>
 <dd><p>The primary class for the protocol window.</p>
 <p>Configures and provides window callback methods. Also provides
 special <cite>run</cite> methods that implement each of the protocol types.
-Protocol types also has special <cite>on_quit()</cite> methods that are
-called prior to application destruction.</p>
+The run methods work in concert with the interface modules and
+microntroller scripts to implement the event logic required by
+a specific experiment. If an experiment requires a new protocol
+type that is not currently available, implementing a new run
+method will often be a good place to start.</p>
 <dl class="attribute">
 <dt id="reachmaster.protocols.Protocols.ready">
 <code class="descname">ready</code><a class="headerlink" href="#reachmaster.protocols.Protocols.ready" title="Permalink to this definition">¶</a></dt>
@@ -1782,13 +1799,14 @@ Messages are sent to the experiment controller to signal important events
 such as reach detections, beginnings/ends of trials, and to initiate robot
 movement. Responses are read from the experiment controller and saved to
 the controller data output file.</p>
-<div class="admonition-todo admonition" id="index-6">
-<p class="first admonition-title">Todo</p>
-<ul class="last simple">
+<dl class="docutils">
+<dt>Todo:</dt>
+<dd><ul class="first last simple">
 <li>Functionalize code chunks so logic is clearer and custom protocol types are easier to implement.</li>
 <li>Absorb communication codes into experiment interface module and document</li>
 </ul>
-</div>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="method">
@@ -1802,13 +1820,14 @@ trial. Messages are sent to the experiment controller to signal important
 events such as reach detections, beginnings/ends of trials, and to initiate
 robot movement. Responses are read from the experiment controller and saved
 to the controller data output file.</p>
-<div class="admonition-todo admonition" id="index-7">
-<p class="first admonition-title">Todo</p>
-<ul class="last simple">
+<dl class="docutils">
+<dt>Todo:</dt>
+<dd><ul class="first last simple">
 <li>Functionalize code chunks so logic is clearer and custom protocol types are easier to implement.</li>
 <li>Absorb communication codes into experiment interface module and document</li>
 </ul>
-</div>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="method">
@@ -1832,22 +1851,24 @@ to the controller data output file.</p>
 with Ximea machine vision USB3.0 cameras via the
 Ximea API. It also provides a high performance video
 encoding and online feature detection class for use by
-protocols.</p>
-<div class="admonition-todo admonition" id="index-8">
-<p class="first admonition-title">Todo</p>
-<ul class="last simple">
-<li>Automate unit tests</li>
+protocols that require high frame rates.</p>
+<dl class="docutils">
+<dt>Todo:</dt>
+<dd><ul class="first last simple">
+<li>Automated unit tests</li>
 <li>Fix camera connection bug</li>
 <li>Integrate ffmpeg settings into configuration file</li>
+<li>Create a Video Settings module?</li>
 </ul>
-</div>
+</dd>
+</dl>
 <dl class="class">
 <dt id="reachmaster.interfaces.camera_interface.CameraInterface">
 <em class="property">class </em><code class="descclassname">reachmaster.interfaces.camera_interface.</code><code class="descname">CameraInterface</code><span class="sig-paren">(</span><em>config</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/reachmaster/interfaces/camera_interface.html#CameraInterface"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#reachmaster.interfaces.camera_interface.CameraInterface" title="Permalink to this definition">¶</a></dt>
 <dd><p>The primary class for the camera interface module.</p>
 <p>Creates a multiprocess object that performs gpu-accelerated
 video encoding and feature (i.e., reach) detection on
-separate processes. Interprocess communincation and
+separate processes. Interprocess communication and
 synchronization is achieved using pipe messages.</p>
 <dl class="attribute">
 <dt id="reachmaster.interfaces.camera_interface.CameraInterface.config">
@@ -2002,7 +2023,7 @@ camera.</p>
 <dt id="reachmaster.interfaces.camera_interface.CameraInterface.stop_interface">
 <code class="descname">stop_interface</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/reachmaster/interfaces/camera_interface.html#CameraInterface.stop_interface"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#reachmaster.interfaces.camera_interface.CameraInterface.stop_interface" title="Permalink to this definition">¶</a></dt>
 <dd><p>Tells the camera processes to shut themselves down, waits
-for them to exit, then cleans up the pipe system.</p>
+for them to exit, then cleans all the pipes.</p>
 </dd></dl>
 
 <dl class="method">
@@ -2100,20 +2121,22 @@ starts image acquisition.</p>
 <p>This module provides a set of functions for interfacing
 with the experiment microcontroller. It provides functions
 to recognize and establish serial connections to the
-controller, read/write settings, exectute common callbacks,
-and read/write custom messages.</p>
-<div class="admonition-todo admonition" id="index-9">
-<p class="first admonition-title">Todo</p>
-<ul class="last simple">
+controller, read/write settings, execute common callbacks
+located in the other modules, and read/write custom messages.</p>
+<dl class="docutils">
+<dt>Todo:</dt>
+<dd><ul class="first last simple">
 <li>Object orient</li>
 <li>Automate unit tests</li>
+<li>Limit custom messages by absorbing communication codes from protocols module</li>
 </ul>
-</div>
+</dd>
+</dl>
 <dl class="function">
 <dt id="reachmaster.interfaces.experiment_interface.deliver_water">
 <code class="descclassname">reachmaster.interfaces.experiment_interface.</code><code class="descname">deliver_water</code><span class="sig-paren">(</span><em>exp_controller</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/reachmaster/interfaces/experiment_interface.html#deliver_water"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#reachmaster.interfaces.experiment_interface.deliver_water" title="Permalink to this definition">¶</a></dt>
 <dd><p>Send a message to experiment controller to open the
-reward solenoid for the user-selected duration.</p>
+solenoid for the user-selected reward duration.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -2128,8 +2151,7 @@ reward solenoid for the user-selected duration.</p>
 <dt id="reachmaster.interfaces.experiment_interface.flush_water">
 <code class="descclassname">reachmaster.interfaces.experiment_interface.</code><code class="descname">flush_water</code><span class="sig-paren">(</span><em>exp_controller</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/reachmaster/interfaces/experiment_interface.html#flush_water"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#reachmaster.interfaces.experiment_interface.flush_water" title="Permalink to this definition">¶</a></dt>
 <dd><p>Send a message to experiment controller to opens the
-reward solenoid for the flush user-selected flush
-duration.</p>
+solenoid for the user-selected flush duration.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -2334,18 +2356,23 @@ controller.</li>
 </div>
 <div class="section" id="module-reachmaster.interfaces.robot_interface">
 <span id="robot-interface"></span><h2>Robot Interface<a class="headerlink" href="#module-reachmaster.interfaces.robot_interface" title="Permalink to this headline">¶</a></h2>
-<p>Module that provides a set of functions for interfacing
+<p>This module provides a set of functions for interfacing
 with the robot microcontroller. It provides functions to
 recognize and establish serial connections to the
-controller, read/write settings, calibration and command
-files.</p>
-<div class="admonition-todo admonition" id="index-10">
-<p class="first admonition-title">Todo</p>
-<ul class="last simple">
+controller, read and write settings, and to load
+calibration and command files. Soon it will provide
+methods to load user-selected scripts to/from the
+controller in order to execute various robot calibration
+routines.</p>
+<dl class="docutils">
+<dt>Todo:</dt>
+<dd><ul class="first last simple">
 <li>Object orient</li>
 <li>Automate unit tests</li>
+<li>Ability to load user-selected controller scipts</li>
 </ul>
-</div>
+</dd>
+</dl>
 <dl class="function">
 <dt id="reachmaster.interfaces.robot_interface.get_ports">
 <code class="descclassname">reachmaster.interfaces.robot_interface.</code><code class="descname">get_ports</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/reachmaster/interfaces/robot_interface.html#get_ports"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#reachmaster.interfaces.robot_interface.get_ports" title="Permalink to this definition">¶</a></dt>
@@ -2388,23 +2415,25 @@ file.</p>
 <dd><p>Load the position commands to the robot controller.</p>
 <p>Uses the method determined by the command type
 selected in the configuration file. Currently, the
-options are <cite>read_from_file</cite>, <cite>sample_from_file</cite>, or
-<cite>parametric_sample</cite>. <cite>read_from_file</cite> takes the
-commands directly from the command file.
-<cite>sample_from_file</cite> generates a sequence of commands by
-sampling rows from the command file with replacement.
-For both of these options, the command file is assumed
-to have three columns ordered as <cite>reach distance</cite>,
-<cite>azimuth’, `elevation</cite>. <cite>parametric_sample</cite> does not
-use the command file. Rather, it samples commands
-uniformly from the <cite>reach volume</cite> determined by the
-user-selected inverse kinematics parameters.</p>
-<div class="admonition-todo admonition" id="index-11">
-<p class="first admonition-title">Todo</p>
-<ul class="last simple">
+options are read_from_file, sample_from_file, or
+parametric_sample. The read_from_file option takes
+the commands directly from the command file. The
+sample_from_file option generates a sequence of
+commands by sampling rows from the command file with
+replacement. For both of these options, the command
+file is assumed to have three columns ordered as
+reach distance, azimuth, elevation. The
+parametric_sample option does not use the command
+file. Rather, it samples commands uniformly from the
+reach volume determined by the user-selected inverse
+kinematics parameters.</p>
+<dl class="docutils">
+<dt>Todo:</dt>
+<dd><ul class="first last simple">
 <li>Further functionalize for better clarity.</li>
 </ul>
-</div>
+</dd>
+</dl>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -2494,14 +2523,15 @@ used in a ReachMaster session. Functions are provided to
 generate default configuration files, as well as to save and
 load previous configurations. This encourages persistence of
 settings across experiments.</p>
-<div class="admonition-todo admonition" id="index-12">
-<p class="first admonition-title">Todo</p>
-<ul class="last simple">
+<dl class="docutils">
+<dt>Todo:</dt>
+<dd><ul class="first last simple">
 <li>Automate unit tests</li>
 <li>Integrate ffmpeg settings</li>
 <li>Flesh out field descriptions</li>
 </ul>
-</div>
+</dd>
+</dl>
 <dl class="function">
 <dt id="reachmaster.config.default_config">
 <code class="descclassname">reachmaster.config.</code><code class="descname">default_config</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/reachmaster/config.html#default_config"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#reachmaster.config.default_config" title="Permalink to this definition">¶</a></dt>
@@ -2541,8 +2571,9 @@ directory.</p>
 <dt id="reachmaster.config.load_config">
 <code class="descclassname">reachmaster.config.</code><code class="descname">load_config</code><span class="sig-paren">(</span><em>file_handle</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/reachmaster/config.html#load_config"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#reachmaster.config.load_config" title="Permalink to this definition">¶</a></dt>
 <dd><p>Load a configuration file.</p>
-<p>File typically selected by user from the configuration
-browser in the root ReachMaster application window.</p>
+<p>Typically loads a file selected by user from the
+configuration browser in the root ReachMaster
+application window.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -2561,15 +2592,16 @@ browser in the root ReachMaster application window.</p>
 <dt id="reachmaster.config.save_tmp">
 <code class="descclassname">reachmaster.config.</code><code class="descname">save_tmp</code><span class="sig-paren">(</span><em>config</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/reachmaster/config.html#save_tmp"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#reachmaster.config.save_tmp" title="Permalink to this definition">¶</a></dt>
 <dd><p>Save the configuration to a temp file.</p>
-<p>The global state of ReachMaster is tracked with a temp
+<p>The global state of ReachMaster is tracked using a temp
 file. Whenever a child window of the main application is
 created or destroyed, the temp file is updated to reflect
 whatever changes in settings may have occurred. If the
 user forgets to save the configuration file at the end of
-a session, the temp file can be used as a backup. It is
+a session, this temp file can be used for recovery. It is
 saved to the temp folder in the ReachMaster root directory.
-<strong>Warning: temp file is reset to defaults as a new session
-is started!</strong></p>
+<strong>Warning: the temp file is reset to the default
+configuration whenever a new instance of ReachMaster is
+started!</strong></p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -2591,7 +2623,7 @@ is started!</strong></p>
   
     <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
       
-        <a href="../wrangling_preprocessing/wrangling_preprocessing.html" class="btn btn-neutral float-right" title="Data Preprocessing" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+        <a href="../preprocessing/preprocessing.html" class="btn btn-neutral float-right" title="Data Preprocessing" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
       
       
         <a href="../software.html" class="btn btn-neutral float-left" title="Software" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>

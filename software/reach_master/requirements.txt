@@ -2,7 +2,6 @@ numpy
 datetime
 opencv-python
 pyserial
-vidgear
 sphinx
 sphinx-gallery
 sphinx_rtd_theme

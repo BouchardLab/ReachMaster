@@ -24,7 +24,6 @@
         <script type="text/javascript" src="../../../_static/jquery.js"></script>
         <script type="text/javascript" src="../../../_static/underscore.js"></script>
         <script type="text/javascript" src="../../../_static/doctools.js"></script>
-        <script type="text/javascript" src="../../../_static/language_data.js"></script>
     
     <script type="text/javascript" src="../../../_static/js/theme.js"></script>
 
@@ -90,6 +89,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../overview.html">Overview</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../hardware/hardware.html">Hardware</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../software/software.html">Software</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../tutorials/tutorials.html">Tutorials</a></li>
 </ul>
 
             
@@ -154,34 +154,35 @@
             
   <h1>Source code for reachmaster.settings.camera_settings</h1><div class="highlight"><pre>
 <span></span><span class="sd">&quot;&quot;&quot;The camera settings window is opened as a child of the </span>
-<span class="sd">ReachMaster root application. It provides functionality for </span>
-<span class="sd">specifying the number of cameras, setting their intrinsic </span>
-<span class="sd">parameters (e.g., exposure, gain, triggers, etc.), and data </span>
-<span class="sd">output parameters (e.g., cropping, pixel resolution, etc.). It </span>
-<span class="sd">provides functions to capture images and record videos which can</span>
-<span class="sd">be useful for post-hoc camera calibration. It also provides </span>
-<span class="sd">functions for adding, removing and saving pixels-of-interest </span>
-<span class="sd">which are used by the experiment protocols for reach detection.</span>
+<span class="sd">ReachMaster root application. It is designed, mainly to </span>
+<span class="sd">specify settings required by Ximea USB3.0 cameras via the </span>
+<span class="sd">camera interface module and the Ximea API. It provides </span>
+<span class="sd">functionality for specifying the number of cameras, setting </span>
+<span class="sd">their intrinsic parameters (e.g., exposure, gain, triggers, </span>
+<span class="sd">etc.), and data output parameters (e.g., cropping, pixel </span>
+<span class="sd">resolution, etc.). It provides functions to capture images </span>
+<span class="sd">and record videos which can be used by post-hoc camera </span>
+<span class="sd">calibration rotuines. It also provides functions for adding, </span>
+<span class="sd">removing and saving pixels-of-interest which are used by </span>
+<span class="sd">the experiment protocols for reach detection.</span>
 
 <span class="sd">Todo:</span>
 <span class="sd">    * Automate unit tests</span>
 
 <span class="sd">&quot;&quot;&quot;</span>
 
-<span class="kn">from</span> <span class="nn">..</span> <span class="kn">import</span> <span class="n">config</span>
-<span class="kn">from</span> <span class="nn">..interfaces</span> <span class="kn">import</span> <span class="n">experiment_interface</span> <span class="k">as</span> <span class="n">expint</span>
-<span class="kn">from</span> <span class="nn">..interfaces</span> <span class="kn">import</span> <span class="n">camera_interface</span> <span class="k">as</span> <span class="n">camint</span>
+<span class="kn">from</span> <span class="nn">..</span> <span class="k">import</span> <span class="n">config</span>
+<span class="kn">from</span> <span class="nn">..interfaces</span> <span class="k">import</span> <span class="n">experiment_interface</span> <span class="k">as</span> <span class="n">expint</span>
+<span class="kn">from</span> <span class="nn">..interfaces</span> <span class="k">import</span> <span class="n">camera_interface</span> <span class="k">as</span> <span class="n">camint</span>
 <span class="kn">import</span> <span class="nn">tkinter</span> <span class="k">as</span> <span class="nn">tk</span> 
 <span class="kn">import</span> <span class="nn">tkinter.messagebox</span>
 <span class="kn">import</span> <span class="nn">cv2</span>
 <span class="kn">import</span> <span class="nn">PIL.Image</span><span class="o">,</span> <span class="nn">PIL.ImageTk</span>
-<span class="kn">from</span> <span class="nn">ximea</span> <span class="kn">import</span> <span class="n">xiapi</span>
 <span class="kn">import</span> <span class="nn">time</span>
 <span class="kn">import</span> <span class="nn">datetime</span>
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
-<span class="kn">import</span> <span class="nn">serial</span>
 <span class="kn">import</span> <span class="nn">os</span> 
-<span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">deque</span>
+<span class="kn">from</span> <span class="nn">collections</span> <span class="k">import</span> <span class="n">deque</span>
 <span class="kn">import</span> <span class="nn">subprocess</span> <span class="k">as</span> <span class="nn">sp</span>
 
 <div class="viewcode-block" id="CameraSettings"><a class="viewcode-back" href="../../../software/reach_master/reach_master.html#reachmaster.settings.camera_settings.CameraSettings">[docs]</a><span class="k">class</span> <span class="nc">CameraSettings</span><span class="p">(</span><span class="n">tk</span><span class="o">.</span><span class="n">Toplevel</span><span class="p">):</span>
@@ -197,7 +198,8 @@
 <span class="sd">    config : dict</span>
 <span class="sd">        The current configuration settings for the application</span>
 <span class="sd">    exp_controller : instance</span>
-<span class="sd">        Serial interface to the experiment microcontroller</span>
+<span class="sd">        Serial interface to the experiment microcontroller which</span>
+<span class="sd">        is used to trigger the cameras</span>
 <span class="sd">    exp_connected : bool </span>
 <span class="sd">        True if the experiment interface is active</span>
 <span class="sd">    num_cams : instance</span>
@@ -278,7 +280,7 @@
 
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parent</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parent</span><span class="p">):</span>
         <span class="c1">#create window and suppress parent</span>
         <span class="n">tk</span><span class="o">.</span><span class="n">Toplevel</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parent</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">transient</span><span class="p">(</span><span class="n">parent</span><span class="p">)</span> 
