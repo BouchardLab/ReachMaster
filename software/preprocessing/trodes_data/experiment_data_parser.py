@@ -2,18 +2,16 @@
 collected during experiments.
 
 """
-import os
-import readTrodesExtractedDataFile3 as read_trodes  # what does the from . import X mean?
-import numpy as np
-import glob
-import pandas as pd
-import json
 import codecs
-import subprocess as sp
-from scipy import ndimage
+import json
+import os
+
+import numpy as np
+import pandas as pd
+import readTrodesExtractedDataFile3 as read_trodes  # what does the from . import X mean?
 
 
-def get_trodes_files(data_dir, trodes_name,win_dir=False):  # pass in data directory, name of rec file
+def get_trodes_files(data_dir, trodes_name, win_dir=False):  # pass in data directory, name of rec file
     """Generate names of all the trodes files in an experimental session.
        Assumes data is saved in the default trodes filesystem and channels are
        named appropriately in the trodes configuration file.
@@ -102,7 +100,7 @@ def read_data(trodes_files, sampling_rate=3000):
         files for an experiment.
 
     """
-    clockrate = np.float_(read_trodes.readTrodesExtractedDataFile(trodes_files['time_file'])['clock rate'])
+    clockrate = np.float_(read_trodes.readTrodesExtractedDataFile(trodes_files['time_file'])['clockrate'])
     ds = int(clockrate / sampling_rate)
     experimental_data = {
         'clockrate': clockrate,
@@ -121,12 +119,12 @@ def read_data(trodes_files, sampling_rate=3000):
             'moving': read_trodes.readTrodesExtractedDataFile(trodes_files['moving_file'])['data'],
             'IR_beam': read_trodes.readTrodesExtractedDataFile(trodes_files['IR_beam_file'])['data'],
             'triggers': read_trodes.readTrodesExtractedDataFile(trodes_files['triggers_file'])['data'],
-            'lights': read_trodes.readTrodesExtractedDataFile(trodes_files(['lights_file'])['data']),
-            'led': read_trodes.readTrodesExtractedDataFile(trodes_files['led_file']['data']),
-            'topCam': read_trodes.readTrodesExtractedDataFile(trodes_files['topCam_file']['data']),
-            'leftCam': read_trodes.readTrodesExtractedDataFile(trodes_files['leftCam_file']['data']),
-            'rightCam': read_trodes.readTrodesExtractedDataFile(trodes_files['rightCam_file']['data']),
-            'solenoid': read_trodes.readTrodesExtractedDataFile(trodes_files['solenoid_file']['data'])
+            'lights': read_trodes.readTrodesExtractedDataFile(trodes_files['lights_file'])['data'],
+            'led': read_trodes.readTrodesExtractedDataFile(trodes_files['led_file'])['data'],
+            'topCam': read_trodes.readTrodesExtractedDataFile(trodes_files['top_Cam_file'])['data'],
+            'leftCam': read_trodes.readTrodesExtractedDataFile(trodes_files['left_Cam_file'])['data'],
+            'rightCam': read_trodes.readTrodesExtractedDataFile(trodes_files['right_Cam_file'])['data'],
+            'solenoid': read_trodes.readTrodesExtractedDataFile(trodes_files['solenoid_file'])['data']
         },
         'analog': {
             'x_pot': read_trodes.readTrodesExtractedDataFile(trodes_files['x_pot_file'])['data']['voltage'][0:-1:ds],

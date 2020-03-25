@@ -1,8 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ChangeListManager">
-    <list default="true" id="1c61d499-d299-414c-a1a7-49655d33faee" name="Default Changelist" comment="Changed_name">
+    <list default="true" id="1c61d499-d299-414c-a1a7-49655d33faee" name="Default Changelist" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/software/preprocessing/trodes_data/experiment_data_parser.py" beforeDir="false" afterPath="$PROJECT_DIR$/software/preprocessing/trodes_data/experiment_data_parser.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -28,27 +29,6 @@
     <property name="last_opened_file_path" value="$USER_HOME$/OneDrive/Desktop/ReachMaster" />
   </component>
   <component name="RunManager">
-    <configuration name="experiment_data_parser" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
-      <module name="ReachMaster" />
-      <option name="INTERPRETER_OPTIONS" value="" />
-      <option name="PARENT_ENVS" value="true" />
-      <envs>
-        <env name="PYTHONUNBUFFERED" value="1" />
-      </envs>
-      <option name="SDK_HOME" value="" />
-      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/software/preprocessing/trodes_data" />
-      <option name="IS_MODULE_SDK" value="true" />
-      <option name="ADD_CONTENT_ROOTS" value="true" />
-      <option name="ADD_SOURCE_ROOTS" value="true" />
-      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/software/preprocessing/trodes_data/experiment_data_parser.py" />
-      <option name="PARAMETERS" value="" />
-      <option name="SHOW_COMMAND_LINE" value="false" />
-      <option name="EMULATE_TERMINAL" value="false" />
-      <option name="MODULE_MODE" value="false" />
-      <option name="REDIRECT_INPUT" value="false" />
-      <option name="INPUT_FILE" value="" />
-      <method v="2" />
-    </configuration>
     <recent_temporary>
       <list>
         <item itemvalue="Python.experiment_data_parser" />
@@ -73,7 +53,14 @@
       <option name="project" value="LOCAL" />
       <updated>1585095705143</updated>
     </task>
-    <option name="localTasksCounter" value="2" />
+    <task id="LOCAL-00002" summary="Windows Paths">
+      <created>1585096382268</created>
+      <option name="number" value="00002" />
+      <option name="presentableId" value="LOCAL-00002" />
+      <option name="project" value="LOCAL" />
+      <updated>1585096382268</updated>
+    </task>
+    <option name="localTasksCounter" value="3" />
     <servers />
   </component>
   <component name="Vcs.Log.Tabs.Properties">
@@ -89,37 +76,58 @@
   </component>
   <component name="VcsManagerConfiguration">
     <MESSAGE value="Changed_name" />
-    <option name="LAST_COMMIT_MESSAGE" value="Changed_name" />
+    <MESSAGE value="Windows Paths" />
+    <option name="LAST_COMMIT_MESSAGE" value="Windows Paths" />
   </component>
   <component name="WindowStateProjectService">
-    <state x="438" y="14" key="CommitChangelistDialog2" timestamp="1585095715698">
+    <state x="521" y="78" key="#experiment_data_parser" timestamp="1585096888676">
       <screen x="0" y="0" width="1536" height="824" />
     </state>
-    <state x="438" y="14" key="CommitChangelistDialog2/0.0.1536.824@0.0.1536.824" timestamp="1585095715698" />
+    <state x="521" y="78" key="#experiment_data_parser/0.0.1536.824@0.0.1536.824" timestamp="1585096888676" />
+    <state x="438" y="14" key="CommitChangelistDialog2" timestamp="1585096381711">
+      <screen x="0" y="0" width="1536" height="824" />
+    </state>
+    <state x="438" y="14" key="CommitChangelistDialog2/0.0.1536.824@0.0.1536.824" timestamp="1585096381711" />
     <state x="563" y="215" key="FileChooserDialogImpl" timestamp="1585091665400">
       <screen x="0" y="0" width="1536" height="824" />
     </state>
     <state x="563" y="215" key="FileChooserDialogImpl/0.0.1536.824@0.0.1536.824" timestamp="1585091665400" />
-    <state width="1500" height="208" key="GridCell.Tab.0.bottom" timestamp="1585095794350">
+    <state width="1500" height="208" key="GridCell.Tab.0.bottom" timestamp="1585096893991">
       <screen x="0" y="0" width="1536" height="824" />
     </state>
-    <state width="1500" height="208" key="GridCell.Tab.0.bottom/0.0.1536.824@0.0.1536.824" timestamp="1585095794350" />
-    <state width="1500" height="208" key="GridCell.Tab.0.center" timestamp="1585095794350">
+    <state width="1500" height="208" key="GridCell.Tab.0.bottom/0.0.1536.824@0.0.1536.824" timestamp="1585096893991" />
+    <state width="1500" height="208" key="GridCell.Tab.0.center" timestamp="1585096893990">
       <screen x="0" y="0" width="1536" height="824" />
     </state>
-    <state width="1500" height="208" key="GridCell.Tab.0.center/0.0.1536.824@0.0.1536.824" timestamp="1585095794350" />
-    <state width="1500" height="208" key="GridCell.Tab.0.left" timestamp="1585095794350">
+    <state width="1500" height="208" key="GridCell.Tab.0.center/0.0.1536.824@0.0.1536.824" timestamp="1585096893990" />
+    <state width="1500" height="208" key="GridCell.Tab.0.left" timestamp="1585096893990">
       <screen x="0" y="0" width="1536" height="824" />
     </state>
-    <state width="1500" height="208" key="GridCell.Tab.0.left/0.0.1536.824@0.0.1536.824" timestamp="1585095794350" />
-    <state width="1500" height="208" key="GridCell.Tab.0.right" timestamp="1585095794350">
+    <state width="1500" height="208" key="GridCell.Tab.0.left/0.0.1536.824@0.0.1536.824" timestamp="1585096893990" />
+    <state width="1500" height="208" key="GridCell.Tab.0.right" timestamp="1585096893991">
       <screen x="0" y="0" width="1536" height="824" />
     </state>
-    <state width="1500" height="208" key="GridCell.Tab.0.right/0.0.1536.824@0.0.1536.824" timestamp="1585095794350" />
-    <state x="375" y="193" key="Vcs.Push.Dialog.v2" timestamp="1585095737860">
+    <state width="1500" height="208" key="GridCell.Tab.0.right/0.0.1536.824@0.0.1536.824" timestamp="1585096893991" />
+    <state width="1500" height="258" key="GridCell.Tab.1.bottom" timestamp="1585096664594">
       <screen x="0" y="0" width="1536" height="824" />
     </state>
-    <state x="375" y="193" key="Vcs.Push.Dialog.v2/0.0.1536.824@0.0.1536.824" timestamp="1585095737860" />
+    <state width="1500" height="258" key="GridCell.Tab.1.bottom/0.0.1536.824@0.0.1536.824" timestamp="1585096664594" />
+    <state width="1500" height="258" key="GridCell.Tab.1.center" timestamp="1585096664594">
+      <screen x="0" y="0" width="1536" height="824" />
+    </state>
+    <state width="1500" height="258" key="GridCell.Tab.1.center/0.0.1536.824@0.0.1536.824" timestamp="1585096664594" />
+    <state width="1500" height="258" key="GridCell.Tab.1.left" timestamp="1585096664594">
+      <screen x="0" y="0" width="1536" height="824" />
+    </state>
+    <state width="1500" height="258" key="GridCell.Tab.1.left/0.0.1536.824@0.0.1536.824" timestamp="1585096664594" />
+    <state width="1500" height="258" key="GridCell.Tab.1.right" timestamp="1585096664594">
+      <screen x="0" y="0" width="1536" height="824" />
+    </state>
+    <state width="1500" height="258" key="GridCell.Tab.1.right/0.0.1536.824@0.0.1536.824" timestamp="1585096664594" />
+    <state x="375" y="193" key="Vcs.Push.Dialog.v2" timestamp="1585096385343">
+      <screen x="0" y="0" width="1536" height="824" />
+    </state>
+    <state x="375" y="193" key="Vcs.Push.Dialog.v2/0.0.1536.824@0.0.1536.824" timestamp="1585096385343" />
     <state x="530" y="194" key="VcsDiffUtil.ChangesDialog" timestamp="1585083834732">
       <screen x="0" y="0" width="1536" height="824" />
     </state>
@@ -128,16 +136,5 @@
       <screen x="0" y="0" width="1536" height="824" />
     </state>
     <state x="114" y="148" width="1336" height="624" key="com.intellij.history.integration.ui.views.FileHistoryDialog/0.0.1536.824@0.0.1536.824" timestamp="1585083997029" />
-  </component>
-  <component name="XDebuggerManager">
-    <breakpoint-manager>
-      <breakpoints>
-        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
-          <url>file://$PROJECT_DIR$/software/preprocessing/trodes_data/experiment_data_parser.py</url>
-          <line>4</line>
-          <option name="timeStamp" value="1" />
-        </line-breakpoint>
-      </breakpoints>
-    </breakpoint-manager>
   </component>
 </project>
