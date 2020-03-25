@@ -202,40 +202,40 @@ def to_seconds(experimental_data, start_at_zero=True):
     return experimental_data
 
 
-def load_params(ecu_address):
-    """Load ECU Metadata File that contains information about the experiment from PNS system
+def load_params(mc_address):
+    """Load Microcontroller Metadata File that contains information about the experiment from PNS system
 
         Parameters
         ----------
-        ecu_address: str
+        mc_address: str
             path to ECU metadata file
 
         Returns
         -------
         params : pandas dataframe
-            ECU Metadata  ['time', 'trial', 'PNS', 'PNS_flag', 'triggered', 'inRewardWin', 'zPOI']
+            Microcontroller Metadata  ['time', 'trial', 'PNS', 'PNS_flag', 'triggered', 'inRewardWin', 'zPOI']
 
         """
-    os.chdir(ecu_address)
-    params = read_file(ecu_address)
+    os.chdir(mc_address)
+    params = read_file(mc_address)
     return params
 
 
-def read_file(ecu_path):
-    """ Read ECU Metadata file into a pandas data frame
+def read_file(mc_path):
+    """ Read Microcontroller Metadata file into a pandas data frame
         Parameters
         ----------
         ecu_path: str
-            path to ECU metadata file
+            path to Microcontroller metadata file
 
         Returns
         -------
         params : pandas data frame
-            ECU Metadata  ['time', 'trial', 'PNS', 'PNS_flag', 'triggered', 'inRewardWin', 'zPOI']
+            Microcontroller Metadata  ['time', 'trial', 'PNS', 'PNS_flag', 'triggered', 'inRewardWin', 'zPOI']
 
     """
-    ecu_files = os.listdir(ecu_path)[0]
-    params = pd.read_csv(ecu_files, delim_whitespace=True, skiprows=1)
+    mc_files = os.listdir(mc_path)[0]
+    params = pd.read_csv(mc_files, delim_whitespace=True, skiprows=1)
     params.columns = ['time', 'trial', 'PNS', 'PNS_flag', 'triggered', 'inRewardWin', 'zPOI']
     return params
 
@@ -245,7 +245,7 @@ def find_transitions(params):
             Parameters
             ----------
             params : pandas data frame
-                ECU Metadata  ['time', 'trial', 'PNS', 'PNS_flag', 'triggered', 'inRewardWin', 'zPOI']
+                Microcontroller Metadata  ['time', 'trial', 'PNS', 'PNS_flag', 'triggered', 'inRewardWin', 'zPOI']
             Returns
             -------
             transition_list: numpy array
@@ -267,7 +267,6 @@ def find_transitions(params):
         del transition_list[0]  # get rid of first experiment trial where it initializes in the 'ready' trial state
     len_var = len(transition_list)
     transition_list = np.asarray(transition_list)
-    transition_list.reshape((2, len_var))  # reshape array into a array dims (2, N), N is # trials
     return transition_list
 
 
@@ -289,14 +288,13 @@ def match_timestamps_index(transition_list, experimental_data):
             """
     # find the first timestamp in trodes data corresponding to metadata
     matched_index = []
-    beam = experimental_data['DIO']['IR_beam_file']
+    beam = experimental_data['DIO']['IR_beam']
     for col in beam.columns:
         matched_index[col] = [0] + [idx for idx, (i, j) in enumerate(zip(beam[col], beam[col][1:]), 1) if i != j]
     matched_index = np.asarray(matched_index)
     # check for starting in the 'on' position, delete if true
-    if experimental_data['DIO']['IR_beam_file'][matched_index[0]] == 1:
+    if experimental_data['DIO']['IR_beam'][matched_index[0]] == 1:
         del matched_index[0]
-    matched_index.reshape((2, len(matched_index)))  # same shape as transition_list
     return matched_index
 
 
@@ -318,7 +316,7 @@ def create_time_mask(transition_list, matched_index):
     return time_mask
 
 
-def create_experiment_dataframe(data_dir, trodes_name, ecu_dir, sampling_rate=3000, df_address=False):
+def create_experiment_dataframe(data_dir, trodes_name, mc_dir, sampling_rate=3000, df_address=False):
     """ Create a data frame holding all time-synced experimental metadata
         Parameters
        ----------
@@ -334,7 +332,7 @@ def create_experiment_dataframe(data_dir, trodes_name, ecu_dir, sampling_rate=30
             read_data().
 
         params : pandas data frame
-            ECU Metadata  ['time', 'trial', 'PNS', 'PNS_flag', 'triggered', 'inRewardWin', 'zPOI']
+            Microcontroller Metadata  ['time', 'trial', 'PNS', 'PNS_flag', 'triggered', 'inRewardWin', 'zPOI']
 
         experimental_dataframe : pandas data frame
             data frame containing all time-synced experimental variables
@@ -345,7 +343,7 @@ def create_experiment_dataframe(data_dir, trodes_name, ecu_dir, sampling_rate=30
     experimental_data = read_data(trodes_files, sampling_rate)
     experimental_data = to_numpy(experimental_data)
     experimental_data = to_seconds(experimental_data)
-    params = load_params(ecu_dir)
+    params = load_params(mc_dir)
     transitions = find_transitions(params)
     match_timestamps_index(transitions, experimental_data)
     time_mask = create_time_mask(transitions, experimental_data)
@@ -393,3 +391,8 @@ def save_existing_dataframe(e_d, param, trans, match, mask):
     with open('exp_df.txt', 'wb') as f:
         json.dump(new_df, codecs.getwriter('utf-8')(f), sort_keys=True, indent=4, ensure_ascii=False)
     return new_df
+
+def statistics(transitions, experimental_data, ecu_data):
+
+
+    return trial_statistics
