@@ -2,8 +2,7 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="1c61d499-d299-414c-a1a7-49655d33faee" name="Default Changelist" comment="">
-      <change beforePath="$PROJECT_DIR$/docs/build/_modules/Tkinter.html" beforeDir="false" afterPath="$PROJECT_DIR$/docs/build/_modules/Tkinter.html" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/docs/build/html/_modules/Tkinter.html" beforeDir="false" afterPath="$PROJECT_DIR$/docs/build/html/_modules/Tkinter.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/software/preprocessing/trodes_data/preprocessing_data_parser.py" beforeDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
