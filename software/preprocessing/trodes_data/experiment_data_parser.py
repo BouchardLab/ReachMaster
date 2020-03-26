@@ -5,6 +5,7 @@ collected during experiments.
 import codecs
 import json
 import os
+
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
@@ -231,14 +232,15 @@ def read_controller_file(controller_path):
         Returns
         -------
         params : pandas data frame
-            Microcontroller Metadata  ['time', 'trial', 'PNS', 'PNS_flag', 'triggered', 'inRewardWin', 'zPOI']
+            Microcontroller Metadata  ['time', 'trial', 'exp_response', 'rob_moving', 'image_triggered', 'in_Reward_Win', 'z_POI']
 
     """
     controller_files = os.listdir(controller_path)[0]
     params = pd.read_csv(controller_files, delim_whitespace=True, skiprows=1)
-    params.columns = ['time', 'trial', 'PNS', 'PNS_flag', 'triggered', 'inRewardWin', 'zPOI']
+    params.columns = ['time', 'trial', 'exp_response', 'rob_moving', 'image_triggered', 'in_Reward_Win', 'z_POI']
     # time trial exp_response rob_moving image_triggered in_reward_window z_poi
     return params
+
 
 def create_experiment_dataframe(data_dir, trodes_name, mc_dir, sampling_rate=3000, df_address=False):
     """ Create a data frame holding all time-synced experimental metadata
@@ -320,7 +322,7 @@ def save_existing_dataframe(e_d, param, trans, match, mask):
 def plot_data(experiment_data, var_name, time_set=False):
     time = experiment_data['time']['time']
     if time_set:
-        time = obtain_times(experiment_data, 30)
+        time = obtain_times(experiment_data, 3)
     exp_var = experiment_data['DIO'][var_name]
     mask = np.empty(len(time))
     for idx, val in enumerate(time):
@@ -376,9 +378,32 @@ def find_reach_indices(controller_data):
         if j == 'e':
             e_index.append(i)
         if j == 'r':
-            if controller_data['exp_response'][i-1] == 'r':
+            if controller_data['exp_response'][i - 1] == 'r':
                 continue
             else:
                 r_start_index.append(i)
-    reach_indices = {'start' : r_start_index, 'stop': e_index}
+    reach_indices = {'start': r_start_index, 'stop': e_index}
     return reach_indices
+
+
+def find_trial_info(controller_data, e_data, norm_time):
+    num_trials = np.amax(controller_data['trial'], axis=0)
+    trial_dict = {'trial': [], 'trials_in_zone': [], 'trials_lick': [], 'time_range': []}
+    reach_indices = find_reach_indices(controller_data)
+    licks = e_data['DIO']['IR_beam']
+    for i in range(num_trials):
+        trial_dict['trial'].append(i)
+        for x in controller_data['in_Reward_Win'][reach_indices['start'][i]:reach_indices['stop'][i]]:
+            if x == 1:
+                trial_dict['retract'].append(i)
+                break
+            else:
+                continue
+        # extract normed timestamps from reach indices
+        reach_times = norm_time[reach_indices['start'][i]:reach_indices['stop'][i]]
+        trial_dict['time_range'].append((np.amin(reach_times, axis=0)), np.amax(reach_times, axis=0))
+        # compare timestamp values to any values in IR_beam
+        for xi in licks:
+            if (xi > reach_times[0]).all() and (xi < reach_times[-1]).all():
+                trial_dict['trials_lick'].append(i)
+    return trial_dict
