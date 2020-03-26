@@ -319,24 +319,28 @@ def save_existing_dataframe(e_d, param, trans, match, mask):
     return new_df
 
 
-def plot_data(experiment_data, var_name, time_set=False):
+def plot_trodes_timeseries(experiment_data, var_name, time_set=False):
     time = experiment_data['time']['time']
     if time_set:
         time = obtain_times(experiment_data, 3)
     exp_var = experiment_data['DIO'][var_name]
-    mask = np.empty(len(time))
-    for idx, val in enumerate(time):
-        if any(val == c for c in exp_var):
-            mask[idx] = 1
-        else:
-            continue
+    mask = create_DIO_mask(time, exp_var)
     plt.plot(time, mask)
     plt.xlabel('time (s)')
     plt.ylabel(var_name)
     plt.title(var_name + ' over experiment')
     plt.show()
-
     return
+
+
+def create_DIO_mask(time_data, trodes_data):
+    mask = np.empty(len(time))
+    for idx, val in enumerate(time_data):
+        if any(val == c for c in trodes_data):
+            mask[idx] = 1
+        else:
+            continue
+    return mask
 
 
 def obtain_times(experiment_data, time_length):
@@ -350,16 +354,37 @@ def obtain_times(experiment_data, time_length):
 
 
 def match_times(controller_data, experiment_data):
-    controller_time = controller_data['time']
-    exposures = experiment_data['DIO']['triggers']
-    controller_time_normalized = controller_time[len(controller_time) - 1]
+    controller_time = controller_data['time'] / 1000  # convert to s
+    exposures = experiment_data['DIO']['topCam']  # exposure data
+    exposures = get_exposure_times(exposures, experiment_data['time']['time'])
+    controller_time_normalized = controller_time - controller_time[-1]
     last_exposure_time = exposures[len(exposures) - 1]
-    norm_array = [(c_time - controller_time_normalized) for c_time in controller_time]
-    return norm_array
+    norm_time = controller_time_normalized + last_exposure_time
+    return norm_time
 
 
-def import_data(trodes_path, trodes_name, ecu_path, win_dir=False):
-    controller_data = read_controller_file(ecu_path)
+def get_exposure_times(exposures, time):
+    exposures_high = exposures[1::2]
+    exposures_low = exposures[2::2]
+    real_exposures = exposures_high + (exposures_high + exposures_low) / 2.0
+    return real_exposures
+
+
+def get_exposure_masks(exposures, time):
+    exposures_low = exposures[1::2]
+    exposures_high = exposures[2::2]
+    mask_array = np.zeros(len(exposures_high))
+    high_index = np.searchsorted(exposures_high, time)
+    exposure_mask = np.put(mask_array, high_index, 1)
+    return exposure_mask
+
+
+def import_controller_data(mc_path):
+    controller_data = read_controller_file(mc_path)
+    return controller_data
+
+
+def import_trodes_data(trodes_path, trodes_name, ecu_path, win_dir=False):
     if win_dir:
         experiment_files = get_trodes_files(trodes_path, trodes_name, win_dir=True)
     else:
@@ -367,8 +392,7 @@ def import_data(trodes_path, trodes_name, ecu_path, win_dir=False):
     experiment_data = read_data(experiment_files)
     experiment_data = to_numpy(experiment_data)
     experiment_data = to_seconds(experiment_data)
-    norm_times = match_times(controller_data, experiment_data)
-    return controller_data, experiment_data, norm_times
+    return experiment_data
 
 
 def find_reach_indices(controller_data):
