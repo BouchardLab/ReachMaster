@@ -394,12 +394,11 @@ def save_existing_dataframe(e_d, param, trans, match, mask):
     return new_df
 
 
-def statistics(transitions, experimental_data, ecu_data):
-    return trial_statistics
+def plot_data(experiment_data, var_name, time_set = False):
 
-
-def plot_data(experiment_data, var_name):
     time = experiment_data['time']['time']
+    if time_set:
+        time = obtain_times(experiment_data, 30)
     exp_var = experiment_data['DIO'][var_name]
     mask = np.empty(len(time))
     for idx, val in enumerate(time):
@@ -407,10 +406,32 @@ def plot_data(experiment_data, var_name):
             mask[idx] = 1
         else:
             continue
-    plt.plot(time,mask)
+    plt.plot(time, mask)
     plt.xlabel('time (s)')
     plt.ylabel(var_name)
     plt.title(var_name + 'over experiment')
     plt.show()
-    
+
     return
+
+
+def obtain_times(experiment_data, time_length):
+
+    time = experiment_data['time']['time']
+    x = 0
+    for i in time < time_length:
+        x += i
+        continue
+    time_vector = time[0:x]
+    return time_vector
+
+
+def match_times(controller_data,experiment_data):
+
+    controller_time = controller_data['time']
+    exposures = experiment_data['DIO']['triggers']
+    controller_time_normalized = controller_time[0] - controller_time[len(controller_time)-1]
+    last_exposure_time = exposures[len(exposures)-1]
+    new_controller_times = controller_time_normalized + last_exposure_time
+
+    return new_controller_times

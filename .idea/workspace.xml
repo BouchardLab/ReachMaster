@@ -83,7 +83,14 @@
       <option name="project" value="LOCAL" />
       <updated>1585098076702</updated>
     </task>
-    <option name="localTasksCounter" value="7" />
+    <task id="LOCAL-00007" summary="Added graphing functionality, docs to-do">
+      <created>1585180849049</created>
+      <option name="number" value="00007" />
+      <option name="presentableId" value="LOCAL-00007" />
+      <option name="project" value="LOCAL" />
+      <updated>1585180849049</updated>
+    </task>
+    <option name="localTasksCounter" value="8" />
     <servers />
   </component>
   <component name="Vcs.Log.Tabs.Properties">
@@ -106,17 +113,18 @@
     <MESSAGE value="Trodes extraction, ECU extraction working." />
     <MESSAGE value="UD" />
     <MESSAGE value="Fixed naming conventions, debugged." />
-    <option name="LAST_COMMIT_MESSAGE" value="Fixed naming conventions, debugged." />
+    <MESSAGE value="Added graphing functionality, docs to-do" />
+    <option name="LAST_COMMIT_MESSAGE" value="Added graphing functionality, docs to-do" />
   </component>
   <component name="WindowStateProjectService">
     <state x="521" y="78" key="#experiment_data_parser" timestamp="1585096888676">
       <screen x="0" y="0" width="1536" height="824" />
     </state>
     <state x="521" y="78" key="#experiment_data_parser/0.0.1536.824@0.0.1536.824" timestamp="1585096888676" />
-    <state x="438" y="14" key="CommitChangelistDialog2" timestamp="1585098075603">
+    <state x="438" y="14" key="CommitChangelistDialog2" timestamp="1585180847652">
       <screen x="0" y="0" width="1536" height="824" />
     </state>
-    <state x="438" y="14" key="CommitChangelistDialog2/0.0.1536.824@0.0.1536.824" timestamp="1585098075603" />
+    <state x="438" y="14" key="CommitChangelistDialog2/0.0.1536.824@0.0.1536.824" timestamp="1585180847652" />
     <state x="563" y="215" key="FileChooserDialogImpl" timestamp="1585091665400">
       <screen x="0" y="0" width="1536" height="824" />
     </state>
@@ -153,10 +161,10 @@
       <screen x="0" y="0" width="1536" height="824" />
     </state>
     <state width="1500" height="258" key="GridCell.Tab.1.right/0.0.1536.824@0.0.1536.824" timestamp="1585097767285" />
-    <state x="375" y="193" key="Vcs.Push.Dialog.v2" timestamp="1585098079635">
+    <state x="375" y="193" key="Vcs.Push.Dialog.v2" timestamp="1585180851663">
       <screen x="0" y="0" width="1536" height="824" />
     </state>
-    <state x="375" y="193" key="Vcs.Push.Dialog.v2/0.0.1536.824@0.0.1536.824" timestamp="1585098079635" />
+    <state x="375" y="193" key="Vcs.Push.Dialog.v2/0.0.1536.824@0.0.1536.824" timestamp="1585180851663" />
     <state x="530" y="194" key="VcsDiffUtil.ChangesDialog" timestamp="1585083834732">
       <screen x="0" y="0" width="1536" height="824" />
     </state>
