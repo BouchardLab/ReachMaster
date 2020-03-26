@@ -5,7 +5,7 @@ collected during experiments.
 import codecs
 import json
 import os
-
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import readTrodesExtractedDataFile3 as read_trodes  # what does the from . import X mean?
@@ -221,11 +221,11 @@ def load_params(mc_address):
     return params
 
 
-def read_file(mc_path):
+def read_file(controller_path):
     """ Read Microcontroller Metadata file into a pandas data frame
         Parameters
         ----------
-        ecu_path: str
+        controller_path: str
             path to Microcontroller metadata file
 
         Returns
@@ -234,9 +234,10 @@ def read_file(mc_path):
             Microcontroller Metadata  ['time', 'trial', 'PNS', 'PNS_flag', 'triggered', 'inRewardWin', 'zPOI']
 
     """
-    mc_files = os.listdir(mc_path)[0]
-    params = pd.read_csv(mc_files, delim_whitespace=True, skiprows=1)
+    controller_files = os.listdir(controller_path)[0]
+    params = pd.read_csv(controller_files, delim_whitespace=True, skiprows=1)
     params.columns = ['time', 'trial', 'PNS', 'PNS_flag', 'triggered', 'inRewardWin', 'zPOI']
+    # time trial exp_response rob_moving image_triggered in_reward_window z_poi
     return params
 
 
@@ -392,7 +393,24 @@ def save_existing_dataframe(e_d, param, trans, match, mask):
         json.dump(new_df, codecs.getwriter('utf-8')(f), sort_keys=True, indent=4, ensure_ascii=False)
     return new_df
 
+
 def statistics(transitions, experimental_data, ecu_data):
-
-
     return trial_statistics
+
+
+def plot_data(experiment_data, var_name):
+    time = experiment_data['time']['time']
+    exp_var = experiment_data['DIO'][var_name]
+    mask = np.empty(len(time))
+    for idx, val in enumerate(time):
+        if any(val == c for c in exp_var):
+            mask[idx] = 1
+        else:
+            continue
+    plt.plot(time,mask)
+    plt.xlabel('time (s)')
+    plt.ylabel(var_name)
+    plt.title(var_name + 'over experiment')
+    plt.show()
+    
+    return
