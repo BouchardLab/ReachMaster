@@ -221,7 +221,7 @@ def load_params(mc_address):
     return params
 
 
-def read_file(controller_path):
+def read_controller_file(controller_path):
     """ Read Microcontroller Metadata file into a pandas data frame
         Parameters
         ----------
@@ -409,7 +409,7 @@ def plot_data(experiment_data, var_name, time_set = False):
     plt.plot(time, mask)
     plt.xlabel('time (s)')
     plt.ylabel(var_name)
-    plt.title(var_name + 'over experiment')
+    plt.title(var_name + ' over experiment')
     plt.show()
 
     return
@@ -433,5 +433,6 @@ def match_times(controller_data,experiment_data):
     controller_time_normalized = controller_time[0] - controller_time[len(controller_time)-1]
     last_exposure_time = exposures[len(exposures)-1]
     new_controller_times = controller_time_normalized + last_exposure_time
-
-    return new_controller_times
+    norm_array = controller_time-controller_time_normalized
+    norm_array = controller_time+last_exposure_time
+    return norm_array
