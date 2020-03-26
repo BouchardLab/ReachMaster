@@ -3,12 +3,12 @@ collected during robot calibration routines.
 
 """
 
-import os
-from . import readTrodesExtractedDataFile3 as read_trodes
 import numpy as np
 import pandas as pd
-import subprocess as sp 
 from scipy import ndimage
+
+from . import readTrodesExtractedDataFile3 as read_trodes
+
 
 def get_trodes_files(data_dir, trodes_name):
     """Generate names of all the trodes files from a calibration recording.
@@ -139,8 +139,9 @@ def to_seconds(calibration_data, start_at_zero = True):
         if start_at_zero:
             for key in calibration_data['DIO'].keys():
                 calibration_data['DIO'][key] = (
-                    calibration_data['DIO'][key] - calibration_data['time']['time'][0]
-                    ) /  calibration_data['clockrate']
+                                                       calibration_data['DIO'][key] - calibration_data['time']['time'][
+                                                   0]
+                                               ) / calibration_data['clockrate']
             calibration_data['time']['time'] = (
                 calibration_data['time']['time'] - calibration_data['time']['time'][0]
                 ) / calibration_data['clockrate']

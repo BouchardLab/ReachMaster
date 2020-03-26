@@ -373,10 +373,11 @@ def get_exposure_times(exposures, time):
 def get_exposure_masks(exposures, time):
     exposures_low = exposures[1::2]
     exposures_high = exposures[2::2]
-    mask_array = np.zeros(len(exposures_high))
-    high_index = np.searchsorted(exposures_high, time)
-    exposure_mask = np.put(mask_array, high_index, 1)
-    return exposure_mask
+    mask_array = np.zeros(len(time))
+    high_index = np.searchsorted(time, exposures_high)
+    for y in high_index:
+        mask_array[y] = 1
+    return mask_array
 
 
 def import_controller_data(mc_path):
