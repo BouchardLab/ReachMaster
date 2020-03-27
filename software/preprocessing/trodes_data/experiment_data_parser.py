@@ -450,7 +450,11 @@ def get_successful_trials(controller_data, matched_time, experiment_data):
     reach_times = get_reach_times(matched_time, reach_indices)
     reach_start = reach_times['start']
     reach_stop = reach_times['stop']
-
+    trial_num = 0
+    for i, j in reach_start, reach_stop:  # these are start and stop times on trodes time
+        if True in np.vectorize(lambda x: i <= x <= j)(lick_data):
+            success_rate.append(trial_num)
+            trial_num += 1
     return success_rate
 
 
