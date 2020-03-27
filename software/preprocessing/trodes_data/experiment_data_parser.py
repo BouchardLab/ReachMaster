@@ -354,19 +354,17 @@ def obtain_times(experiment_data, time_length):
 
 
 def match_times(controller_data, experiment_data):
-    controller_time = controller_data['time'] / 1000  # convert to s
+    controller_time = np.asarray(controller_data['time'] / 1000)  # convert to s
     exposures = experiment_data['DIO']['topCam']  # exposure data
-    exposures = get_exposure_times(exposures, experiment_data['time']['time'])
-    controller_time_normalized = controller_time - controller_time[-1]
-    last_exposure_time = exposures[len(exposures) - 1]
-    norm_time = controller_time_normalized + last_exposure_time
-    return norm_time
+    exposures = get_exposure_times(exposures)
+    controller_time_normalized = controller_time - controller_time[-1] + exposures[-1]
+    return controller_time_normalized
 
 
-def get_exposure_times(exposures, time):
+def get_exposure_times(exposures):
     exposures_high = exposures[1::2]
     exposures_low = exposures[2::2]
-    real_exposures = exposures_high + (exposures_high + exposures_low) / 2.0
+    real_exposures = exposures_high + (exposures_low - exposures_high / 2)
     return real_exposures
 
 
@@ -396,25 +394,70 @@ def import_trodes_data(trodes_path, trodes_name, ecu_path, win_dir=False):
     return experiment_data
 
 
-def find_reach_indices(controller_data):
-    e_index = []
-    r_start_index = []
+def get_reach_indices(controller_data):
+    end_index = []
+    start_index = []
     for i, j in enumerate(controller_data['exp_response']):
         if j == 'e':
-            e_index.append(i)
+            end_index.append(i)
         if j == 'r':
             if controller_data['exp_response'][i - 1] == 'r':
                 continue
             else:
-                r_start_index.append(i)
-    reach_indices = {'start': r_start_index, 'stop': e_index}
+                start_index.append(i)
+    reach_indices = {'start': start_index, 'stop': end_index}
     return reach_indices
+
+
+def get_reach_times(controller_time, reach_indices):
+    reach_times = {'start': [], 'stop': []}
+    reach_start = reach_indices['start']
+    reach_stop = reach_indices['stop']
+    for i in reach_start:
+        reach_times['start'].append(controller_time[i])
+    for i in reach_stop:
+        reach_times['stop'].append(controller_time[i])
+    return reach_times
+
+
+def make_reach_masks(reach_times, time):
+    reach_start = reach_times['start']
+    reach_stop = reach_times['stop']
+    mask_array = np.zeros(len(time))
+    start_index = np.searchsorted(time, reach_start)
+    stop_index = np.searchsorted(time, reach_stop)
+    for i, j in start_index, stop_index:
+        mask_array[i:j] = 1
+    return mask_array
+
+
+def make_trial_masks(controller_data, time):
+    trials = np.asarray(controller_data['trial'])
+    trial_transitions = np.where(np.roll(trials, 1) != trials)[0]
+    num_trials = np.amax(trials)
+    mask_array = np.zeros(len(time))
+    trial_index = np.searchsorted(time, trial_transitions)
+    start = 0
+    for i in range(0, num_trials - 1):
+        mask_array[start:trial_index[i]] = i
+    return mask_array
+
+
+def get_successful_trials(controller_data, matched_time, experiment_data):
+    success_rate = []
+    lick_data = experiment_data['DIO']['IR_beam']
+    reach_indices = get_reach_indices(controller_data)
+    reach_times = get_reach_times(matched_time, reach_indices)
+    reach_start = reach_times['start']
+    reach_stop = reach_times['stop']
+
+    return success_rate
 
 
 def find_trial_info(controller_data, e_data, norm_time):
     num_trials = np.amax(controller_data['trial'], axis=0)
     trial_dict = {'trial': [], 'trials_in_zone': [], 'trials_lick': [], 'time_range': []}
-    reach_indices = find_reach_indices(controller_data)
+    reach_indices = get_reach_indices(controller_data)
     licks = e_data['DIO']['IR_beam']
     for i in range(num_trials):
         trial_dict['trial'].append(i)
