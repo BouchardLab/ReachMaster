@@ -363,8 +363,7 @@ def match_times(controller_data, experiment_data):
 
 def get_exposure_times(exposures):
     exposures_high = exposures[1::2]
-    exposures_low = exposures[2::2]
-    real_exposures = exposures_high + (exposures_low - exposures_high / 2)
+    real_exposures = exposures_high + (exposures_high / 2)
     return real_exposures
 
 
@@ -383,7 +382,7 @@ def import_controller_data(mc_path):
     return controller_data
 
 
-def import_trodes_data(trodes_path, trodes_name, ecu_path, win_dir=False):
+def import_trodes_data(trodes_path, trodes_name, win_dir=False):
     if win_dir:
         experiment_files = get_trodes_files(trodes_path, trodes_name, win_dir=True)
     else:
