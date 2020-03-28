@@ -363,7 +363,7 @@ def match_times(controller_data, experiment_data):
 
 def get_exposure_times(exposures):
     exposures_high = exposures[1::2]
-    real_exposures = exposures_high + (exposures_high / 2)
+    real_exposures = exposures_high
     return real_exposures
 
 
