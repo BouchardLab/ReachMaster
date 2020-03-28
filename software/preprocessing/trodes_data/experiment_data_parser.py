@@ -463,24 +463,9 @@ def get_successful_trials(controller_data, matched_time, experiment_data):
     return success_rate
 
 
-def find_trial_info(controller_data, e_data, norm_time):
-    num_trials = np.amax(controller_data['trial'], axis=0)
-    trial_dict = {'trial': [], 'trials_in_zone': [], 'trials_lick': [], 'time_range': []}
-    reach_indices = get_reach_indices(controller_data)
-    licks = e_data['DIO']['IR_beam']
-    for i in range(num_trials):
-        trial_dict['trial'].append(i)
-        for x in controller_data['in_Reward_Win'][reach_indices['start'][i]:reach_indices['stop'][i]]:
-            if x == 1:
-                trial_dict['retract'].append(i)
-                break
-            else:
-                continue
-        # extract normed timestamps from reach indices
-        reach_times = norm_time[reach_indices['start'][i]:reach_indices['stop'][i]]
-        trial_dict['time_range'].append((np.amin(reach_times, axis=0)), np.amax(reach_times, axis=0))
-        # compare timestamp values to any values in IR_beam
-        for xi in licks:
-            if (xi > reach_times[0]).all() and (xi < reach_times[-1]).all():
-                trial_dict['trials_lick'].append(i)
-    return trial_dict
+def get_config(config_path):
+    files = [i for i in os.listdir(config_path) if os.path.isfile(os.path.join(config_path, i)) and \
+             'Work' in i]
+    os.chdir(config_path)
+    config_file = json.load(open(files))
+    return config_file
