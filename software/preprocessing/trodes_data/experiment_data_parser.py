@@ -465,7 +465,7 @@ def get_successful_trials(controller_data, matched_time, experiment_data):
 
 def get_config(config_path):
     files = [i for i in os.listdir(config_path) if os.path.isfile(os.path.join(config_path, i)) and \
-             'Work' in i]
+             'Workspace%' in i]
     os.chdir(config_path)
-    config_file = json.load(open(files))
+    config_file = json.load(open(files[0]))
     return config_file

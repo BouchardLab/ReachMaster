@@ -2,7 +2,6 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="1c61d499-d299-414c-a1a7-49655d33faee" name="Default Changelist" comment="">
-      <change afterPath="$PROJECT_DIR$/software/preprocessing/trodes_data/trial_mask.png" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/software/preprocessing/trodes_data/experiment_data_parser.py" beforeDir="false" afterPath="$PROJECT_DIR$/software/preprocessing/trodes_data/experiment_data_parser.py" afterDir="false" />
     </list>
@@ -179,7 +178,14 @@
       <option name="project" value="LOCAL" />
       <updated>1585357714715</updated>
     </task>
-    <option name="localTasksCounter" value="20" />
+    <task id="LOCAL-00020" summary="Added controller read option">
+      <created>1585425033824</created>
+      <option name="number" value="00020" />
+      <option name="presentableId" value="LOCAL-00020" />
+      <option name="project" value="LOCAL" />
+      <updated>1585425033824</updated>
+    </task>
+    <option name="localTasksCounter" value="21" />
     <servers />
   </component>
   <component name="Vcs.Log.Tabs.Properties">
@@ -212,7 +218,8 @@
     <MESSAGE value="Midnight work" />
     <MESSAGE value="Midnight work, functions written but must be debugged" />
     <MESSAGE value="Starting to work well" />
-    <option name="LAST_COMMIT_MESSAGE" value="Starting to work well" />
+    <MESSAGE value="Added controller read option" />
+    <option name="LAST_COMMIT_MESSAGE" value="Added controller read option" />
     <option name="OPTIMIZE_IMPORTS_BEFORE_PROJECT_COMMIT" value="true" />
     <option name="REFORMAT_BEFORE_PROJECT_COMMIT" value="true" />
   </component>
@@ -221,10 +228,10 @@
       <screen x="0" y="0" width="1536" height="824" />
     </state>
     <state x="521" y="78" key="#experiment_data_parser/0.0.1536.824@0.0.1536.824" timestamp="1585096888676" />
-    <state x="438" y="14" key="CommitChangelistDialog2" timestamp="1585357713139">
+    <state x="438" y="14" key="CommitChangelistDialog2" timestamp="1585425032047">
       <screen x="0" y="0" width="1536" height="824" />
     </state>
-    <state x="438" y="14" key="CommitChangelistDialog2/0.0.1536.824@0.0.1536.824" timestamp="1585357713139" />
+    <state x="438" y="14" key="CommitChangelistDialog2/0.0.1536.824@0.0.1536.824" timestamp="1585425032047" />
     <state x="563" y="215" key="FileChooserDialogImpl" timestamp="1585200332311">
       <screen x="0" y="0" width="1536" height="824" />
     </state>
@@ -261,10 +268,10 @@
       <screen x="0" y="0" width="1536" height="824" />
     </state>
     <state width="1500" height="258" key="GridCell.Tab.1.right/0.0.1536.824@0.0.1536.824" timestamp="1585097767285" />
-    <state x="375" y="193" key="Vcs.Push.Dialog.v2" timestamp="1585357726138">
+    <state x="375" y="193" key="Vcs.Push.Dialog.v2" timestamp="1585425038705">
       <screen x="0" y="0" width="1536" height="824" />
     </state>
-    <state x="375" y="193" key="Vcs.Push.Dialog.v2/0.0.1536.824@0.0.1536.824" timestamp="1585357726138" />
+    <state x="375" y="193" key="Vcs.Push.Dialog.v2/0.0.1536.824@0.0.1536.824" timestamp="1585425038705" />
     <state x="530" y="194" key="VcsDiffUtil.ChangesDialog" timestamp="1585083834732">
       <screen x="0" y="0" width="1536" height="824" />
     </state>
