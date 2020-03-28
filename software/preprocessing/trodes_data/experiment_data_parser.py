@@ -5,11 +5,13 @@ collected during experiments.
 import codecs
 import json
 import os
+import time
 
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import readTrodesExtractedDataFile3 as read_trodes  # what does the from . import X mean?
+from moviepy.editor import VideoFileClip
 
 
 def get_trodes_files(data_dir, trodes_name, win_dir=False):  # pass in data directory, name of rec file
@@ -469,3 +471,52 @@ def get_config(config_path):
     os.chdir(config_path)
     config_file = json.load(open(files[0]))
     return config_file
+
+
+def import_config_data(config_path):
+    data = get_config(config_path)
+    config_data = {'command__file': data['RobotSettings']['commandFile'], 'x_pos': data['RobotSettings']['xCommandPos'],
+                   'y_pos': data['RobotSettings']['yCommandPos'], 'z_pos': data['RobotSettings']['zCommandPos'] }
+    return config_data
+
+
+def get_trodes_robot_data (e_data):
+    data = {
+
+    }
+    return data
+
+
+def make_split_trial_videos(video_path, reach_times):
+    """
+
+    Parameters
+    ----------
+    video_path
+    reach_times
+    new_video_path
+
+    Returns
+    -------
+
+    """
+
+    start_times = reach_times['start']
+    stop_times = reach_times['stop']
+    try:
+        if not os.path.exists(video_path + 'trials'):
+            os.makedirs(video_path + 'trials')
+    except OSError:
+        print('Error: Creating directory of data')
+    current_clip = 0
+    for xi in range(len(start_times)):
+        clip = VideoFileClip(video_path).subclip(start_times[xi], stop_times[xi])
+        name = str(video_path) + '_reach_' + str(current_clip) + '.avi'
+        clip.to_videofile(name, codec="libx264", audio=False,)
+        current_clip += 1
+        if current_clip == 10:
+            break
+
+    return
+
+
