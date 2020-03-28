@@ -425,20 +425,24 @@ def make_reach_masks(reach_times, time):
     mask_array = np.zeros(len(time))
     start_index = np.searchsorted(time, reach_start)
     stop_index = np.searchsorted(time, reach_stop)
-    for i, j in start_index, stop_index:
+    for xi in range(len(start_index)):
+        i = start_index[xi]
+        j = stop_index[xi]
         mask_array[i:j] = 1
     return mask_array
 
 
-def make_trial_masks(controller_data, time):
+def make_trial_masks(controller_data, experiment_data):
+    time = experiment_data['time']['time']
     trials = np.asarray(controller_data['trial'])
+    matched_times = match_times(controller_data, experiment_data)
     trial_transitions = np.where(np.roll(trials, 1) != trials)[0]
     num_trials = np.amax(trials)
     mask_array = np.zeros(len(time))
+    trial_transitions = matched_times[trial_transitions]
     trial_index = np.searchsorted(time, trial_transitions)
-    start = 0
     for i in range(0, num_trials - 1):
-        mask_array[start:trial_index[i]] = i
+        mask_array[trial_index[i]:trial_index[i + 1]] = i + 1
     return mask_array
 
 
@@ -450,7 +454,9 @@ def get_successful_trials(controller_data, matched_time, experiment_data):
     reach_start = reach_times['start']
     reach_stop = reach_times['stop']
     trial_num = 0
-    for i, j in reach_start, reach_stop:  # these are start and stop times on trodes time
+    for xi in range(len(reach_start)):
+        i = reach_start[xi]  # these are start and stop times on trodes time
+        j = reach_stop[xi]
         if True in np.vectorize(lambda x: i <= x <= j)(lick_data):
             success_rate.append(trial_num)
             trial_num += 1
