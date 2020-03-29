@@ -193,7 +193,14 @@
       <option name="project" value="LOCAL" />
       <updated>1585425285039</updated>
     </task>
-    <option name="localTasksCounter" value="22" />
+    <task id="LOCAL-00022" summary="Added trial video split function">
+      <created>1585435925072</created>
+      <option name="number" value="00022" />
+      <option name="presentableId" value="LOCAL-00022" />
+      <option name="project" value="LOCAL" />
+      <updated>1585435925072</updated>
+    </task>
+    <option name="localTasksCounter" value="23" />
     <servers />
   </component>
   <component name="Vcs.Log.Tabs.Properties">
@@ -228,19 +235,28 @@
     <MESSAGE value="Starting to work well" />
     <MESSAGE value="Added controller read option" />
     <MESSAGE value="Added controller read option,debugged" />
-    <option name="LAST_COMMIT_MESSAGE" value="Added controller read option,debugged" />
+    <MESSAGE value="Added trial video split function" />
+    <option name="LAST_COMMIT_MESSAGE" value="Added trial video split function" />
     <option name="OPTIMIZE_IMPORTS_BEFORE_PROJECT_COMMIT" value="true" />
     <option name="REFORMAT_BEFORE_PROJECT_COMMIT" value="true" />
   </component>
   <component name="WindowStateProjectService">
-    <state x="521" y="78" key="#experiment_data_parser" timestamp="1585096888676">
+    <state x="0" y="0" key="#com.intellij.fileTypes.FileTypeChooser" timestamp="1585454086275">
       <screen x="0" y="0" width="1536" height="824" />
     </state>
-    <state x="521" y="78" key="#experiment_data_parser/0.0.1536.824@0.0.1536.824" timestamp="1585096888676" />
-    <state x="438" y="14" key="CommitChangelistDialog2" timestamp="1585425284058">
+    <state x="0" y="0" key="#com.intellij.fileTypes.FileTypeChooser/0.0.1536.824@0.0.1536.824" timestamp="1585454086275" />
+    <state x="521" y="78" key="#experiment_data_parser" timestamp="1585488855554">
       <screen x="0" y="0" width="1536" height="824" />
     </state>
-    <state x="438" y="14" key="CommitChangelistDialog2/0.0.1536.824@0.0.1536.824" timestamp="1585425284058" />
+    <state x="521" y="78" key="#experiment_data_parser/0.0.1536.824@0.0.1536.824" timestamp="1585488855554" />
+    <state x="0" y="165" key="#xdebugger.XInspectDialog" timestamp="1585443622356">
+      <screen x="0" y="0" width="1536" height="824" />
+    </state>
+    <state x="0" y="165" key="#xdebugger.XInspectDialog/0.0.1536.824@0.0.1536.824" timestamp="1585443622356" />
+    <state x="438" y="14" key="CommitChangelistDialog2" timestamp="1585435924030">
+      <screen x="0" y="0" width="1536" height="824" />
+    </state>
+    <state x="438" y="14" key="CommitChangelistDialog2/0.0.1536.824@0.0.1536.824" timestamp="1585435924030" />
     <state x="563" y="215" key="FileChooserDialogImpl" timestamp="1585200332311">
       <screen x="0" y="0" width="1536" height="824" />
     </state>
@@ -277,22 +293,22 @@
       <screen x="0" y="0" width="1536" height="824" />
     </state>
     <state width="1500" height="258" key="GridCell.Tab.1.right/0.0.1536.824@0.0.1536.824" timestamp="1585097767285" />
-    <state x="25" y="47" key="SettingsEditor" timestamp="1585435422213">
+    <state x="25" y="47" key="SettingsEditor" timestamp="1585489646959">
       <screen x="0" y="0" width="1536" height="824" />
     </state>
-    <state x="25" y="47" key="SettingsEditor/0.0.1536.824@0.0.1536.824" timestamp="1585435422213" />
-    <state x="375" y="193" key="Vcs.Push.Dialog.v2" timestamp="1585425038705">
+    <state x="25" y="47" key="SettingsEditor/0.0.1536.824@0.0.1536.824" timestamp="1585489646959" />
+    <state x="375" y="193" key="Vcs.Push.Dialog.v2" timestamp="1585435928810">
       <screen x="0" y="0" width="1536" height="824" />
     </state>
-    <state x="375" y="193" key="Vcs.Push.Dialog.v2/0.0.1536.824@0.0.1536.824" timestamp="1585425038705" />
+    <state x="375" y="193" key="Vcs.Push.Dialog.v2/0.0.1536.824@0.0.1536.824" timestamp="1585435928810" />
     <state x="530" y="194" key="VcsDiffUtil.ChangesDialog" timestamp="1585083834732">
       <screen x="0" y="0" width="1536" height="824" />
     </state>
     <state x="530" y="194" key="VcsDiffUtil.ChangesDialog/0.0.1536.824@0.0.1536.824" timestamp="1585083834732" />
-    <state width="775" height="419" key="XDebugger.FullValuePopup" timestamp="1585341556968">
+    <state width="775" height="419" key="XDebugger.FullValuePopup" timestamp="1585443566345">
       <screen x="0" y="0" width="1536" height="824" />
     </state>
-    <state width="775" height="419" key="XDebugger.FullValuePopup/0.0.1536.824@0.0.1536.824" timestamp="1585341556968" />
+    <state width="775" height="419" key="XDebugger.FullValuePopup/0.0.1536.824@0.0.1536.824" timestamp="1585443566345" />
     <state x="114" y="148" width="1336" height="624" key="com.intellij.history.integration.ui.views.FileHistoryDialog" timestamp="1585083997029">
       <screen x="0" y="0" width="1536" height="824" />
     </state>

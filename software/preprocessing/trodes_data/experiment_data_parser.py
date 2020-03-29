@@ -7,11 +7,11 @@ import json
 import os
 import time
 
+import cv2
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import readTrodesExtractedDataFile3 as read_trodes  # what does the from . import X mean?
-from moviepy.editor import VideoFileClip
 
 
 def get_trodes_files(data_dir, trodes_name, win_dir=False):  # pass in data directory, name of rec file
@@ -501,7 +501,7 @@ def make_split_trial_videos(video_path, reach_times):
 
     """
 
-    start_times = reach_times['start']
+    start_times = reach_times['start']  # normalize these times
     stop_times = reach_times['stop']
     try:
         if not os.path.exists(video_path + 'trials'):
@@ -509,14 +509,23 @@ def make_split_trial_videos(video_path, reach_times):
     except OSError:
         print('Error: Creating directory of data')
     current_clip = 0
+    cap = cv2.VideoCapture(video_path)
+    frameCount = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+    frameWidth = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+    frameHeight = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+    video = cv2.VideoWriter(str(current_clip) + 'reach.avi', -1, 1, (frameWidth, frameHeight))
+    buf = np.empty((frameCount, frameHeight, frameWidth, 3), np.dtype('uint8'))
+    fc = 0
+    ret = True
+    while (fc < frameCount and ret):
+        ret, buf[fc] = cap.read()
+        fc += 1
+    cap.release()
     for xi in range(len(start_times)):
-        clip = VideoFileClip(video_path).subclip(start_times[xi], stop_times[xi])
-        name = str(video_path) + '_reach_' + str(current_clip) + '.avi'
-        clip.to_videofile(name, codec="libx264", audio=False,)
-        current_clip += 1
-        if current_clip == 10:
-            break
-
+        start = start_times[xi] + 1000
+        stop = stop_times[xi] + 1000
+        for i in range(start, stop):
+            video.write(buf[i])
+    cv2.destroyAllWindows()
+    video.release()
     return
-
-
