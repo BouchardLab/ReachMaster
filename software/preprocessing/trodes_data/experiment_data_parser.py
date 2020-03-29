@@ -514,7 +514,7 @@ def make_split_trial_videos(video_path, reach_times):
     frameWidth = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
     frameHeight = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
     video = cv2.VideoWriter(str(current_clip) + 'reach.avi', -1, 1, (frameWidth, frameHeight))
-    buf = np.empty((frameCount, frameHeight, frameWidth, 3), np.dtype('uint8'))
+    buf = np.empty((frameCount, frameHeight, frameWidth, 3))
     fc = 0
     ret = True
     while (fc < frameCount and ret):
