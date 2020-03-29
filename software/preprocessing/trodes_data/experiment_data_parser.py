@@ -5,7 +5,6 @@ collected during experiments.
 import codecs
 import json
 import os
-import time
 
 import cv2
 import matplotlib.pyplot as plt
@@ -335,8 +334,28 @@ def plot_trodes_timeseries(experiment_data, var_name, time_set=False):
     return
 
 
+def create_bins(bounds, quantity):
+    """ Adapted from code taken from Bernd Klein, Numerical Python Course"""
+    """ create_bins returns an equal-width (distance) partitioning. 
+        It returns an ascending list of tuples, representing the intervals.
+        A tuple bins[i], i.e. (bins[i][0], bins[i][1])  with i > 0 
+        and i < quantity, satisfies the following conditions:
+            (1) bins[i][0] + width == bins[i][1]
+            (2) bins[i-1][0] + width == bins[i][0] and
+                bins[i-1][1] + width == bins[i][1]
+    """
+
+    bins = []
+    lower_bound = np.asarray(bounds['start'])
+    upper_bound = np.asarray(bounds['start'])
+    width = upper_bound - lower_bound
+    for low in range(lower_bound):
+        bins.append((low, low + width))
+    return bins
+
+
 def create_DIO_mask(time_data, trodes_data):
-    mask = np.empty(len(time))
+    mask = np.empty(len(time_data))
     for idx, val in enumerate(time_data):
         if any(val == c for c in trodes_data):
             mask[idx] = 1
@@ -460,8 +479,7 @@ def get_successful_trials(controller_data, matched_time, experiment_data):
         i = reach_start[xi]  # these are start and stop times on trodes time
         j = reach_stop[xi]
         if True in np.vectorize(lambda x: i <= x <= j)(lick_data):
-            success_rate.append(trial_num)
-            trial_num += 1
+            success_rate.append(xi)
     return success_rate
 
 
