@@ -2,7 +2,7 @@
 collected during experiments.
 
 """
-import codecs
+
 import json
 import os
 
@@ -204,25 +204,6 @@ def to_seconds(experimental_data, start_at_zero=True):
     return experimental_data
 
 
-def load_params(mc_address):
-    """Load Microcontroller Metadata File that contains information about the experiment from PNS system
-
-        Parameters
-        ----------
-        mc_address: str
-            path to ECU metadata file
-
-        Returns
-        -------
-        params : pandas dataframe
-            Microcontroller Metadata  ['time', 'trial', 'PNS', 'PNS_flag', 'triggered', 'inRewardWin', 'zPOI']
-
-        """
-    os.chdir(mc_address)
-    params = read_file(mc_address)
-    return params
-
-
 def read_controller_file(controller_path):
     """ Read Microcontroller Metadata file into a pandas data frame
         Parameters
@@ -239,91 +220,28 @@ def read_controller_file(controller_path):
     controller_files = os.listdir(controller_path)[0]
     params = pd.read_csv(controller_files, delim_whitespace=True, skiprows=1)
     params.columns = ['time', 'trial', 'exp_response', 'rob_moving', 'image_triggered', 'in_Reward_Win', 'z_POI']
-    # time trial exp_response rob_moving image_triggered in_reward_window z_poi
     return params
 
+def plot_trodes_timeseries(experiment_data, var_name, time_set=False):
+    """
 
-def create_experiment_dataframe(data_dir, trodes_name, mc_dir, sampling_rate=3000, df_address=False):
-    """ Create a data frame holding all time-synced experimental metadata
-        Parameters
-       ----------
-       data_dir : str
-           Parent directory where the trodes data lives
-       trodes_name : str
-           Name of original .rec trodes file
-        Returns
-        --------
-        experimental_data : dict
-            All of the digital (DIO) and analog data corresponding to the trodes
-            files for a experiment. For example, as returned by
-            read_data().
+    Parameters
+    ----------
+    experiment_data : dict
+        dict containing trodes experiment data
+    var_name : str
+        variable to be plotted, for example 'topCam' or 'moving'
+    time_set : integer
+        set a discrete plotting time range , from 0 to time_set, manually (in seconds)
 
-        params : pandas data frame
-            Microcontroller Metadata  ['time', 'trial', 'PNS', 'PNS_flag', 'triggered', 'inRewardWin', 'zPOI']
-
-        experimental_dataframe : pandas data frame
-            data frame containing all time-synced experimental variables
+    Returns
+    -------
 
     """
-    # Preprocessing steps
-    trodes_files = get_trodes_files(data_dir, trodes_name)
-    experimental_data = read_data(trodes_files, sampling_rate)
-    experimental_data = to_numpy(experimental_data)
-    experimental_data = to_seconds(experimental_data)
-    params = load_params(mc_dir)
-    transitions = find_transitions(params)
-    match_timestamps_index(transitions, experimental_data)
-    time_mask = create_time_mask(transitions, experimental_data)
-    if df_address:
-        experimental_dataframe = load_existing_dataframe(df_address)
-    else:
-        experimental_dataframe = save_existing_dataframe(experimental_data, params, transitions, match_timestamps_index,
-                                                         time_mask)
-    return experimental_dataframe
-
-
-def load_existing_dataframe(df_address):
-    """ This function loads in previously saved  Hdf5 objects
-         Parameters
-         ---------
-         df_address : str
-            path to previously computed experimental dataframe
-
-         Returns
-         -------
-         old_structure: pandas dataframe
-            previous experimental dataframe
-
-         """
-    os.chdir(df_address)
-    old_structure = pd.read_hdf('exp_df.txt')
-    return old_structure
-
-
-def save_existing_dataframe(e_d, param, trans, match, mask):
-    """ This function loads in previously saved  Hdf5 objects
-         Parameters
-         ---------
-
-
-         Returns
-         -------
-         new_df: pandas dataframe (hdf5)
-            dataframe (index tbd) containing experimental metadata
-
-         """
-    # merge dataframes into object to store
-    new_df = {'trodes_data': e_d, 'hyperparams': param, 'transitions': trans, 'matched_time': match, 'masks': mask}
-    # save new large df as hdf5 format object.
-    with open('exp_df.txt', 'wb') as f:
-        json.dump(new_df, codecs.getwriter('utf-8')(f), sort_keys=True, indent=4, ensure_ascii=False)
-    return new_df
-
-
-def plot_trodes_timeseries(experiment_data, var_name, time_set=False):
     time = experiment_data['time']['time']
+    time_var = 3
     if time_set:
-        time = obtain_times(experiment_data, 3)
+        time = obtain_times(experiment_data, time_set)
     exp_var = experiment_data['DIO'][var_name]
     mask = create_DIO_mask(time, exp_var)
     plt.plot(time, mask)
@@ -334,27 +252,20 @@ def plot_trodes_timeseries(experiment_data, var_name, time_set=False):
     return
 
 
-def create_bins(bounds, quantity):
-    """ Adapted from code taken from Bernd Klein, Numerical Python Course"""
-    """ create_bins returns an equal-width (distance) partitioning. 
-        It returns an ascending list of tuples, representing the intervals.
-        A tuple bins[i], i.e. (bins[i][0], bins[i][1])  with i > 0 
-        and i < quantity, satisfies the following conditions:
-            (1) bins[i][0] + width == bins[i][1]
-            (2) bins[i-1][0] + width == bins[i][0] and
-                bins[i-1][1] + width == bins[i][1]
+def create_DIO_mask(time_data, trodes_data):
     """
 
-    bins = []
-    lower_bound = np.asarray(bounds['start'])
-    upper_bound = np.asarray(bounds['start'])
-    width = upper_bound - lower_bound
-    for low in range(lower_bound):
-        bins.append((low, low + width))
-    return bins
-
-
-def create_DIO_mask(time_data, trodes_data):
+    Parameters
+    ----------
+    time_data : array
+        trodes experimental time array eg ['time']['time']
+    trodes_data
+        data used to create mask eg 'led' or 'topCam'
+    Returns
+    -------
+    mask : array
+        binary mask (1 indicates ongoing signal from variable)
+    """
     mask = np.empty(len(time_data))
     for idx, val in enumerate(time_data):
         if any(val == c for c in trodes_data):
@@ -365,6 +276,20 @@ def create_DIO_mask(time_data, trodes_data):
 
 
 def obtain_times(experiment_data, time_length):
+    """
+
+    Parameters
+    ----------
+    experiment_data : dict
+        dict containing trodes experimental data
+    time_length : int
+        variable to truncate time array by eg 5 would truncate time to 5 seconds
+
+    Returns
+    -------
+    time_vector : array
+        truncated array of trodes times
+    """
     time = experiment_data['time']['time']
     x = 0
     for i in time < time_length:
@@ -375,6 +300,19 @@ def obtain_times(experiment_data, time_length):
 
 
 def match_times(controller_data, experiment_data):
+    """
+
+    Parameters
+    ----------
+    controller_data : list
+        list of experimental controller variables and values
+    experiment_data : dict
+        dict of trodes experimental data per session
+    Returns
+    -------
+    controller_time_normalized : array
+        array of controller times matched to trodes times, syncing controller and trodes signals
+    """
     controller_time = np.asarray(controller_data['time'] / 1000)  # convert to s
     exposures = experiment_data['DIO']['topCam']  # exposure data
     exposures = get_exposure_times(exposures)
@@ -383,12 +321,40 @@ def match_times(controller_data, experiment_data):
 
 
 def get_exposure_times(exposures):
+    """
+
+    Parameters
+    ----------
+    exposures : array
+        trodes DIO file containing camera exposures
+
+    Returns
+    -------
+    real_exposures : array
+        estimated true exposure events
+
+    """
     exposures_high = exposures[1::2]
     real_exposures = exposures_high
     return real_exposures
 
 
 def get_exposure_masks(exposures, time):
+    """
+
+    Parameters
+    ----------
+    exposures : array
+        trodes DIO file containing camera exposure times
+    time : array
+        array of trodes times
+
+    Returns
+    -------
+    mask_array : array
+        array containing exposure masks (1 indicates exposure process starting)
+
+    """
     exposures_low = exposures[1::2]
     exposures_high = exposures[2::2]
     mask_array = np.zeros(len(time))
@@ -399,11 +365,39 @@ def get_exposure_masks(exposures, time):
 
 
 def import_controller_data(mc_path):
+    """
+
+    Parameters
+    ----------
+    mc_path : str
+        full path of microcontroller data file
+
+    Returns
+    -------
+    controller_data : list
+        list of arrays containing controller data (reach events, robot movement etc)
+    """
     controller_data = read_controller_file(mc_path)
     return controller_data
 
 
 def import_trodes_data(trodes_path, trodes_name, win_dir=False):
+    """
+
+    Parameters
+    ----------
+    trodes_path : str
+        location of trodes data files
+    trodes_name : str
+        name of trodes file eg. RM1520190917_xxxx
+    win_dir : boolean
+        indicate if your computer is using a windows path with True
+
+    Returns
+    -------
+    experiment_data : dict
+        returns dict of arrays containing trodes data from a session
+    """
     if win_dir:
         experiment_files = get_trodes_files(trodes_path, trodes_name, win_dir=True)
     else:
@@ -415,6 +409,18 @@ def import_trodes_data(trodes_path, trodes_name, win_dir=False):
 
 
 def get_reach_indices(controller_data):
+    """
+
+    Parameters
+    ----------
+    controller_data : list
+        list containing data from experimental microcontroller
+
+    Returns
+    -------
+    reach_indices : list
+        list containinng start and stop indices of the controller data
+    """
     end_index = []
     start_index = []
     for i, j in enumerate(controller_data['exp_response']):
@@ -430,6 +436,20 @@ def get_reach_indices(controller_data):
 
 
 def get_reach_times(controller_time, reach_indices):
+    """
+
+    Parameters
+    ----------
+    controller_time : list
+        list containing CONVERTED controller times (use match_times first!)
+    reach_indices : list
+        list containing reach indices corresponding to entries in controller data
+
+    Returns
+    -------
+    reach_times : list
+        list containing start and stop reach times in trodes time
+    """
     reach_times = {'start': [], 'stop': []}
     reach_start = reach_indices['start']
     reach_stop = reach_indices['stop']
@@ -441,6 +461,19 @@ def get_reach_times(controller_time, reach_indices):
 
 
 def make_reach_masks(reach_times, time):
+    """
+
+    Parameters
+    ----------
+    reach_times : list
+        list of array of reach times in converted trodes time
+    time : array
+        reach times converted into trodes time
+    Returns
+    -------
+    mask_array : array
+        array containing  binary mask for reach events (1 indicates ongoing reach)
+    """
     reach_start = reach_times['start']
     reach_stop = reach_times['stop']
     mask_array = np.zeros(len(time))
@@ -454,6 +487,19 @@ def make_reach_masks(reach_times, time):
 
 
 def make_trial_masks(controller_data, experiment_data):
+    """
+
+    Parameters
+    ----------
+    controller_data : list
+        list of data from the experimental microcontroller
+    experiment_data : dict
+        dict of trodes experimental data over sessions
+    Returns
+    -------
+    mask_array : array
+        mask containing trial numbers over trodes time
+    """
     time = experiment_data['time']['time']
     trials = np.asarray(controller_data['trial'])
     matched_times = match_times(controller_data, experiment_data)
@@ -468,6 +514,22 @@ def make_trial_masks(controller_data, experiment_data):
 
 
 def get_successful_trials(controller_data, matched_time, experiment_data):
+    """
+
+    Parameters
+    ----------
+    controller_data : list
+        list of data from the microcontroller
+    matched_time : array
+        controller event times converted to trodes time
+    experiment_data : dict
+        trodes experimental data for each session
+
+    Returns
+    -------
+    success_rate : list
+        list of successful trials
+    """
     success_rate = []
     lick_data = experiment_data['DIO']['IR_beam']
     reach_indices = get_reach_indices(controller_data)
@@ -484,6 +546,18 @@ def get_successful_trials(controller_data, matched_time, experiment_data):
 
 
 def get_config(config_path):
+    """
+
+    Parameters
+    ----------
+    config_path : str
+        path to experimental metadata file
+
+    Returns
+    -------
+    config_file : dict
+        dict of experimental metadata from each experiment session
+    """
     files = [i for i in os.listdir(config_path) if os.path.isfile(os.path.join(config_path, i)) and \
              'Workspace%' in i]
     os.chdir(config_path)
@@ -492,9 +566,21 @@ def get_config(config_path):
 
 
 def import_config_data(config_path):
+    """
+
+    Parameters
+    ----------
+    config_path : str
+        path to the experimental configuration file
+
+    Returns
+    -------
+    config data : dict
+        dict containing relevant experimental metadata
+    """
     data = get_config(config_path)
     config_data = {'command__file': data['RobotSettings']['commandFile'], 'x_pos': data['RobotSettings']['xCommandPos'],
-                   'y_pos': data['RobotSettings']['yCommandPos'], 'z_pos': data['RobotSettings']['zCommandPos'] }
+                   'y_pos': data['RobotSettings']['yCommandPos'], 'z_pos': data['RobotSettings']['zCommandPos']}
     return config_data
 
 
@@ -507,12 +593,14 @@ def get_trodes_robot_data (e_data):
 
 def make_split_trial_videos(video_path, reach_times):
     """
-
+    Function to split an experimental trial video into discrete videos of each trial inside the session
     Parameters
     ----------
-    video_path
-    reach_times
-    new_video_path
+    video_path : str
+       full path to video of experiment session
+    reach_times : dict
+        dict of arrays containing reach start and stop times
+
 
     Returns
     -------
