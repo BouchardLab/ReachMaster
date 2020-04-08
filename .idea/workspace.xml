@@ -1,10 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ChangeListManager">
-    <list default="true" id="1c61d499-d299-414c-a1a7-49655d33faee" name="Default Changelist" comment="">
-      <change afterPath="$PROJECT_DIR$/software/preprocessing/video_data/Visualization (1).ipynb" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/software/preprocessing/video_data/convertvdo_writegear.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/software/preprocessing/video_data/splitvdo_writegear.py" afterDir="false" />
+    <list default="true" id="1c61d499-d299-414c-a1a7-49655d33faee" name="Default Changelist" comment="Added previously locally stored code">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -230,7 +227,14 @@
       <option name="project" value="LOCAL" />
       <updated>1585526839132</updated>
     </task>
-    <option name="localTasksCounter" value="27" />
+    <task id="LOCAL-00027" summary="Added previously locally stored code">
+      <created>1585600330055</created>
+      <option name="number" value="00027" />
+      <option name="presentableId" value="LOCAL-00027" />
+      <option name="project" value="LOCAL" />
+      <updated>1585600330055</updated>
+    </task>
+    <option name="localTasksCounter" value="28" />
     <servers />
   </component>
   <component name="Vcs.Log.Tabs.Properties">
@@ -247,8 +251,6 @@
     </option>
   </component>
   <component name="VcsManagerConfiguration">
-    <option name="CHECK_CODE_SMELLS_BEFORE_PROJECT_COMMIT" value="true" />
-    <option name="CHECK_CODE_CLEANUP_BEFORE_PROJECT_COMMIT" value="true" />
     <option name="CHECK_NEW_TODO" value="false" />
     <option name="ADD_EXTERNAL_FILES_SILENTLY" value="true" />
     <MESSAGE value="Changed_name" />
@@ -269,10 +271,8 @@
     <MESSAGE value="Added trial video split function" />
     <MESSAGE value="Added last functions for the time being" />
     <MESSAGE value="Added documentation to existing functions" />
-    <option name="LAST_COMMIT_MESSAGE" value="Added documentation to existing functions" />
-    <option name="OPTIMIZE_IMPORTS_BEFORE_PROJECT_COMMIT" value="true" />
-    <option name="REFORMAT_BEFORE_PROJECT_COMMIT" value="true" />
-    <option name="REARRANGE_BEFORE_PROJECT_COMMIT" value="true" />
+    <MESSAGE value="Added previously locally stored code" />
+    <option name="LAST_COMMIT_MESSAGE" value="Added previously locally stored code" />
   </component>
   <component name="WindowStateProjectService">
     <state x="0" y="0" key="#com.intellij.fileTypes.FileTypeChooser" timestamp="1585454086275">
@@ -287,10 +287,10 @@
       <screen x="0" y="0" width="1536" height="824" />
     </state>
     <state x="0" y="165" key="#xdebugger.XInspectDialog/0.0.1536.824@0.0.1536.824" timestamp="1585443622356" />
-    <state x="438" y="14" key="CommitChangelistDialog2" timestamp="1585526838414">
+    <state x="438" y="14" key="CommitChangelistDialog2" timestamp="1586362582299">
       <screen x="0" y="0" width="1536" height="824" />
     </state>
-    <state x="438" y="14" key="CommitChangelistDialog2/0.0.1536.824@0.0.1536.824" timestamp="1585526838414" />
+    <state x="438" y="14" key="CommitChangelistDialog2/0.0.1536.824@0.0.1536.824" timestamp="1586362582299" />
     <state x="563" y="215" key="FileChooserDialogImpl" timestamp="1585200332311">
       <screen x="0" y="0" width="1536" height="824" />
     </state>
@@ -331,10 +331,10 @@
       <screen x="0" y="0" width="1536" height="824" />
     </state>
     <state x="25" y="47" key="SettingsEditor/0.0.1536.824@0.0.1536.824" timestamp="1585489646959" />
-    <state x="375" y="193" key="Vcs.Push.Dialog.v2" timestamp="1585526841871">
+    <state x="375" y="193" key="Vcs.Push.Dialog.v2" timestamp="1585600332315">
       <screen x="0" y="0" width="1536" height="824" />
     </state>
-    <state x="375" y="193" key="Vcs.Push.Dialog.v2/0.0.1536.824@0.0.1536.824" timestamp="1585526841871" />
+    <state x="375" y="193" key="Vcs.Push.Dialog.v2/0.0.1536.824@0.0.1536.824" timestamp="1585600332315" />
     <state x="530" y="194" key="VcsDiffUtil.ChangesDialog" timestamp="1585083834732">
       <screen x="0" y="0" width="1536" height="824" />
     </state>
