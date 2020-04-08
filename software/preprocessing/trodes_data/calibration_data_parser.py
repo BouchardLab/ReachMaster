@@ -28,7 +28,7 @@ def get_trodes_files(data_dir, trodes_name):
         The file names for each channel of a calibration recording. More 
         specifically, `x_push_file` is the *.dat file for the `x` actuator
         `push` valve command recording. Similarly, `y_pot_file` is the 
-        *.dat for the `y` actuator poteniometer recording.  
+        *.dat for the `y` actuator potentiometer recording.
         
     """
     trodes_files = {
