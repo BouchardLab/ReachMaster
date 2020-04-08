@@ -1,11 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ChangeListManager">
-    <list default="true" id="a1c8115f-4f72-432b-971d-99b558eda06f" name="Default Changelist" comment="">
-      <change beforePath="$PROJECT_DIR$/docs/build/_modules/Tkinter.html" beforeDir="false" afterPath="$PROJECT_DIR$/docs/build/_modules/Tkinter.html" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/docs/build/html/_modules/Tkinter.html" beforeDir="false" afterPath="$PROJECT_DIR$/docs/build/html/_modules/Tkinter.html" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/software/preprocessing/test.png" beforeDir="false" />
-    </list>
+    <list default="true" id="08e502cf-66eb-4bc3-ab70-232b9dcd2625" name="Default Changelist" comment="" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
