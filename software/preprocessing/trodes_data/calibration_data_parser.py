@@ -6,7 +6,6 @@ collected during robot calibration routines.
 import numpy as np
 import pandas as pd
 from scipy import ndimage
-
 from . import readTrodesExtractedDataFile3 as read_trodes
 
 

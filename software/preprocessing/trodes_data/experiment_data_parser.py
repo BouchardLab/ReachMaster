@@ -5,12 +5,10 @@ collected during experiments.
 
 import json
 import os
-
 import cv2
-import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-import readTrodesExtractedDataFile3 as read_trodes  # what does the from . import X mean?
+from . import readTrodesExtractedDataFile3 as read_trodes
 
 
 def get_trodes_files(data_dir, trodes_name, win_dir=False):  # pass in data directory, name of rec file
@@ -203,55 +201,6 @@ def to_seconds(experimental_data, start_at_zero=True):
         pass
     return experimental_data
 
-
-def read_controller_file(controller_path):
-    """ Read Microcontroller Metadata file into a pandas data frame
-        Parameters
-        ----------
-        controller_path: str
-            path to Microcontroller metadata file
-
-        Returns
-        -------
-        params : pandas data frame
-            Microcontroller Metadata  ['time', 'trial', 'exp_response', 'rob_moving', 'image_triggered', 'in_Reward_Win', 'z_POI']
-
-    """
-    controller_files = os.listdir(controller_path)[0]
-    params = pd.read_csv(controller_files, delim_whitespace=True, skiprows=1)
-    params.columns = ['time', 'trial', 'exp_response', 'rob_moving', 'image_triggered', 'in_Reward_Win', 'z_POI']
-    return params
-
-def plot_trodes_timeseries(experiment_data, var_name, time_set=False):
-    """
-
-    Parameters
-    ----------
-    experiment_data : dict
-        dict containing trodes experiment data
-    var_name : str
-        variable to be plotted, for example 'topCam' or 'moving'
-    time_set : integer
-        set a discrete plotting time range , from 0 to time_set, manually (in seconds)
-
-    Returns
-    -------
-
-    """
-    time = experiment_data['time']['time']
-    time_var = 3
-    if time_set:
-        time = obtain_times(experiment_data, time_set)
-    exp_var = experiment_data['DIO'][var_name]
-    mask = create_DIO_mask(time, exp_var)
-    plt.plot(time, mask)
-    plt.xlabel('time (s)')
-    plt.ylabel(var_name)
-    plt.title(var_name + ' over experiment')
-    plt.show()
-    return
-
-
 def create_DIO_mask(time_data, trodes_data):
     """
 
@@ -364,23 +313,6 @@ def get_exposure_masks(exposures, time):
     return mask_array
 
 
-def import_controller_data(mc_path):
-    """
-
-    Parameters
-    ----------
-    mc_path : str
-        full path of microcontroller data file
-
-    Returns
-    -------
-    controller_data : list
-        list of arrays containing controller data (reach events, robot movement etc)
-    """
-    controller_data = read_controller_file(mc_path)
-    return controller_data
-
-
 def import_trodes_data(trodes_path, trodes_name, win_dir=False):
     """
 
@@ -408,230 +340,8 @@ def import_trodes_data(trodes_path, trodes_name, win_dir=False):
     return experiment_data
 
 
-def get_reach_indices(controller_data):
-    """
-
-    Parameters
-    ----------
-    controller_data : list
-        list containing data from experimental microcontroller
-
-    Returns
-    -------
-    reach_indices : list
-        list containinng start and stop indices of the controller data
-    """
-    end_index = []
-    start_index = []
-    for i, j in enumerate(controller_data['exp_response']):
-        if j == 'e':
-            end_index.append(i)
-        if j == 'r':
-            if controller_data['exp_response'][i - 1] == 'r':
-                continue
-            else:
-                start_index.append(i)
-    reach_indices = {'start': start_index, 'stop': end_index}
-    return reach_indices
-
-
-def get_reach_times(controller_time, reach_indices):
-    """
-
-    Parameters
-    ----------
-    controller_time : list
-        list containing CONVERTED controller times (use match_times first!)
-    reach_indices : list
-        list containing reach indices corresponding to entries in controller data
-
-    Returns
-    -------
-    reach_times : list
-        list containing start and stop reach times in trodes time
-    """
-    reach_times = {'start': [], 'stop': []}
-    reach_start = reach_indices['start']
-    reach_stop = reach_indices['stop']
-    for i in reach_start:
-        reach_times['start'].append(controller_time[i])
-    for i in reach_stop:
-        reach_times['stop'].append(controller_time[i])
-    return reach_times
-
-
-def make_reach_masks(reach_times, time):
-    """
-
-    Parameters
-    ----------
-    reach_times : list
-        list of array of reach times in converted trodes time
-    time : array
-        reach times converted into trodes time
-    Returns
-    -------
-    mask_array : array
-        array containing  binary mask for reach events (1 indicates ongoing reach)
-    """
-    reach_start = reach_times['start']
-    reach_stop = reach_times['stop']
-    mask_array = np.zeros(len(time))
-    start_index = np.searchsorted(time, reach_start)
-    stop_index = np.searchsorted(time, reach_stop)
-    for xi in range(len(start_index)):
-        i = start_index[xi]
-        j = stop_index[xi]
-        mask_array[i:j] = 1
-    return mask_array
-
-
-def make_trial_masks(controller_data, experiment_data):
-    """
-
-    Parameters
-    ----------
-    controller_data : list
-        list of data from the experimental microcontroller
-    experiment_data : dict
-        dict of trodes experimental data over sessions
-    Returns
-    -------
-    mask_array : array
-        mask containing trial numbers over trodes time
-    """
-    time = experiment_data['time']['time']
-    trials = np.asarray(controller_data['trial'])
-    matched_times = match_times(controller_data, experiment_data)
-    trial_transitions = np.where(np.roll(trials, 1) != trials)[0]
-    num_trials = np.amax(trials)
-    mask_array = np.zeros(len(time))
-    trial_transitions = matched_times[trial_transitions]
-    trial_index = np.searchsorted(time, trial_transitions)
-    for i in range(0, num_trials - 1):
-        mask_array[trial_index[i]:trial_index[i + 1]] = i + 1
-    return mask_array
-
-
-def get_successful_trials(controller_data, matched_time, experiment_data):
-    """
-
-    Parameters
-    ----------
-    controller_data : list
-        list of data from the microcontroller
-    matched_time : array
-        controller event times converted to trodes time
-    experiment_data : dict
-        trodes experimental data for each session
-
-    Returns
-    -------
-    success_rate : list
-        list of successful trials
-    """
-    success_rate = []
-    lick_data = experiment_data['DIO']['IR_beam']
-    reach_indices = get_reach_indices(controller_data)
-    reach_times = get_reach_times(matched_time, reach_indices)
-    reach_start = reach_times['start']
-    reach_stop = reach_times['stop']
-    trial_num = 0
-    for xi in range(len(reach_start)):
-        i = reach_start[xi]  # these are start and stop times on trodes time
-        j = reach_stop[xi]
-        if True in np.vectorize(lambda x: i <= x <= j)(lick_data):
-            success_rate.append(xi)
-    return success_rate
-
-
-def get_config(config_path):
-    """
-
-    Parameters
-    ----------
-    config_path : str
-        path to experimental metadata file
-
-    Returns
-    -------
-    config_file : dict
-        dict of experimental metadata from each experiment session
-    """
-    files = [i for i in os.listdir(config_path) if os.path.isfile(os.path.join(config_path, i)) and \
-             'Workspace%' in i]
-    os.chdir(config_path)
-    config_file = json.load(open(files[0]))
-    return config_file
-
-
-def import_config_data(config_path):
-    """
-
-    Parameters
-    ----------
-    config_path : str
-        path to the experimental configuration file
-
-    Returns
-    -------
-    config data : dict
-        dict containing relevant experimental metadata
-    """
-    data = get_config(config_path)
-    config_data = {'command__file': data['RobotSettings']['commandFile'], 'x_pos': data['RobotSettings']['xCommandPos'],
-                   'y_pos': data['RobotSettings']['yCommandPos'], 'z_pos': data['RobotSettings']['zCommandPos']}
-    return config_data
-
-
 def get_trodes_robot_data (e_data):
     data = {
 
     }
     return data
-
-
-def make_split_trial_videos(video_path, reach_times):
-    """
-    Function to split an experimental trial video into discrete videos of each trial inside the session
-    Parameters
-    ----------
-    video_path : str
-       full path to video of experiment session
-    reach_times : dict
-        dict of arrays containing reach start and stop times
-
-
-    Returns
-    -------
-
-    """
-
-    start_times = reach_times['start']  # normalize these times
-    stop_times = reach_times['stop']
-    try:
-        if not os.path.exists(video_path + 'trials'):
-            os.makedirs(video_path + 'trials')
-    except OSError:
-        print('Error: Creating directory of data')
-    current_clip = 0
-    cap = cv2.VideoCapture(video_path)
-    frameCount = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-    frameWidth = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
-    frameHeight = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
-    video = cv2.VideoWriter(str(current_clip) + 'reach.avi', -1, 1, (frameWidth, frameHeight))
-    buf = np.empty((frameCount, frameHeight, frameWidth, 3))
-    fc = 0
-    ret = True
-    while (fc < frameCount and ret):
-        ret, buf[fc] = cap.read()
-        fc += 1
-    cap.release()
-    for xi in range(len(start_times)):
-        start = start_times[xi] + 1000
-        stop = stop_times[xi] + 1000
-        for i in range(start, stop):
-            video.write(buf[i])
-    cv2.destroyAllWindows()
-    video.release()
-    return
