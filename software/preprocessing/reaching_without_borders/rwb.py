@@ -1,5 +1,53 @@
+import pynwb
+import numpy as np
 
+def init_nwb_file(file_name, source_script, experimenter):
 
+    #session description
+    #identifier
+    #session_start_time
+    #file_create_date
+    #timestamps_reference_time
+    #experimenter
+    #session_id
+    #source_script_file_name
+    #stimulus_notes
+    #devices
+    #subject
+
+    nwbfile = pynwb.NWBFile(session_description='demonstrate NWBFile basics',  # required
+                      identifier='NWB123',  # required
+                      session_start_time=start_time,  # required
+                      file_create_date=create_date)  # optional
+    #general time series
+    test_ts = pynwb.TimeSeries(name='test_timeseries', data=data, unit='m', timestamps=timestamps)
+    nwbfile.add_acquisition(test_ts)
+    reuse_ts = pynwb.TimeSeries('reusing_timeseries', newdata, 'SIunit', timestamps=test_ts)
+    #electrophysiology data
+    device = nwbfile.create_device(name='trodes_rig123')
+    electrode_group = nwbfile.create_electrode_group(electrode_name,
+                                                     description=description,
+                                                     location=location,
+                                                     device=device)
+    for idx in [1, 2, 3, 4]:
+        nwbfile.add_electrode(id=idx,
+                              x=1.0, y=2.0, z=3.0,
+                              imp=float(-idx),
+                              location='CA1', filtering='none',
+                              group=electrode_group)
+    electrode_table_region = nwbfile.create_electrode_table_region([0, 2], 'the first and third electrodes')
+    ephys_ts = pynwb.ecephys.ElectricalSeries('test_ephys_data',
+                                ephys_data,
+                                electrode_table_region,
+                                timestamps=ephys_timestamps,
+                                # Alternatively, could specify starting_time and rate as follows
+                                # starting_time=ephys_timestamps[0],
+                                # rate=rate,
+                                resolution=0.001,
+                                comments="This data was randomly generated with numpy, using 1234 as the seed",
+                                description="Random numbers generated with numpy.random.rand")
+    nwbfile.add_acquisition(ephys_ts)
+    return nwbfile
 
 def make_trial_masks(controller_data, experiment_data):
     """

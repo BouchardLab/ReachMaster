@@ -1,4 +1,13 @@
 sphinx
 sphinx-gallery
-sphinx_rtd_theme
+sphinx_rtd_theme~=0.4.3
 autodoc
+numpy~=1.18.1
+datetime~=4.3
+h5py~=2.10.0
+pyserial~=3.4
+pillow~=7.0.0
+setuptools~=46.1.3
+pandas~=1.0.3
+scipy~=1.4.1
+matplotlib~=3.1.3
