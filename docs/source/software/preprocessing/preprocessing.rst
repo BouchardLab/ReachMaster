@@ -17,6 +17,11 @@ Calibration data parser
 .. automodule:: trodes_data.calibration_data_parser
 	:members:
 
+Experimental data parser
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. automodule:: trodes_data.experiment_data_parser
+	:members:
+
 Video Data
 ---------------------------------------
 
