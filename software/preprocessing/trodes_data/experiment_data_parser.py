@@ -8,7 +8,7 @@ import os
 
 import numpy as np
 import pandas as pd
-import readTrodesExtractedDataFile3 as read_trodes  # what does the from . import X mean?
+from . import readTrodesExtractedDataFile3 as read_trodes
 
 
 def get_trodes_files(data_dir, trodes_name, win_dir=False):  # pass in data directory, name of rec file
