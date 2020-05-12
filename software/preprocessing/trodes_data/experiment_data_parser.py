@@ -32,7 +32,7 @@ def get_trodes_files(data_dir, trodes_name, win_dir=False):  # pass in data dire
            'solenoid' would contain data from the .dat file containing experimental information about the
            solenoid used to deliver water as a reward during experiments.
 
-       """
+    """
     if win_dir:
         trodes_files = {
             'time_file': data_dir + '\\%s\\%s.analog\\%s.timestamps.dat' % (trodes_name, trodes_name, trodes_name),
