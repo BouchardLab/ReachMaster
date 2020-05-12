@@ -81,7 +81,7 @@ def read_data(trodes_files, sampling_rate = 3000):
             'z_push': read_trodes.readTrodesExtractedDataFile(trodes_files['z_push_file'])['data'], 
             'z_pull': read_trodes.readTrodesExtractedDataFile(trodes_files['z_pull_file'])['data']
         },
-        'analog':{
+        'analog': {
             'x_pot': read_trodes.readTrodesExtractedDataFile(trodes_files['x_pot_file'])['data']['voltage'][0:-1:ds],
             'y_pot': read_trodes.readTrodesExtractedDataFile(trodes_files['y_pot_file'])['data']['voltage'][0:-1:ds],
             'z_pot': read_trodes.readTrodesExtractedDataFile(trodes_files['z_pot_file'])['data']['voltage'][0:-1:ds]
@@ -304,9 +304,9 @@ def get_valve_transitions(calibration_data):
 def get_calibration_frame(
     data_dir, 
     trodes_name, 
-    sampling_rate = 3000, 
-    medfilter_width = 11, 
-    pot_units = 'cm'
+    sampling_rate=3000,
+    medfilter_width=11,
+    pot_units='cm'
     ):
     """Generate a data frame for estimating robot calibration parameters.
     State variables include the starting positions and valve open
@@ -341,7 +341,7 @@ def get_calibration_frame(
     trodes_files = get_trodes_files(data_dir, trodes_name)
     calibration_data = read_data(trodes_files, sampling_rate)
     calibration_data = to_numpy(calibration_data)
-    calibration_data = median_filter_pots(calibration_data, width = medfilter_width)
+    calibration_data = median_filter_pots(calibration_data, width=medfilter_width)
     calibration_data = to_seconds(calibration_data)
     if pot_units == 'cm':
         calibration_data = pots_to_cm(calibration_data)
@@ -547,7 +547,3 @@ def get_traces_frame(
     data_frame['y_displacement'] -= data_frame['y_start_position']
     data_frame['z_displacement'] -= data_frame['z_start_position']
     return data_frame
-
-    
-
-    
