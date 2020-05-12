@@ -5,7 +5,6 @@ collected during experiments.
 
 import json
 import os
-import cv2
 import numpy as np
 import pandas as pd
 from . import readTrodesExtractedDataFile3 as read_trodes
@@ -46,9 +45,9 @@ def get_trodes_files(data_dir, trodes_name, win_dir=False):  # pass in data dire
             'triggers_file': data_dir + '\\%s\\%s.DIO\\%s.dio_triggers.dat' % (trodes_name, trodes_name, trodes_name),
             'IR_beam_file': data_dir + '\\%s\\%s.DIO\\%s.dio_IRbeam.dat' % (trodes_name, trodes_name, trodes_name),
             'led_file': data_dir + '\\%s\\%s.DIO\\%s.dio_led.dat' % (trodes_name, trodes_name, trodes_name),
-            'left_Cam_file': data_dir + '\\%s\\%s.DIO\\%s.dio_leftCam.dat' % (trodes_name, trodes_name, trodes_name),
-            'right_Cam_file': data_dir + '\\%s\\%s.DIO\\%s.dio_rightCam.dat' % (trodes_name, trodes_name, trodes_name),
-            'top_Cam_file': data_dir + '\\%s\\%s.DIO\\%s.dio_topCam.dat' % (trodes_name, trodes_name, trodes_name),
+            'left_cam_file': data_dir + '\\%s\\%s.DIO\\%s.dio_leftCam.dat' % (trodes_name, trodes_name, trodes_name),
+            'right_cam_file': data_dir + '\\%s\\%s.DIO\\%s.dio_rightCam.dat' % (trodes_name, trodes_name, trodes_name),
+            'top_cam_file': data_dir + '\\%s\\%s.DIO\\%s.dio_topCam.dat' % (trodes_name, trodes_name, trodes_name),
             'lights_file': data_dir + '\\%s\\%s.DIO\\%s.dio_lights.dat' % (trodes_name, trodes_name, trodes_name),
             'solenoid_file': data_dir + '\\%s\\%s.DIO\\%s.dio_solenoid.dat' % (trodes_name, trodes_name, trodes_name),
             'x_pot_file': data_dir + '\\%s\\%s.analog\\%s.analog_potX.dat' % (trodes_name, trodes_name, trodes_name),
@@ -68,9 +67,9 @@ def get_trodes_files(data_dir, trodes_name, win_dir=False):  # pass in data dire
             'triggers_file': data_dir + '/%s/%s.DIO/%s.dio_triggers.dat' % (trodes_name, trodes_name, trodes_name),
             'IR_beam_file': data_dir + '/%s/%s.DIO/%s.dio_IRbeam.dat' % (trodes_name, trodes_name, trodes_name),
             'led_file': data_dir + '/%s/%s.DIO/%s.dio_led.dat' % (trodes_name, trodes_name, trodes_name),
-            'left_Cam_file': data_dir + '/%s/%s.DIO/%s.dio_leftCam.dat' % (trodes_name, trodes_name, trodes_name),
-            'right_Cam_file': data_dir + '/%s/%s.DIO/%s.dio_rightCam.dat' % (trodes_name, trodes_name, trodes_name),
-            'top_Cam_file': data_dir + '/%s/%s.DIO/%s.dio_topCam.dat' % (trodes_name, trodes_name, trodes_name),
+            'left_cam_file': data_dir + '/%s/%s.DIO/%s.dio_leftCam.dat' % (trodes_name, trodes_name, trodes_name),
+            'right_cam_file': data_dir + '/%s/%s.DIO/%s.dio_rightCam.dat' % (trodes_name, trodes_name, trodes_name),
+            'top_cam_file': data_dir + '/%s/%s.DIO/%s.dio_topCam.dat' % (trodes_name, trodes_name, trodes_name),
             'lights_file': data_dir + '/%s/%s.DIO/%s.dio_lights.dat' % (trodes_name, trodes_name, trodes_name),
             'solenoid_file': data_dir + '/%s/%s.DIO/%s.dio_solenoid.dat' % (trodes_name, trodes_name, trodes_name),
             'x_pot_file': data_dir + '/%s/%s.analog/%s.analog_potX.dat' % (trodes_name, trodes_name, trodes_name),
@@ -121,9 +120,9 @@ def read_data(trodes_files, sampling_rate=3000):
             'triggers': read_trodes.readTrodesExtractedDataFile(trodes_files['triggers_file'])['data'],
             'lights': read_trodes.readTrodesExtractedDataFile(trodes_files['lights_file'])['data'],
             'led': read_trodes.readTrodesExtractedDataFile(trodes_files['led_file'])['data'],
-            'topCam': read_trodes.readTrodesExtractedDataFile(trodes_files['top_Cam_file'])['data'],
-            'leftCam': read_trodes.readTrodesExtractedDataFile(trodes_files['left_Cam_file'])['data'],
-            'rightCam': read_trodes.readTrodesExtractedDataFile(trodes_files['right_Cam_file'])['data'],
+            'top_cam': read_trodes.readTrodesExtractedDataFile(trodes_files['top_cam_file'])['data'],
+            'left_cam': read_trodes.readTrodesExtractedDataFile(trodes_files['left_cam_file'])['data'],
+            'right_cam': read_trodes.readTrodesExtractedDataFile(trodes_files['right_cam_file'])['data'],
             'solenoid': read_trodes.readTrodesExtractedDataFile(trodes_files['solenoid_file'])['data']
         },
         'analog': {
@@ -247,28 +246,6 @@ def obtain_times(experiment_data, time_length):
     time_vector = time[0:x]
     return time_vector
 
-
-def match_times(controller_data, experiment_data):
-    """
-
-    Parameters
-    ----------
-    controller_data : list
-        list of experimental controller variables and values
-    experiment_data : dict
-        dict of trodes experimental data per session
-    Returns
-    -------
-    controller_time_normalized : array
-        array of controller times matched to trodes times, syncing controller and trodes signals
-    """
-    controller_time = np.asarray(controller_data['time'] / 1000)  # convert to s
-    exposures = experiment_data['DIO']['topCam']  # exposure data
-    exposures = get_exposure_times(exposures)
-    controller_time_normalized = controller_time - controller_time[-1] + exposures[-1]
-    return controller_time_normalized
-
-
 def get_exposure_times(exposures):
     """
 
@@ -338,10 +315,3 @@ def import_trodes_data(trodes_path, trodes_name, win_dir=False):
     experiment_data = to_numpy(experiment_data)
     experiment_data = to_seconds(experiment_data)
     return experiment_data
-
-
-def get_trodes_robot_data (e_data):
-    data = {
-
-    }
-    return data
