@@ -19,7 +19,7 @@ def get_trodes_files(data_dir, trodes_name):
     data_dir : str
         Parent directory where the trodes data lives
     trodes_name : str
-        Name of original .rec trodes file
+        Name of original *.rec trodes file
 
     Returns
     -------
