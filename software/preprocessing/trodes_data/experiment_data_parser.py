@@ -6,11 +6,9 @@ collected during experiments.
 import json
 import os
 
-import cv2
-import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-import readTrodesExtractedDataFile3 as read_trodes  # what does the from . import X mean?
+from . import readTrodesExtractedDataFile3 as read_trodes
 
 
 def get_trodes_files(data_dir, trodes_name, win_dir=False):  # pass in data directory, name of rec file
@@ -34,7 +32,7 @@ def get_trodes_files(data_dir, trodes_name, win_dir=False):  # pass in data dire
            'solenoid' would contain data from the .dat file containing experimental information about the
            solenoid used to deliver water as a reward during experiments.
 
-       """
+    """
     if win_dir:
         trodes_files = {
             'time_file': data_dir + '\\%s\\%s.analog\\%s.timestamps.dat' % (trodes_name, trodes_name, trodes_name),
@@ -221,35 +219,6 @@ def read_controller_file(controller_path):
     params = pd.read_csv(controller_files, delim_whitespace=True, skiprows=1)
     params.columns = ['time', 'trial', 'exp_response', 'rob_moving', 'image_triggered', 'in_Reward_Win', 'z_POI']
     return params
-
-def plot_trodes_timeseries(experiment_data, var_name, time_set=False):
-    """
-
-    Parameters
-    ----------
-    experiment_data : dict
-        dict containing trodes experiment data
-    var_name : str
-        variable to be plotted, for example 'topCam' or 'moving'
-    time_set : integer
-        set a discrete plotting time range , from 0 to time_set, manually (in seconds)
-
-    Returns
-    -------
-
-    """
-    time = experiment_data['time']['time']
-    time_var = 3
-    if time_set:
-        time = obtain_times(experiment_data, time_set)
-    exp_var = experiment_data['DIO'][var_name]
-    mask = create_DIO_mask(time, exp_var)
-    plt.plot(time, mask)
-    plt.xlabel('time (s)')
-    plt.ylabel(var_name)
-    plt.title(var_name + ' over experiment')
-    plt.show()
-    return
 
 
 def create_DIO_mask(time_data, trodes_data):
