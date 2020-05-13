@@ -3,10 +3,8 @@ collected during experiments.
 
 """
 
-import json
-import os
 import numpy as np
-import pandas as pd
+
 from . import readTrodesExtractedDataFile3 as read_trodes
 
 
@@ -17,12 +15,13 @@ def get_trodes_files(data_dir, trodes_name, win_dir=False):  # pass in data dire
 
        Parameters
        ----------
+       win_dir : boolean
+            Flag, True if using a windows directory system
        data_dir : str
            Parent directory where the trodes data lives
        trodes_name : str
            Name of original .rec trodes file
-        win_dir : boolean
-            Flag, True if using a windows directory system
+
        Returns
        -------
        trodes_files : dict
@@ -261,6 +260,7 @@ def get_exposure_times(exposures):
 
     """
     exposures_high = exposures[1::2]
+    exposures_low = exposures[0::2]
     real_exposures = exposures_high
     return real_exposures
 

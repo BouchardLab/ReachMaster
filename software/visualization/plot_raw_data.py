@@ -4,8 +4,8 @@ video data sources.
 """
 
 import matplotlib.pyplot as plt
-from ..preprocessing.trodes_data import experiment_data_parser as trodes_edp
-from ..preprocessing.controller_data import experiment_data_parser as controller_edp
+
+from software.preprocessing.trodes_data.experiment_data_parser import obtain_times, create_DIO_mask
 
 
 def plot_trodes_timeseries(experiment_data, var_name, time_set=False):

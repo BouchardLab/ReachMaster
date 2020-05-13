@@ -1,11 +1,15 @@
-import pynwb
-import numpy as np
+import os
 from datetime import datetime
+
+import cv2
+import numpy as np
+import pynwb
 from dateutil.tz import tzlocal
-from ..trodes_data import experiment_data_parser as trodes_edp
-from ..controller_data import experiment_data_parser as controller_edp
+
+from software.preprocessing.controller_data.controller_data_parser import get_reach_indices, get_reach_times
+from software.preprocessing.trodes_data import experiment_data_parser as trodes_edp
 # from ..video_data import experiment_data_parser as video_edp
-from ..config_data import config_parser
+from software.preprocessing.trodes_data.experiment_data_parser import get_exposure_times
 
 
 def init_nwb_file(file_name, source_script, experimenter, session_start_time):
@@ -80,7 +84,7 @@ def add_trodes_dio(nwb_file, trodes_data):
 def trodes_to_nwb(nwb_file, data_dir, trodes_name):
     trodes_data = trodes_edp.import_trodes_data(data_dir, trodes_name)
     nwb_file = add_trodes_analog(nwb_file, trodes_data)
-    nwb_file = add_trode_dio(nwb_file, trodes_data)
+    nwb_file = add_trodes_dio(nwb_file, trodes_data)
     return nwb_file
     # timestamps_reference_time
 
@@ -220,7 +224,7 @@ def make_split_trial_videos(video_path, reach_times):
     buf = np.empty((frameCount, frameHeight, frameWidth, 3))
     fc = 0
     ret = True
-    while (fc < frameCount and ret):
+    while fc < frameCount and ret:
         ret, buf[fc] = cap.read()
         fc += 1
     cap.release()
