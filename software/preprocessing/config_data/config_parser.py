@@ -1,4 +1,5 @@
-
+import json
+import os
 
 
 def get_config(config_path):
@@ -14,7 +15,7 @@ def get_config(config_path):
     config_file : dict
         dict of experimental metadata from each experiment session
     """
-    files = [i for i in os.listdir(config_path) if os.path.isfile(os.path.join(config_path, i)) and \
+    files = [i for i in os.listdir(config_path) if os.path.isfile(os.path.join(config_path, i)) and
              'Workspace%' in i]
     os.chdir(config_path)
     config_file = json.load(open(files[0]))

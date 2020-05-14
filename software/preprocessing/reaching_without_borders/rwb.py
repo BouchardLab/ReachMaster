@@ -6,7 +6,9 @@ import numpy as np
 import pynwb
 from dateutil.tz import tzlocal
 
+from software.preprocessing.config_data.config_parser import import_config_data
 from software.preprocessing.controller_data.controller_data_parser import get_reach_indices, get_reach_times
+from software.preprocessing.controller_data.controller_data_parser import import_controller_data
 from software.preprocessing.trodes_data import experiment_data_parser as trodes_edp
 # from ..video_data import experiment_data_parser as video_edp
 from software.preprocessing.trodes_data.experiment_data_parser import get_exposure_times
@@ -86,50 +88,53 @@ def trodes_to_nwb(nwb_file, data_dir, trodes_name):
     nwb_file = add_trodes_analog(nwb_file, trodes_data)
     nwb_file = add_trodes_dio(nwb_file, trodes_data)
     return nwb_file
-    # timestamps_reference_time
-
-    # general time series
-    test_ts = pynwb.TimeSeries(name='test_timeseries', data=data, unit='m', timestamps=timestamps)
-    nwbfile.add_acquisition(test_ts)
-    reuse_ts = pynwb.TimeSeries('reusing_timeseries', newdata, 'SIunit', timestamps=test_ts)
-    # electrophysiology data
-    device = nwbfile.create_device(name='trodes_rig123')
-    electrode_group = nwbfile.create_electrode_group(electrode_name,
-                                                     description=description,
-                                                     location=location,
-                                                     device=device)
-    for idx in [1, 2, 3, 4]:
-        nwbfile.add_electrode(id=idx,
-                              x=1.0, y=2.0, z=3.0,
-                              imp=float(-idx),
-                              location='CA1', filtering='none',
-                              group=electrode_group)
-    electrode_table_region = nwbfile.create_electrode_table_region([0, 2], 'the first and third electrodes')
-    ephys_ts = pynwb.ecephys.ElectricalSeries('test_ephys_data',
-                                              ephys_data,
-                                              electrode_table_region,
-                                              timestamps=ephys_timestamps,
-                                              # Alternatively, could specify starting_time and rate as follows
-                                              # starting_time=ephys_timestamps[0],
-                                              # rate=rate,
-                                              resolution=0.001,
-                                              comments="This data was randomly generated with numpy, using 1234 as the seed",
-                                              description="Random numbers generated with numpy.random.rand")
-    nwbfile.add_acquisition(ephys_ts)
 
 
-def controller_to_nwb(nwb_file, dir):
+def controller_to_nwb(nwb_file, controller_dir):
+    controller_data = import_controller_data(controller_dir)
+    nwb_file = add_controller_data(nwb_file, controller_data)
     return nwb_file
 
 
-def config_to_nwb(nwb_file, dir):
+def add_controller_data(nwb_file, controller_data):
+    controller_keys = ['time', 'trial', 'exp_response', 'rob_moving', 'image_triggered', 'in_Reward_Win', 'z_POI']
+    c_file = pynwb.behavior.BehavioralEpochs(name='controller_data')
+    for key in controller_keys:
+        start_times = controller_data[key][1::2]
+        stop_times = controller_data[key][2::2]
+        if len(start_times) > 0:
+            interval_series = pynwb.misc.IntervalSeries(
+                name=key,
+                data=[1, -1],
+                timestamps=[start_times[0], stop_times[0]]
+            )
+            for i in range(len(start_times))[1:]:
+                interval_series.add_interval(
+                    start=float(start_times[i]),
+                    stop=float(stop_times[i])
+                )
+            c_file.add_interval_series(interval_series)
+    nwb_file.add_acquisition(c_file)
+    return nwb_file
+
+
+def config_to_nwb(nwb_file, config_dir):
+    config_data = import_config_data(config_dir)
     # session_id
     # stimulus_notes
     # devices
     return nwb_file
 
 
-def link_videos(nwb_file, dir):
+def add_config(nwb_file, config_data):
+    return nwb_file
+
+
+def link_videos(nwb_file, video_dir):
+    return nwb_file
+
+
+def add_videos(nwb_file, video_data):
     return nwb_file
 
 
