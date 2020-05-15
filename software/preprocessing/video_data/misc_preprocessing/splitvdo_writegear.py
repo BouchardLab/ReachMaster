@@ -1,16 +1,17 @@
 import cv2
+import numpy as np
 from vidgear.gears import WriteGear
-import numpy as np 
 
 intput_filename = '928.mp4'
 no_of_cam = 3
 crf = '25'
-pix_Format = 'yuv420p'	
+pix_Format = 'yuv420p'
+
 
 def conver2bgr(frame):
-	frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-	frame = cv2.cvtColor(frame, cv2.COLOR_BAYER_BG2BGR)
-	return frame
+    frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+    frame = cv2.cvtColor(frame, cv2.COLOR_BAYER_BG2BGR)
+    return frame
 
 def enhanceImage(frame):
 	cols, rows, ch = frame.shape

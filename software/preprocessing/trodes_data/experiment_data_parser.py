@@ -199,6 +199,7 @@ def to_seconds(experimental_data, start_at_zero=True):
         pass
     return experimental_data
 
+
 def create_DIO_mask(time_data, trodes_data):
     """
 
@@ -256,12 +257,12 @@ def get_exposure_times(exposures):
     Returns
     -------
     real_exposures : array
-        estimated true exposure events
+        estimated true exposure events (mean of exposure)
 
     """
     exposures_high = exposures[1::2]
     exposures_low = exposures[0::2]
-    real_exposures = exposures_high
+    real_exposures = (exposures_high + exposures_low) / 2
     return real_exposures
 
 
@@ -281,8 +282,8 @@ def get_exposure_masks(exposures, time):
         array containing exposure masks (1 indicates exposure process starting)
 
     """
-    exposures_low = exposures[1::2]
-    exposures_high = exposures[2::2]
+
+    exposures_high = (exposures[2::2] + exposures[1::2] / 2)
     mask_array = np.zeros(len(time))
     high_index = np.searchsorted(time, exposures_high)
     for y in high_index:

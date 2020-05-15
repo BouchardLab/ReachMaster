@@ -1,6 +1,5 @@
 import cv2
 from vidgear.gears import WriteGear
-import numpy as np 
 
 intput_filename = '917.mp4'
 output_filename = 'converted_917_.mp4'
