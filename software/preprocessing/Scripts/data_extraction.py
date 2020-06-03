@@ -7,14 +7,13 @@ from software.preprocessing.config_data.config_parser import import_config_data
 from software.preprocessing.controller_data.controller_data_parser import import_controller_data, get_reach_indices, \
     get_reach_times
 from software.preprocessing.reaching_without_borders.rwb import match_times, get_successful_trials
-from software.preprocessing.trodes_data.experiment_data_parser import import_trodes_data, get_exposure_times,
+from software.preprocessing.trodes_data.experiment_data_parser import import_trodes_data, get_exposure_times
 
-trodes_dir = ''
-exp_name = ''
-controller_dir = ''
-config_dir = ''
-controller_path = ''
-save_path = ''
+trodes_dir = 'C:\\Users\\bassp\\PycharmProjects\\ReachMaster\\software\\preprocessing\\trodes_data'
+exp_name = 'RM1520190927_144153'
+controller_path = 'C:\\Users\\bassp\\PycharmProjects\\ReachMaster\\software\\preprocessing\\Scripts'
+config_dir = 'C:\\Users\\bassp\\PycharmProjects\\ReachMaster\\software\\preprocessing\\Scripts'
+save_path = 'C:\\Users\\bassp\\PycharmProjects\\ReachMaster\\software\\preprocessing\\Scripts'
 # importing data
 trodes_data = import_trodes_data(trodes_dir, exp_name)
 config_data = import_config_data(config_dir)
