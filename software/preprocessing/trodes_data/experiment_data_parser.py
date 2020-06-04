@@ -260,9 +260,9 @@ def get_exposure_times(exposures):
         estimated true exposure events (mean of exposure)
 
     """
-    exposures_high = exposures[1::2]
+    exposures_high = exposures[1::2]  # HIGH EXPOSURE IS FIRST IN TIME SERIES
     exposures_low = exposures[0::2]
-    real_exposures = (exposures_high + exposures_low) / 2
+    real_exposures = (exposures_high + exposures_low[1:]) / 2
     return real_exposures
 
 
