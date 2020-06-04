@@ -258,7 +258,7 @@ def match_times(controller_data, experiment_data):
         array of controller times matched to trodes times, syncing controller and trodes signals
     """
     controller_time = np.asarray(controller_data['time'] / 1000)  # convert to s
-    exposures = experiment_data['DIO']['topCam']  # exposure data
+    exposures = experiment_data['DIO']['top_cam']  # exposure data
     exposures = get_exposure_times(exposures)
     controller_time_normalized = controller_time - controller_time[-1] + exposures[-1]
     return controller_time_normalized

@@ -38,6 +38,6 @@ def import_config_data(config_path):
     data = get_config(config_path)
     config_data = {'command__file': data['RobotSettings']['commandFile'], 'x_pos': data['RobotSettings']['xCommandPos'],
                    'y_pos': data['RobotSettings']['yCommandPos'], 'z_pos': data['RobotSettings']['zCommandPos'],
-                   'Camera_Settings': data['Camera_Settings'], 'ReachMaster': data['ReachMaster'],
-                   'Robot_Settings': data['Robot_Settings']}
+                   'ReachMaster': data['ReachMaster']
+                   }
     return config_data
