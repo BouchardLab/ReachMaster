@@ -192,6 +192,7 @@ def get_successful_trials(controller_data, matched_time, experiment_data):
     for xi in range(len(reach_start)):
         i = reach_start[xi]  # these are start and stop times on trodes time
         j = reach_stop[xi]
+
         if True in np.vectorize(lambda x: i <= x <= j)(lick_data):
             success_rate.append(xi)
     return success_rate

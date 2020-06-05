@@ -13,7 +13,7 @@ from software.preprocessing.trodes_data.experiment_data_parser import import_tro
 def load_files(analysis=False):
     trodes_dir = 'C:\\Users\\bassp\\PycharmProjects\\ReachMaster\\software\\preprocessing\\trodes_data'
     exp_name = 'RM1520190927_144153'
-    controller_path = 'C:\\Users\\bassp\\PycharmProjects\\ReachMaster\\software\\preprocessing\\Scripts'
+    controller_path = 'C:\\Users\\bassp\\OneDrive\\Desktop\\Project\\RM15\\927\\S3\\Controller_Data'
     config_dir = 'C:\\Users\\bassp\\PycharmProjects\\ReachMaster\\software\\preprocessing\\Scripts'
     save_path = 'C:\\Users\\bassp\\PycharmProjects\\ReachMaster\\software\\preprocessing\\Scripts'
     # importing data
@@ -30,6 +30,11 @@ def load_files(analysis=False):
         reach_masks = get_reach_times(true_time, reach_indices)
         reach_masks_start = np.asarray(reach_masks['start'])
         reach_masks_stop = np.asarray(reach_masks['stop'])
+        trial_masks =
+        # changes: masks must be in exp time as binary variables to export
+        # 0 for fail, 1 for success
+        # should also extract the handle positions for coordinate xforms
+
         # save as np objects
         np.savetxt('reach_masks_start.csv', reach_masks_start, delimiter=',')
         np.savetxt('reach_masks_stop.csv', reach_masks_stop, delimiter=',')
