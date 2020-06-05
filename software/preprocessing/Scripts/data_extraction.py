@@ -41,4 +41,5 @@ def load_files(analysis=False):
         np.savetxt('succ_trials.csv', np.asarray(successful_trials), delimiter=',')
         np.savetxt('true_time.csv', true_time, delimiter=',')
         np.savetxt('trial_masks.csv', trial_masks, delimiter=',')
+        np.savetxt('reach_indices.csv', reach_indices, delimiter=',')
     return
