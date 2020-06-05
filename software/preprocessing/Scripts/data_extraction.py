@@ -31,6 +31,8 @@ def load_files(analysis=False):
         reach_masks_start = np.asarray(reach_masks['start'])
         reach_masks_stop = np.asarray(reach_masks['stop'])
         trial_masks = make_trial_masks(controller_data, trodes_data)
+        reach_indices_start = reach_indices['start']
+        reach_indices_stop = reach_indices['stop']
         # changes: masks must be in exp time as binary variables to export
         # 0 for fail, 1 for success
         # should also extract the handle positions for coordinate xforms
@@ -41,5 +43,6 @@ def load_files(analysis=False):
         np.savetxt('succ_trials.csv', np.asarray(successful_trials), delimiter=',')
         np.savetxt('true_time.csv', true_time, delimiter=',')
         np.savetxt('trial_masks.csv', trial_masks, delimiter=',')
-        np.savetxt('reach_indices.csv', reach_indices, delimiter=',')
+        np.savetxt('reach_indices_start.csv', reach_indices_start, delimiter=',')
+        np.savetxt('reach_indices_stop.csv', reach_indices_stop, delimiter=',')
     return
