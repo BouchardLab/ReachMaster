@@ -6,7 +6,7 @@ import numpy as np
 from software.preprocessing.config_data.config_parser import import_config_data
 from software.preprocessing.controller_data.controller_data_parser import import_controller_data, get_reach_indices, \
     get_reach_times
-from software.preprocessing.reaching_without_borders.rwb import match_times, get_successful_trials
+from software.preprocessing.reaching_without_borders.rwb import match_times, get_successful_trials, make_trial_masks
 from software.preprocessing.trodes_data.experiment_data_parser import import_trodes_data, get_exposure_times
 
 
@@ -30,7 +30,7 @@ def load_files(analysis=False):
         reach_masks = get_reach_times(true_time, reach_indices)
         reach_masks_start = np.asarray(reach_masks['start'])
         reach_masks_stop = np.asarray(reach_masks['stop'])
-        trial_masks =
+        trial_masks = make_trial_masks(controller_data, trodes_data)
         # changes: masks must be in exp time as binary variables to export
         # 0 for fail, 1 for success
         # should also extract the handle positions for coordinate xforms
@@ -40,5 +40,5 @@ def load_files(analysis=False):
         np.savetxt('reach_masks_stop.csv', reach_masks_stop, delimiter=',')
         np.savetxt('succ_trials.csv', np.asarray(successful_trials), delimiter=',')
         np.savetxt('true_time.csv', true_time, delimiter=',')
-
-    return successful_trials
+        np.savetxt('trial_masks.csv', trial_masks, delimiter=',')
+    return
