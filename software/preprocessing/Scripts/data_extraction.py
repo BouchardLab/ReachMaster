@@ -2,7 +2,8 @@
 
 """
 import numpy as np
-
+import glob
+import os
 from software.preprocessing.config_data.config_parser import import_config_data
 from software.preprocessing.controller_data.controller_data_parser import import_controller_data, get_reach_indices, \
     get_reach_times
@@ -10,15 +11,13 @@ from software.preprocessing.reaching_without_borders.rwb import match_times, get
 from software.preprocessing.trodes_data.experiment_data_parser import import_trodes_data, get_exposure_times
 
 
-def load_files(analysis=False):
-    trodes_dir = 'C:\\Users\\bassp\\PycharmProjects\\ReachMaster\\software\\preprocessing\\trodes_data'
-    exp_name = 'RM1520190927_144153'
-    controller_path = 'C:\\Users\\bassp\\OneDrive\\Desktop\\Project\\RM15\\927\\S3\\Controller_Data'
-    config_dir = 'C:\\Users\\bassp\\PycharmProjects\\ReachMaster\\software\\preprocessing\\Scripts'
-    save_path = 'C:\\Users\\bassp\\PycharmProjects\\ReachMaster\\software\\preprocessing\\Scripts'
+
+def load_files(trodes_dir,exp_name,controller_path,config_dir,save_path, analysis=False,scrape=False):
     # importing data
     trodes_data = import_trodes_data(trodes_dir, exp_name, win_dir=True)
     config_data = import_config_data(config_dir)
+    # import config differently?
+    # can analyze per each slice
     controller_data = import_controller_data(controller_path)
     # analysis
     if analysis:
@@ -33,6 +32,7 @@ def load_files(analysis=False):
         trial_masks = make_trial_masks(controller_data, trodes_data)
         reach_indices_start = reach_indices['start']
         reach_indices_stop = reach_indices['stop']
+
         # changes: masks must be in exp time as binary variables to export
         # 0 for fail, 1 for success
         # should also extract the handle positions for coordinate xforms
@@ -45,4 +45,38 @@ def load_files(analysis=False):
         np.savetxt('trial_masks.csv', trial_masks, delimiter=',')
         np.savetxt('reach_indices_start.csv', reach_indices_start, delimiter=',')
         np.savetxt('reach_indices_stop.csv', reach_indices_stop, delimiter=',')
+        dataframe = to_df()
+    return dataframe
+
+
+def name_scrape(file):
+    """
+
+    Parameters
+    ----------
+    file - string of a file name
+
+
+    Returns
+    -------
+    controller_file - string containing address of controller file
+    trodes_files - string containing address of trodes files
+    config_file - string containing address of config file
+    exp_name - string containing experiment name eg 'RMxxYYYYMMDD_time', found through parsing the trodes file
+    """
+
+    return controller_file,trodes_files,config_file,exp_name
+
+
+def to_df():
+
+    return dataframe
+
+
+def scrape_trodes_df(trodes_dir,controller_dir,config_dir,save_path,):
+    os.chdir(trodes_dir)
+    for file in glob.glob("*.DIO"):
+        c_path, trodes_path, config_path, exp_name = name_scrape(file)
+        list_of_df = load_files(trodes_path, exp_name, c_path, config_path, save_path)
+
     return
