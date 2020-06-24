@@ -40,17 +40,17 @@ def load_files(trodes_dir,exp_name,controller_path,config_dir,save_path, analysi
         np.savetxt('trial_masks.csv', trial_masks, delimiter=',')
         np.savetxt('reach_indices_start.csv', reach_indices_start, delimiter=',')
         np.savetxt('reach_indices_stop.csv', reach_indices_stop, delimiter=',')
-        dataframe = to_df(true_time,reach_masks_start,reach_masks_stop,reach_indices_start,reach_indices_stop,successful_trials
+        dataframe = to_df(true_time,reach_masks_start,reach_masks_stop,reach_indices_start,reach_indices_stop,successful_trials)
     return dataframe
 
 
-def name_scrape(file):
+def name_scrape(file,pns):
     """
 
     Parameters
     ----------
     file - string of a file name
-
+    pns - string, address of pns folder
 
     Returns
     -------
@@ -60,8 +60,20 @@ def name_scrape(file):
     exp_name - string containing experiment name eg 'RMxxYYYYMMDD_time', found through parsing the trodes file
     """
     #config, controller data use the 11 characters before extensions name
+    # import cns data and pns path as string
+    path = str(file)  # or something like that, check
+    # scrape name from current dir!
+    exp_name = ''
+    os.chdir(path)
+    # pass to df function
+    # scrape file path to get pns file path
+    os.chdir(pns)
+    path_deleveled = str(file)  # get rid of last dir (RM...)
 
-    return controller_file, trodes_files, config_file, exp_name
+    os.chdir(path_deleveled)
+    config_path = path_deleveled + 'workspaces/'
+    controller_path = path_deleveled + 'sensor_data/'
+    return controller_path, config_path, exp_name
 
 def host_off(save_path):
     Cns = '~/bnelson/CNS/'
@@ -70,20 +82,9 @@ def host_off(save_path):
     # search for all directory paths containing .rec files
     os.chdir(Cns)
     for file in glob.glob('*.rec*'):
-        #import cns data and pns path as string
-        path = str(file) # or something like that, check
-        # scrape name from current dir!
-        exp_name = ''
-        os.chdir(path)
-        # pass to df function
-        # scrape file path to get pns file path
-        os.chdir(pns)
-        path_deleveled = str(file) # get rid of last dir (RM...)
-
-        os.chdir(path_deleveled)
-        config_path = path_deleveled + 'workspaces/'
-        controller_path = path_deleveled + 'sensor_data/'
+        controller_path,config_path,exp_name = name_scrape(file,pns)
         df = load_files(file, exp_name, controller_path, config_path, save_path, analysis=True)
+
     return df
 
 
