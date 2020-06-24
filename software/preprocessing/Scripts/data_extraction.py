@@ -1,9 +1,11 @@
 """Script to import trodes, micro-controller, and config data
 
 """
-import numpy as np
 import glob
 import os
+
+import numpy as np
+
 from software.preprocessing.config_data.config_parser import import_config_data
 from software.preprocessing.controller_data.controller_data_parser import import_controller_data, get_reach_indices, \
     get_reach_times
@@ -11,8 +13,7 @@ from software.preprocessing.reaching_without_borders.rwb import match_times, get
 from software.preprocessing.trodes_data.experiment_data_parser import import_trodes_data, get_exposure_times
 
 
-
-def load_files(trodes_dir,exp_name,controller_path,config_dir,save_path, analysis=False,scrape=False):
+def load_files(trodes_dir, exp_name, controller_path, config_dir, save_path, analysis=False, scrape=False):
     # importing data
     trodes_data = import_trodes_data(trodes_dir, exp_name, win_dir=True)
     config_data = import_config_data(config_dir)
@@ -68,12 +69,50 @@ def name_scrape(file):
     return controller_file,trodes_files,config_file,exp_name
 
 
-def to_df():
+def make_big_df(times, bodyparts, start, stop, mask, scorer, date, session, trial, dim, path=False, dataframe=False):
+    for i, j in enumerate(bodyparts):
+        part_name = str(bodyparts[i])
+        print(part_name + ' is being added..')
+        t = load_all_trials(bodyparts[i], path)
+        list_of_df = find_all_trial_data(times, t, start, stop, mask, part_name, scorer, rat, date, session, dim)
+        if i == 0:
+            main_df = list_of_df
+        else:
+            main_df = pd.concat([main_df, list_of_df], axis=1)
+    print('Finished!')
+    return main_df
 
-    return dataframe
+
+def to_df(times, part_file, trial_mask_start, trial_mask_stop, mask, part, scorer, rat, date, session, dim):
+    for i in range(0, len(trial_mask_start) - 1):
+        i_x = int(trial_mask_start[i])
+        j_x = int(trial_mask_stop[i])
+        val = mask[i_x]
+        if val == 1:
+            trial = 'Fail'
+        if val == 2:
+            trial = 'Success'
+        trial_array = part_file[i_x:j_x]
+        times = np.asarray(times)
+        time_start = (times[i_x])
+        time_stop = (times[j_x])
+        total = float(time_stop - time_start)
+        time_list = [time_start, time_stop, total]
+        new_trial = np.asarray(trial_array)
+        c = pd.MultiIndex.from_product([[scorer], [rat], [date], [session], [dim], [i], [part], [trial],
+                                        [total], ['x', 'y', 'z']],
+                                       names=['Scorer', 'Rat', 'Date', 'Session', 'trial_dim', 'trials', 'Bodypart',
+                                              'S/F', 'exp_times', 'coords'])
+        new_df = pd.DataFrame(new_trial, columns=c)
+        new_df.keys
+        if i == 0:
+            trial_dataframe = new_df
+        else:
+            trial_dataframe = pd.concat([trial_dataframe, new_df], axis=1)
+    return trial_dataframe
 
 
-def scrape_trodes_df(trodes_dir,controller_dir,config_dir,save_path,):
+def scrape_trodes_df(trodes_dir, controller_dir, config_dir, save_path, ):
     os.chdir(trodes_dir)
     for file in glob.glob("*.DIO"):
         c_path, trodes_path, config_path, exp_name = name_scrape(file)
