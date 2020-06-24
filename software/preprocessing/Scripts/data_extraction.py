@@ -5,28 +5,25 @@ import glob
 import os
 
 import numpy as np
+import pandas as pd
 
 from software.preprocessing.config_data.config_parser import import_config_data
 from software.preprocessing.controller_data.controller_data_parser import import_controller_data, get_reach_indices, \
     get_reach_times
 from software.preprocessing.reaching_without_borders.rwb import match_times, get_successful_trials, make_trial_masks
-from software.preprocessing.trodes_data.experiment_data_parser import import_trodes_data, get_exposure_times
+from software.preprocessing.trodes_data.experiment_data_parser import import_trodes_data
 
 
 def load_files(trodes_dir, exp_name, controller_path, config_dir, save_path, analysis=False, scrape=False):
     # importing data
     trodes_data = import_trodes_data(trodes_dir, exp_name, win_dir=True)
     config_data = import_config_data(config_dir)
-    # import config differently?
-    # can analyze per each slice
     controller_data = import_controller_data(controller_path)
     # analysis
     if analysis:
-        time = trodes_data['time']
         true_time = match_times(controller_data, trodes_data)
         reach_indices = get_reach_indices(controller_data)
         successful_trials = get_successful_trials(controller_data, true_time, trodes_data)
-        exposures = get_exposure_times(trodes_data['DIO']['top_cam'])
         reach_masks = get_reach_times(true_time, reach_indices)
         reach_masks_start = np.asarray(reach_masks['start'])
         reach_masks_stop = np.asarray(reach_masks['stop'])
@@ -50,7 +47,7 @@ def load_files(trodes_dir, exp_name, controller_path, config_dir, save_path, ana
     return dataframe
 
 
-def name_scrape(file):
+def name_scrape(file, controller_dir, config_dir):
     """
 
     Parameters
@@ -65,16 +62,17 @@ def name_scrape(file):
     config_file - string containing address of config file
     exp_name - string containing experiment name eg 'RMxxYYYYMMDD_time', found through parsing the trodes file
     """
-
-    return controller_file,trodes_files,config_file,exp_name
+    controller_file = ""
+    trodes_files = ""
+    config_file = ""
+    exp_name = ""
+    return controller_file, trodes_files, config_file, exp_name
 
 
 def make_big_df(times, bodyparts, start, stop, mask, scorer, date, session, trial, dim, path=False, dataframe=False):
     for i, j in enumerate(bodyparts):
-        part_name = str(bodyparts[i])
-        print(part_name + ' is being added..')
-        t = load_all_trials(bodyparts[i], path)
-        list_of_df = find_all_trial_data(times, t, start, stop, mask, part_name, scorer, rat, date, session, dim)
+        # list_of_df = to_df(times, t, start, stop, mask, part_name, scorer, rat, date, session, dim)
+        list_of_df = 0
         if i == 0:
             main_df = list_of_df
         else:
@@ -112,10 +110,10 @@ def to_df(times, part_file, trial_mask_start, trial_mask_stop, mask, part, score
     return trial_dataframe
 
 
-def scrape_trodes_df(trodes_dir, controller_dir, config_dir, save_path, ):
+def scrape_trodes_df(trodes_dir, controller_dir, config_dir, save_path):
     os.chdir(trodes_dir)
     for file in glob.glob("*.DIO"):
-        c_path, trodes_path, config_path, exp_name = name_scrape(file)
+        c_path, trodes_path, config_path, exp_name = name_scrape(file, controller_dir, config_dir)
         list_of_df = load_files(trodes_path, exp_name, c_path, config_path, save_path)
 
     return
