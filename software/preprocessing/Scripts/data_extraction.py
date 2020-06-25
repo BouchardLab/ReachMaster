@@ -14,7 +14,7 @@ from software.preprocessing.reaching_without_borders.rwb import match_times, get
 from software.preprocessing.trodes_data.experiment_data_parser import import_trodes_data
 
 
-def load_files(trodes_dir, exp_name, controller_path, config_dir, analysis=False, cns=False, pns=False):
+def load_files(trodes_dir, exp_name, controller_path, config_dir, analysis=False, cns=False, pns=False, save_path=False):
     # importing data
     exp_name = exp_name[2:-1]
     exp_name = exp_name.rsplit('.', 1)[0]
@@ -40,7 +40,9 @@ def load_files(trodes_dir, exp_name, controller_path, config_dir, analysis=False
         reach_masks_stop = np.asarray(reach_masks['stop'])
         reach_indices_start = reach_indices['start']
         reach_indices_stop = reach_indices['stop']
-        trial_masks = trial_mask(true_time, reach_indices_start, reach_indices_stop)
+        trial_masks = trial_mask(true_time, reach_indices_start, reach_indices_stop,successful_trials)
+    if save_path:
+        os.chdir(save_path)
         np.savetxt('reach_masks_start.csv', reach_masks_start, delimiter=',')
         np.savetxt('reach_masks_stop.csv', reach_masks_stop, delimiter=',')
         np.savetxt('succ_trials.csv', np.asarray(successful_trials), delimiter=',')
@@ -49,7 +51,7 @@ def load_files(trodes_dir, exp_name, controller_path, config_dir, analysis=False
         np.savetxt('reach_indices_start.csv', reach_indices_start, delimiter=',')
         np.savetxt('reach_indices_stop.csv', reach_indices_stop, delimiter=',')
 
-        dataframe = to_df(exp_name, config_data, true_time, reach_masks_start, reach_masks_stop, reach_indices_start,
+    dataframe = to_df(exp_name, config_data, true_time, reach_masks_start, reach_masks_stop, reach_indices_start,
                           reach_indices_stop, successful_trials, trial_masks)
     return dataframe
 
@@ -72,10 +74,11 @@ def name_scrape(file):
     # controller_data
     name = file.split('/')
     path_d = file.rsplit('/', 2)[0]
-    path_d = file.replace('/CNS', '/PNS')
-    path_d = file.rsplit('/RM', 2)[0]
-    config_path = path_d + '/workspaces/'
-    controller_path = path_d + '/sensor_data/'
+    path_d = file.replace('/CNS', '/PNS_data')
+    path_d = path_d.rsplit('/RM', 2)[0]
+
+    config_path = path_d + '/workspaces'
+    controller_path = path_d + '/sensor_data'
     # trodes_data
     n = file.rsplit('/', 1)[1]
     if '/S' in file:
@@ -108,25 +111,26 @@ def host_off(save_path=False):
 
 
 def get_config_data(config_data):
-    config_dataframe = ''
-    return config_dataframe
+    exp_type = config_data['RobotSettings']['commandFile']
+    reward_dur = config_data['ExperimentSettings']['rewardWinDur']
+    robot_config = config_data['RobotSettings']
+
+    return exp_type, reward_dur, robot_config
 
 
 def to_df(file_name, config_data, true_time, reach_masks_start, reach_masks_stop, reach_indices_start,
-          reach_indices_stop, successful_trials, trial_masks, trial_dataframe):
+          reach_indices_stop, successful_trials, trial_masks):
     session = file_name[0:2]
     # functions to get specific items from config file
-    config_dataframe = get_config_data(config_data)
+    dim, reward_dur, robot_config = get_config_data(config_data)
     rat, date = get_name(file_name)
-    dim = config_dataframe[0]
-    robot_coordinates = config_dataframe[1]
     c = pd.MultiIndex.from_product([rat], [date], [session], [dim], [true_time], [reach_masks_start],
                                    [reach_masks_stop],
                                    [reach_indices_start], [reach_indices_stop], [successful_trials], [trial_masks],
-                                   [robot_coordinates],
+                                   [robot_config],[reward_dur],
                                    names=['Rat', 'Date', 'Session', 'trial_dim', 'true_time', 'masks_start',
                                           'masks_stop',
-                                          'indices_start', 'indices_stop', 'SF', 'masks', 'robot coordinates'])
+                                          'indices_start', 'indices_stop', 'SF', 'masks', 'robot config','reward_dur'])
     new_df = pd.DataFrame(columns=c)
     return new_df
 
@@ -139,12 +143,14 @@ def get_name(file_name):
 
 
 def trial_mask(matched_times, r_i_start, r_i_stop, s_t):
-    new_times = np.zeros(len(matched_times[0]))
+    lenx = int(matched_times.shape[0])
+    new_times = np.zeros((lenx))
     for i, j in zip(range(0, len(r_i_start) - 1), range(0, len(r_i_stop) - 1)):
         ix = int(r_i_start[i])
         jx = int(r_i_stop[i])
-        if any(i == s_t):
+        if any(i == s for s in s_t):
             new_times[ix:jx] = 2
+            print(i)
         else:
             new_times[ix:jx] = 1
     return new_times

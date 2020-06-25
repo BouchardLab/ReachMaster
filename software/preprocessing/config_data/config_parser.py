@@ -1,5 +1,5 @@
 import json
-
+import os
 
 def get_config(config_path):
     """
@@ -14,7 +14,9 @@ def get_config(config_path):
     config_file : dict
         dict of experimental metadata from each experiment session
     """
-    config_file = json.load(open(config_path))
+    os.chdir(config_path)
+    config_file = str(os.listdir()[0])
+    config_file = json.load(open(config_file))
     return config_file
 
 

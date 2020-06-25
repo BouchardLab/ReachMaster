@@ -22,6 +22,7 @@ def read_controller_file(controller_path):
 
     """
     controller_files = os.listdir(controller_path)[0]
+    os.chdir(controller_path)
     params = pd.read_csv(controller_files, delim_whitespace=True, skiprows=1)
     params.columns = ['time', 'trial', 'exp_response', 'rob_moving', 'image_triggered', 'in_Reward_Win', 'z_POI']
     return params
