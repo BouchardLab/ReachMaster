@@ -87,6 +87,7 @@ def host_off(save_path=False):
     # cns is laid out rat/day/session/file_name/localdir (we want to be in localdir)
     # search for all directory paths containing .rec files
     main_df = pd.DataFrame()
+    os.chdir(cns)
     for file in glob.glob('*.rec*'):
         controller_path, config_path, exp_name, trodes_name = name_scrape(file)
         print(exp_name + ' is being added..')
