@@ -50,7 +50,7 @@ def load_files(trodes_dir, exp_name, controller_path, config_dir, analysis=False
     return dataframe
 
 
-def name_scrape(file, pns, cns):
+def name_scrape(file):
     """
 
     Parameters
@@ -66,18 +66,17 @@ def name_scrape(file, pns, cns):
     exp_name - string containing experiment name eg 'RMxxYYYYMMDD_time', found through parsing the trodes file
     """
     # controller_data
-    path_d = file.split('/', [-1])  # get rid of last dir
-    path_deleveled = path_d.split('/', [-1])
-    config_path = path_deleveled + '/workspaces/'
-    controller_path = path_deleveled + '/sensor_data/'
+    name = file.split('/')
+    path_d = file.rsplit('/', 2)[0]
+    config_path = path_d + '/workspaces/'
+    controller_path = path_d + '/sensor_data/'
     # trodes_data
-    n = file.split('/', [-1])
-    name = n.split('/', [-1])
+    n = file.rsplit('/', 1)[1]
     if '/S' in file:
         sess = file.split('/')
         sess = str(sess[2])  # get 'session' part of the namestring
     exp_name = sess + name
-    return controller_path, config_path, exp_name, name
+    return controller_path, config_path, exp_name, n
 
 
 def host_off(save_path=False):
@@ -87,7 +86,7 @@ def host_off(save_path=False):
     # search for all directory paths containing .rec files
     i = 0
     for file in glob.glob('*.rec*'):
-        controller_path, config_path, exp_name, trodes_name = name_scrape(file, pns, cns)
+        controller_path, config_path, exp_name, trodes_name = name_scrape(file)
         print(exp_name + ' is being added..')
         list_of_df = load_files(trodes_name, exp_name, controller_path, config_path, analysis=True)
         if i == 0:
@@ -101,31 +100,34 @@ def host_off(save_path=False):
     return main_df
 
 
+def get_config_data(config_data):
+    config_dataframe = ''
+    return config_dataframe
+
+
 def to_df(file_name, config_data, true_time, reach_masks_start, reach_masks_stop, reach_indices_start,
-          reach_indices_stop, successful_trials, trial_masks):
+          reach_indices_stop, successful_trials, trial_masks, trial_dataframe):
+    session = file_name[0:2]
     # functions to get specific items from config file
-    # functions to fetch rat, date, and session from file name
+    config_dataframe = get_config_data(config_data)
     rat, date = get_name(file_name)
+    dim = config_dataframe[0]
+    robot_coordinates = config_dataframe[1]
     c = pd.MultiIndex.from_product([rat], [date], [session], [dim], [true_time], [reach_masks_start],
                                    [reach_masks_stop],
                                    [reach_indices_start], [reach_indices_stop], [successful_trials], [trial_masks],
+                                   [robot_coordinates],
                                    names=['Rat', 'Date', 'Session', 'trial_dim', 'true_time', 'masks_start',
                                           'masks_stop',
-                                          'indices_start', 'indices_stop', 'SF', 'masks'])
-    new_df = pd.DataFrame(new_trial, columns=c)
-    new_df.keys
-    if i == 0:
-        trial_dataframe = new_df
-    else:
-        trial_dataframe = pd.concat([trial_dataframe, new_df], axis=1)
-    return trial_dataframe
+                                          'indices_start', 'indices_stop', 'SF', 'masks', 'robot coordinates'])
+    new_df = pd.DataFrame(columns=c)
+    return new_df
 
 
 def get_name(file_name):
     # split file name
     rat = file_name[2:4]
     date = file_name[5:12]
-
     return rat, date
 
 
