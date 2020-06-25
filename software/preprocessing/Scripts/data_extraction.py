@@ -14,9 +14,14 @@ from software.preprocessing.reaching_without_borders.rwb import match_times, get
 from software.preprocessing.trodes_data.experiment_data_parser import import_trodes_data, get_exposure_times
 
 
-def load_files(trodes_dir, exp_name, controller_path, config_dir, save_path, analysis=False, scrape=False):
+def load_files(trodes_dir, exp_name, controller_path, config_dir, analysis=False, cns=False, pns=False):
     # importing data
+    if cns:
+        os.chdir(cns)
     trodes_data = import_trodes_data(trodes_dir, exp_name, win_dir=True)
+
+    if pns:
+        os.chdir(pns)
     config_data = import_config_data(config_dir)
     # import config differently?
     # can analyze per each slice
@@ -41,11 +46,13 @@ def load_files(trodes_dir, exp_name, controller_path, config_dir, save_path, ana
         np.savetxt('trial_masks.csv', trial_masks, delimiter=',')
         np.savetxt('reach_indices_start.csv', reach_indices_start, delimiter=',')
         np.savetxt('reach_indices_stop.csv', reach_indices_stop, delimiter=',')
-        dataframe = to_df(true_time,reach_masks_start,reach_masks_stop,reach_indices_start,reach_indices_stop,successful_trials)
+
+        dataframe = to_df(exp_name, config_data, true_time, reach_masks_start, reach_masks_stop, reach_indices_start,
+                          reach_indices_stop, successful_trials, trial_masks)
     return dataframe
 
 
-def name_scrape(file,pns):
+def name_scrape(file, pns, cns):
     """
 
     Parameters
@@ -60,20 +67,15 @@ def name_scrape(file,pns):
     config_file - string containing address of config file
     exp_name - string containing experiment name eg 'RMxxYYYYMMDD_time', found through parsing the trodes file
     """
-    #config, controller data use the 11 characters before extensions name
-    # import cns data and pns path as string
-    path = str(file)  # or something like that, check
-    # scrape name from current dir!
-    exp_name = ''
-    os.chdir(path)
-    # pass to df function
-    # scrape file path to get pns file path
-    os.chdir(pns)
-    path_deleveled = str(file)  # get rid of last dir (RM...)
-
-    os.chdir(path_deleveled)
-    config_path = path_deleveled + 'workspaces/'
-    controller_path = path_deleveled + 'sensor_data/'
+    path_d = file.split('/', [-1])  # get rid of last dir
+    path_deleveled = path_d.split('/', [-1])
+    config_path = path_deleveled + '/workspaces/'
+    controller_path = path_deleveled + '/sensor_data/'
+    name = ''
+    if '/S' in file:
+        sess = file.split('/')
+        sess = str(sess[2])  # get 'session' part of the thing
+    exp_name = sess + name
     return controller_path, config_path, exp_name
 
 
@@ -82,10 +84,9 @@ def host_off(save_path):
     pns = '~/bnelson/PNS_data/'
     # cns is laid out rat/day/session/file_name/localdir (we want to be in localdir)
     # search for all directory paths containing .rec files
-    os.chdir(Cns)
     i = 0
     for file in glob.glob('*.rec*'):
-        controller_path, config_path, exp_name = name_scrape(file, pns)
+        controller_path, config_path, exp_name = name_scrape(file, pns, cns)
         print(exp_name + ' is being added..')
         list_of_df = load_files(file, exp_name, controller_path, config_path, save_path, analysis=True)
         if i == 0:
@@ -97,11 +98,17 @@ def host_off(save_path):
     return main_df
 
 
-def to_df():
-    c = pd.MultiIndex.from_product([[scorer], [rat], [date], [session], [dim], [i], [part], [trial],
-                                    [total], ['x', 'y', 'z']],
-                                   names=['Scorer', 'Rat', 'Date', 'Session', 'trial_dim', 'trials', 'Bodypart', 'S/F',
-                                          'exp_times', 'coords'])
+def to_df(file_name, config_data, true_time, reach_masks_start, reach_masks_stop, reach_indices_start,
+          reach_indices_stop, successful_trials, trial_masks):
+    # functions to get specific items from config file
+    # functions to fetch rat, date, and session from file name
+    rat, date = get_name(file_name)
+    c = pd.MultiIndex.from_product([rat], [date], [session], [dim], [true_time], [reach_masks_start],
+                                   [reach_masks_stop],
+                                   [reach_indices_start], [reach_indices_stop], [successful_trials], [trial_masks],
+                                   names=['Rat', 'Date', 'Session', 'trial_dim', 'true_time', 'masks_start',
+                                          'masks_stop',
+                                          'indices_start', 'indices_stop', 'SF', 'masks'])
     new_df = pd.DataFrame(new_trial, columns=c)
     new_df.keys
     if i == 0:
@@ -109,6 +116,14 @@ def to_df():
     else:
         trial_dataframe = pd.concat([trial_dataframe, new_df], axis=1)
     return trial_dataframe
+
+
+def get_name(file_name):
+    # split file name
+    rat = file_name[2:4]
+    date = file_name[5:12]
+
+    return rat, date
 
 
 def trial_mask(matched_times, r_i_start, r_i_stop, s_t):
