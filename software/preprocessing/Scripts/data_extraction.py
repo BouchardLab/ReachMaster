@@ -86,16 +86,12 @@ def host_off(save_path=False):
     #pns = '~/bnelson/PNS_data/'
     # cns is laid out rat/day/session/file_name/localdir (we want to be in localdir)
     # search for all directory paths containing .rec files
-    i = 0
+    main_df = pd.DataFrame()
     for file in glob.glob('*.rec*'):
         controller_path, config_path, exp_name, trodes_name = name_scrape(file)
         print(exp_name + ' is being added..')
-        list_of_df = load_files(trodes_name, exp_name, controller_path, config_path, analysis=True,cns=cns,pns=pns)
-        if i == 0:
-            main_df = list_of_df
-        else:
-            main_df = pd.concat([main_df, list_of_df], axis=1)
-        i += 1
+        list_of_df = load_files(trodes_name, exp_name, controller_path, config_path, analysis=True, cns=cns, pns=pns)
+        main_df = pd.concat([main_df, list_of_df], axis=1)
     print('Finished!!')
     if save_path:
         main_df.to_csv(save_path)
