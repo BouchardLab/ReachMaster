@@ -16,12 +16,16 @@ from software.preprocessing.trodes_data.experiment_data_parser import import_tro
 
 def load_files(trodes_dir, exp_name, controller_path, config_dir, analysis=False, cns=False, pns=False):
     # importing data
+    exp_name = exp_name[2:-1]
+    exp_name = exp_name.rsplit('.', 1)[0]
+    trodes_dir = trodes_dir.rsplit('/', 1)[0]
     if cns:
         os.chdir(cns)
-    trodes_data = import_trodes_data(trodes_dir, exp_name, win_dir=True)
+    trodes_data = import_trodes_data(trodes_dir, exp_name, win_dir=False)
 
     if pns:
         os.chdir(pns)
+
     config_data = import_config_data(config_dir)
     # import config differently?
     # can analyze per each slice
@@ -68,21 +72,24 @@ def name_scrape(file):
     # controller_data
     name = file.split('/')
     path_d = file.rsplit('/', 2)[0]
+    path_d = file.replace('/CNS', '/PNS')
+    path_d = file.rsplit('/RM', 2)[0]
     config_path = path_d + '/workspaces/'
     controller_path = path_d + '/sensor_data/'
     # trodes_data
     n = file.rsplit('/', 1)[1]
     if '/S' in file:
-        sess = file.split('/')
-        sess = str(sess[2])  # get 'session' part of the namestring
-    exp_name = sess + name
+        sess = file.rsplit('/S')
+        sess = str(sess[1])  # get 'session' part of the namestring
+        ix = 'S' + sess[0]
+    exp_name = str(ix) + n
     return controller_path, config_path, exp_name, n
 
 
 def host_off(save_path=False):
     cns_pattern = '/home/kallanved/Desktop/P/CNS/**/*.rec'
     pns = '/home/kallanved/Desktop/P/PNS_data/'
-    cns = 'home/kallanved/Desktop/P/CNS/'
+    cns = '/home/kallanved/Desktop/P/CNS'
     #cns = '~/bnelson/CNS/'
     #pns = '~/bnelson/PNS_data/'
     # cns is laid out rat/day/session/file_name/localdir (we want to be in localdir)
@@ -91,7 +98,7 @@ def host_off(save_path=False):
     for file in glob.glob(cns_pattern, recursive=True):
         controller_path, config_path, exp_name, trodes_name = name_scrape(file)
         print(exp_name + ' is being added..')
-        list_of_df = load_files(trodes_name, exp_name, controller_path, config_path, analysis=True, cns=cns, pns=pns)
+        list_of_df = load_files(file, exp_name, controller_path, config_path, analysis=True, cns=cns, pns=pns)
         main_df = pd.concat([main_df, list_of_df], axis=1)
     print('Finished!!')
     if save_path:

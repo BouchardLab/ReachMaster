@@ -55,25 +55,25 @@ def get_trodes_files(data_dir, trodes_name, win_dir=False):  # pass in data dire
         }
     else:
         trodes_files = {
-            'time_file': data_dir + '/%s/%s.analog/%s.timestamps.dat' % (trodes_name, trodes_name, trodes_name),
-            'x_push_file': data_dir + '/%s/%s.DIO/%s.dio_xPush.dat' % (trodes_name, trodes_name, trodes_name),
-            'x_pull_file': data_dir + '/%s/%s.DIO/%s.dio_xPull.dat' % (trodes_name, trodes_name, trodes_name),
-            'y_push_file': data_dir + '/%s/%s.DIO/%s.dio_yPush.dat' % (trodes_name, trodes_name, trodes_name),
-            'y_pull_file': data_dir + '/%s/%s.DIO/%s.dio_yPull.dat' % (trodes_name, trodes_name, trodes_name),
-            'z_push_file': data_dir + '/%s/%s.DIO/%s.dio_zPush.dat' % (trodes_name, trodes_name, trodes_name),
-            'z_pull_file': data_dir + '/%s/%s.DIO/%s.dio_zPull.dat' % (trodes_name, trodes_name, trodes_name),
-            'moving_file': data_dir + '/%s/%s.DIO/%s.dio_moving.dat' % (trodes_name, trodes_name, trodes_name),
-            'triggers_file': data_dir + '/%s/%s.DIO/%s.dio_triggers.dat' % (trodes_name, trodes_name, trodes_name),
-            'IR_beam_file': data_dir + '/%s/%s.DIO/%s.dio_IRbeam.dat' % (trodes_name, trodes_name, trodes_name),
-            'led_file': data_dir + '/%s/%s.DIO/%s.dio_led.dat' % (trodes_name, trodes_name, trodes_name),
-            'left_cam_file': data_dir + '/%s/%s.DIO/%s.dio_leftCam.dat' % (trodes_name, trodes_name, trodes_name),
-            'right_cam_file': data_dir + '/%s/%s.DIO/%s.dio_rightCam.dat' % (trodes_name, trodes_name, trodes_name),
-            'top_cam_file': data_dir + '/%s/%s.DIO/%s.dio_topCam.dat' % (trodes_name, trodes_name, trodes_name),
-            'lights_file': data_dir + '/%s/%s.DIO/%s.dio_lights.dat' % (trodes_name, trodes_name, trodes_name),
-            'solenoid_file': data_dir + '/%s/%s.DIO/%s.dio_solenoid.dat' % (trodes_name, trodes_name, trodes_name),
-            'x_pot_file': data_dir + '/%s/%s.analog/%s.analog_potX.dat' % (trodes_name, trodes_name, trodes_name),
-            'y_pot_file': data_dir + '/%s/%s.analog/%s.analog_potY.dat' % (trodes_name, trodes_name, trodes_name),
-            'z_pot_file': data_dir + '/%s/%s.analog/%s.analog_potZ.dat' % (trodes_name, trodes_name, trodes_name)
+            'time_file': data_dir + '/%s.analog/%s.timestamps.dat' % ( trodes_name, trodes_name),
+            'x_push_file': data_dir + '/%s.DIO/%s.dio_xPush.dat' % ( trodes_name, trodes_name),
+            'x_pull_file': data_dir + '/%s.DIO/%s.dio_xPull.dat' % ( trodes_name, trodes_name),
+            'y_push_file': data_dir + '/%s.DIO/%s.dio_yPush.dat' % ( trodes_name, trodes_name),
+            'y_pull_file': data_dir + '/%s.DIO/%s.dio_yPull.dat' % (trodes_name, trodes_name),
+            'z_push_file': data_dir + '/%s.DIO/%s.dio_zPush.dat' % (trodes_name, trodes_name),
+            'z_pull_file': data_dir + '/%s.DIO/%s.dio_zPull.dat' % ( trodes_name, trodes_name),
+            'moving_file': data_dir + '/%s.DIO/%s.dio_moving.dat' % (trodes_name, trodes_name),
+            'triggers_file': data_dir + '/%s.DIO/%s.dio_triggers.dat' % (trodes_name, trodes_name),
+            'IR_beam_file': data_dir + '/%s.DIO/%s.dio_IRbeam.dat' % (trodes_name, trodes_name),
+            'led_file': data_dir + '/%s.DIO/%s.dio_led.dat' % (trodes_name, trodes_name),
+            'left_cam_file': data_dir + '/%s.DIO/%s.dio_leftCam.dat' % (trodes_name, trodes_name),
+            'right_cam_file': data_dir + '/%s.DIO/%s.dio_rightCam.dat' % (trodes_name, trodes_name),
+            'top_cam_file': data_dir + '/%s.DIO/%s.dio_topCam.dat' % (trodes_name, trodes_name),
+            'lights_file': data_dir + '/%s.DIO/%s.dio_lights.dat' % (trodes_name, trodes_name),
+            'solenoid_file': data_dir + '/%s.DIO/%s.dio_solenoid.dat' % (trodes_name, trodes_name),
+            'x_pot_file': data_dir + '/%s.analog/%s.analog_potX.dat' % (trodes_name, trodes_name),
+            'y_pot_file': data_dir + '/%s.analog/%s.analog_potY.dat' % (trodes_name, trodes_name),
+            'z_pot_file': data_dir + '/%s.analog/%s.analog_potZ.dat' % (trodes_name, trodes_name)
         }
     return trodes_files
 
