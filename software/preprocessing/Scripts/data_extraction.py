@@ -11,7 +11,7 @@ from software.preprocessing.config_data.config_parser import import_config_data
 from software.preprocessing.controller_data.controller_data_parser import import_controller_data, get_reach_indices, \
     get_reach_times
 from software.preprocessing.reaching_without_borders.rwb import match_times, get_successful_trials
-from software.preprocessing.trodes_data.experiment_data_parser import import_trodes_data, get_exposure_times
+from software.preprocessing.trodes_data.experiment_data_parser import import_trodes_data
 
 
 def load_files(trodes_dir, exp_name, controller_path, config_dir, analysis=False, cns=False, pns=False):
@@ -28,11 +28,9 @@ def load_files(trodes_dir, exp_name, controller_path, config_dir, analysis=False
     controller_data = import_controller_data(controller_path)
     # analysis
     if analysis:
-        time = trodes_data['time']
         true_time = match_times(controller_data, trodes_data)
         reach_indices = get_reach_indices(controller_data)
         successful_trials = get_successful_trials(controller_data, true_time, trodes_data)
-        exposures = get_exposure_times(trodes_data['DIO']['top_cam'])
         reach_masks = get_reach_times(true_time, reach_indices)
         reach_masks_start = np.asarray(reach_masks['start'])
         reach_masks_stop = np.asarray(reach_masks['stop'])
@@ -67,34 +65,39 @@ def name_scrape(file, pns, cns):
     config_file - string containing address of config file
     exp_name - string containing experiment name eg 'RMxxYYYYMMDD_time', found through parsing the trodes file
     """
+    # controller_data
     path_d = file.split('/', [-1])  # get rid of last dir
     path_deleveled = path_d.split('/', [-1])
     config_path = path_deleveled + '/workspaces/'
     controller_path = path_deleveled + '/sensor_data/'
-    name = ''
+    # trodes_data
+    n = file.split('/', [-1])
+    name = n.split('/', [-1])
     if '/S' in file:
         sess = file.split('/')
-        sess = str(sess[2])  # get 'session' part of the thing
+        sess = str(sess[2])  # get 'session' part of the namestring
     exp_name = sess + name
-    return controller_path, config_path, exp_name
+    return controller_path, config_path, exp_name, name
 
 
-def host_off(save_path):
-    Cns = '~/bnelson/CNS/'
+def host_off(save_path=False):
+    cns = '~/bnelson/CNS/'
     pns = '~/bnelson/PNS_data/'
     # cns is laid out rat/day/session/file_name/localdir (we want to be in localdir)
     # search for all directory paths containing .rec files
     i = 0
     for file in glob.glob('*.rec*'):
-        controller_path, config_path, exp_name = name_scrape(file, pns, cns)
+        controller_path, config_path, exp_name, trodes_name = name_scrape(file, pns, cns)
         print(exp_name + ' is being added..')
-        list_of_df = load_files(file, exp_name, controller_path, config_path, save_path, analysis=True)
+        list_of_df = load_files(trodes_name, exp_name, controller_path, config_path, analysis=True)
         if i == 0:
             main_df = list_of_df
         else:
             main_df = pd.concat([main_df, list_of_df], axis=1)
         i += 1
     print('Finished!!')
+    if save_path:
+        main_df.to_csv(save_path)
     return main_df
 
 
