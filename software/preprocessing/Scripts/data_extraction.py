@@ -80,8 +80,8 @@ def name_scrape(file):
 
 
 def host_off(save_path=False):
-    cns = '~/Desktop/P/CNS/'
-    pns = '~/Desktop/P/PNS_data/'
+    cns = '/home/kallanved/Desktop/P/CNS'
+    pns = '/home/kallanved/Desktop/P/PNS_data/'
     #cns = '~/bnelson/CNS/'
     #pns = '~/bnelson/PNS_data/'
     # cns is laid out rat/day/session/file_name/localdir (we want to be in localdir)
