@@ -80,15 +80,15 @@ def name_scrape(file):
 
 
 def host_off(save_path=False):
-    cns = '/home/kallanved/Desktop/P/CNS'
+    cns_pattern = '/home/kallanved/Desktop/P/CNS/**/*.rec'
     pns = '/home/kallanved/Desktop/P/PNS_data/'
+    cns = 'home/kallanved/Desktop/P/CNS/'
     #cns = '~/bnelson/CNS/'
     #pns = '~/bnelson/PNS_data/'
     # cns is laid out rat/day/session/file_name/localdir (we want to be in localdir)
     # search for all directory paths containing .rec files
     main_df = pd.DataFrame()
-    os.chdir(cns)
-    for file in glob.glob('*.rec*'):
+    for file in glob.glob(cns_pattern, recursive=True):
         controller_path, config_path, exp_name, trodes_name = name_scrape(file)
         print(exp_name + ' is being added..')
         list_of_df = load_files(trodes_name, exp_name, controller_path, config_path, analysis=True, cns=cns, pns=pns)
