@@ -124,13 +124,13 @@ def to_df(file_name, config_data, true_time, reach_masks_start, reach_masks_stop
     # functions to get specific items from config file
     dim, reward_dur, robot_config = get_config_data(config_data)
     rat, date = get_name(file_name)
-    c = pd.MultiIndex.from_product([rat], [date], [session], [dim], [true_time], [reach_masks_start],
-                                   [reach_masks_stop],
-                                   [reach_indices_start], [reach_indices_stop], [successful_trials], [trial_masks],
-                                   [robot_config],[reward_dur],
+    c = pd.MultiIndex.from_product([[rat], [date], [session], [dim], [true_time], [reach_masks_start],
+                                    [reach_masks_stop],
+                                    [reach_indices_start], [reach_indices_stop], [successful_trials], [trial_masks],
+                                    [reward_dur]],
                                    names=['Rat', 'Date', 'Session', 'trial_dim', 'true_time', 'masks_start',
                                           'masks_stop',
-                                          'indices_start', 'indices_stop', 'SF', 'masks', 'robot config','reward_dur'])
+                                          'indices_start', 'indices_stop', 'SF', 'masks', 'reward_dur'])
     new_df = pd.DataFrame(columns=c)
     return new_df
 
