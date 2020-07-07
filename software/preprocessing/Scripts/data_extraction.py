@@ -90,10 +90,10 @@ def name_scrape(file):
 
 def host_off(save_path=False):
     cns_pattern = '/home/kallanved/Desktop/P/CNS/**/*.rec'
-    pns = '/home/kallanved/Desktop/P/PNS_data/'
-    cns = '/home/kallanved/Desktop/P/CNS'
-    #cns = '~/bnelson/CNS/'
-    #pns = '~/bnelson/PNS_data/'
+    #pns = '/home/kallanved/Desktop/P/PNS_data/'
+    #cns = '/home/kallanved/Desktop/P/CNS'
+    cns = '/home/bnelson/Data/CNS/'
+    pns = '/home/bnelson/Data/PNS_data/'
     # cns is laid out rat/day/session/file_name/localdir (we want to be in localdir)
     # search for all directory paths containing .rec files
     d = []
