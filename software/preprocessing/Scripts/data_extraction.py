@@ -5,8 +5,7 @@ import glob
 import os
 from collections import defaultdict
 import numpy as np
-import pandas as pd
-import csv
+import json
 from software.preprocessing.config_data.config_parser import import_config_data
 from software.preprocessing.controller_data.controller_data_parser import import_controller_data, get_reach_indices, \
     get_reach_times
@@ -105,12 +104,8 @@ def host_off(save_path=False):
         d.append(list_of_df)
     print('Finished!!')
     if save_path:
-        with open(save_path, 'wb') as f:
-            for ix in range(len(d)):
-                value = d[ix]
-                w = csv.DictWriter(f, value.keys())
-                w.writeheader()
-                w.writerow()
+        with open(save_path, 'w') as f:
+            json.dump(d, f)
 
     return d
 
@@ -130,11 +125,11 @@ def to_df(file_name, config_data, true_time, reach_masks_start, reach_masks_stop
     date = get_name(file_name)
     successful_trials = np.asarray(successful_trials)
     dict = make_dict()
-    dict[rat][date][session][dim]['time'] = true_time
-    dict[rat][date][session][dim]['masks_start'] = reach_masks_start
-    dict[rat][date][session][dim]['mask_stop'] = reach_masks_stop
-    dict[rat][date][session][dim]['SF'] = successful_trials
-    dict[rat][date][session][dim]['masks'] = trial_masks
+    dict[rat][date][session][dim]['time'] = true_time.tolist()
+    dict[rat][date][session][dim]['masks_start'] = reach_masks_start.tolist()
+    dict[rat][date][session][dim]['mask_stop'] = reach_masks_stop.tolist()
+    dict[rat][date][session][dim]['SF'] = successful_trials.tolist()
+    dict[rat][date][session][dim]['masks'] = trial_masks.tolist()
     dict[rat][date][session][dim]['dur'] = reward_dur
     return dict
 
@@ -157,7 +152,6 @@ def trial_mask(matched_times, r_i_start, r_i_stop, s_t):
         jx = int(r_i_stop[i])
         if any(i == s for s in s_t):
             new_times[ix:jx] = 2
-            print(i)
         else:
             new_times[ix:jx] = 1
     return new_times
