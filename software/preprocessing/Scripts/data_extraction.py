@@ -97,29 +97,22 @@ def host_off(save_path=False):
     #pns = '~/bnelson/PNS_data/'
     # cns is laid out rat/day/session/file_name/localdir (we want to be in localdir)
     # search for all directory paths containing .rec files
-    main_df = pd.DataFrame()
-    i = 0
+    d = []
     for file in glob.glob(cns_pattern, recursive=True):
         controller_path, config_path, exp_name, name, ix, trodes_name = name_scrape(file)
         print(exp_name + ' is being added..')
         list_of_df = load_files(file, exp_name, controller_path, config_path, name, ix, analysis=True, cns=cns, pns=pns)
-        if i == 0:
-            d = list_of_df
-            i += 1
-        else:
-            for k, v in list_of_df.items():
-                if (k in d):
-                    d[k].update(list_of_df[k])
-                else:
-                    d[k] = list_of_df[k]
+        d.append(list_of_df)
     print('Finished!!')
     if save_path:
         with open(save_path, 'wb') as f:
-            w = csv.DictWriter(f, d.keys())
-            w.writeheader()
-            w.writerow(d)
+            for ix in range(len(d)):
+                value = d[ix]
+                w = csv.DictWriter(f, value.keys())
+                w.writeheader()
+                w.writerow()
 
-    return list_of_df
+    return d
 
 
 def get_config_data(config_data):
