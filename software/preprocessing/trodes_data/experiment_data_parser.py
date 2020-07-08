@@ -264,11 +264,10 @@ def get_exposure_times(exposures):
     exposures_low = exposures[0::2]
     # add error checking for exposures
     if len(exposures_high) != len(exposures_low):
-        if len(exposures_high) > len(exposures_low):
-            del exposures_high[-1]
+        if len(exposures_high) < len(exposures_low):
+            real_exposures = (exposures_high + exposures_low[1:]) / 2
         else:
-            del exposures_low[-1]
-    real_exposures = (exposures_high + exposures_low[1:]) / 2
+            real_exposures = (exposures_high[1:] + exposures_low) / 2
     return real_exposures
 
 

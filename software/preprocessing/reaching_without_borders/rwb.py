@@ -189,7 +189,7 @@ def get_successful_trials(controller_data, matched_time, experiment_data):
     reach_start = reach_times['start']
     reach_stop = reach_times['stop']
     trial_num = 0
-    if lick_data:
+    if lick_data.any():
         for xi in range(len(reach_start)-1):
             i = reach_start[xi]  # these are start and stop times on trodes time
             j = reach_stop[xi]

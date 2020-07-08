@@ -50,8 +50,8 @@ def load_files(trodes_dir, exp_name, controller_path, config_dir, rat, session, 
         np.savetxt('reach_indices_start.csv', reach_indices_start, delimiter=',')
         np.savetxt('reach_indices_stop.csv', reach_indices_stop, delimiter=',')
 
-    dataframe = to_df(exp_names, config_data, true_time, reach_masks_start, reach_masks_stop, reach_indices_start,
-                          reach_indices_stop, successful_trials, trial_masks, rat, session)
+    dataframe = to_df(exp_names, config_data, true_time, reach_masks_start, reach_masks_stop,successful_trials,
+                      trial_masks, rat, session)
     return dataframe
 
 
@@ -90,10 +90,10 @@ def name_scrape(file):
 
 def host_off(save_path=False):
     cns_pattern = '/home/kallanved/Desktop/P/CNS/**/*.rec'
-    #pns = '/home/kallanved/Desktop/P/PNS_data/'
-    #cns = '/home/kallanved/Desktop/P/CNS'
-    cns = '/home/bnelson/Data/CNS/'
-    pns = '/home/bnelson/Data/PNS_data/'
+    pns = '/home/kallanved/Desktop/P/PNS_data/'
+    cns = '/home/kallanved/Desktop/P/CNS'
+    #cns = '/home/bnelson/Data/CNS/'
+    #pns = '/home/bnelson/Data/PNS_data/'
     # cns is laid out rat/day/session/file_name/localdir (we want to be in localdir)
     # search for all directory paths containing .rec files
     d = []
@@ -118,8 +118,8 @@ def get_config_data(config_data):
     return exp_type, reward_dur, robot_config
 
 
-def to_df(file_name, config_data, true_time, reach_masks_start, reach_masks_stop, reach_indices_start,
-          reach_indices_stop, successful_trials, trial_masks, rat, session):
+def to_df(file_name, config_data, true_time, reach_masks_start, reach_masks_stop,
+          successful_trials, trial_masks, rat, session):
     # functions to get specific items from config file
     dim, reward_dur, robot_config = get_config_data(config_data)
     date = get_name(file_name)
