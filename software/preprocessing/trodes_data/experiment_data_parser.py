@@ -225,7 +225,7 @@ def create_DIO_mask(time_data, trodes_data):
 
 def obtain_times(experiment_data, time_length):
     """
-
+    function to obtain trodes data times
     Parameters
     ----------
     experiment_data : dict

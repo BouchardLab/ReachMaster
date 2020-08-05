@@ -58,16 +58,27 @@ def get_reach_indices(controller_data):
     reach_indices : list
         list containinng start and stop indices of the controller data
     """
+    # to:do for checks on if robot is moving while in reward window
+    # moving = True to moving = False, what is indice for position?
+    #
     end_index = []
     start_index = []
+    rewarded = []
     for i, j in enumerate(controller_data['exp_response']):
         if j == 'e':
             end_index.append(i)
         if j == 'r':
             if controller_data['exp_response'][i - 1] == 'r':
                 continue
+            if controller_data['in_Reward_Win'][i] == 1:
+                if controller_data['in_Reward_Win'][i - 1] == 0:
+                    rewarded.append(i)
+                else:
+                    continue
+            # if controller_data
             else:
                 start_index.append(i)
+
     reach_indices = {'start': start_index, 'stop': end_index}
     return reach_indices
 
