@@ -13,6 +13,7 @@ from software.preprocessing.config_data.config_parser import import_config_data
 from software.preprocessing.controller_data.controller_data_parser import import_controller_data, get_reach_indices, \
     get_reach_times
 from software.preprocessing.reaching_without_borders.rwb import match_times, get_successful_trials
+from software.preprocessing.trodes_data.calibration_data_parser import get_calibration_frame
 from software.preprocessing.trodes_data.experiment_data_parser import import_trodes_data
 
 
@@ -36,9 +37,6 @@ def load_files(trodes_dir, exp_name, controller_path, config_dir, rat, session, 
     # analysis
     if analysis:
         lick_data = trodes_data['DIO']['IR_beam']
-        r_x = trodes_data['analog']['x_pot']
-        r_y = trodes_data['analog']['y_pot']
-        r_z = trodes_data['analog']['z_pot']
         true_time = match_times(controller_data, trodes_data)
         reach_indices = get_reach_indices(controller_data)
         successful_trials = get_successful_trials(controller_data, true_time, trodes_data)
@@ -48,6 +46,10 @@ def load_files(trodes_dir, exp_name, controller_path, config_dir, rat, session, 
         reach_indices_start = reach_indices['start']
         reach_indices_stop = reach_indices['stop']
         trial_masks = trial_mask(true_time, reach_indices_start, reach_indices_stop, successful_trials)
+        positional_data = get_calibration_frame(trodes_dir, exp_names)
+        r_x = positional_data('x_position')
+        r_y = positional_data('y_position')
+        r_z = positional_data('z_position')
     if save_path:
         os.chdir(save_path)
         np.savetxt('reach_masks_start.csv', reach_masks_start, delimiter=',')
@@ -136,7 +138,7 @@ def to_df(file_name, config_data, true_time, reach_masks_start, reach_masks_stop
     dim, reward_dur, x_pos, y_pos, z_pos, x0, y0, z0 = get_config_data(config_data)
     date = get_name(file_name)
     successful_trials = np.asarray(successful_trials)
-    if save_as_dict:
+    if save_as_dict:  # depreciated
         dict = make_dict()
         dict[rat][date][session][dim]['time'] = true_time.tolist()
         dict[rat][date][session][dim]['masks_start'] = reach_masks_start.tolist()
