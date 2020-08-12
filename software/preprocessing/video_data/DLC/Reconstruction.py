@@ -4,9 +4,18 @@ Use with DLT co-effecients obtained through easyWand or other procedures + multi
 Author: Brett Nelson, NSDS Lab 2020
 
 """
-import matplotlib.pyplot as plt
-# imports
+#imports
 import numpy as np
+from numpy.random import normal as normal
+import matplotlib
+import matplotlib.pyplot as plt
+import matplotlib.cm as cm
+import matplotlib.colors as mcolors
+from mpl_toolkits.mplot3d import Axes3D
+import matplotlib.pyplot as plt
+import matplotlib.animation as animation
+import os
+import pandas as pd
 
 
 # dlt reconstruct adapted by An Chi Chen from DLTdv5 by Tyson Hedrick
@@ -158,7 +167,7 @@ def reconstruct_3d(dlt_coefs_file, dlc_files, output_format, plotting=True):
     return xyz_all
 
 
-def reconstruct_points(list_of_csv, coeffs, output_path=False, plotting=False):
+def reconstruct_points(list_of_csv, coeffs, output_path = False,plotting=False):
     """
     Parameters
     ----------
@@ -174,5 +183,42 @@ def reconstruct_points(list_of_csv, coeffs, output_path=False, plotting=False):
         output_path = output_path
     else:
         output_path = ''
-    xyzAll = reconstruct_3d(coeffs, list_of_csv, output_path, plotting=plotting)
+    xyzAll = reconstruct_3d(coeffs, list_of_csv, output_path,plotting=plotting)
     return xyzAll
+
+
+def find_cam_files(root_dir, extension, pathList):
+    """
+    Function to find cam files for 3-D calibration
+    Parameters
+    ----------
+    root_dir : path directory
+    extension : string of extension you want found eg .mp4 or .txt
+
+    pathList : empty list
+    Returns
+    -------
+    pathList : list containing lists of file names
+    """
+    for file in glob.glob(root_dir,extension,recursive=True):
+        if file.find('cam1'): # check and make sure that the files have been split
+            cam_path = file.rsplit('_')[0]
+            cam2_path = cam_path + 'cam2.mp4'
+            cam3_path = cam_path + 'cam3.mp4'
+            pathList.append([file,cam2_path,cam3_path])
+        else:
+            print('Sorry, file not found :: file designation' + file)
+
+    return pathList
+
+
+def extract_3D_kinematics(filepath, dlt_coeffs, output_path):
+    pl = []
+    pts_dataframe = pd.DataFrame()
+    cam_files = find_cam_files(filepath, '.mp4', pl)
+    for i in cam_files:
+        pts = reconstruct_points(i, dlt_coeffs, output_path)
+
+    return pts_dataframe
+
+
