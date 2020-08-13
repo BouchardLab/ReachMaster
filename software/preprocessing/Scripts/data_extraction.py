@@ -2,23 +2,18 @@
 
 """
 import glob
-import json
 import os
 from collections import defaultdict
-
 import numpy as np
-import pandas as pd
-
+import json
 from software.preprocessing.config_data.config_parser import import_config_data
 from software.preprocessing.controller_data.controller_data_parser import import_controller_data, get_reach_indices, \
     get_reach_times
 from software.preprocessing.reaching_without_borders.rwb import match_times, get_successful_trials
-from software.preprocessing.trodes_data.calibration_data_parser import get_calibration_frame
 from software.preprocessing.trodes_data.experiment_data_parser import import_trodes_data
 
 
-def load_files(trodes_dir, exp_name, controller_path, config_dir, rat, session, analysis=False, cns=False, pns=False,
-               save_path=False):
+def load_files(trodes_dir, exp_name, controller_path, config_dir, rat, session, analysis=False, cns=False, pns=False, save_path=False):
     # importing data
     exp_names = exp_name[2:-1]
     exp_names = exp_names.rsplit('.', 1)[0]
@@ -36,7 +31,6 @@ def load_files(trodes_dir, exp_name, controller_path, config_dir, rat, session, 
     controller_data = import_controller_data(controller_path)
     # analysis
     if analysis:
-        lick_data = trodes_data['DIO']['IR_beam']
         true_time = match_times(controller_data, trodes_data)
         reach_indices = get_reach_indices(controller_data)
         successful_trials = get_successful_trials(controller_data, true_time, trodes_data)
@@ -45,11 +39,7 @@ def load_files(trodes_dir, exp_name, controller_path, config_dir, rat, session, 
         reach_masks_stop = np.asarray(reach_masks['stop'])
         reach_indices_start = reach_indices['start']
         reach_indices_stop = reach_indices['stop']
-        trial_masks = trial_mask(true_time, reach_indices_start, reach_indices_stop, successful_trials)
-        positional_data = get_calibration_frame(trodes_dir, exp_names)
-        r_x = positional_data('x_position')
-        r_y = positional_data('y_position')
-        r_z = positional_data('z_position')
+        trial_masks = trial_mask(true_time, reach_indices_start, reach_indices_stop,successful_trials)
     if save_path:
         os.chdir(save_path)
         np.savetxt('reach_masks_start.csv', reach_masks_start, delimiter=',')
@@ -60,8 +50,8 @@ def load_files(trodes_dir, exp_name, controller_path, config_dir, rat, session, 
         np.savetxt('reach_indices_start.csv', reach_indices_start, delimiter=',')
         np.savetxt('reach_indices_stop.csv', reach_indices_stop, delimiter=',')
 
-    dataframe = to_df(exp_names, config_data, true_time, reach_masks_start, reach_masks_stop, successful_trials,
-                      trial_masks, rat, session, lick_data, r_x, r_y, r_z)
+    dataframe = to_df(exp_names, config_data, true_time, reach_masks_start, reach_masks_stop,successful_trials,
+                      trial_masks, rat, session)
     return dataframe
 
 
@@ -123,38 +113,24 @@ def host_off(save_path=False):
 def get_config_data(config_data):
     exp_type = config_data['RobotSettings']['commandFile']
     reward_dur = config_data['ExperimentSettings']['rewardWinDur']
-    x_pos = config_data['RobotSettings']['xCommandPos']
-    y_pos = config_data['RobotSettings']['yCommandPos']
-    z_pos = config_data['RobotSettings']['zCommandPos']
-    x0 = config_data['RobotSettings']['x0']
-    y0 = config_data['RobotSettings']['y0']
-    z0 = config_data['RobotSettings']['z0']
-    return exp_type, reward_dur, x_pos, y_pos, z_pos, x0, y0, z0
+    robot_config = config_data['RobotSettings']
+
+    return exp_type, reward_dur, robot_config
 
 
 def to_df(file_name, config_data, true_time, reach_masks_start, reach_masks_stop,
-          successful_trials, trial_masks, rat, session, lick_data, r_x, r_y, r_z, save_as_dict=False):
+          successful_trials, trial_masks, rat, session):
     # functions to get specific items from config file
-    dim, reward_dur, x_pos, y_pos, z_pos, x0, y0, z0 = get_config_data(config_data)
+    dim, reward_dur, robot_config = get_config_data(config_data)
     date = get_name(file_name)
     successful_trials = np.asarray(successful_trials)
-    if save_as_dict:  # depreciated
-        dict = make_dict()
-        dict[rat][date][session][dim]['time'] = true_time.tolist()
-        dict[rat][date][session][dim]['masks_start'] = reach_masks_start.tolist()
-        dict[rat][date][session][dim]['mask_stop'] = reach_masks_stop.tolist()
-        dict[rat][date][session][dim]['SF'] = successful_trials.tolist()
-        dict[rat][date][session][dim]['masks'] = trial_masks.tolist()
-        # dict[rat][date][session][dim]['dur'] = reward_dur
-    else:
-        # multi dict; rat, date, session, dim
-        # data; robot config garbage, exp time, exposure time, s/f, moving, robot readings, lick data
-        dict = pd.DataFrame([true_time, reach_masks_start, reach_masks_stop, successful_trials, trial_masks, lick_data,
-                             r_x, r_y, r_z, x_pos, y_pos, z_pos, x0, y0, z0], columns=['time', 'm_start', 'm_stop',
-                                                                                       'SF', 't_m', 'lick', 'r_x',
-                                                                                       'r_y', 'r_z', 'x_p', 'y_p',
-                                                                                       'z_p', 'x0', 'y0', 'z0'])
-        pd.concat([dict], keys=[rat, date, session, dim], names=['Rat', 'Date', 'S', 'Dim'], axis=1)
+    dict = make_dict()
+    dict[rat][date][session][dim]['time'] = true_time.tolist()
+    dict[rat][date][session][dim]['masks_start'] = reach_masks_start.tolist()
+    dict[rat][date][session][dim]['mask_stop'] = reach_masks_stop.tolist()
+    dict[rat][date][session][dim]['SF'] = successful_trials.tolist()
+    dict[rat][date][session][dim]['masks'] = trial_masks.tolist()
+    dict[rat][date][session][dim]['dur'] = reward_dur
     return dict
 
 
