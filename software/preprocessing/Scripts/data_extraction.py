@@ -3,34 +3,53 @@
 """
 import glob
 import json
-import numpy as np
 import os
-import pandas as pd
-import pdb
 from collections import defaultdict
+import pdb
+import numpy as np
+import pandas as pd
 
 from software.preprocessing.config_data.config_parser import import_config_data
 from software.preprocessing.controller_data.controller_data_parser import import_controller_data, get_reach_indices, \
     get_reach_times
 from software.preprocessing.reaching_without_borders.rwb import match_times, get_successful_trials
-from software.preprocessing.trodes_data.calibration_data_parser import get_calibration_frame
 from software.preprocessing.trodes_data.experiment_data_parser import import_trodes_data
+from software.preprocessing.trodes_data.calibration_data_parser import get_traces_frame
 
 
 def load_files(trodes_dir, exp_name, controller_path, config_dir, rat, session, analysis=False, cns=False, pns=False,
                save_path=False):
+    """
+
+    Parameters
+    ----------
+    trodes_dir : directory containing trodes .rec file
+    exp_name : name of folder containing .rec file/ video file
+    controller_path : full path to micro-controller data
+    config_dir : directory containing .json file with configuration parameters
+    rat :
+    session
+    analysis
+    cns
+    pns
+    save_path
+
+    Returns
+    -------
+
+    """
     # importing data
     exp_names = exp_name[2:-1]
     exp_names = exp_names.rsplit('.', 1)[0]
     trodes_dir = trodes_dir.rsplit('/', 1)[0]
-    positional_data = get_calibration_frame(trodes_dir, exp_names)
+    positional_data = get_traces_frame(trodes_dir,exp_names)
     if cns:
         os.chdir(cns)
     trodes_data = import_trodes_data(trodes_dir, exp_names, win_dir=False)
-
+    
     if pns:
         os.chdir(pns)
-
+    
     config_data = import_config_data(config_dir)
     # import config differently?
     # can analyze per each slice
@@ -47,10 +66,16 @@ def load_files(trodes_dir, exp_name, controller_path, config_dir, rat, session, 
         reach_indices_start = reach_indices['start']
         reach_indices_stop = reach_indices['stop']
         trial_masks = trial_mask(true_time, reach_indices_start, reach_indices_stop, successful_trials)
-        r_x = positional_data['x_position']
-        r_y = positional_data['y_position']
-        r_z = positional_data['z_position']
-
+        r_x = positional_data['x_start_position']
+        r_y = positional_data['y_start_position']
+        r_z = positional_data['z_start_position']
+        t_x = positional_data['x_duration']
+        d_x = positional_data['x_displacement']
+        t_y = positional_data['y_duration']
+        d_y = positional_data['y_displacement']
+        t_z = positional_data['z_duration']
+        d_z = positional_data['z_displacement']
+        
     if save_path:
         os.chdir(save_path)
         np.savetxt('reach_masks_start.csv', reach_masks_start, delimiter=',')
@@ -61,7 +86,7 @@ def load_files(trodes_dir, exp_name, controller_path, config_dir, rat, session, 
         np.savetxt('reach_indices_start.csv', reach_indices_start, delimiter=',')
         np.savetxt('reach_indices_stop.csv', reach_indices_stop, delimiter=',')
     dataframe = to_df(exp_names, config_data, true_time, reach_masks_start, reach_masks_stop, successful_trials,
-                      trial_masks, rat, session, lick_data, r_x, r_y, r_z, controller_data, reach_indices)
+                      trial_masks, rat, session, lick_data, r_x, r_y, r_z,t_x,d_x,t_y,d_y,t_z,d_z,controller_data, reach_indices)
     return dataframe
 
 def name_scrape(file):
@@ -111,10 +136,10 @@ def host_off(save_path=True):
         d.append(list_of_df)
     print('Finished!!')
     save_df = pd.concat(d)
-    save_df.set_index(['rat', 'S', 'Date', 'dim'])
+    save_df.set_index(['rat','S','Date','dim'])
     save_df.to_csv(save_path)
     save_df.to_csv('~/Data/default_save.csv')
-    save_df.to_hdf('~/Data/default_save.h5', key='save_df', mode='w')
+    save_df.to_hdf('~/Data/default_save.h5',key = 'save_df', mode='w')
     save_df.to_pickle('~/Data/default_save.pickle')
     return save_df
 
@@ -132,15 +157,14 @@ def get_config_data(config_data):
 
 
 def to_df(file_name, config_data, true_time, reach_masks_start, reach_masks_stop,
-          successful_trials, trial_masks, rat, session, lick_data, r_x, r_y, r_z, controller_data, reach_indices,
-          save_as_dict=False):
+          successful_trials, trial_masks, rat, session, lick_data, r_x, r_y, r_z, controller_data,reach_indices, save_as_dict=False):
     # functions to get specific items from config file
     dim, reward_dur, x_pos, y_pos, z_pos, x0, y0, z0 = get_config_data(config_data)
     date = get_name(file_name)
     moving = controller_data['rob_moving']
     r_w = controller_data['in_Reward_Win']
     successful_trials = np.asarray(successful_trials)
-    if save_as_dict:  # depreciated
+    if save_as_dict: #depreciated
         dict = make_dict()
         dict[rat][date][session][dim]['time'] = true_time.tolist()
         dict[rat][date][session][dim]['masks_start'] = reach_masks_start.tolist()
@@ -151,16 +175,13 @@ def to_df(file_name, config_data, true_time, reach_masks_start, reach_masks_stop
     else:
         # multi dict; rat, date, session, dim (add this as 
         # data; robot config garbage, exp time, exposure time, s/f, moving, robot readings, lick data
-        dict = pd.DataFrame(
-            {'rat': rat, 'S': session, 'Date': date, 'dim': dim, 'time': [np.asarray(true_time).tolist()],
-             'm_start': [np.asarray(reach_masks_start).tolist()],
-             'm_stop': [np.asarray(reach_masks_stop).tolist()], 'SF': [successful_trials], 't_m': [trial_masks],
-             'lick': [np.asarray(lick_data).tolist()], 'r_x': [np.asarray(r_x)], 'r_y': [np.asarray(r_y)],
-             'r_z': [np.asarray(r_z)],
-             'x_p': [np.asarray(x_pos).tolist()], 'y_p': [np.asarray(y_pos).tolist()],
-             'z_p': [np.asarray(z_pos).tolist()], 'x0': [x0], 'y0': [y0], 'z0': [z0],
-             'moving': [np.asarray(moving, dtype=int)], 'RW': [r_w], 'r_start': [reach_indices['start']],
-             'r_stop': [reach_indices['stop']]})
+        dict = pd.DataFrame({'rat':rat, 'S': session, 'Date': date, 'dim':dim, 'time' : [np.asarray(true_time).tolist()],
+        'm_start': [np.asarray(reach_masks_start).tolist()], 
+        'm_stop': [np.asarray(reach_masks_stop).tolist()], 'SF': [successful_trials], 't_m': [trial_masks],
+        'lick': [np.asarray(lick_data).tolist()], 'r_x': [np.asarray(r_x)], 'r_y': [np.asarray(r_y)], 'r_z': [np.asarray(r_z)], 
+        'x_p':[np.asarray(x_pos).tolist()], 'y_p':[np.asarray(y_pos).tolist()],
+        'z_p':[np.asarray(z_pos).tolist()], 'x0':[x0], 'y0':[y0], 'z0':[z0], 'moving': [np.asarray(moving,dtype=int)], 'RW': [r_w],'r_start':[reach_indices['start']],
+        'r_stop':[reach_indices['stop']] ,'t_x': [t_x],'d_x':[d_x], 't_y': [t_y],'d_y':[d_y], 't_z':[t_z],'d_z':[d_z] })
         return dict
 
 
