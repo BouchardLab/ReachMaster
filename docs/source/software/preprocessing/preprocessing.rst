@@ -24,8 +24,12 @@ Experimental data parser
 
 Video Data
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automodule::
+.. automodule:: video_data.misc_preprocessing.split
 	:members:
+.. automodule:: video_data.DLC.AV
+    :members:
+.. automodule:: video_data.DLC.Reconstruction
+    :members:
 
 Controller Data
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
