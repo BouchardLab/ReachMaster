@@ -79,8 +79,8 @@ def load_files(dlt_path,trodes_dir, exp_name, controller_path, config_dir, rat, 
         d_z = positional_data['z_displacement']
     dataframe = to_df(exp_names, config_data, true_time, reach_masks_start, reach_masks_stop, successful_trials,
                       trial_masks, rat, session, lick_data, r_x, r_y, r_z, t_x, d_x, t_y, d_y, t_z, d_z,
-                      controller_data, reach_indices, kinematic_data)
-    return dataframe
+                      controller_data, reach_indices)
+    return dataframe,kinematic_data
 
 
 def name_scrape(file):
@@ -138,7 +138,7 @@ def host_off(save_path,dlt_path):
     for file in glob.glob(cns_pattern, recursive=True):
         controller_path, config_path, exp_name, name, ix, trodes_name,video_path = name_scrape(file)
         print(exp_name + ' is being added..')
-        list_of_df = load_files(dlt_path,file, exp_name, controller_path, config_path, name, ix,video_path,
+        list_of_df,kinematics_df = load_files(dlt_path,file, exp_name, controller_path, config_path, name, ix,video_path,
                                 analysis=True, cns=cns, pns=pns)
         d.append(list_of_df)
     print('Finished!!')
@@ -175,7 +175,7 @@ def get_config_data(config_data):
 
 def to_df(file_name, config_data, true_time, reach_masks_start, reach_masks_stop,
           successful_trials, trial_masks, rat, session, lick_data, r_x, r_y, r_z, t_x, d_x, t_y, d_y, t_z, d_z,
-          controller_data, reach_indices,kinematic_data, save_as_dict=False):
+          controller_data, reach_indices, save_as_dict=False):
     """
 
     Parameters
@@ -205,7 +205,7 @@ def to_df(file_name, config_data, true_time, reach_masks_start, reach_masks_stop
 
     Returns
     -------
-
+    dict : pandas dataframe containing an experiments data
     """
     # functions to get specific items from config file
     dim, reward_dur, x_pos, y_pos, z_pos, x0, y0, z0 = get_config_data(config_data)
@@ -234,7 +234,7 @@ def to_df(file_name, config_data, true_time, reach_masks_start, reach_masks_stop
              'z_p': [np.asarray(z_pos).tolist()], 'x0': [x0], 'y0': [y0], 'z0': [z0],
              'moving': [np.asarray(moving, dtype=int)], 'RW': [r_w], 'r_start': [reach_indices['start']],
              'r_stop': [reach_indices['stop']], 't_x': [t_x], 'd_x': [d_x], 't_y': [t_y], 'd_y': [d_y], 't_z': [t_z],
-             'd_z': [d_z], 'x':kinematic_data[:, 0 ,:],'y':kinematic_data[:,1,:],'z':kinematic_data[:,2,:]})
+             'd_z': [d_z]})
         return dict
 
 
