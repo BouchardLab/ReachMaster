@@ -140,6 +140,7 @@ def host_off(save_path,dlt_path):
         print(exp_name + ' is being added..')
         list_of_df,kinematics_df = load_files(dlt_path,file, exp_name, controller_path, config_path, name, ix,video_path,
                                 analysis=True, cns=cns, pns=pns)
+        pdb.set_trace()
         d.append(list_of_df)
     print('Finished!!')
     save_df = pd.concat(d)
