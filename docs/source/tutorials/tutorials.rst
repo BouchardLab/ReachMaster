@@ -10,3 +10,4 @@ be added over time.
     robot_calibration/robot_calibration
     camera_calibration/camera_calibration
     robot_workspace/robot_workspace
+    experiment_data_extraction/data_extraction
