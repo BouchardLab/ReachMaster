@@ -152,7 +152,7 @@ def host_off(save_path,dlt_path):
     return save_df
 
 
-def get_kinematic_data(save_path,dlt_path):
+def get_kinematic_data(dlt_path):
     cns_pattern = '/clusterfs/bebb/users/bnelson/CNS/RM16/**/*.rec'
     pns = '/clusterfs/bebb/users/bnelson/PNS_data/'
     cns = '/clusterfs/bebb/users/bnelson/CNS'
