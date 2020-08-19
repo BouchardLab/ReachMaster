@@ -66,7 +66,8 @@ autodoc_mock_imports = [
     'ximea',
     'cv2',
     'VidGear',
-    'deeplabcut'
+    'deeplabcut',
+    'tensorflow'
 ]
 
 # Add any paths that contain templates here, relative to this directory.
