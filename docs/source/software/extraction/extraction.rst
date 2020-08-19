@@ -7,7 +7,7 @@ of experimental and behavioral data. For more information, please see
 the data pipeline tutorial.
 Data Extraction Script
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automodule:: software.preprocessing.Scripts.data_extraction
+.. automodule:: Scripts.data_extraction
      :members:
-.. automodule:: software.preprocessing.Scripts.utils
+.. automodule:: Scripts.utils
     :members:
