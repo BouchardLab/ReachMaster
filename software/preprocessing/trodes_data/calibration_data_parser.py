@@ -509,7 +509,7 @@ def get_traces_frame(
     # currently slow, need to vectorize/optimize
     start_indices = start_indices - start_indices[0]
     for event in range(num_events - 1):
-        print(str(event) + ' of ' + str(num_events))
+        #print(str(event) + ' of ' + str(num_events))
         data_frame['start_time'][start_indices[event]:start_indices[event + 1]] = (
             trace_start_times[event]
         )

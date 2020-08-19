@@ -152,6 +152,22 @@ def host_off(save_path,dlt_path):
     return save_df
 
 
+def get_kinematic_data(save_path,dlt_path):
+    cns_pattern = '/clusterfs/bebb/users/bnelson/CNS/RM16/**/*.rec'
+    pns = '/clusterfs/bebb/users/bnelson/PNS_data/'
+    cns = '/clusterfs/bebb/users/bnelson/CNS'
+    # cns is laid out rat/day/session/file_name/localdir (we want to be in localdir)
+    # search for all directory paths containing .rec files
+    d = []
+    for file in glob.glob(cns_pattern, recursive=True):
+        controller_path, config_path, exp_name, name, ix, trodes_name, video_path = name_scrape(file)
+        print(exp_name + ' is being added..')
+        kinematics_df = get_kinematic_data(video_path,dlt_path)
+        d.append(kinematics_df)
+
+    return d
+
+
 def get_config_data(config_data):
     """
 
