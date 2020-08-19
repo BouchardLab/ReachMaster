@@ -10,7 +10,6 @@ from software.preprocessing.config_data.config_parser import import_config_data
 from software.preprocessing.controller_data.controller_data_parser import get_reach_indices, get_reach_times
 from software.preprocessing.controller_data.controller_data_parser import import_controller_data
 from software.preprocessing.trodes_data import experiment_data_parser as trodes_edp
-# from ..video_data import experiment_data_parser as video_edp
 from software.preprocessing.trodes_data.experiment_data_parser import get_exposure_times
 
 

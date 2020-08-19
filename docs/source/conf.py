@@ -64,8 +64,9 @@ todo_include_todos = True
 autodoc_mock_imports = [
     'serial',
     'ximea',
-    'cv2',
-    'VidGear',
+    'cv2'
+    'pynwb'
+    'vidgear',
     'deeplabcut',
     'tensorflow'
 ]
