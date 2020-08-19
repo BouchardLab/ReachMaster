@@ -9,19 +9,19 @@
 
 import os
 import sys
-import sphinx_rtd_theme
 
 # -- Path setup --------------------------------------------------------------
 
 # Set the software project root dirs
 reach_master_root = os.path.join(os.path.dirname(os.path.dirname(os.getcwd())),"software/reach_master")
-preprocessing_root = os.path.join(os.path.dirname(os.path.dirname(os.getcwd())),"software/preprocessing")
-
+preprocessing_root = os.path.join(os.path.dirname(os.path.dirname(os.getcwd())), "software/preprocessing")
+software_root = os.path.join(os.path.dirname(os.path.dirname(os.getcwd())), "software")
 # Insert the project root dir as the first element in the PYTHONPATH.
 # This lets us ensure that the source package is imported, and that its
 # version is used.
 sys.path.append(reach_master_root)
 sys.path.append(preprocessing_root)
+sys.path.append(software_root)
 
 # -- Project information -----------------------------------------------------
 project = 'ReachMaster'
@@ -65,6 +65,10 @@ autodoc_mock_imports = [
     'serial',
     'ximea',
     'cv2'
+    'pynwb'
+    'vidgear',
+    'deeplabcut',
+    'tensorflow'
 ]
 
 # Add any paths that contain templates here, relative to this directory.

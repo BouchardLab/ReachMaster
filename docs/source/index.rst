@@ -8,7 +8,7 @@ ReachMaster is a pneumatically-actuated robotic system that supports a variety o
 	:width: 800
 
 .. toctree::
-   :maxdepth: 3
+   :maxdepth: 6
    :caption: Contents:
     
    overview
