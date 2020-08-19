@@ -5,7 +5,7 @@ analyses with the ReachMaster system. More tutorials should
 be added over time.
 
 .. toctree::
-    :maxdepth: 2
+    :maxdepth: 3
     
     robot_calibration/robot_calibration
     camera_calibration/camera_calibration

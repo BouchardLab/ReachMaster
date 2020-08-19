@@ -11,6 +11,9 @@ extraction and pre-processing steps necessary to obtain quality experimental dat
 
 Obtaining and Organizing Kinematics
 -----------------------------------------
+We rely on DeepLabCut to automate kinematic predictions for (currently) 27 regions of interest during an experiment.
+These regions are selected to best represent both gross and fine bi-manual reaching movements.
+Predictions are generated across entire experiments, then filtered using experimental parameters such as trial times.
 
 Pre-processing robot data sources
 -----------------------------------------
