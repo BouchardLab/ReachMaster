@@ -23,7 +23,7 @@ Experimental data parser
     :members:
 
 Video Data
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+---------------------------------------
 .. automodule:: video_data.misc_preprocessing.split
     :members:
 .. automodule:: video_data.DLC.AV
@@ -32,17 +32,17 @@ Video Data
     :members:
 
 Controller Data
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+---------------------------------------
 .. automodule:: controller_data.controller_data_parser
     :members:
 
 ReachMaster Configuration Data
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+---------------------------------------
 .. automodule:: config_data.config_parser
     :members:
 
-NWB
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Reaching Without Borders (NWB)
+----------------------------------------
 .. automodule:: reaching_without_borders.export_to_nwb
 	:members:
 .. automodule:: reaching_without_borders.rwb
