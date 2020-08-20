@@ -98,7 +98,7 @@ def dlt_reconstruct(c, camPts):
     return xyz
 
 
-def reconstruct_3d(dlt_coefs_file, dlc_files, output_format, plotting=True):
+def reconstruct_3d(dlt_coefs_file, dlc_files, output_format, plotting=False):
     """Perform 3-D reconstruction using DLT co-effecients and extracted multi-camera predictions
     Parameters
     ----------
@@ -165,7 +165,7 @@ def reconstruct_3d(dlt_coefs_file, dlc_files, output_format, plotting=True):
         plt.legend(names)
         plt.show()
 
-    return xyz_all
+    return xyz_all, names
 
 
 def reconstruct_points(list_of_csv, coeffs, output_path = False,plotting=False):
@@ -272,7 +272,7 @@ def get_file_sets(glob_path, resnet_version, filtered=False):
     return cam1_list, cam2_list, cam3_list
 
 
-def get_kinematic_data(glob_path, dlt_path, resnet_version, save=False):
+def get_kinematic_data(glob_path, dlt_path, resnet_version, save=True):
     cam1_list, cam2_list, cam3_list = get_file_sets(glob_path, resnet_version)
     for i, val in enumerate(cam1_list):
         cam_list = [cam1_list[i], cam2_list[i], cam3_list[i]]
@@ -281,15 +281,15 @@ def get_kinematic_data(glob_path, dlt_path, resnet_version, save=False):
             df = 0
             print('Error in the video extraction!! Make sure all your files are extracted.')
             break
-        xyzAll, labels = reconstruct_3d(dlt_path, cam_list)
+        xyzAll, labels = reconstruct_3d(dlt_path, cam_list,'.csv')
         coords = ['X', 'Y', 'Z']
-
-        header = pd.MultiIndex.from_product([labels,
+        scorer = ['Brett']
+        header = pd.MultiIndex.from_product([scorer,labels,
                                              coords],
-                                            names=['bodyparts', 'coords'])
+                                            names=['scorer','bodyparts', 'coords'])
         df = pd.DataFrame(xyzAll.reshape((xyzAll.shape[0], xyzAll.shape[1] * xyzAll.shape[2])), columns=header)
         if save:
-            df.to_csv('savekinematics_df.csv')
+            df.to_csv('/home/kallanved/Desktop/EX/savekinematics_df.csv')
     return df
 
 
