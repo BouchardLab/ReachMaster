@@ -2,13 +2,13 @@
 
 """
 import glob
-import json
+
 import os
 from collections import defaultdict
 import pdb
 import numpy as np
 import pandas as pd
-
+from software.preprocessing.video_data.DLC.Reconstruction import get_kinematic_data
 from software.preprocessing.config_data.config_parser import import_config_data
 from software.preprocessing.controller_data.controller_data_parser import import_controller_data, get_reach_indices, \
     get_reach_times
@@ -17,12 +17,12 @@ from software.preprocessing.trodes_data.experiment_data_parser import import_tro
 from software.preprocessing.trodes_data.calibration_data_parser import get_traces_frame
 
 
-def load_files(trodes_dir, exp_name, controller_path, config_dir, rat, session, analysis=False, cns=False, pns=False,
-               save_path=False):
+def load_files(dlt_path,trodes_dir, exp_name, controller_path, config_dir, rat, session,video_path, analysis=False, cns=False, pns=False):
     """
 
     Parameters
     ----------
+    save_path : str, path location to save data extraction at ex '/larry/lobsters/home/book/'
     trodes_dir : directory containing trodes .rec file
     exp_name : name of folder containing .rec file/ video file
     controller_path : full path to micro-controller data
@@ -30,9 +30,10 @@ def load_files(trodes_dir, exp_name, controller_path, config_dir, rat, session, 
     rat : name of rat eg RM16
     session : name of experimental session eg S1
     analysis : boolean, set as True to extract experimental analysis
+    video_path : path to video data
     cns : boolean, manual set of cns path
     pns : boolean, manual set of pns path
-    save_path : string, path to save results
+
 
     Returns
     -------
@@ -43,6 +44,7 @@ def load_files(trodes_dir, exp_name, controller_path, config_dir, rat, session, 
     exp_names = exp_names.rsplit('.', 1)[0]
     trodes_dir = trodes_dir.rsplit('/', 1)[0]
     positional_data = get_traces_frame(trodes_dir, exp_names)
+    kinematic_data = get_kinematic_data(video_path,dlt_path)
     if cns:
         os.chdir(cns)
     trodes_data = import_trodes_data(trodes_dir, exp_names, win_dir=False)
@@ -75,20 +77,10 @@ def load_files(trodes_dir, exp_name, controller_path, config_dir, rat, session, 
         d_y = positional_data['y_displacement']
         t_z = positional_data['z_duration']
         d_z = positional_data['z_displacement']
-
-    if save_path:
-        os.chdir(save_path)
-        np.savetxt('reach_masks_start.csv', reach_masks_start, delimiter=',')
-        np.savetxt('reach_masks_stop.csv', reach_masks_stop, delimiter=',')
-        np.savetxt('succ_trials.csv', np.asarray(successful_trials), delimiter=',')
-        np.savetxt('true_time.csv', true_time, delimiter=',')
-        np.savetxt('trial_masks.csv', trial_masks, delimiter=',')
-        np.savetxt('reach_indices_start.csv', reach_indices_start, delimiter=',')
-        np.savetxt('reach_indices_stop.csv', reach_indices_stop, delimiter=',')
     dataframe = to_df(exp_names, config_data, true_time, reach_masks_start, reach_masks_stop, successful_trials,
                       trial_masks, rat, session, lick_data, r_x, r_y, r_z, t_x, d_x, t_y, d_y, t_z, d_z,
                       controller_data, reach_indices)
-    return dataframe
+    return dataframe,kinematic_data
 
 
 def name_scrape(file):
@@ -114,6 +106,7 @@ def name_scrape(file):
 
     config_path = path_d + '/workspaces'
     controller_path = path_d + '/sensor_data'
+    video_path = path_d + '/videos/**.csv'
     # trodes_data
     n = file.rsplit('/', 1)[1]
     if '/S' in file:
@@ -121,19 +114,20 @@ def name_scrape(file):
         sess = str(sess[1])  # get 'session' part of the namestring
         ix = 'S' + sess[0]
     exp_name = str(ix) + n
-    return controller_path, config_path, exp_name, name, ix, n
+    return controller_path, config_path, exp_name, name, ix, n, video_path
 
 
-def host_off(save_path):
+def host_off(save_path,dlt_path):
     """
 
     Parameters
     ----------
     save_path : path to save experimental dataframe
+    dlt_path : path of DLT co-effecients file for reconstructing 3-D co-effecients. This is found using EASYWAND.
 
     Returns
     -------
-    save_df : complete data frame
+    save_df : complete experimental data frame
     """
     cns_pattern = '/clusterfs/bebb/users/bnelson/CNS/**/*.rec'
     pns = '/clusterfs/bebb/users/bnelson/PNS_data/'
@@ -142,9 +136,11 @@ def host_off(save_path):
     # search for all directory paths containing .rec files
     d = []
     for file in glob.glob(cns_pattern, recursive=True):
-        controller_path, config_path, exp_name, name, ix, trodes_name = name_scrape(file)
+        controller_path, config_path, exp_name, name, ix, trodes_name,video_path = name_scrape(file)
         print(exp_name + ' is being added..')
-        list_of_df = load_files(file, exp_name, controller_path, config_path, name, ix, analysis=True, cns=cns, pns=pns)
+        list_of_df,kinematics_df = load_files(dlt_path,file, exp_name, controller_path, config_path, name, ix,video_path,
+                                analysis=True, cns=cns, pns=pns)
+        pdb.set_trace()
         d.append(list_of_df)
     print('Finished!!')
     save_df = pd.concat(d)
@@ -154,6 +150,22 @@ def host_off(save_path):
     save_df.to_hdf('~/Data/default_save.h5', key='save_df', mode='w')
     save_df.to_pickle('~/Data/default_save.pickle')
     return save_df
+
+
+def get_kinematic_data(dlt_path):
+    cns_pattern = '/clusterfs/bebb/users/bnelson/CNS/RM16/**/*.rec'
+    pns = '/clusterfs/bebb/users/bnelson/PNS_data/'
+    cns = '/clusterfs/bebb/users/bnelson/CNS'
+    # cns is laid out rat/day/session/file_name/localdir (we want to be in localdir)
+    # search for all directory paths containing .rec files
+    d = []
+    for file in glob.glob(cns_pattern, recursive=True):
+        controller_path, config_path, exp_name, name, ix, trodes_name, video_path = name_scrape(file)
+        print(exp_name + ' is being added..')
+        kinematics_df = get_kinematic_data(video_path,dlt_path)
+        d.append(kinematics_df)
+
+    return d
 
 
 def get_config_data(config_data):
@@ -210,7 +222,7 @@ def to_df(file_name, config_data, true_time, reach_masks_start, reach_masks_stop
 
     Returns
     -------
-
+    dict : pandas dataframe containing an experiments data
     """
     # functions to get specific items from config file
     dim, reward_dur, x_pos, y_pos, z_pos, x0, y0, z0 = get_config_data(config_data)

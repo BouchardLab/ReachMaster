@@ -15,6 +15,7 @@ from mpl_toolkits.mplot3d import Axes3D
 import matplotlib.pyplot as plt
 import matplotlib.animation as animation
 import os
+import glob
 import pandas as pd
 
 
@@ -97,7 +98,7 @@ def dlt_reconstruct(c, camPts):
     return xyz
 
 
-def reconstruct_3d(dlt_coefs_file, dlc_files, output_format, plotting=True):
+def reconstruct_3d(dlt_coefs_file, dlc_files, output_format, plotting=False):
     """Perform 3-D reconstruction using DLT co-effecients and extracted multi-camera predictions
     Parameters
     ----------
@@ -164,7 +165,7 @@ def reconstruct_3d(dlt_coefs_file, dlc_files, output_format, plotting=True):
         plt.legend(names)
         plt.show()
 
-    return xyz_all
+    return xyz_all, names
 
 
 def reconstruct_points(list_of_csv, coeffs, output_path = False,plotting=False):
@@ -219,6 +220,90 @@ def extract_3D_kinematics(filepath, dlt_coeffs, output_path):
     for i in cam_files:
         pts = reconstruct_points(i, dlt_coeffs, output_path)
 
+
     return pts_dataframe
+
+
+def get_file_sets(glob_path,resnet_version,filtered=False):
+    cam1_list=[]
+    cam2_list=[]
+    cam3_list=[]
+    all_files = glob.glob(glob_path,recursive=True)
+    all_files.extend(glob.glob(resnet_version))
+    if filtered:
+        all_files.extend(glob.glob(filtered))
+    for file in all_files:
+        if 'cam1' in file:
+            # find rest of files containing exp names
+            files=file.rsplit('/',1)[1]
+            names = str(files.rsplit('_cam1',1)[0])
+            file_list = [file_list for file_list in all_files if names in file_list]
+            for s in file_list:
+                if "cam1" in s:
+                    cam1_list.append(s)
+                if "cam2" in s:
+                    cam2_list.append(s)
+                if "cam3" in s:
+                    cam3_list.append(s)
+    return cam1_list,cam2_list,cam3_list
+
+
+def get_file_sets(glob_path, resnet_version, filtered=False):
+    cam1_list = []
+    cam2_list = []
+    cam3_list = []
+    all_files = glob.glob(glob_path, recursive=True)
+    all_files.extend(glob.glob(resnet_version))
+    if filtered:
+        all_files.extend(glob.glob(filtered))
+    for file in all_files:
+        if 'cam1' in file:
+            # find rest of files containing exp names
+            files = file.rsplit('/', 1)[1]
+            names = str(files.rsplit('_cam1', 1)[0])
+            file_list = [file_list for file_list in all_files if names in file_list]
+            for s in file_list:
+                if "cam1" in s:
+                    cam1_list.append(s)
+                if "cam2" in s:
+                    cam2_list.append(s)
+                if "cam3" in s:
+                    cam3_list.append(s)
+    return cam1_list, cam2_list, cam3_list
+
+
+def get_kinematic_data(glob_path, dlt_path, resnet_version, save=True):
+    cam1_list, cam2_list, cam3_list = get_file_sets(glob_path, resnet_version)
+    for i, val in enumerate(cam1_list):
+        cam_list = [cam1_list[i], cam2_list[i], cam3_list[i]]
+        cu = filter_cam_lists(cam_list)
+        if cu == 1:
+            df = 0
+            print('Error in the video extraction!! Make sure all your files are extracted.')
+            break
+        xyzAll, labels = reconstruct_3d(dlt_path, cam_list,'.csv')
+        coords = ['X', 'Y', 'Z']
+        scorer = ['Brett']
+        header = pd.MultiIndex.from_product([scorer,labels,
+                                             coords],
+                                            names=['scorer','bodyparts', 'coords'])
+        df = pd.DataFrame(xyzAll.reshape((xyzAll.shape[0], xyzAll.shape[1] * xyzAll.shape[2])), columns=header)
+        if save:
+            df.to_csv('/home/kallanved/Desktop/EX/savekinematics_df.csv')
+    return df
+
+
+def filter_cam_lists(cam_list):
+    cu = 0
+    c1 = cam_list[0]
+    c2 = cam_list[1]
+    c3 = cam_list[2]
+    # compare lengths
+    if len(c1) == len(c2) == len(c3):
+        cu=0
+    else:
+        print('Video File(s) are not available')
+        cu = 1
+    return cu
 
 

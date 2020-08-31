@@ -31,16 +31,16 @@ def get_trodes_files(data_dir, trodes_name):
         
     """
     trodes_files = {
-        'time_file': data_dir + '/%s/%s.analog/%s.timestamps.dat' % (trodes_name, trodes_name, trodes_name),
-        'x_push_file': data_dir + '/%s/%s.DIO/%s.dio_xPush.dat' % (trodes_name, trodes_name, trodes_name),
-        'x_pull_file': data_dir + '/%s/%s.DIO/%s.dio_xPull.dat' % (trodes_name, trodes_name, trodes_name),
-        'y_push_file': data_dir + '/%s/%s.DIO/%s.dio_yPush.dat' % (trodes_name, trodes_name, trodes_name),
-        'y_pull_file': data_dir + '/%s/%s.DIO/%s.dio_yPull.dat' % (trodes_name, trodes_name, trodes_name),
-        'z_push_file': data_dir + '/%s/%s.DIO/%s.dio_zPush.dat' % (trodes_name, trodes_name, trodes_name),
-        'z_pull_file': data_dir + '/%s/%s.DIO/%s.dio_zPull.dat' % (trodes_name, trodes_name, trodes_name),
-        'x_pot_file': data_dir + '/%s/%s.analog/%s.analog_potX.dat' % (trodes_name, trodes_name, trodes_name),
-        'y_pot_file': data_dir + '/%s/%s.analog/%s.analog_potY.dat' % (trodes_name, trodes_name, trodes_name),
-        'z_pot_file': data_dir + '/%s/%s.analog/%s.analog_potZ.dat' % (trodes_name, trodes_name, trodes_name)
+        'time_file': data_dir + '/%s.analog/%s.timestamps.dat' % ( trodes_name, trodes_name),
+        'x_push_file': data_dir + '/%s.DIO/%s.dio_xPush.dat' % ( trodes_name, trodes_name),
+        'x_pull_file': data_dir + '/%s.DIO/%s.dio_xPull.dat' % (trodes_name, trodes_name),
+        'y_push_file': data_dir + '/%s.DIO/%s.dio_yPush.dat' % ( trodes_name, trodes_name),
+        'y_pull_file': data_dir + '/%s.DIO/%s.dio_yPull.dat' % ( trodes_name, trodes_name),
+        'z_push_file': data_dir + '/%s.DIO/%s.dio_zPush.dat' % ( trodes_name, trodes_name),
+        'z_pull_file': data_dir + '/%s.DIO/%s.dio_zPull.dat' % ( trodes_name, trodes_name),
+        'x_pot_file': data_dir + '/%s.analog/%s.analog_potX.dat' % ( trodes_name, trodes_name),
+        'y_pot_file': data_dir + '/%s.analog/%s.analog_potY.dat' % ( trodes_name, trodes_name),
+        'z_pot_file': data_dir + '/%s.analog/%s.analog_potZ.dat' % ( trodes_name, trodes_name)
     }
     return trodes_files
 
@@ -509,7 +509,7 @@ def get_traces_frame(
     # currently slow, need to vectorize/optimize
     start_indices = start_indices - start_indices[0]
     for event in range(num_events - 1):
-        print(str(event) + ' of ' + str(num_events))
+        #print(str(event) + ' of ' + str(num_events))
         data_frame['start_time'][start_indices[event]:start_indices[event + 1]] = (
             trace_start_times[event]
         )
