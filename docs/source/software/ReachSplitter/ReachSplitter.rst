@@ -6,23 +6,23 @@ SciKit Learn and [] to segment individual reaches
 and assign a hierarchy of labels to the newly segmented reaches.
 
 Class Hierarchy
-========================
+-----------------
 [Image]
 
 Description of Each Class
-==========================
+--------------------------
 
 Description of Pipeline Structure
-==================================
+--------------------------------
 
 Inputs
-===========
+-------
 
 Outputs
-===========
+--------
 
 Requirements
-============
+-------------
 
 
 ReachSplitter Main Function
