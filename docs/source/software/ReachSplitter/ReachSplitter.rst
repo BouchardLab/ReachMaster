@@ -1,29 +1,26 @@
+*************
 ReachSplitter
-===========================================================
+*************
 ReachSplitter is a software pipeline developed to segment and classify coarsely derived trials from the
 ReachMaster experimental system. ReachSplitter uses
 SciKit Learn and [] to segment individual reaches
 and assign a hierarchy of labels to the newly segmented reaches.
 
-Class Hierarchy
-========================
+Trial Classification Hierarchy
+##############################
 [Image]
 
-Description of Each Class
-==========================
+Within-Trial Reach Segmentation
+################################
 
-Description of Pipeline Structure
-==================================
 
-Inputs
-===========
+Overall Reach Extraction Pipeline Structure
+############################################
 
-Outputs
-===========
-
-Requirements
-============
-
+Inputs, Outputs and Local Data File Requirements
+################################################
+ReachSplitter is designed to work with two files as input, a dataframe containing predicted positions for various end-effectors and a dataframe containing raw sensor and interpreted data from the ReachMaster system. *In order to run ReachSplitter, one needs these files*. 
+ReachSplitter outputs predicted reach start indices from a given trial block, hierarchal classification of each reach segment, and metadata necessary for transmission of data into Neurodata Without Borders. Additional functionality includes direct extraction of data into Neurodata Without Borders.
 
 ReachSplitter Main Function
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

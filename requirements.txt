@@ -5,7 +5,6 @@ sphinx
 sphinx-gallery
 sphinx_rtd_theme~=0.4.3
 autodoc
-numpy~=1.18.1
 datetime~=4.3
 h5py~=2.10.0
 pyserial~=3.4
@@ -20,4 +19,4 @@ vidgear~=0.1.5
 mock~=3.0.5
 future~=0.18.2
 python-dateutil~=2.8.0
-deeplabcut~=2.2b7
+#deeplabcut~=2.2b7
