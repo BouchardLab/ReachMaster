@@ -64,6 +64,9 @@ def get_reach_indices(controller_data):
     end_index = []
     start_index = []
     rewarded = []
+    moved = []
+    move_rz = []
+
     for i, j in enumerate(controller_data['exp_response']):
         if j == 'e':
             end_index.append(i)
@@ -78,6 +81,7 @@ def get_reach_indices(controller_data):
             # if controller_data
             else:
                 start_index.append(i)
+    for g, k in enumerate(start_index):
 
     reach_indices = {'start': start_index, 'stop': end_index}
     return reach_indices
