@@ -50,8 +50,7 @@ extensions = [
     'sphinx.ext.ifconfig',
     'sphinx.ext.githubpages',
     'sphinx.ext.mathjax',
-    'sphinx.ext.autosectionlabel',
-    'sphinxcontrib.programoutput'
+    'sphinx.ext.autosectionlabel'
 
 ]
 
