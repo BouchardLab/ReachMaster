@@ -2,7 +2,7 @@
 
 """
 import glob
-
+import pickle
 import os
 from collections import defaultdict
 import pdb
@@ -17,7 +17,8 @@ from software.preprocessing.trodes_data.experiment_data_parser import import_tro
 from software.preprocessing.trodes_data.calibration_data_parser import get_traces_frame
 
 
-def load_files(dlt_path,trodes_dir, exp_name, controller_path, config_dir, rat, session,video_path, analysis=False, cns=False, pns=False):
+def load_files(dlt_path, trodes_dir, exp_name, controller_path, config_dir, rat, session, video_path, analysis=False,
+               cns=False, pns=False, positional=False):
     """
 
     Parameters
@@ -43,8 +44,18 @@ def load_files(dlt_path,trodes_dir, exp_name, controller_path, config_dir, rat, 
     exp_names = exp_name[2:-1]
     exp_names = exp_names.rsplit('.', 1)[0]
     trodes_dir = trodes_dir.rsplit('/', 1)[0]
-    positional_data = get_traces_frame(trodes_dir, exp_names)
-    kinematic_data = get_kinematic_data(video_path,dlt_path)
+    if positional:
+        positional_data = get_traces_frame(trodes_dir, exp_names)
+        r_x = positional_data['x_start_position']
+        r_y = positional_data['y_start_position']
+        r_z = positional_data['z_start_position']
+        t_x = positional_data['x_duration']
+        d_x = positional_data['x_displacement']
+        t_y = positional_data['y_duration']
+        d_y = positional_data['y_displacement']
+        t_z = positional_data['z_duration']
+        d_z = positional_data['z_displacement']
+
     if cns:
         os.chdir(cns)
     trodes_data = import_trodes_data(trodes_dir, exp_names, win_dir=False)
@@ -56,6 +67,9 @@ def load_files(dlt_path,trodes_dir, exp_name, controller_path, config_dir, rat, 
     # import config differently?
     # can analyze per each slice
     controller_data = import_controller_data(controller_path)
+    x_pot = trodes_data['analog']['x_pot']
+    y_pot = trodes_data['analog']['y_pot']
+    z_pot = trodes_data['analog']['z_pot']
     # analysis
     if analysis:
         lick_data = trodes_data['DIO']['IR_beam']
@@ -68,19 +82,10 @@ def load_files(dlt_path,trodes_dir, exp_name, controller_path, config_dir, rat, 
         reach_indices_start = reach_indices['start']
         reach_indices_stop = reach_indices['stop']
         trial_masks = trial_mask(true_time, reach_indices_start, reach_indices_stop, successful_trials)
-        r_x = positional_data['x_start_position']
-        r_y = positional_data['y_start_position']
-        r_z = positional_data['z_start_position']
-        t_x = positional_data['x_duration']
-        d_x = positional_data['x_displacement']
-        t_y = positional_data['y_duration']
-        d_y = positional_data['y_displacement']
-        t_z = positional_data['z_duration']
-        d_z = positional_data['z_displacement']
-    dataframe = to_df(exp_names, config_data, true_time, reach_masks_start, reach_masks_stop, successful_trials,
-                      trial_masks, rat, session, lick_data, r_x, r_y, r_z, t_x, d_x, t_y, d_y, t_z, d_z,
-                      controller_data, reach_indices)
-    return dataframe,kinematic_data
+
+        dataframe = to_df(exp_names, config_data, true_time, reach_masks_start, reach_masks_stop, successful_trials,
+                          trial_masks, rat, session, lick_data, controller_data, reach_indices, x_pot, y_pot, z_pot)
+    return dataframe
 
 
 def name_scrape(file):
@@ -117,7 +122,7 @@ def name_scrape(file):
     return controller_path, config_path, exp_name, name, ix, n, video_path
 
 
-def host_off(save_path,dlt_path):
+def host_off(save_path, dlt_path):
     """
 
     Parameters
@@ -136,24 +141,63 @@ def host_off(save_path,dlt_path):
     # search for all directory paths containing .rec files
     d = []
     for file in glob.glob(cns_pattern, recursive=True):
-        controller_path, config_path, exp_name, name, ix, trodes_name,video_path = name_scrape(file)
+        controller_path, config_path, exp_name, name, ix, trodes_name, video_path = name_scrape(file)
         print(exp_name + ' is being added..')
-        list_of_df,kinematics_df = load_files(dlt_path,file, exp_name, controller_path, config_path, name, ix,video_path,
+        list_of_df = load_files(dlt_path, file, exp_name, controller_path, config_path, name, ix, video_path,
                                 analysis=True, cns=cns, pns=pns)
-        pdb.set_trace()
         d.append(list_of_df)
     print('Finished!!')
     save_df = pd.concat(d)
     save_df.set_index(['rat', 'S', 'Date', 'dim'])
-    save_df.to_csv(save_path)
-    save_df.to_csv('~/Data/default_save.csv')
-    save_df.to_hdf('~/Data/default_save.h5', key='save_df', mode='w')
-    save_df.to_pickle('~/Data/default_save.pickle')
+    # save_df.to_csv(save_path)
+    # save_df.to_csv('~/Data/default_save_robot.csv')
+    # save_df.to_hdf('~/Data/default_save_robot.h5', key='save_df', mode='w')
+    save_df.to_pickle('~/Data/default_save_new.pickle')
     return save_df
 
 
-def get_kinematic_data(dlt_path):
-    cns_pattern = '/clusterfs/bebb/users/bnelson/CNS/RM16/**/*.rec'
+def parse_videos(save_path, save=False):
+    list_of_block_video_filenames = []
+    return list_of_block_video_filenames
+
+
+def save_kinematics(unpickled_list):
+    encountered_df = False
+    for i in range(len(unpickled_list)):
+        rat_df1 = unpickled_list[i]
+        if ((rat_df1 is not 0) and (type(rat_df1) is not list)):
+
+            if (not encountered_df):
+                encountered_df = True
+
+            # create a new dataframe (copy of original), then removes levels corresponding to (rat, date, session, dim)
+            df1 = rat_df1.droplevel([0, 1, 2, 3], axis=1)
+
+            # inserts columns and data for (rat, date, session, dim)
+            pos_arr = [0, 1, 1, 3]  # order to insert columns (rat, date, session, dim)
+            for i in range(4):
+                col_name = rat_df1.columns.names[i]
+                val = rat_df1.columns.levels[i][0]
+                df1.insert(pos_arr[i], col_name, val)
+
+            else:
+                df2 = rat_df1.droplevel([0, 1, 2, 3], axis=1)
+
+                pos_arr = [0, 1, 1, 3]  # order to insert columns (rat, date, session, dim)
+                for i in range(4):
+                    col_name = rat_df1.columns.names[i]
+                    val = rat_df1.columns.levels[i][0]
+                    df2.insert(pos_arr[i], col_name, val)
+                df1 = pd.concat([df1, df2], axis=0, sort=False)  # concat new df to existing df
+
+    # sets index of new df
+    df1 = df1.set_index(['rat', 'date', 'session', 'dim'])
+    return df1
+
+
+def get_kinematics(dlt_path, rat_name, pik=False):
+    cns_path = '/clusterfs/bebb/users/bnelson/CNS/' + rat_name
+    cns_pattern = cns_path + '/**/*.rec'
     pns = '/clusterfs/bebb/users/bnelson/PNS_data/'
     cns = '/clusterfs/bebb/users/bnelson/CNS'
     # cns is laid out rat/day/session/file_name/localdir (we want to be in localdir)
@@ -161,9 +205,17 @@ def get_kinematic_data(dlt_path):
     d = []
     for file in glob.glob(cns_pattern, recursive=True):
         controller_path, config_path, exp_name, name, ix, trodes_name, video_path = name_scrape(file)
+        # dim, reward_dur, x_pos, y_pos, z_pos, x0, y0, z0, r, t1, t2 = get_config_data(str(config_path))
+        date = get_name(file)
         print(exp_name + ' is being added..')
-        kinematics_df = get_kinematic_data(video_path,dlt_path)
+        kinematics_df = get_kinematic_data(video_path, dlt_path, 'resnet101', name, date, ix, 0)
         d.append(kinematics_df)
+    os.chdir(cns)
+    save_df = save_kinematics(d)
+    save_df.to_hdf('kinematic_data_save_df.h5', key='save_df', mode='w')
+    if pik:
+        with open('kin1_data.pkl', 'wb') as output:
+            pickle.dump(d, output, pickle.HIGHEST_PROTOCOL)
 
     return d
 
@@ -181,18 +233,21 @@ def get_config_data(config_data):
     """
     exp_type = config_data['RobotSettings']['commandFile']
     reward_dur = config_data['ExperimentSettings']['rewardWinDur']
-    x_pos = config_data['RobotSettings']['xCommandPos']
-    y_pos = config_data['RobotSettings']['yCommandPos']
-    z_pos = config_data['RobotSettings']['zCommandPos']
+    x_p = config_data['RobotSettings']['xCommandPos']
+    y_p = config_data['RobotSettings']['yCommandPos']
+    z_p = config_data['RobotSettings']['zCommandPos']
     x0 = config_data['RobotSettings']['x0']
     y0 = config_data['RobotSettings']['y0']
     z0 = config_data['RobotSettings']['z0']
-    return exp_type, reward_dur, x_pos, y_pos, z_pos, x0, y0, z0
+    r = config_data['RobotSettings']['x']
+    t1 = config_data['RobotSettings']['y']
+    t2 = config_data['RobotSettings']['z']
+    return exp_type, reward_dur, x_p, y_p, z_p, x0, y0, z0, r, t1, t2
 
 
 def to_df(file_name, config_data, true_time, reach_masks_start, reach_masks_stop,
-          successful_trials, trial_masks, rat, session, lick_data, r_x, r_y, r_z, t_x, d_x, t_y, d_y, t_z, d_z,
-          controller_data, reach_indices, save_as_dict=False):
+          successful_trials, trial_masks, rat, session, lick_data, controller_data, reach_indices, x_pot, y_pot, z_pot,
+          save_as_dict=False):
     """
 
     Parameters
@@ -225,41 +280,31 @@ def to_df(file_name, config_data, true_time, reach_masks_start, reach_masks_stop
     dict : pandas dataframe containing an experiments data
     """
     # functions to get specific items from config file
-    dim, reward_dur, x_pos, y_pos, z_pos, x0, y0, z0 = get_config_data(config_data)
-    date = get_name(file_name)
+    dim, reward_dur, x_pos, y_pos, z_pos, x0, y0, z0, r, t1, t2 = get_config_data(config_data)
+    date = get_name(file_name, Trodes=False)
     moving = controller_data['rob_moving']
     r_w = controller_data['in_Reward_Win']
+    exp_response = controller_data['exp_response']
     successful_trials = np.asarray(successful_trials)
-    if save_as_dict:  # depreciated
-        dict = make_dict()
-        dict[rat][date][session][dim]['time'] = true_time.tolist()
-        dict[rat][date][session][dim]['masks_start'] = reach_masks_start.tolist()
-        dict[rat][date][session][dim]['mask_stop'] = reach_masks_stop.tolist()
-        dict[rat][date][session][dim]['SF'] = successful_trials.tolist()
-        dict[rat][date][session][dim]['masks'] = trial_masks.tolist()
-        # dict[rat][date][session][dim]['dur'] = reward_dur
-    else:
-        # multi dict; rat, date, session, dim (add this as 
-        # data; robot config garbage, exp time, exposure time, s/f, moving, robot readings, lick data
-        dict = pd.DataFrame(
-            {'rat': rat, 'S': session, 'Date': date, 'dim': dim, 'time': [np.asarray(true_time).tolist()],
-             'm_start': [np.asarray(reach_masks_start).tolist()],
-             'm_stop': [np.asarray(reach_masks_stop).tolist()], 'SF': [successful_trials], 't_m': [trial_masks],
-             'lick': [np.asarray(lick_data).tolist()], 'r_x': [np.asarray(r_x)], 'r_y': [np.asarray(r_y)],
-             'r_z': [np.asarray(r_z)],
-             'x_p': [np.asarray(x_pos).tolist()], 'y_p': [np.asarray(y_pos).tolist()],
-             'z_p': [np.asarray(z_pos).tolist()], 'x0': [x0], 'y0': [y0], 'z0': [z0],
-             'moving': [np.asarray(moving, dtype=int)], 'RW': [r_w], 'r_start': [reach_indices['start']],
-             'r_stop': [reach_indices['stop']], 't_x': [t_x], 'd_x': [d_x], 't_y': [t_y], 'd_y': [d_y], 't_z': [t_z],
-             'd_z': [d_z]})
-        return dict
+
+    dict = pd.DataFrame(
+        {'rat': rat, 'S': session, 'Date': date, 'dim': dim, 'time': [np.asarray(true_time).tolist()],
+         'm_start': [np.asarray(reach_masks_start).tolist()],
+         'm_stop': [np.asarray(reach_masks_stop).tolist()], 'SF': [successful_trials], 't_m': [trial_masks],
+         'lick': [np.asarray(lick_data).tolist()],
+         'x_p': [np.asarray(x_pos).tolist()], 'y_p': [np.asarray(y_pos).tolist()],
+         'z_p': [np.asarray(z_pos).tolist()], 'x0': [x0], 'y0': [y0], 'z0': [z0],
+         'moving': [np.asarray(moving, dtype=int)], 'RW': [r_w], 'r_start': [reach_indices['start']],
+         'r_stop': [reach_indices['stop']], 'r': [r], 't2': [t2], 't1': [t1], 'exp_response': [exp_response],
+         'x_pot': [x_pot], 'y_pot': [y_pot], 'z_pot': [z_pot]})
+    return dict
 
 
 def make_dict():
     return defaultdict(make_dict)
 
 
-def get_name(file_name):
+def get_name(file_name, Trodes=True):
     """
 
     Parameters
@@ -271,7 +316,15 @@ def get_name(file_name):
     date: string, cleaned experiment data
     """
     # split file name
-    date = file_name[5:12]
+    if Trodes:
+        date = file_name[5:12]
+    else:
+        try:
+            file_name = file_name.split('/')[-2]
+            date = file_name[5:12]
+        except:
+            date = file_name[5:12]
+    # print(file_name,date)
     return date
 
 
@@ -299,5 +352,3 @@ def trial_mask(matched_times, r_i_start, r_i_stop, s_t):
         else:
             new_times[ix:jx] = 1
     return new_times
-
-# run
