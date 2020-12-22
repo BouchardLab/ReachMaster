@@ -1,11 +1,12 @@
 Data Preprocessing
 =======================================
 
-Trodes Data
+Trodes Data Extraction
 ---------------------------------------
 Here we go over a collection of modules for extracting,
 reading, parsing and preprocessing trodes data produced
-by various ReachMaster routines.
+by various ReachMaster routines. This data forms the backbone of the
+experimental dataframe used to contain our sensor data.
 
 Extract trodes data to python
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
