@@ -50,6 +50,16 @@ def get_arm_velocities(postures):
 
 
 def segment_by_arm_velocities(postures):
+    """
+
+    Parameters
+    ----------
+    postures
+
+    Returns
+    -------
+
+    """
     arm_velocities = get_arm_velocities(postures)
     reach_start = arm_velocities
 

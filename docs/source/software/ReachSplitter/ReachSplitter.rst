@@ -3,8 +3,8 @@ ReachSplitter
 *************
 ReachSplitter is a software pipeline developed to segment and classify coarsely derived trials from the
 ReachMaster experimental system. ReachSplitter uses
-SciKit Learn and [] to segment individual reaches
-and assign a hierarchy of labels to the newly segmented reaches.
+SciKit Learn and Ruptures to segment and classify individual reaches.
+Functions assign a hierarchy of labels to newly segmented reaches.
 
 Trial Classification Hierarchy
 ##############################

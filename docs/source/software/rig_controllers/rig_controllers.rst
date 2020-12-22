@@ -4,8 +4,9 @@ Rig Controllers
 Brief Overview
 ----------------------------------------
 
-Arduino micro-controllers are used to interact with the robot and experiment systems.
+Arduino micro-controllers are used to interact with the robot and experimental systems.
 Code for the micro-controllers is written for Arduino 1.8.1
+
 Arduino Code
 --------------------------------------
 
