@@ -1,11 +1,10 @@
 """
     Written by Brett Nelson, UC Berkeley/ Lawrence Berkeley National Labs, NSDS Lab 12/8/2020
-
     This code is intended to create and implement structure supervised classification of coarsely
     segmented trial behavior from the ReachMaster experimental system.
     Functions are designed to work with a classifier of your choice.
-
     Edited: 12/8/2020
+    Edited: 12/24/2020 -Emily 
 """
 
 import numpy as np
@@ -24,7 +23,6 @@ import DataStream_Vis_Utils as utils
 
 def make_vectorized_labels(blist):
     """
-
     :param blist: list of labels, for more robust description please see github
     :return:
             new_list : vectorized list of labels
@@ -440,6 +438,10 @@ def stack_ML_arrays(list_of_k, list_of_f):
 
     return ogk, ogf
 
+###
+# Functions above generate final_ML_array,final_feature_array
+# Functions below are classification_structure() and its helpers
+###
 
 def norm_and_zscore_ML_array(ML_array, robust=False, decomp=False, gauss=False):
     """
@@ -475,12 +477,18 @@ def split_ML_array(Ml_array, labels_array, t=0.2):
 
 def onehot_nulls(type_labels_):
     # kwargs: n_f_fr_s_st: Trial type (null, failed, failed_rew,s ,succ_tug), label key [0, 1, 2, 3, 4]
+    """
+    Helper function for get_ML_labels
+    """
     null_labels = np.zeros((type_labels_.shape[0]))
     null_labels[np.where(type_labels_ == 0)] = 1  # 1 if null, 0 if real trial
     return null_labels
 
 
 def onehot_num_reaches(num_labels_):
+    """
+    Helper function for get_ML_labels
+    """
     num_r_labels = np.zeros((num_labels_.shape[0]))  # 0 vector
     num_r_labels[np.where(num_labels_ > 1)] = 1  # 0 if <1, 1 if > 1 reaches
     return num_r_labels
@@ -488,6 +496,9 @@ def onehot_num_reaches(num_labels_):
 
 def hand_type_onehot(hand_labels_, simple=True):
     # 'lr': 2 , 'l' : 1, 'bi' : 3 , 'lbi' : 4, 'r': 0,
+    """
+    Helper function for get_ML_labels
+    """
     hand_type_label = np.zeros((hand_labels_.shape[0]))
     if simple:
         hand_type_label[np.where(hand_labels_ > 1)] = 1  # classify all non r,l reaches as 0 vector
@@ -522,6 +533,7 @@ def run_classifier(_model, _X_train, _X_test, input_labels):
 def classification_structure(ml, feature, model_,kFold=False,LOO=False,PCA_data=False,constant_split=False,structured=True,
                              plot_correlation_matrix=False,pred=False,disc=True,bal=True,conf=True): # add kFold argument
     """
+    Args:
     ml : ML-ready feature vector containing experimental and kinematic data
     feature : labels for each class (vectorized using blist and get_ML_labels)
     model : classifier (sk-Learn compatible)
@@ -529,28 +541,51 @@ def classification_structure(ml, feature, model_,kFold=False,LOO=False,PCA_data=
     LOO : boolean flag, set True if using LOO cross-validation from sk-Learn
     PCA : boolean flag, set True if using PCA to reduce dimensions of feature vectors
     constant_split : boolean flag, set True if comparing results between classifiers
+    structured: boolean flag, set True to do multiple binary classifications 
+    
+    Args for visualizations
+    plot_correlation_matrix: 
+    pred:
+    disc:
+    bal:
+    conf:
 
+    variables: 
+    cs:
+    preds:
+    X_train : ML_array : array shape : (Cut Trials, Features, Frames)
+    X_test : ML_array : array shape : (Cut Trials, Features, Frames)
+    y_train : array shape : (Trails, 9). dim 9 for 
+         1 int trial_num, 2 int start, 3 int stop, 
+         4 int trial_type, 5 int num_reaches,6 str which_hand_reach,
+         7 str tug_noTug, 8 int hand_switch, 9 int num_frames
+    y_test : array shape : (Trails, 9).
+    train_labels : ML labels from y_train data.
+        Format: list of arrays of 0s and 1s, where each array corresponds to 
+           trial type, num reaches, reach with which hand, is tug, hand switch
     """
     # split before norming to prevent bias in test data
-    classifier_pipeline = make_pipeline(preprocessing.StandardScaler(), model_)
     if constant_split:
+        classifier_pipeline = make_pipeline(preprocessing.StandardScaler(), model_)
         cs=[]
         X_train, X_test, y_train, y_test = split_ML_array(ml, feature, t=0.2)
         train_labels = get_ML_labels(y_train)
         X_train = norm_and_zscore_ML_array(X_train, robust=False, decomp=False, gauss=False)
         X_test = norm_and_zscore_ML_array(X_test, robust=False, decomp=False, gauss=False)
         for i, vals in enumerate(train_labels):
-            cs.append(run_classifier(model_,X_train, X_test, vals, 0))
+            #cs.append(run_classifier(model_,X_train, X_test, vals, 0)) # EXTRA UNKNOWN ARG 0
+            cs.append(run_classifier(model_,X_train, X_test, vals))
+            # TODO ?
             # need to add cross_val_score for X_train,X_test splits
-
         return cs, model_
-
+    
     # Create Classifier Pipeline Object in SciKit Learn
     if PCA_data:
         classifier_pipeline = make_pipeline(preprocessing.StandardScaler(),
                                             decomposition.PCA(n_components=int(PCA_data)), model_)
     else:
         classifier_pipeline = make_pipeline(preprocessing.StandardScaler(), model_)
+    
     # For simple Classifier:
     X_train, X_test, y_train, y_test = split_ML_array(ml, feature, t=0.2)
     # generate correct labels for test/train labels
@@ -558,6 +593,7 @@ def classification_structure(ml, feature, model_,kFold=False,LOO=False,PCA_data=
     # norm and z-score test/train features
     X_train = norm_and_zscore_ML_array(X_train, robust=False, decomp=False, gauss=False)
     X_test = norm_and_zscore_ML_array(X_test, robust=False, decomp=False, gauss=False)
+    
     # Feature Work
     if PCA_data:
         pcs = decomposition.PCA()
@@ -577,6 +613,16 @@ def classification_structure(ml, feature, model_,kFold=False,LOO=False,PCA_data=
         for idx, vals in enumerate(train_labels):
             # check for important class, then train inputs
             if idx == 0: # Reach vs Null
+                
+            # TODO
+            # predict null or reach trial type
+            # update preds == ...
+            # split_n_reaches(ml)
+            # take out null trials, then pass data fwd to predict n reaches
+            # for given 'ml_array_RM16.h5' data 12/24/2020
+                # idx is 0, 1,2,3, 4
+                # vals = input labels for run_classfifer()              
+                
                 # Save ML predictions, models
                 preds.append(cross_val_score(classifier_pipeline,
                                             ml.reshape(ml.shape[0], ml.shape[1] * ml.shape[2]),
@@ -588,6 +634,17 @@ def classification_structure(ml, feature, model_,kFold=False,LOO=False,PCA_data=
                 visualize_model(ml.reshape(ml.shape[0], ml.shape[1] * ml.shape[2]), get_ML_labels(feature)[idx]
                                 , classifier_pipeline,pred=pred,disc=disc, conf=conf, bal=bal)
             if idx == 1: # num reaches, 1 vs >1
+                
+                # TODO 
+                # predict num reaches=1 or >1
+                # n_zero_ml_array = get_nreach_classification()
+                # if trial contains > int x reaches, 
+                # then zero out all features and data in trial array like [ix, :, :, :]=0
+                # send x< reach array to simple segmentation
+                # get_simple_segments = ...
+                # update and save ML predictions and models below
+                # save model == add to pipeline?                
+                
                 # Save ML predictions, models
                 preds.append(cross_val_score(classifier_pipeline,
                                              ml.reshape(ml.shape[0], ml.shape[1] * ml.shape[2]),
@@ -599,6 +656,18 @@ def classification_structure(ml, feature, model_,kFold=False,LOO=False,PCA_data=
                 visualize_model(ml.reshape(ml.shape[0], ml.shape[1] * ml.shape[2]), get_ML_labels(feature)[idx]
                                 , classifier_pipeline,pred=pred,disc=disc, conf=conf, bal=bal)
             if idx ==3: # l/r vs lra,bi,rla
+                
+                # TODO
+                # Should idx be 2 hand_labels and/or 4 switch labels, not 3 tug_labels?
+                # for isx in range(0, ml_cut.shape[0]):
+                    # classify LR or [LRA, RLA, BI]
+                    # preds_arm1 = pred_arm(ml_cut[isx,:,:,:]) 
+                # split ml_cut into classes
+                # func input , uses pred_arm1 as indicies to split ml_cut data
+                # ml_LR, ml+BRL = arm_split(ml_cut, preds_arm1) 
+                    # continue
+                    # pred_arm2 = ...            
+                
                 # Save ML predictions, models
                 preds.append(cross_val_score(classifier_pipeline,
                                              ml.reshape(ml.shape[0], ml.shape[1] * ml.shape[2]),
@@ -619,7 +688,8 @@ def classification_structure(ml, feature, model_,kFold=False,LOO=False,PCA_data=
                     preds.append(cross_val_score(classifier_pipeline, ml.reshape(ml.shape[0], ml.shape[1]*ml.shape[2]),
                                                  get_ML_labels(feature)[i], cv=ml.shape[0]-10))
                 else:# simple classification
-                    preds.append(run_classifier(model_, X_train, X_test, vals, 0))
+                    #preds.append(run_classifier(model_, X_train, X_test, vals, 0)) # EXTRA UNKNOWN ARG 0
+                    preds.append(run_classifier(model_, X_train, X_test, vals))
                     continue
             except:
                 print('Bad Classifier Entry (Line 500)')
@@ -649,7 +719,6 @@ def is_tug_no_tug():
 def is_reach_rewarded(lick_data,start,stop):
     """
     Function to simply classify trials as rewarded with water or not using sensor data from ReachMaster (lick detector).
-
     """
     reward_vector=[]
     return reward_vector
