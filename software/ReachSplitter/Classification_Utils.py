@@ -4,7 +4,7 @@
     segmented trial behavior from the ReachMaster experimental system.
     Functions are designed to work with a classifier of your choice.
     Edited: 12/8/2020
-    Edited: 12/24/2020 -Emily 
+    Last edited: 12/24/2020, 11/11/2021 -Emily 
 """
 
 import numpy as np
@@ -125,16 +125,16 @@ def block_pos_extract(kin_df, et, el, wv):
         feat_name.append(columnName[0])
         try:
             if columnName[1] == 'X':
-                x_arr_.append(filter_obvious_outliers(columnData.values, wv))
+                x_arr_.append(filter_obvious_outliers(columnData.values[0], wv))
             if columnName[1] == 'Y':
-                y_arr_.append(filter_obvious_outliers(columnData.values, wv))
+                y_arr_.append(filter_obvious_outliers(columnData.values[0], wv))
             if columnName[1] == 'Z':
-                azir = filter_obvious_outliers(columnData.values, wv)
+                azir = filter_obvious_outliers(columnData.values[0], wv)
                 z_arr_.append(azir)
-                #print(np.where(azir == 0))
         except:
+            # case for probability column
             print('No filtering..')
-            pdb.set_trace()
+            #pdb.set_trace()
     # transform the coordinates in each block
     try:
         block = xform_array([x_arr_, y_arr_, z_arr_], et, el)
@@ -142,6 +142,7 @@ def block_pos_extract(kin_df, et, el, wv):
         print('o')
     # print(np.where(block==0))
     return block, feat_name
+
 
 
 def reshape_posture_trials(a):
@@ -428,6 +429,14 @@ def create_ML_array(matched_kinematics_array,matched_exp_array):
 
 
 def stack_ML_arrays(list_of_k, list_of_f):
+    """
+    params:
+        list_of_k:
+        list_of_f:
+    returns: 
+        ogk: final ml array
+        ogf: final feature array
+    """
     for idd, valz in enumerate(list_of_k):
         if idd == 0:
             ogk = valz
@@ -471,6 +480,12 @@ def norm_and_zscore_ML_array(ML_array, robust=False, decomp=False, gauss=False):
 
 
 def split_ML_array(Ml_array, labels_array, t=0.2):
+    """
+    params:
+        ML_array:
+        labels_array: feature array
+        t:
+    """
     X_train, X_test, y_train, y_test = train_test_split(Ml_array, labels_array, test_size=t, random_state=0)
     return X_train, X_test, y_train, y_test
 
@@ -479,9 +494,10 @@ def onehot_nulls(type_labels_):
     # kwargs: n_f_fr_s_st: Trial type (null, failed, failed_rew,s ,succ_tug), label key [0, 1, 2, 3, 4]
     """
     Helper function for get_ML_labels
+    1 if null trial, 0 if real trial
     """
     null_labels = np.zeros((type_labels_.shape[0]))
-    null_labels[np.where(type_labels_ == 0)] = 1  # 1 if null, 0 if real trial
+    null_labels[np.where(type_labels_ == 0)] = 1 
     return null_labels
 
 
@@ -508,9 +524,15 @@ def hand_type_onehot(hand_labels_, simple=True):
 
 
 def get_ML_labels(fv):
-    # #[int trial_num, int start, int stop,
-    # int trial_type, int num_reaches, str which_hand_reach, str tug_noTug, int hand_switch, int num_frames]
-    # shape (Trials, 9 ^)
+    """
+    params:
+        fv: array with shape (Trials, 9 featues)
+            9 features: [int trial_num, int start, int stop, int trial_type,
+                int num_reaches, str which_hand_reach, str tug_noTug, int hand_switch, int num_frames]
+            
+    returns: list of 5 arrays
+    """
+
     fv = fv[:, 3:-1]  # take label catagories necessary for trial classification
     type_labels = onehot_nulls(fv[:, 0])  # labels for trial type
     num_labels = onehot_num_reaches(fv[:, 1])  # labels for num reaches in trial
@@ -531,38 +553,42 @@ def run_classifier(_model, _X_train, _X_test, input_labels):
 
 
 def classification_structure(ml, feature, model_,kFold=False,LOO=False,PCA_data=False,constant_split=False,structured=True,
-                             plot_correlation_matrix=False,pred=False,disc=True,bal=True,conf=True): # add kFold argument
+                             plot_correlation_matrix=False,pred=False,disc=True,bal=True,conf=True):
     """
     Args:
-    ml : ML-ready feature vector containing experimental and kinematic data
-    feature : labels for each class (vectorized using blist and get_ML_labels)
-    model : classifier (sk-Learn compatible)
-    kFold : int, number of folds if using kFold cross-validation from sk-Learn
-    LOO : boolean flag, set True if using LOO cross-validation from sk-Learn
-    PCA : boolean flag, set True if using PCA to reduce dimensions of feature vectors
-    constant_split : boolean flag, set True if comparing results between classifiers
-    structured: boolean flag, set True to do multiple binary classifications 
+        ml : ML-ready feature vector containing experimental and kinematic data
+        feature : labels for each class (vectorized using blist and get_ML_labels)
+        model : classifier (sk-Learn compatible)
+        kFold : int, number of folds if using kFold cross-validation from sk-Learn
+        LOO : boolean flag, set True if using LOO cross-validation from sk-Learn
+        PCA : boolean flag, set True if using PCA to reduce dimensions of feature vectors
+        constant_split : boolean flag, set True if comparing results between classifiers
+        structured: boolean flag, set True to do multiple binary classifications 
     
     Args for visualizations
-    plot_correlation_matrix: 
-    pred:
-    disc:
-    bal:
-    conf:
+        plot_correlation_matrix: 
+        pred:
+        disc:
+        bal:
+        conf:
 
     variables: 
-    cs:
-    preds:
-    X_train : ML_array : array shape : (Cut Trials, Features, Frames)
-    X_test : ML_array : array shape : (Cut Trials, Features, Frames)
-    y_train : array shape : (Trails, 9). dim 9 for 
-         1 int trial_num, 2 int start, 3 int stop, 
-         4 int trial_type, 5 int num_reaches,6 str which_hand_reach,
-         7 str tug_noTug, 8 int hand_switch, 9 int num_frames
-    y_test : array shape : (Trails, 9).
-    train_labels : ML labels from y_train data.
-        Format: list of arrays of 0s and 1s, where each array corresponds to 
-           trial type, num reaches, reach with which hand, is tug, hand switch
+        cs:
+        preds:
+        X_train : ML_array : array shape : (Cut Trials, Features, Frames)
+        X_test : ML_array : array shape : (Cut Trials, Features, Frames)
+        y_train : array shape : (Trails, 9). dim 9 for 
+             1 int trial_num, 2 int start, 3 int stop, 
+             4 int trial_type, 5 int num_reaches,6 str which_hand_reach,
+             7 str tug_noTug, 8 int hand_switch, 9 int num_frames
+        y_test : array shape : (Trails, 9).
+        train_labels : ML labels from y_train data.
+            Format: list of arrays of 0s and 1s, where each array corresponds to 
+               trial type, num reaches, reach with which hand, is tug, hand switch
+        vals: input_labels into run_classifer fn
+        
+      Notes:
+        kfold boolean arg vs KFold for sklearn.model_selection._split.KFold
     """
     # split before norming to prevent bias in test data
     if constant_split:
@@ -573,11 +599,12 @@ def classification_structure(ml, feature, model_,kFold=False,LOO=False,PCA_data=
         X_train = norm_and_zscore_ML_array(X_train, robust=False, decomp=False, gauss=False)
         X_test = norm_and_zscore_ML_array(X_test, robust=False, decomp=False, gauss=False)
         for i, vals in enumerate(train_labels):
-            #cs.append(run_classifier(model_,X_train, X_test, vals, 0)) # EXTRA UNKNOWN ARG 0
             cs.append(run_classifier(model_,X_train, X_test, vals))
             # TODO ?
             # need to add cross_val_score for X_train,X_test splits
         return cs, model_
+    
+    
     
     # Create Classifier Pipeline Object in SciKit Learn
     if PCA_data:
@@ -608,6 +635,9 @@ def classification_structure(ml, feature, model_,kFold=False,LOO=False,PCA_data=
     if plot_correlation_matrix:
         pearson_features(X_train)
 
+        
+        
+        
     preds = []
     if structured:
         for idx, vals in enumerate(train_labels):
@@ -633,6 +663,7 @@ def classification_structure(ml, feature, model_,kFold=False,LOO=False,PCA_data=
                 visualizer.show()
                 visualize_model(ml.reshape(ml.shape[0], ml.shape[1] * ml.shape[2]), get_ML_labels(feature)[idx]
                                 , classifier_pipeline,pred=pred,disc=disc, conf=conf, bal=bal)
+            
             if idx == 1: # num reaches, 1 vs >1
                 
                 # TODO 
@@ -655,10 +686,10 @@ def classification_structure(ml, feature, model_,kFold=False,LOO=False,PCA_data=
                 visualizer.show()
                 visualize_model(ml.reshape(ml.shape[0], ml.shape[1] * ml.shape[2]), get_ML_labels(feature)[idx]
                                 , classifier_pipeline,pred=pred,disc=disc, conf=conf, bal=bal)
-            if idx ==3: # l/r vs lra,bi,rla
+            
+            if idx ==2: # which hand reaches: l/r vs lra,bi,rla
                 
                 # TODO
-                # Should idx be 2 hand_labels and/or 4 switch labels, not 3 tug_labels?
                 # for isx in range(0, ml_cut.shape[0]):
                     # classify LR or [LRA, RLA, BI]
                     # preds_arm1 = pred_arm(ml_cut[isx,:,:,:]) 
@@ -678,17 +709,18 @@ def classification_structure(ml, feature, model_,kFold=False,LOO=False,PCA_data=
                 visualizer.show()
                 visualize_model(ml.reshape(ml.shape[0], ml.shape[1] * ml.shape[2]), get_ML_labels(feature)[idx]
                                 , classifier_pipeline,pred=pred,disc=disc, conf=conf, bal=bal)
+    
+    
     else:
         for i, vals in enumerate(train_labels):  # loop over each layer of classifier, this just does classification
             try:
-                if KFold:
+                if kFold:
                     preds.append(cross_val_score(classifier_pipeline,
                                     ml.reshape(ml.shape[0], ml.shape[1]*ml.shape[2]), get_ML_labels(feature)[i], cv=kFold))
                 elif LOO:
                     preds.append(cross_val_score(classifier_pipeline, ml.reshape(ml.shape[0], ml.shape[1]*ml.shape[2]),
                                                  get_ML_labels(feature)[i], cv=ml.shape[0]-10))
                 else:# simple classification
-                    #preds.append(run_classifier(model_, X_train, X_test, vals, 0)) # EXTRA UNKNOWN ARG 0
                     preds.append(run_classifier(model_, X_train, X_test, vals))
                     continue
             except:
