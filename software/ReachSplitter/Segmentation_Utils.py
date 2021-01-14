@@ -40,12 +40,12 @@ def segment_time_series(time_series, bkps=1, gamma=1e-2, display=True):
     if display:
         rpt.display(time_series, bkps, rpt_result)
         plt.show()
-    return rpt_result
+    return rpt_result # returns
 
 
 def get_arm_velocities(postures):
     #
-    velocities = np.diff(postures, axis=1)
+    velocities = np.diff(postures, axis=1) # get single-dim vel for all frames
     return velocities
 
 
