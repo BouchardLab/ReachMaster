@@ -1,10 +1,12 @@
 """
     Written by Brett Nelson, UC Berkeley/ Lawrence Berkeley National Labs, NSDS Lab 12/8/2020
+               Emily Nguyen, UC Berkeley
+
     This code is intended to create and implement structure supervised classification of coarsely
     segmented trial behavior from the ReachMaster experimental system.
     Functions are designed to work with a classifier of your choice.
+
     Edited: 12/8/2020
-    Last edited: 12/24/2020, 11/11/2021 -Emily 
 """
 
 import numpy as np
@@ -20,9 +22,11 @@ from yellowbrick.features import Rank2D
 from Classification_Visualization import visualize_model, print_preds, plot_decision_tree
 from yellowbrick.classifier import ClassificationReport
 import DataStream_Vis_Utils as utils
+from scipy import ndimage
 
 def make_vectorized_labels(blist):
     """
+
     :param blist: list of labels, for more robust description please see github
     :return:
             new_list : vectorized list of labels
@@ -100,22 +104,6 @@ def transpose_kin_array(kc,et,el):
     return kc
 
 
-def filter_obvious_outliers(x, k):
-    # Code for median filtering function taken from https://gist.github.com/bhawkins/3535131.
-    assert k % 2 == 1, "Median filter length must be odd."
-    assert x.ndim == 1, "Input must be one-dimensional."
-    k2 = (k - 1) // 2
-    y = np.ones((len(x), k), dtype=x.dtype)
-    y[:, k2] = x
-    for i in range(k2):
-        j = k2 - i
-        y[j:, i] = x[:-j]
-        y[:j, i] = x[0]
-        y[:-j, -(i + 1)] = x[j:]
-        y[-j:, -(i + 1)] = x[-1]
-    return np.median(y, axis=1)
-
-
 def block_pos_extract(kin_df, et, el, wv):
     x_arr_ = []
     y_arr_ = []
@@ -125,31 +113,24 @@ def block_pos_extract(kin_df, et, el, wv):
         feat_name.append(columnName[0])
         try:
             if columnName[1] == 'X':
-                x_arr_.append(filter_obvious_outliers(columnData.values[0], wv))
+                x_arr_.append(ndimage.median_filter(columnData.values[0], wv))
             if columnName[1] == 'Y':
-                y_arr_.append(filter_obvious_outliers(columnData.values[0], wv))
+                y_arr_.append(ndimage.median_filter(columnData.values[0], wv))
             if columnName[1] == 'Z':
-                azir = filter_obvious_outliers(columnData.values[0], wv)
-                z_arr_.append(azir)
+                z_arr_.append(ndimage.median_filter(columnData.values[0], wv))
         except:
-            # case for probability column
             print('No filtering..')
-            #pdb.set_trace()
-    # transform the coordinates in each block
+            pdb.set_trace()
     try:
         block = xform_array([x_arr_, y_arr_, z_arr_], et, el)
     except:
         print('o')
-    # print(np.where(block==0))
     return block, feat_name
-
 
 
 def reshape_posture_trials(a):
     pdb.set_trace()
     for ix, array in enumerate(a):
-        #yarr = ykin[ix]
-        #zarr = zkin[ix]
         if ix == 0:
             arx = a
 
@@ -271,28 +252,39 @@ def forward_xform_coords(x, y, z):
 
 
 def calculate_robot_features(xpot, ypot, zpot, mstart_, mstop_):
-    sample_rate = 30000  # sample rate from analog
+    #print(mstart_,mstop_)
+    sample_rate = 3000  # sample rate from analog
     # split into sample
-    start__ = int(mstart_ * sample_rate)
-    stop__ = int(mstop_ * sample_rate)
-    xp = xpot[start__:stop__]
-    yp = ypot[start__:stop__]
-    zp = zpot[start__:stop__]
-    r1, theta1, phi1, x1, y1, z1 = forward_xform_coords(xp, yp, zp)  # units of meters
+    try:
+        start__ = int(mstart_ * sample_rate)
+        stop__ = int(mstop_ * sample_rate)
+    except:
+        print('bad sampling conversion')
+    try:
+        xp = xpot[start__:stop__]
+        yp = ypot[start__:stop__]
+        zp = zpot[start__:stop__]
+    except:
+        print('ooooo')
+    try:
+        r1, theta1, phi1, x1, y1, z1 = forward_xform_coords(xp, yp, zp)  # units of meters
+    except:
+        print('bad xform')
+        pdb.set_trace()
     # vta = np.diff(vt)
     try:
-        vx = np.diff(x1) / 30000  # units of seconds
-        vy = np.diff(y1) / 30000  # units of seconds
-        vz = np.diff(z1) / 30000  # units of seconds
+        vx = np.diff(x1) / sample_rate  # units of seconds
+        vy = np.diff(y1) / sample_rate # units of seconds
+        vz = np.diff(z1) / sample_rate  # units of seconds
     except:
         print('bad potentiometer derivatives')
         pdb.set_trace()
     # ve=np.absolute(np.gradient(np.asarray([x1,y1,z1]),axis=0))/30000
-    # ae = np.gradient(ve)/30000
+    # ae = np.gradient(ve)/3000
     return vx, vy, vz, x1, y1, z1
 
 
-def import_experiment_features(exp_array, starts, window_length, pre, m_start, m_stop):
+def import_experiment_features(exp_array, starts, window_length, pre):
     # features to extract from experiment array : pot_x, pot_y, pot_z, lick_array, rew_zone robot features
     wlength = (starts[0] + window_length) - (
                 starts[0] - pre)  # get length of exposures we are using for trial classification
@@ -321,24 +313,26 @@ def import_experiment_features(exp_array, starts, window_length, pre, m_start, m
             vcx, vcy, vcz, xp1, yp1, zp1 = calculate_robot_features(exp_array['x_pot'].to_numpy()[0],
                                                                     exp_array['y_pot'].to_numpy()[0],
                                                                     exp_array['z_pot'].to_numpy()[0],
-                                                                    m_start[ixs], m_stop[ixs])
+                                                                    exp_array['m_start'].to_numpy()[0][ixs],
+                                                                    exp_array['m_stop'].to_numpy()[0][ixs]
+                                                                    )
         except:
             print('bad pot data')
             pdb.set_trace()
         # fill in array
         # decimate potentiometer from s to exposure !~ in frames (we dont have exact a-d-c)
         try:
-            xp1 = xp1[::213]
-            yp1 = yp1[::213]
-            zp1 = zp1[::213]
-            vcx = vcx[::213]
-            vcy = vcy[::213]
-            vcz = vcz[::213]
+            xp1 = xp1[::21]
+            yp1 = yp1[::21]
+            zp1 = zp1[::21]
+            vcx = vcx[::21]
+            vcy = vcy[::21]
+            vcz = vcz[::21]
         except:
             print('bad downsample')
             pdb.set_trace()
         # downsample potentiometer readings to match camera exposures
-        # each exposure is ~ 213hz
+        # each exposure is ~ 21hz (we sample at 3khz)
         # make same length as other features, to avoid problems with ML (this means we will lose ~5 data points at end of experiment)
         try:
             xp1 = xp1[0:wlength]
@@ -373,16 +367,14 @@ def make_s_f_trial_arrays_from_block(kin_array_, robot_array_, et, el, rat, date
         kim_df = kin_array_[kin_array_.index.get_level_values('rat') == rat][
             kin_array_.index.get_level_values('date') == kdate]
         kc = kim_df[kim_df.index.get_level_values('session') == session]
-        _a, _feat_labels = block_pos_extract(kc, et, el, wv)
     except:
         print('Not in kinematic array : Trial ' + rat + date + session)
         return 0, 0, 0
+    _a, _feat_labels = block_pos_extract(kc, et, el, wv)
     r_df = utils.get_single_trial(robot_array_, date, session, rat)
     start = r_df['r_start'].values[0]
-    m_start = r_df['m_start'].values[0]
-    m_stop = r_df['m_stop'].values[0]
     try:
-        exp_features = import_experiment_features(r_df, start, window_length, pre, m_start, m_stop)
+        exp_features = import_experiment_features(r_df, start, window_length, pre)
     except:
         print('bad robot feature extraction')
         exp_features = 0
@@ -391,6 +383,8 @@ def make_s_f_trial_arrays_from_block(kin_array_, robot_array_, et, el, rat, date
     print('Finished trial splitting')
     _hot_vector = onehot(r_df)
     return _hot_vector, _tt1, _feat_labels, exp_features
+
+
 
 
 def match_stamps(kinematic_array_, label_array, exp_array_):
@@ -429,14 +423,6 @@ def create_ML_array(matched_kinematics_array,matched_exp_array):
 
 
 def stack_ML_arrays(list_of_k, list_of_f):
-    """
-    params:
-        list_of_k:
-        list_of_f:
-    returns: 
-        ogk: final ml array
-        ogf: final feature array
-    """
     for idd, valz in enumerate(list_of_k):
         if idd == 0:
             ogk = valz
@@ -447,10 +433,6 @@ def stack_ML_arrays(list_of_k, list_of_f):
 
     return ogk, ogf
 
-###
-# Functions above generate final_ML_array,final_feature_array
-# Functions below are classification_structure() and its helpers
-###
 
 def norm_and_zscore_ML_array(ML_array, robust=False, decomp=False, gauss=False):
     """
@@ -480,31 +462,18 @@ def norm_and_zscore_ML_array(ML_array, robust=False, decomp=False, gauss=False):
 
 
 def split_ML_array(Ml_array, labels_array, t=0.2):
-    """
-    params:
-        ML_array:
-        labels_array: feature array
-        t:
-    """
     X_train, X_test, y_train, y_test = train_test_split(Ml_array, labels_array, test_size=t, random_state=0)
     return X_train, X_test, y_train, y_test
 
 
 def onehot_nulls(type_labels_):
     # kwargs: n_f_fr_s_st: Trial type (null, failed, failed_rew,s ,succ_tug), label key [0, 1, 2, 3, 4]
-    """
-    Helper function for get_ML_labels
-    1 if null trial, 0 if real trial
-    """
     null_labels = np.zeros((type_labels_.shape[0]))
-    null_labels[np.where(type_labels_ == 0)] = 1 
+    null_labels[np.where(type_labels_ == 0)] = 1  # 1 if null, 0 if real trial
     return null_labels
 
 
 def onehot_num_reaches(num_labels_):
-    """
-    Helper function for get_ML_labels
-    """
     num_r_labels = np.zeros((num_labels_.shape[0]))  # 0 vector
     num_r_labels[np.where(num_labels_ > 1)] = 1  # 0 if <1, 1 if > 1 reaches
     return num_r_labels
@@ -512,9 +481,6 @@ def onehot_num_reaches(num_labels_):
 
 def hand_type_onehot(hand_labels_, simple=True):
     # 'lr': 2 , 'l' : 1, 'bi' : 3 , 'lbi' : 4, 'r': 0,
-    """
-    Helper function for get_ML_labels
-    """
     hand_type_label = np.zeros((hand_labels_.shape[0]))
     if simple:
         hand_type_label[np.where(hand_labels_ > 1)] = 1  # classify all non r,l reaches as 0 vector
@@ -524,15 +490,9 @@ def hand_type_onehot(hand_labels_, simple=True):
 
 
 def get_ML_labels(fv):
-    """
-    params:
-        fv: array with shape (Trials, 9 featues)
-            9 features: [int trial_num, int start, int stop, int trial_type,
-                int num_reaches, str which_hand_reach, str tug_noTug, int hand_switch, int num_frames]
-            
-    returns: list of 5 arrays
-    """
-
+    # #[int trial_num, int start, int stop,
+    # int trial_type, int num_reaches, str which_hand_reach, str tug_noTug, int hand_switch, int num_frames]
+    # shape (Trials, 9 ^)
     fv = fv[:, 3:-1]  # take label catagories necessary for trial classification
     type_labels = onehot_nulls(fv[:, 0])  # labels for trial type
     num_labels = onehot_num_reaches(fv[:, 1])  # labels for num reaches in trial
@@ -552,8 +512,9 @@ def run_classifier(_model, _X_train, _X_test, input_labels):
     return [type_pred, type_feature_imp]
 
 
-def classification_structure(ml, feature, model_,kFold=False,LOO=False,PCA_data=False,constant_split=False,structured=True,
-                             plot_correlation_matrix=False,pred=False,disc=True,bal=True,conf=True):
+def classification_structure(ml, feature, model_, kFold=False, LOO=False, PCA_data=False, constant_split=False,
+                             structured=True,
+                             plot_correlation_matrix=False, pred=False, disc=True, bal=True, conf=True):
     """
     Args:
         ml : ML-ready feature vector containing experimental and kinematic data
@@ -563,56 +524,53 @@ def classification_structure(ml, feature, model_,kFold=False,LOO=False,PCA_data=
         LOO : boolean flag, set True if using LOO cross-validation from sk-Learn
         PCA : boolean flag, set True if using PCA to reduce dimensions of feature vectors
         constant_split : boolean flag, set True if comparing results between classifiers
-        structured: boolean flag, set True to do multiple binary classifications 
-    
+        structured: boolean flag, set True to do multiple binary classifications
+
     Args for visualizations
-        plot_correlation_matrix: 
+        plot_correlation_matrix:
         pred:
         disc:
         bal:
         conf:
-
-    variables: 
+    variables:
         cs:
         preds:
         X_train : ML_array : array shape : (Cut Trials, Features, Frames)
         X_test : ML_array : array shape : (Cut Trials, Features, Frames)
-        y_train : array shape : (Trails, 9). dim 9 for 
-             1 int trial_num, 2 int start, 3 int stop, 
+        y_train : array shape : (Trails, 9). dim 9 for
+             1 int trial_num, 2 int start, 3 int stop,
              4 int trial_type, 5 int num_reaches,6 str which_hand_reach,
              7 str tug_noTug, 8 int hand_switch, 9 int num_frames
         y_test : array shape : (Trails, 9).
         train_labels : ML labels from y_train data.
-            Format: list of arrays of 0s and 1s, where each array corresponds to 
+            Format: list of arrays of 0s and 1s, where each array corresponds to
                trial type, num reaches, reach with which hand, is tug, hand switch
         vals: input_labels into run_classifer fn
-        
+
       Notes:
         kfold boolean arg vs KFold for sklearn.model_selection._split.KFold
     """
     # split before norming to prevent bias in test data
     if constant_split:
         classifier_pipeline = make_pipeline(preprocessing.StandardScaler(), model_)
-        cs=[]
+        cs = []
         X_train, X_test, y_train, y_test = split_ML_array(ml, feature, t=0.2)
         train_labels = get_ML_labels(y_train)
         X_train = norm_and_zscore_ML_array(X_train, robust=False, decomp=False, gauss=False)
         X_test = norm_and_zscore_ML_array(X_test, robust=False, decomp=False, gauss=False)
         for i, vals in enumerate(train_labels):
-            cs.append(run_classifier(model_,X_train, X_test, vals))
+            cs.append(run_classifier(model_, X_train, X_test, vals))
             # TODO ?
             # need to add cross_val_score for X_train,X_test splits
         return cs, model_
-    
-    
-    
+
     # Create Classifier Pipeline Object in SciKit Learn
     if PCA_data:
         classifier_pipeline = make_pipeline(preprocessing.StandardScaler(),
                                             decomposition.PCA(n_components=int(PCA_data)), model_)
     else:
         classifier_pipeline = make_pipeline(preprocessing.StandardScaler(), model_)
-    
+
     # For simple Classifier:
     X_train, X_test, y_train, y_test = split_ML_array(ml, feature, t=0.2)
     # generate correct labels for test/train labels
@@ -620,62 +578,36 @@ def classification_structure(ml, feature, model_,kFold=False,LOO=False,PCA_data=
     # norm and z-score test/train features
     X_train = norm_and_zscore_ML_array(X_train, robust=False, decomp=False, gauss=False)
     X_test = norm_and_zscore_ML_array(X_test, robust=False, decomp=False, gauss=False)
-    
+
     # Feature Work
     if PCA_data:
         pcs = decomposition.PCA()
         X_train = pcs.fit(X_train)
         X_test = pcs.fit(X_test)
-        for ii,mi in enumerate(pcs.explained_variance_ratio_[:].sum()):
+        for ii, mi in enumerate(pcs.explained_variance_ratio_[:].sum()):
             if mi > .99:
-                n_comps=ii
-        X_train = X_train[0:ii,:]
-        X_test = X_test[0:ii,:]
+                n_comps = ii
+        X_train = X_train[0:ii, :]
+        X_test = X_test[0:ii, :]
 
     if plot_correlation_matrix:
         pearson_features(X_train)
 
-        
-        
-        
     preds = []
     if structured:
         for idx, vals in enumerate(train_labels):
             # check for important class, then train inputs
-            if idx == 0: # Reach vs Null
-                
-            # TODO
-            # predict null or reach trial type
-            # update preds == ...
-            # split_n_reaches(ml)
-            # take out null trials, then pass data fwd to predict n reaches
-            # for given 'ml_array_RM16.h5' data 12/24/2020
+            if idx == 0:  # Reach vs Null
+
+                # TODO
+                # predict null or reach trial type
+                # update preds == ...
+                # split_n_reaches(ml)
+                # take out null trials, then pass data fwd to predict n reaches
+                # for given 'ml_array_RM16.h5' data 12/24/2020
                 # idx is 0, 1,2,3, 4
-                # vals = input labels for run_classfifer()              
-                
-                # Save ML predictions, models
-                preds.append(cross_val_score(classifier_pipeline,
-                                            ml.reshape(ml.shape[0], ml.shape[1] * ml.shape[2]),
-                                            get_ML_labels(feature)[idx], cv=kFold))
-                # Plot in Yellowbrick
-                visualizer = CVScores(classifier_pipeline, cv=kFold, scoring='f1_weighted')
-                visualizer.fit(ml.reshape(ml.shape[0], ml.shape[1] * ml.shape[2]), get_ML_labels(feature)[idx])
-                visualizer.show()
-                visualize_model(ml.reshape(ml.shape[0], ml.shape[1] * ml.shape[2]), get_ML_labels(feature)[idx]
-                                , classifier_pipeline,pred=pred,disc=disc, conf=conf, bal=bal)
-            
-            if idx == 1: # num reaches, 1 vs >1
-                
-                # TODO 
-                # predict num reaches=1 or >1
-                # n_zero_ml_array = get_nreach_classification()
-                # if trial contains > int x reaches, 
-                # then zero out all features and data in trial array like [ix, :, :, :]=0
-                # send x< reach array to simple segmentation
-                # get_simple_segments = ...
-                # update and save ML predictions and models below
-                # save model == add to pipeline?                
-                
+                # vals = input labels for run_classfifer()
+
                 # Save ML predictions, models
                 preds.append(cross_val_score(classifier_pipeline,
                                              ml.reshape(ml.shape[0], ml.shape[1] * ml.shape[2]),
@@ -685,20 +617,43 @@ def classification_structure(ml, feature, model_,kFold=False,LOO=False,PCA_data=
                 visualizer.fit(ml.reshape(ml.shape[0], ml.shape[1] * ml.shape[2]), get_ML_labels(feature)[idx])
                 visualizer.show()
                 visualize_model(ml.reshape(ml.shape[0], ml.shape[1] * ml.shape[2]), get_ML_labels(feature)[idx]
-                                , classifier_pipeline,pred=pred,disc=disc, conf=conf, bal=bal)
-            
-            if idx ==2: # which hand reaches: l/r vs lra,bi,rla
-                
+                                , classifier_pipeline, pred=pred, disc=disc, conf=conf, bal=bal)
+
+            if idx == 1:  # num reaches, 1 vs >1
+
+                # TODO
+                # predict num reaches=1 or >1
+                # n_zero_ml_array = get_nreach_classification()
+                # if trial contains > int x reaches,
+                # then zero out all features and data in trial array like [ix, :, :, :]=0
+                # send x< reach array to simple segmentation
+                # get_simple_segments = ...
+                # update and save ML predictions and models below
+                # save model == add to pipeline?
+
+                # Save ML predictions, models
+                preds.append(cross_val_score(classifier_pipeline,
+                                             ml.reshape(ml.shape[0], ml.shape[1] * ml.shape[2]),
+                                             get_ML_labels(feature)[idx], cv=kFold))
+                # Plot in Yellowbrick
+                visualizer = CVScores(classifier_pipeline, cv=kFold, scoring='f1_weighted')
+                visualizer.fit(ml.reshape(ml.shape[0], ml.shape[1] * ml.shape[2]), get_ML_labels(feature)[idx])
+                visualizer.show()
+                visualize_model(ml.reshape(ml.shape[0], ml.shape[1] * ml.shape[2]), get_ML_labels(feature)[idx]
+                                , classifier_pipeline, pred=pred, disc=disc, conf=conf, bal=bal)
+
+            if idx == 2:  # which hand reaches: l/r vs lra,bi,rla
+
                 # TODO
                 # for isx in range(0, ml_cut.shape[0]):
-                    # classify LR or [LRA, RLA, BI]
-                    # preds_arm1 = pred_arm(ml_cut[isx,:,:,:]) 
+                # classify LR or [LRA, RLA, BI]
+                # preds_arm1 = pred_arm(ml_cut[isx,:,:,:])
                 # split ml_cut into classes
                 # func input , uses pred_arm1 as indicies to split ml_cut data
-                # ml_LR, ml+BRL = arm_split(ml_cut, preds_arm1) 
-                    # continue
-                    # pred_arm2 = ...            
-                
+                # ml_LR, ml+BRL = arm_split(ml_cut, preds_arm1)
+                # continue
+                # pred_arm2 = ...
+
                 # Save ML predictions, models
                 preds.append(cross_val_score(classifier_pipeline,
                                              ml.reshape(ml.shape[0], ml.shape[1] * ml.shape[2]),
@@ -708,29 +663,33 @@ def classification_structure(ml, feature, model_,kFold=False,LOO=False,PCA_data=
                 visualizer.fit(ml.reshape(ml.shape[0], ml.shape[1] * ml.shape[2]), get_ML_labels(feature)[idx])
                 visualizer.show()
                 visualize_model(ml.reshape(ml.shape[0], ml.shape[1] * ml.shape[2]), get_ML_labels(feature)[idx]
-                                , classifier_pipeline,pred=pred,disc=disc, conf=conf, bal=bal)
-    
-    
+                                , classifier_pipeline, pred=pred, disc=disc, conf=conf, bal=bal)
+
+
     else:
         for i, vals in enumerate(train_labels):  # loop over each layer of classifier, this just does classification
             try:
                 if kFold:
                     preds.append(cross_val_score(classifier_pipeline,
-                                    ml.reshape(ml.shape[0], ml.shape[1]*ml.shape[2]), get_ML_labels(feature)[i], cv=kFold))
+                                                 ml.reshape(ml.shape[0], ml.shape[1] * ml.shape[2]),
+                                                 get_ML_labels(feature)[i], cv=kFold))
                 elif LOO:
-                    preds.append(cross_val_score(classifier_pipeline, ml.reshape(ml.shape[0], ml.shape[1]*ml.shape[2]),
-                                                 get_ML_labels(feature)[i], cv=ml.shape[0]-10))
-                else:# simple classification
+                    preds.append(
+                        cross_val_score(classifier_pipeline, ml.reshape(ml.shape[0], ml.shape[1] * ml.shape[2]),
+                                        get_ML_labels(feature)[i], cv=ml.shape[0] - 10))
+                else:  # simple classification
                     preds.append(run_classifier(model_, X_train, X_test, vals))
                     continue
             except:
                 print('Bad Classifier Entry (Line 500)')
                 pdb.set_trace()
         try:
-            print_preds(preds,train_labels)
+            print_preds(preds, train_labels)
         except:
             print('')
     return preds, model_
+
+
 
 
 def pearson_features(ml_array_):
@@ -751,6 +710,7 @@ def is_tug_no_tug():
 def is_reach_rewarded(lick_data,start,stop):
     """
     Function to simply classify trials as rewarded with water or not using sensor data from ReachMaster (lick detector).
+
     """
     reward_vector=[]
     return reward_vector
