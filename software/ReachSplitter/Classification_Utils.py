@@ -313,8 +313,8 @@ def import_experiment_features(exp_array, starts, window_length, pre):
             vcx, vcy, vcz, xp1, yp1, zp1 = calculate_robot_features(exp_array['x_pot'].to_numpy()[0],
                                                                     exp_array['y_pot'].to_numpy()[0],
                                                                     exp_array['z_pot'].to_numpy()[0],
-                                                                    exp_array['m_start'].to_numpy()[0][ixs],
-                                                                    exp_array['m_stop'].to_numpy()[0][ixs]
+                                                                    exp_array['r_start'].to_numpy()[0][ixs],
+                                                                    exp_array['r_stop'].to_numpy()[0][ixs]
                                                                     )
         except:
             print('bad pot data')
