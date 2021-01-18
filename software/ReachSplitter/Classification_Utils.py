@@ -511,6 +511,166 @@ def run_classifier(_model, _X_train, _X_test, input_labels):
     type_feature_imp = pd.Series(_model.feature_importances_).sort_values(ascending=True)
     return [type_pred, type_feature_imp]
 
+### classification_structure helpers ### 
+
+def do_constant_split(model_, ml, feature):
+    """
+    classification_structure helper
+    Args:
+        ml : ML-ready feature vector containing experimental and kinematic data
+        feature : labels for each class (vectorized using blist and get_ML_labels)
+        model_ : classifier (sk-Learn compatible)
+    Returns: 
+        cs: list of arrays of classifier predictions
+        model_
+    """
+    classifier_pipeline = make_pipeline(preprocessing.StandardScaler(), model_)
+    cs = []
+    
+    # generate correct labels for test/train labels
+    X_train, X_test, y_train, y_test = split_ML_array(ml, feature, t=0.2)
+    train_labels = get_ML_labels(y_train)
+    
+    # norm and z-score test/train features
+    X_train = norm_and_zscore_ML_array(X_train, robust=False, decomp=False, gauss=False)
+    X_test = norm_and_zscore_ML_array(X_test, robust=False, decomp=False, gauss=False)
+    
+    for i, vals in enumerate(train_labels):
+        cs.append(run_classifier(model_, X_train, X_test, vals))
+        # TODO ?
+        # need to add cross_val_score for X_train,X_test splits
+    return cs, model_
+
+def simple_classification_verification(train_labels, classifier_pipeline, ml, feature, kFold, model_, X_train, X_test):
+    """
+    classification_structure helper
+    else case for verification and clarity
+    
+    Returns: 
+        preds: list of (5 arrays of 5 elems) arrays of classifier predictions 
+        model_
+    """
+    preds = []
+    for i, vals in enumerate(train_labels):  # loop over each layer of classifier, this just does classification
+        try:
+            if kFold:
+                preds.append(cross_val_score(classifier_pipeline,
+                                             ml.reshape(ml.shape[0], ml.shape[1] * ml.shape[2]),
+                                             get_ML_labels(feature)[i], cv=kFold))
+            elif LOO:
+                preds.append(
+                    cross_val_score(classifier_pipeline, ml.reshape(ml.shape[0], ml.shape[1] * ml.shape[2]),
+                                    get_ML_labels(feature)[i], cv=ml.shape[0] - 10))
+            else:  # simple classification
+                preds.append(run_classifier(model_, X_train, X_test, vals))
+                continue
+        except:
+            print('Bad Classifier Entry (Line 500)')
+            pdb.set_trace()
+    try:
+        print_preds(preds, train_labels)
+    except:
+        print('')    
+    return preds, model_
+
+
+def save_CV_score_to_preds(preds, classifier_pipeline, ml, feature, idx, kFold):
+    """
+    helper for structured_classification
+    Appends return value of sklearn.model_selection.cross_val_score to preds
+    
+    Args:
+        preds: list of predictions
+        
+    Returns:
+        preds with array of scores of the estimator for each run of the cross validation appended
+    """
+    preds.append(cross_val_score(classifier_pipeline,
+                                 ml.reshape(ml.shape[0], ml.shape[1] * ml.shape[2]),
+                                 get_ML_labels(feature)[idx], cv=kFold))
+    return preds
+
+def structured_classification(ml, feature, model_, 
+                             X_train, X_test, y_train, y_test, train_labels, classifier_pipeline,
+                             kFold, pred, disc, bal, conf):
+    """
+    classification_structure helper
+    Performs classification for each level in hierarchy
+    
+    Variables:
+        vals: input_labels into run_classifer fn
+    Returns: 
+        preds
+        model_
+    """
+    preds = []
+    for idx, vals in enumerate(train_labels):
+        # check for important class, then train inputs
+        if idx == 0:  # Reach vs Null
+
+            # TODO
+            # predict null or reach trial type
+            # update preds == ...
+            # split_n_reaches(ml)
+            # take out null trials, then pass data fwd to predict n reaches
+            # for given 'ml_array_RM16.h5' data 12/24/2020
+            # idx is 0, 1,2,3, 4
+            # vals = input labels for run_classfifer()
+
+            # Save ML predictions, models
+            preds = save_CV_score_to_preds(preds, classifier_pipeline, ml, feature, idx, kFold)
+            
+            # Plot in Yellowbrick
+            visualizer = CVScores(classifier_pipeline, cv=kFold, scoring='f1_weighted')
+            visualizer.fit(ml.reshape(ml.shape[0], ml.shape[1] * ml.shape[2]), get_ML_labels(feature)[idx])
+            visualizer.show()
+            visualize_model(ml.reshape(ml.shape[0], ml.shape[1] * ml.shape[2]), get_ML_labels(feature)[idx]
+                            , classifier_pipeline, pred=pred, disc=disc, conf=conf, bal=bal)
+
+        if idx == 1:  # num reaches, 1 vs >1
+
+            # TODO
+            # predict num reaches=1 or >1
+            # n_zero_ml_array = get_nreach_classification()
+            # if trial contains > int x reaches,
+            # then zero out all features and data in trial array like [ix, :, :, :]=0
+            # send x< reach array to simple segmentation
+            # get_simple_segments = ...
+            # update and save ML predictions and models below
+            # save model == add to pipeline?
+
+            # Save ML predictions, models
+            preds = save_CV_score_to_preds(preds, classifier_pipeline, ml, feature, idx, kFold)
+    
+            # Plot in Yellowbrick
+            visualizer = CVScores(classifier_pipeline, cv=kFold, scoring='f1_weighted')
+            visualizer.fit(ml.reshape(ml.shape[0], ml.shape[1] * ml.shape[2]), get_ML_labels(feature)[idx])
+            visualizer.show()
+            visualize_model(ml.reshape(ml.shape[0], ml.shape[1] * ml.shape[2]), get_ML_labels(feature)[idx]
+                            , classifier_pipeline, pred=pred, disc=disc, conf=conf, bal=bal)
+
+        if idx == 2:  # which hand reaches: l/r vs lra,bi,rla
+
+            # TODO
+            # for isx in range(0, ml_cut.shape[0]):
+            # classify LR or [LRA, RLA, BI]
+            # preds_arm1 = pred_arm(ml_cut[isx,:,:,:])
+            # split ml_cut into classes
+            # func input , uses pred_arm1 as indicies to split ml_cut data
+            # ml_LR, ml+BRL = arm_split(ml_cut, preds_arm1)
+            # continue
+            # pred_arm2 = ...
+
+            # Save ML predictions, models
+            preds = save_CV_score_to_preds(preds, classifier_pipeline, ml, feature, idx, kFold)
+            
+            # Plot in YellowBrick
+            visualizer = CVScores(classifier_pipeline, cv=kFold, scoring='f1_weighted')
+            visualizer.fit(ml.reshape(ml.shape[0], ml.shape[1] * ml.shape[2]), get_ML_labels(feature)[idx])
+            visualizer.show()
+            visualize_model(ml.reshape(ml.shape[0], ml.shape[1] * ml.shape[2]), get_ML_labels(feature)[idx]
+                            , classifier_pipeline, pred=pred, disc=disc, conf=conf, bal=bal)
+    return preds, model_
 
 def classification_structure(ml, feature, model_, kFold=False, LOO=False, PCA_data=False, constant_split=False,
                              structured=True,
@@ -519,22 +679,20 @@ def classification_structure(ml, feature, model_, kFold=False, LOO=False, PCA_da
     Args:
         ml : ML-ready feature vector containing experimental and kinematic data
         feature : labels for each class (vectorized using blist and get_ML_labels)
-        model : classifier (sk-Learn compatible)
+        model_ : classifier (sk-Learn compatible)
         kFold : int, number of folds if using kFold cross-validation from sk-Learn
         LOO : boolean flag, set True if using LOO cross-validation from sk-Learn
         PCA : boolean flag, set True if using PCA to reduce dimensions of feature vectors
         constant_split : boolean flag, set True if comparing results between classifiers
         structured: boolean flag, set True to do multiple binary classifications
 
-    Args for visualizations
+    Args for yellowbrick visualizations
         plot_correlation_matrix:
         pred:
         disc:
         bal:
         conf:
-    variables:
-        cs:
-        preds:
+    Variables:
         X_train : ML_array : array shape : (Cut Trials, Features, Frames)
         X_test : ML_array : array shape : (Cut Trials, Features, Frames)
         y_train : array shape : (Trails, 9). dim 9 for
@@ -545,24 +703,16 @@ def classification_structure(ml, feature, model_, kFold=False, LOO=False, PCA_da
         train_labels : ML labels from y_train data.
             Format: list of arrays of 0s and 1s, where each array corresponds to
                trial type, num reaches, reach with which hand, is tug, hand switch
-        vals: input_labels into run_classifer fn
+     Returns:
+         preds: list of (3 arrays of 5 elems for each classifier in hierarchy) arrays of classifier predictions
+         model_
 
       Notes:
         kfold boolean arg vs KFold for sklearn.model_selection._split.KFold
     """
     # split before norming to prevent bias in test data
     if constant_split:
-        classifier_pipeline = make_pipeline(preprocessing.StandardScaler(), model_)
-        cs = []
-        X_train, X_test, y_train, y_test = split_ML_array(ml, feature, t=0.2)
-        train_labels = get_ML_labels(y_train)
-        X_train = norm_and_zscore_ML_array(X_train, robust=False, decomp=False, gauss=False)
-        X_test = norm_and_zscore_ML_array(X_test, robust=False, decomp=False, gauss=False)
-        for i, vals in enumerate(train_labels):
-            cs.append(run_classifier(model_, X_train, X_test, vals))
-            # TODO ?
-            # need to add cross_val_score for X_train,X_test splits
-        return cs, model_
+        return do_constant_split(model_, ml, feature)
 
     # Create Classifier Pipeline Object in SciKit Learn
     if PCA_data:
@@ -593,101 +743,14 @@ def classification_structure(ml, feature, model_, kFold=False, LOO=False, PCA_da
     if plot_correlation_matrix:
         pearson_features(X_train)
 
-    preds = []
+    # Run classification hierarchy
     if structured:
-        for idx, vals in enumerate(train_labels):
-            # check for important class, then train inputs
-            if idx == 0:  # Reach vs Null
-
-                # TODO
-                # predict null or reach trial type
-                # update preds == ...
-                # split_n_reaches(ml)
-                # take out null trials, then pass data fwd to predict n reaches
-                # for given 'ml_array_RM16.h5' data 12/24/2020
-                # idx is 0, 1,2,3, 4
-                # vals = input labels for run_classfifer()
-
-                # Save ML predictions, models
-                preds.append(cross_val_score(classifier_pipeline,
-                                             ml.reshape(ml.shape[0], ml.shape[1] * ml.shape[2]),
-                                             get_ML_labels(feature)[idx], cv=kFold))
-                # Plot in Yellowbrick
-                visualizer = CVScores(classifier_pipeline, cv=kFold, scoring='f1_weighted')
-                visualizer.fit(ml.reshape(ml.shape[0], ml.shape[1] * ml.shape[2]), get_ML_labels(feature)[idx])
-                visualizer.show()
-                visualize_model(ml.reshape(ml.shape[0], ml.shape[1] * ml.shape[2]), get_ML_labels(feature)[idx]
-                                , classifier_pipeline, pred=pred, disc=disc, conf=conf, bal=bal)
-
-            if idx == 1:  # num reaches, 1 vs >1
-
-                # TODO
-                # predict num reaches=1 or >1
-                # n_zero_ml_array = get_nreach_classification()
-                # if trial contains > int x reaches,
-                # then zero out all features and data in trial array like [ix, :, :, :]=0
-                # send x< reach array to simple segmentation
-                # get_simple_segments = ...
-                # update and save ML predictions and models below
-                # save model == add to pipeline?
-
-                # Save ML predictions, models
-                preds.append(cross_val_score(classifier_pipeline,
-                                             ml.reshape(ml.shape[0], ml.shape[1] * ml.shape[2]),
-                                             get_ML_labels(feature)[idx], cv=kFold))
-                # Plot in Yellowbrick
-                visualizer = CVScores(classifier_pipeline, cv=kFold, scoring='f1_weighted')
-                visualizer.fit(ml.reshape(ml.shape[0], ml.shape[1] * ml.shape[2]), get_ML_labels(feature)[idx])
-                visualizer.show()
-                visualize_model(ml.reshape(ml.shape[0], ml.shape[1] * ml.shape[2]), get_ML_labels(feature)[idx]
-                                , classifier_pipeline, pred=pred, disc=disc, conf=conf, bal=bal)
-
-            if idx == 2:  # which hand reaches: l/r vs lra,bi,rla
-
-                # TODO
-                # for isx in range(0, ml_cut.shape[0]):
-                # classify LR or [LRA, RLA, BI]
-                # preds_arm1 = pred_arm(ml_cut[isx,:,:,:])
-                # split ml_cut into classes
-                # func input , uses pred_arm1 as indicies to split ml_cut data
-                # ml_LR, ml+BRL = arm_split(ml_cut, preds_arm1)
-                # continue
-                # pred_arm2 = ...
-
-                # Save ML predictions, models
-                preds.append(cross_val_score(classifier_pipeline,
-                                             ml.reshape(ml.shape[0], ml.shape[1] * ml.shape[2]),
-                                             get_ML_labels(feature)[idx], cv=kFold))
-                # Plot in YellowBrick
-                visualizer = CVScores(classifier_pipeline, cv=kFold, scoring='f1_weighted')
-                visualizer.fit(ml.reshape(ml.shape[0], ml.shape[1] * ml.shape[2]), get_ML_labels(feature)[idx])
-                visualizer.show()
-                visualize_model(ml.reshape(ml.shape[0], ml.shape[1] * ml.shape[2]), get_ML_labels(feature)[idx]
-                                , classifier_pipeline, pred=pred, disc=disc, conf=conf, bal=bal)
-
-
+        return structured_classification(ml, feature, model_, 
+                             X_train, X_test, y_train, y_test, train_labels, classifier_pipeline,
+                             kFold, pred, disc, bal, conf)
     else:
-        for i, vals in enumerate(train_labels):  # loop over each layer of classifier, this just does classification
-            try:
-                if kFold:
-                    preds.append(cross_val_score(classifier_pipeline,
-                                                 ml.reshape(ml.shape[0], ml.shape[1] * ml.shape[2]),
-                                                 get_ML_labels(feature)[i], cv=kFold))
-                elif LOO:
-                    preds.append(
-                        cross_val_score(classifier_pipeline, ml.reshape(ml.shape[0], ml.shape[1] * ml.shape[2]),
-                                        get_ML_labels(feature)[i], cv=ml.shape[0] - 10))
-                else:  # simple classification
-                    preds.append(run_classifier(model_, X_train, X_test, vals))
-                    continue
-            except:
-                print('Bad Classifier Entry (Line 500)')
-                pdb.set_trace()
-        try:
-            print_preds(preds, train_labels)
-        except:
-            print('')
-    return preds, model_
+        return simple_classification_verification(train_labels, classifier_pipeline, ml, feature, kFold, model_, X_train, X_test)
+
 
 
 
