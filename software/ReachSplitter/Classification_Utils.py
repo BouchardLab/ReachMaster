@@ -114,7 +114,7 @@ def pkl_to_df(pickle_file):
 
 def make_vectorized_labels(blist):
     """ Vectorizes list of DLC video trial labels for use in ML-standard format
-        Converts labels into numberic format.
+        Converts labels into numeric format.
 
     Args:
         blist (list of str and int): list of trial labels for a specific rat,date,session
@@ -216,9 +216,11 @@ def block_pos_extract(kin_df, et, el, wv):
 
     Args:
         kin_df (df): kinematic DataFrame for a single block
-        et (int):
-        el (int):
-        wv (int):
+        et (int): coordinate change variable
+            Will take the positional coordinates and put them into the robot reference frame.
+        el (int): coordinate change variable
+            Will take the positional coordinates and put them into the robot reference frame.
+        wv (int): the wavelet # for the median filter applied to the positional data
 
     Returns:
         block (list of lists of array of ints): List of three lists for X,Y,Z column data.
@@ -295,7 +297,7 @@ def onehot(r_df):
     """ Returns one hot array for robot data.
 
     Args:
-        r_df (df): robot DataFrame for a single trial
+        r_df (df): robot DataFrame for a single block
 
     Returns:
         one hot array
@@ -430,7 +432,7 @@ def import_experiment_features(exp_array, starts, window_length, pre):
         Features to extract are pot_x, pot_y, pot_z, lick_array, rew_zone robot features.
 
     Args:
-        exp_array (df): single trial from robot DataFrame
+        exp_array (df): single block from robot DataFrame
         starts (list of ints): list of ints corresponding to video frame numbers
         window_length (int):
         pre (int):
@@ -517,73 +519,75 @@ def import_experiment_features(exp_array, starts, window_length, pre):
     return exp_feat_array
 
 
-def get_kinematic_trial(kin_df_, rat, kdate, session):
-    """ Retrieves a single trial (row) in a kinematic dataframe for given rat,date,session
+def get_kinematic_block(kin_df_, rat, kdate, session):
+    """ Retrieves a single block (row) in a kinematic dataframe for given rat,date,session
         
     Args:
         kin_df_ (df): kinematic dataframe indexed by 'rat','date','session',dim
         rat (str): rat ID
-        kdate (str): trial date in 'kin_df_'
-        session (str): trial session
+        kdate (str): block date in 'kin_df_'
+        session (str): block session
         
     Returns:
-        kin_trial_df (df): desired trial row in 'kin_df_' indexed by rat,date,session,dim
+        kin_block_df (df): desired block row in 'kin_df_' indexed by rat,date,session,dim
     
     Raises:
-        LookupError: If desired trial does not exist
+        LookupError: If desired block does not exist
     """
     try:
-        kin_trial_df = kin_df_[kin_df_.index.get_level_values('rat') == rat]
-        kin_trial_df = kin_trial_df[kin_trial_df.index.get_level_values('date') == kdate]
-        kin_trial_df = kin_trial_df[kin_trial_df.index.get_level_values('session') == session]
-        return kin_trial_df
+        kin_block_df = kin_df_[kin_df_.index.get_level_values('rat') == rat]
+        kin_block_df = kin_block_df[kin_block_df.index.get_level_values('date') == kdate]
+        kin_block_df = kin_block_df[kin_block_df.index.get_level_values('session') == session]
+        return kin_block_df
     except:
         raise LookupError('Not in kinematic dataframe : Trial ' + rat + " " + kdate + " " + session) from None
 
 
 def make_s_f_trial_arrays_from_block(kin_df_, robot_df_, et, el, rat, date, kdate, session, wv=5, window_length=800,
                                      pre=100):
-    """ 
+    """ Returns trialized and formatted features from kinematic and experimental data
     
     Args:
         kin_df_ (df): kinematic DateFrame indexed by rat,date,session,dim
         robot_df_ (df): robot experimental DataFrame
-        et (int):
-        el (int):
+        et (int): coordinate change variable
+            Will take the positional coordinates and put them into the robot reference frame.
+        el (int): coordinate change variable
+            Will take the positional coordinates and put them into the robot reference frame.
         rat (str): rat ID
-        date (str): trial date in robot_df_
-        kdate (str): trial date in kin_df_
-        session (str): trial session
-        wv (int): (default 5)
+        date (str): block date in robot_df_
+        kdate (str): block date in kin_df_
+        session (str): block session
+        wv (int): the wavelet # for the median filter applied to the positional data (default 5)
         window_length (int): (default 800)
         pre (int): (default 100)
     
     Returns:
-        _hot_vector (array): one hot array of robot trial data
+        _hot_vector (array): one hot array of robot block data
         _tt1 (nested array of ints): trialized kinematic data
-        _feat_labels (list of str): list of feature names from 'kin_df_'
+        feature_names_list (list of str): list of feature names from 'kin_df_'
         exp_features (list of arrays): experimental features with dimensions Ntrials X Features X Length
     """
-    # get single trial from kinematic DataFrame
-    kin_trial_df = get_kinematic_trial(kin_df_, rat, kdate, session)
+    # get single block from kinematic DataFrame
+    kin_block_df = get_kinematic_block(kin_df_, rat, kdate, session)
     # extract posture arrays, and feature names
-    _a, _feat_labels = block_pos_extract(kin_trial_df, et, el, wv)
+    block_pos_arr, feature_names_list = block_pos_extract(kin_block_df, et, el, wv)
 
-    # get single trial from robot DataFrame
-    r_trial_df = utils.get_single_trial(robot_df_, date, session, rat)
+    # get single block from robot DataFrame
+    r_block_df = utils.get_single_block(robot_df_, date, session, rat)
 
-    # get start column value, which is a list of ints corresponding to video frame numbers
-    start = r_trial_df['r_start'].values[0]
+    # get starting_frames_list column value, which is a list of ints corresponding to video frame numbers
+    start = r_block_df['r_start'].values[0]
     try:
-        exp_features = import_experiment_features(r_trial_df, start, window_length, pre)
+        exp_features = import_experiment_features(r_block_df, start, window_length, pre)
     except:
         print('bad robot feature extraction')
 
     # trialized kinematic data
-    _tt1 = split_trial(_a, start, window_length, pre)
+    _tt1 = split_trial(block_pos_arr, start, window_length, pre)
     # Finished trial splitting
-    _hot_vector = onehot(r_trial_df)
-    return _hot_vector, _tt1, _feat_labels, exp_features
+    _hot_vector = onehot(r_block_df)
+    return _hot_vector, _tt1, feature_names_list, exp_features
 
 ####################################
 ####################################
@@ -744,7 +748,7 @@ def do_constant_split(model_, ml, feature):
     return cs, model_
 
 
-def simple_classification_verification(train_labels, classifier_pipeline, ml, feature, kFold, model_, X_train, X_test):
+def simple_classification_verification(train_labels, classifier_pipeline, ml, feature, kFold, model_, LOO, X_train, X_test):
     """
     classification_structure helper
     else case for verification and clarity
@@ -954,7 +958,7 @@ def classification_structure(ml, feature, model_, kFold=False, LOO=False, PCA_da
                                          X_train, X_test, y_train, y_test, train_labels, classifier_pipeline,
                                          kFold, pred, disc, bal, conf)
     else:
-        return simple_classification_verification(train_labels, classifier_pipeline, ml, feature, kFold, model_,
+        return simple_classification_verification(train_labels, classifier_pipeline, ml, feature, kFold, model_, LOO,
                                                   X_train, X_test)
 
 
