@@ -295,7 +295,7 @@ def onehot(r_df):
     """ Returns one hot array for robot data.
 
     Args:
-        r_df (df): robot Dataframe for a single trial
+        r_df (df): robot DataFrame for a single trial
 
     Returns:
         one hot array
@@ -791,7 +791,7 @@ def save_CV_score_to_preds(preds, classifier_pipeline, ml, feature, idx, kFold):
     preds.append(cross_val_score(classifier_pipeline,
                                  ml.reshape(ml.shape[0], ml.shape[1] * ml.shape[2]),
                                  get_ML_labels(feature)[idx], cv=kFold))
-    return preds
+    return preds, classifier_pipeline
 
 
 def structured_classification(ml, feature, model_,
@@ -822,7 +822,7 @@ def structured_classification(ml, feature, model_,
             # vals = input labels for run_classfifer()
 
             # Save ML predictions, models
-            preds = save_CV_score_to_preds(preds, classifier_pipeline, ml, feature, idx, kFold)
+            preds, classifier_pipeline = save_CV_score_to_preds(preds, classifier_pipeline, ml, feature, idx, kFold)
 
             # Plot in Yellowbrick
             visualizer = CVScores(classifier_pipeline, cv=kFold, scoring='f1_weighted')
@@ -844,7 +844,7 @@ def structured_classification(ml, feature, model_,
             # save model == add to pipeline?
 
             # Save ML predictions, models
-            preds = save_CV_score_to_preds(preds, classifier_pipeline, ml, feature, idx, kFold)
+            preds, classifier_pipeline = save_CV_score_to_preds(preds, classifier_pipeline, ml, feature, idx, kFold)
 
             # Plot in Yellowbrick
             visualizer = CVScores(classifier_pipeline, cv=kFold, scoring='f1_weighted')
@@ -866,7 +866,7 @@ def structured_classification(ml, feature, model_,
             # pred_arm2 = ...
 
             # Save ML predictions, models
-            preds = save_CV_score_to_preds(preds, classifier_pipeline, ml, feature, idx, kFold)
+            preds, classifier_pipeline = save_CV_score_to_preds(preds, classifier_pipeline, ml, feature, idx, kFold)
 
             # Plot in YellowBrick
             visualizer = CVScores(classifier_pipeline, cv=kFold, scoring='f1_weighted')

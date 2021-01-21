@@ -7,16 +7,17 @@ import pandas as pd
 
 
 class TestFileLoading(TestCase):
-    def __init__(self):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
         """ Initialize unchanged class attributes for testing
 
         Notes:
             May take a long time to run.
         """
         # load data
-        kinematic_data_path = 'tkd16.pkl'
-        kinematic_df = CU.pkl_to_df(kinematic_data_path)
-        unpickled_list = pd.read_pickle(kinematic_data_path)
+        self.kinematic_data_path = 'tkd16.pkl'
+        self.kinematic_df = CU.pkl_to_df(self.kinematic_data_path)
+        self.unpickled_list = pd.read_pickle(self.kinematic_data_path)
 
     def test_pkl_to_df_NumRows(self):
         """
@@ -35,13 +36,16 @@ class TestFileLoading(TestCase):
         expected_df_index = ['rat', 'date', 'session', 'dim']
         self.assertEqual(expected_df_index, self.kinematic_df.index.names)
 
+
 class TestGetMethods(TestCase):
-    def __init__(self):
-        """ Initialize unchanged class attributes for testing
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        """ Initialize unchanged class attributes for testing 
+            ( act like global variables )
         """
         # load data
-        kinematic_data_path = 'tkd16.pkl'
-        kinematic_df = CU.pkl_to_df(kinematic_data_path)
+        self.kinematic_data_path = 'tkd16.pkl'
+        self.kinematic_df = CU.pkl_to_df(self.kinematic_data_path)
 
     def test_get_kinematic_trial(self):
         """
