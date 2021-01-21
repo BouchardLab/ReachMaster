@@ -428,6 +428,36 @@ def calculate_robot_features(xpot, ypot, zpot, mstart_, mstop_):
     return vx, vy, vz, x1, y1, z1
 
 
+def is_tug_no_tug(moving_times):
+    """
+    Function to classify trials with post-reaching behavior from well-behaved handle release.
+    Gives a simple estimate of if theres tug of war or not
+    """
+    # ask if there is robot velocity after a trial ends (for around a second)
+    reward_end_times=np.argwhere(moving_times==1)[0] # take the first index when a robot movement command is issued
+    movement_end_times = np.argwhere(moving_times == 1)[-1]
+    # Handle Probability thresholding
+    #post_trial_robot_movement = robot_vector[:,:,reward_end_times:reward_end_times+100] # get all values from end of trial to +100
+    move_time = 20 # parameter threshold needed to evoke TOW
+    # Histogram total results of this parameter
+    if movement_end_times - reward_end_times > move_time:
+        tug_preds = 1 # tug of war
+    else:
+        tug_preds = 0 # no tug of war
+    return tug_preds, movement_end_times - reward_end_times
+
+def is_reach_rewarded(lick_data_):
+    """
+    Function to simply classify trials as rewarded with water or not using sensor data from ReachMaster (lick detector).
+    Tells if the reach was rewarded or not
+    """
+    rew_lick_=0
+    if lick_data_.any():
+        if np.where(lick_data_ == 1) > 3: # filter bad lick noise
+            rew_lick_ = 1
+    return rew_lick_
+
+
 def import_experiment_features(exp_array, starts, window_length, pre):
     """ Extracts features from experiment array.
         Features to extract are pot_x, pot_y, pot_z, lick_array, rew_zone robot features.
@@ -445,17 +475,18 @@ def import_experiment_features(exp_array, starts, window_length, pre):
     Notes:
         make_s_f_trial_arrays_from_block helper
     """
-    wlength = (starts[0] + window_length) - (
-            starts[0] - pre)  # get length of exposures we are using for trial classification
-    exp_feat_array = np.empty((len(starts), 11, wlength))  # create empty np array Ntrials X Features X Length
+    # features to extract from experiment array : pot_x, pot_y, pot_z, lick_array, rew_zone robot features
+    wlength = (starts[0] + window_length) - (starts[0] - pre)  # get length of exposures we are using for trial classification
+    exp_feat_array = np.empty((len(starts), 12, wlength))  # create empty np array Ntrials X Features X Length
     for ixs, vals in enumerate(starts):  # loop over each trial
         # get experimental feature values
         try:
             time_ = exp_array['time'].to_numpy()[0]
+            moving = exp_array['moving'].to_numpy()[0]
             rz = exp_array['RW'].to_numpy()[0]
         except:
             print('f1')
-            # pdb.set_trace()
+            #pdb.set_trace()
         try:
             rz = rz[vals - pre:vals + window_length]
             lick = exp_array['lick'].to_numpy()[0]
@@ -465,19 +496,22 @@ def import_experiment_features(exp_array, starts, window_length, pre):
             lick_mask_array = np.zeros(exp_time.shape[0] + 1, dtype=int)
             lick_mask_array[lmi] = 1
             np.delete(lick_mask_array, [-1])
+            lick_mask_array=lick_mask_array[vals-pre:vals+window_length]
+            #moving = moving[vals-pre:vals+window_length] # TODO repl with is_reach_rewarded
+            moving = is_reach_rewarded(lick) ### ??
         except:
             print('f2')
-            # pdb.set_trace()
+            #pdb.set_trace()
         try:
-            vcx, vcy, vcz, xp1, yp1, zp1 = calculate_robot_features(exp_array['x_pot'].to_numpy()[0],
+            vcx, vcy, vcz, xp1, yp1, zp1=calculate_robot_features(exp_array['x_pot'].to_numpy()[0],
                                                                     exp_array['y_pot'].to_numpy()[0],
                                                                     exp_array['z_pot'].to_numpy()[0],
-                                                                    exp_array['r_start'].to_numpy()[0][ixs],
-                                                                    exp_array['r_stop'].to_numpy()[0][ixs]
+                                                                    exp_array['m_start'].to_numpy()[0][ixs],
+                                                                    exp_array['m_stop'].to_numpy()[0][ixs]
                                                                     )
         except:
             print('bad pot data')
-            # pdb.set_trace()
+            #pdb.set_trace()
         # fill in array
         # decimate potentiometer from s to exposure !~ in frames (we dont have exact a-d-c)
         try:
@@ -489,7 +523,7 @@ def import_experiment_features(exp_array, starts, window_length, pre):
             vcz = vcz[::21]
         except:
             print('bad downsample')
-            # pdb.set_trace()
+            #pdb.set_trace()
         # downsample potentiometer readings to match camera exposures
         # each exposure is ~ 21hz (we sample at 3khz)
         # make same length as other features, to avoid problems with ML (this means we will lose ~5 data points at end of experiment)
@@ -502,23 +536,78 @@ def import_experiment_features(exp_array, starts, window_length, pre):
             vcz = vcz[0:wlength]
         except:
             print('bad decimate')
-            # pdb.set_trace()
+            #pdb.set_trace()
         try:
             exp_feat_array[ixs, 0:3, :] = [vcx, vcy, vcz]
         except:
             print(exp_feat_array[ixs, 0:3, :])
-            print('maybe an issue?')
             continue
         try:
             exp_feat_array[ixs, 6, :] = rz
             exp_feat_array[ixs, 7, :] = xp1
             exp_feat_array[ixs, 8, :] = yp1
             exp_feat_array[ixs, 9, :] = zp1
-            exp_feat_array[ixs, 10, :] = lick_mask_array[vals - pre:vals + window_length]
+            exp_feat_array[ixs, 10, :] = lick_mask_array
+            exp_feat_array[ixs,11,:] = moving
         except:
             print('bad robot data fit')
-    # Finished experimental feature generation
+    print('Finished experimental feature generation')
     return exp_feat_array
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 def get_kinematic_block(kin_df_, rat, kdate, session):

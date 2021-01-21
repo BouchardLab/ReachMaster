@@ -133,7 +133,7 @@ class TestClassificationWorkflow(TestCase):
         d = self.kinematic_df
         hdf = self.robot_df
         hot_vector, tt, feats, e = CU.make_s_f_trial_arrays_from_block(d, hdf, et, el, 'RM16', '0190920', '0190920',
-                                                                       'S3', 9, window_length=800, pre=100)
+                                                                       'S3', 9, window_length=250, pre=10)
         hot_vector3, tt3, feats3, e3 = CU.make_s_f_trial_arrays_from_block(d, hdf, et, el, 'RM16', '0190919', '0190919',
                                                                            'S3', 9)  # Emily label trial list
         hot_vectornl2, ttnl2, featsnl2, enl2 = CU.make_s_f_trial_arrays_from_block(d, hdf, et, el, 'RM16', '0190917',
