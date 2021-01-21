@@ -24,24 +24,111 @@ from yellowbrick.classifier import ClassificationReport
 import DataStream_Vis_Utils as utils
 from scipy import ndimage
 
-def make_vectorized_labels(blist):
-    """
+### Functions to load data into pandas DataFrames ###
 
-    :param blist: list of labels, for more robust description please see github
-    :return:
-            new_list : vectorized list of labels
-            ind_total : vectorized array of reaching indices
+def unpack_pkl_df(rat_df1):
+    """ Formats a pandas DataFrame.
+        rat,date,session,dim levels are converted to columns.
+        Each column's values (except rat,date,session,dim) are stored in a single array.
+
+    Args:
+        rat_df1 (df):  a multi-level DataFrame corresponding to an element in an un-pickled list
+
+    Returns:
+        new_df (df): a new formatted DataFrame with only 1 row for a specific rat,date,session,dim
+    Notes:
+        pkl_to_df helper
+    """
+    # create a new DataFrame (copy of original), then removes levels corresponding to (rat, date, session, dim)
+    df1 = rat_df1.droplevel([0, 1, 2, 3], axis=1)
+
+    # stores final row values for each rat,date,session
+    newlist = []
+
+    # create empty df by removing all rows
+    new_df = df1[0:0]
+
+    # inserts rat, date, session, dim columns
+    for i in range(4):
+        col_name = rat_df1.columns.names[i]
+        val = rat_df1.columns.levels[i][0]
+        newlist.append(val)
+        new_df.insert(i, col_name, val)
+
+    # turn each column's values into an array
+    for i in range(len(df1.columns)):
+        newlist.append(df1[df1.columns[i]].values)
+
+    # append list of values into empty df
+    to_append = newlist
+    a_series = pd.Series(to_append, index=new_df.columns)
+    new_df = new_df.append(a_series, ignore_index=True)
+    return new_df
+
+
+def pkl_to_df(pickle_file):
+    """ Converts a pickle files into a pandas DataFrame indexed by rat,date,session,dim
+
+    Args:
+        pickle_file (str): file path to pickle file that contains a list of DataFrames
+
+    Returns:
+        df_to_return (df): DataFrame indexed by rat,date,session,dim
+            with one row corresponding to one element in 'unpickled_list'
+    """
+    # unpickle file
+    unpickled_list = pd.read_pickle(pickle_file)
+
+    # true if have encountered a DataFrame in list
+    encountered_df = False
+
+    # iterate through list
+    for i in range(len(unpickled_list)):
+        try:
+            rat_df1 = unpickled_list[i]
+
+            # create new df with 1 row
+            if (not encountered_df):
+                encountered_df = True
+                df_to_return = unpack_pkl_df(rat_df1)
+
+            # concat new df to existing df
+            else:
+                df_to_append = unpack_pkl_df(rat_df1)
+                df_to_return = pd.concat([df_to_return, df_to_append], axis=0, sort=False)
+
+        except:
+            print("do nothing, not a valid df")
+
+    # sets index of new df
+    df_to_return = df_to_return.set_index(['rat', 'date', 'session', 'dim'])
+    return df_to_return
+
+
+def make_vectorized_labels(blist):
+    """ Vectorizes list of DLC video trial labels for use in ML-standard format
+        Converts labels into numberic format.
+
+    Args:
+        blist (list of str and int): list of trial labels for a specific rat,date,session
+            For more robust description please see github
+
+    Returns:
+        new_list (arr of list): array of lists of numeric labels.
+            One list corresponds to one labeled trial.
+        ind_total (arr of list): array of lists of reaching indices
+
+    Notes:
+         Each index in a labeled trial are as follows: [int trial_num, int start, int stop, int trial_type,
+         int num_reaches, str which_hand_reach, str tug_noTug, int hand_switch, int num_frames]
+
     """
     ll = len(blist)
     new_list = np.empty((ll, 9))
     ind_total = []
     for ix, l in enumerate(blist):
-        # l has index of [int trial_num, int start, int stop, int trial_type, int num_reaches, str which_hand_reach, str tug_noTug, int hand_switch, int num_frames]
-        # we want to vectorize this list for use in ML-standard format (0,1 etc)
-
         # transform non-numerics into numeric template
-        # arm type
-        # 'lr': 2 , 'l' : 1, 'bi' : 3 , 'lbi' : 4, 'r': 0, 'tug': 1
+        # arm type: 'lr': 2 , 'l' : 1, 'bi' : 3 , 'lbi' : 4, 'r': 0, 'tug': 1
         if 'l' in str(l[5]):
             if 'lr' in str(l[5]):
                 blist[ix][5] = 2
@@ -89,7 +176,7 @@ def xform_array(k_m, eit, cl):
     return k_m
 
 
-def transpose_kin_array(kc,et,el):
+def transpose_kin_array(kc, et, el):
     # kc is dtype pandas dataframe
     # we want numpy data format
     # kc['colname'].to_numpy()
@@ -252,7 +339,7 @@ def forward_xform_coords(x, y, z):
 
 
 def calculate_robot_features(xpot, ypot, zpot, mstart_, mstop_):
-    #print(mstart_,mstop_)
+    # print(mstart_,mstop_)
     sample_rate = 3000  # sample rate from analog
     # split into sample
     try:
@@ -274,7 +361,7 @@ def calculate_robot_features(xpot, ypot, zpot, mstart_, mstop_):
     # vta = np.diff(vt)
     try:
         vx = np.diff(x1) / sample_rate  # units of seconds
-        vy = np.diff(y1) / sample_rate # units of seconds
+        vy = np.diff(y1) / sample_rate  # units of seconds
         vz = np.diff(z1) / sample_rate  # units of seconds
     except:
         print('bad potentiometer derivatives')
@@ -287,7 +374,7 @@ def calculate_robot_features(xpot, ypot, zpot, mstart_, mstop_):
 def import_experiment_features(exp_array, starts, window_length, pre):
     # features to extract from experiment array : pot_x, pot_y, pot_z, lick_array, rew_zone robot features
     wlength = (starts[0] + window_length) - (
-                starts[0] - pre)  # get length of exposures we are using for trial classification
+            starts[0] - pre)  # get length of exposures we are using for trial classification
     exp_feat_array = np.empty((len(starts), 11, wlength))  # create empty np array Ntrials X Features X Length
     for ixs, vals in enumerate(starts):  # loop over each trial
         # get experimental feature values
@@ -361,15 +448,55 @@ def import_experiment_features(exp_array, starts, window_length, pre):
     return exp_feat_array
 
 
-def make_s_f_trial_arrays_from_block(kin_array_, robot_array_, et, el, rat, date, kdate, session, wv=5, window_length=800,
-                                     pre=100):
+def get_kinematic_trial(kin_df_, rat, kdate, session):
+    """ Retrieves a single trial (row) in a kinematic dataframe for given rat,date,session
+        
+    Args:
+        kin_df_ (df): kinematic dataframe indexed by 'rat','date','session',dim
+        rat (str): rat ID
+        kdate (str): trial date in 'kin_df_'
+        session (str): trial session
+        
+    Returns:
+        kin_trial_df (df): desired trial row in 'kin_df_' indexed by rat,date,session,dim
+    
+    Raises:
+        LookupError: If desired trial does not exist
+    """
     try:
-        kim_df = kin_array_[kin_array_.index.get_level_values('rat') == rat][
-            kin_array_.index.get_level_values('date') == kdate]
-        kc = kim_df[kim_df.index.get_level_values('session') == session]
+        kin_trial_df = kin_df_[kin_df_.index.get_level_values('rat') == rat]
+        kin_trial_df = kin_trial_df[kin_trial_df.index.get_level_values('date') == kdate]
+        kin_trial_df = kin_trial_df[kin_trial_df.index.get_level_values('session') == session]
+        return kin_trial_df
     except:
-        print('Not in kinematic array : Trial ' + rat + date + session)
-        return 0, 0, 0
+        raise LookupError('Not in kinematic dataframe : Trial ' + rat + " " + kdate + " " + session) from None
+
+
+def make_s_f_trial_arrays_from_block(kin_df_, robot_array_, et, el, rat, date, kdate, session, wv=5, window_length=800,
+                                     pre=100):
+    """ 
+    
+    Args:
+        kin_df_ (df): kinematic dataframe indexed by rat,date,session,dim
+        robot_array_ (df):
+        et (int):
+        el (int):
+        rat (str): rat ID
+        date (str): trial date in robot_df_
+        kdate (str): trial date in kin_df_
+        session (str): trial session
+        wv (int): (default 5)
+        window_length (int): (default 800)
+        pre (int): (default 100)
+    
+    Returns:
+        _hot_vector:
+        _tt1:
+        _feat_labels:
+        exp_features:
+    """
+    ## repl kc with kin_trial_df
+    kc = get_kinematic_trial(kin_df_, rat, kdate, session)
     _a, _feat_labels = block_pos_extract(kc, et, el, wv)
     r_df = utils.get_single_trial(robot_array_, date, session, rat)
     start = r_df['r_start'].values[0]
@@ -385,10 +512,8 @@ def make_s_f_trial_arrays_from_block(kin_array_, robot_array_, et, el, rat, date
     return _hot_vector, _tt1, _feat_labels, exp_features
 
 
-
-
 def match_stamps(kinematic_array_, label_array, exp_array_):
-  # Create trial arrays
+    # Create trial arrays
     len_array = len(label_array)
     try:
         mk_array = np.empty((len_array, kinematic_array_[0].shape[0], kinematic_array_[0].shape[1],
@@ -401,11 +526,11 @@ def match_stamps(kinematic_array_, label_array, exp_array_):
     except:
         print('Bad Robot Data Pass')
         pdb.set_trace()
-  # From label array, first column states the trial # of the row
+    # From label array, first column states the trial # of the row
     for dr, tval in enumerate(label_array):
         # iterate over the index and value of each trial element
-        ixd=int(label_array[dr][0]) # get trial #
-        #pdb.set_trace()
+        ixd = int(label_array[dr][0])  # get trial #
+        # pdb.set_trace()
         try:
             mk_array[ixd, :, :, :] = kinematic_array_[ixd, :, :, :]
             ez_array[ixd, :, :] = exp_array_[ixd, :, :]
@@ -414,11 +539,11 @@ def match_stamps(kinematic_array_, label_array, exp_array_):
     return mk_array, ez_array
 
 
-def create_ML_array(matched_kinematics_array,matched_exp_array):
-    mid_amt = matched_kinematics_array.shape[1]*matched_kinematics_array.shape[2]
-    l=matched_kinematics_array.shape[3]
-    tl=matched_kinematics_array.shape[0]
-    ctc = np.concatenate((matched_kinematics_array.reshape(tl,mid_amt,l), matched_exp_array),axis=1)
+def create_ML_array(matched_kinematics_array, matched_exp_array):
+    mid_amt = matched_kinematics_array.shape[1] * matched_kinematics_array.shape[2]
+    l = matched_kinematics_array.shape[3]
+    tl = matched_kinematics_array.shape[0]
+    ctc = np.concatenate((matched_kinematics_array.reshape(tl, mid_amt, l), matched_exp_array), axis=1)
     return ctc
 
 
@@ -511,7 +636,8 @@ def run_classifier(_model, _X_train, _X_test, input_labels):
     type_feature_imp = pd.Series(_model.feature_importances_).sort_values(ascending=True)
     return [type_pred, type_feature_imp]
 
-### classification_structure helpers ### 
+
+### classification_structure helpers ###
 
 def do_constant_split(model_, ml, feature):
     """
@@ -526,20 +652,21 @@ def do_constant_split(model_, ml, feature):
     """
     classifier_pipeline = make_pipeline(preprocessing.StandardScaler(), model_)
     cs = []
-    
+
     # generate correct labels for test/train labels
     X_train, X_test, y_train, y_test = split_ML_array(ml, feature, t=0.2)
     train_labels = get_ML_labels(y_train)
-    
+
     # norm and z-score test/train features
     X_train = norm_and_zscore_ML_array(X_train, robust=False, decomp=False, gauss=False)
     X_test = norm_and_zscore_ML_array(X_test, robust=False, decomp=False, gauss=False)
-    
+
     for i, vals in enumerate(train_labels):
         cs.append(run_classifier(model_, X_train, X_test, vals))
         # TODO ?
         # need to add cross_val_score for X_train,X_test splits
     return cs, model_
+
 
 def simple_classification_verification(train_labels, classifier_pipeline, ml, feature, kFold, model_, X_train, X_test):
     """
@@ -570,7 +697,7 @@ def simple_classification_verification(train_labels, classifier_pipeline, ml, fe
     try:
         print_preds(preds, train_labels)
     except:
-        print('')    
+        print('')
     return preds, model_
 
 
@@ -590,9 +717,10 @@ def save_CV_score_to_preds(preds, classifier_pipeline, ml, feature, idx, kFold):
                                  get_ML_labels(feature)[idx], cv=kFold))
     return preds
 
-def structured_classification(ml, feature, model_, 
-                             X_train, X_test, y_train, y_test, train_labels, classifier_pipeline,
-                             kFold, pred, disc, bal, conf):
+
+def structured_classification(ml, feature, model_,
+                              X_train, X_test, y_train, y_test, train_labels, classifier_pipeline,
+                              kFold, pred, disc, bal, conf):
     """
     classification_structure helper
     Performs classification for each level in hierarchy
@@ -619,7 +747,7 @@ def structured_classification(ml, feature, model_,
 
             # Save ML predictions, models
             preds = save_CV_score_to_preds(preds, classifier_pipeline, ml, feature, idx, kFold)
-            
+
             # Plot in Yellowbrick
             visualizer = CVScores(classifier_pipeline, cv=kFold, scoring='f1_weighted')
             visualizer.fit(ml.reshape(ml.shape[0], ml.shape[1] * ml.shape[2]), get_ML_labels(feature)[idx])
@@ -641,7 +769,7 @@ def structured_classification(ml, feature, model_,
 
             # Save ML predictions, models
             preds = save_CV_score_to_preds(preds, classifier_pipeline, ml, feature, idx, kFold)
-    
+
             # Plot in Yellowbrick
             visualizer = CVScores(classifier_pipeline, cv=kFold, scoring='f1_weighted')
             visualizer.fit(ml.reshape(ml.shape[0], ml.shape[1] * ml.shape[2]), get_ML_labels(feature)[idx])
@@ -663,7 +791,7 @@ def structured_classification(ml, feature, model_,
 
             # Save ML predictions, models
             preds = save_CV_score_to_preds(preds, classifier_pipeline, ml, feature, idx, kFold)
-            
+
             # Plot in YellowBrick
             visualizer = CVScores(classifier_pipeline, cv=kFold, scoring='f1_weighted')
             visualizer.fit(ml.reshape(ml.shape[0], ml.shape[1] * ml.shape[2]), get_ML_labels(feature)[idx])
@@ -671,6 +799,7 @@ def structured_classification(ml, feature, model_,
             visualize_model(ml.reshape(ml.shape[0], ml.shape[1] * ml.shape[2]), get_ML_labels(feature)[idx]
                             , classifier_pipeline, pred=pred, disc=disc, conf=conf, bal=bal)
     return preds, model_
+
 
 def classification_structure(ml, feature, model_, kFold=False, LOO=False, PCA_data=False, constant_split=False,
                              structured=True,
@@ -745,14 +874,12 @@ def classification_structure(ml, feature, model_, kFold=False, LOO=False, PCA_da
 
     # Run classification hierarchy
     if structured:
-        return structured_classification(ml, feature, model_, 
-                             X_train, X_test, y_train, y_test, train_labels, classifier_pipeline,
-                             kFold, pred, disc, bal, conf)
+        return structured_classification(ml, feature, model_,
+                                         X_train, X_test, y_train, y_test, train_labels, classifier_pipeline,
+                                         kFold, pred, disc, bal, conf)
     else:
-        return simple_classification_verification(train_labels, classifier_pipeline, ml, feature, kFold, model_, X_train, X_test)
-
-
-
+        return simple_classification_verification(train_labels, classifier_pipeline, ml, feature, kFold, model_,
+                                                  X_train, X_test)
 
 
 def pearson_features(ml_array_):
@@ -766,14 +893,14 @@ def is_tug_no_tug():
     Function to classify trials with post-reaching behavior from well-behaved handle release.
     """
     # ask if there is robot velocity after a trial ends (for around a second)
-    tug_preds=[]
+    tug_preds = []
     return tug_preds
 
 
-def is_reach_rewarded(lick_data,start,stop):
+def is_reach_rewarded(lick_data, start, stop):
     """
     Function to simply classify trials as rewarded with water or not using sensor data from ReachMaster (lick detector).
 
     """
-    reward_vector=[]
+    reward_vector = []
     return reward_vector
