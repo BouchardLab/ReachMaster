@@ -177,7 +177,7 @@ def make_vectorized_labels(blist):
     return new_list, np.array(ind_total)
 
 ####################################
-# Functions for Feature formatting
+# Functions for Ml and Feature Array Generation
 ####################################
 
 def xform_array(k_m, eit, cl):
@@ -272,7 +272,8 @@ def split_trial(posture_array, _start, window_length, pre):
         posture_array (list of lists of array of ints): is timexfeatx 3 x coords np array returned by block_pos_extract
         _start: list of ints which represent video frame numbers
         window_length (int):
-        pre (int):
+        pre (int): pre cut off before a trial starts, the number of frames to load data from before start time
+            For trial splitting
 
     Returns:
         trials_list (array of arrays ... of ints): formatted arrays
@@ -434,8 +435,9 @@ def import_experiment_features(exp_array, starts, window_length, pre):
     Args:
         exp_array (df): single block from robot DataFrame
         starts (list of ints): list of ints corresponding to video frame numbers
-        window_length (int):
-        pre (int):
+        window_length (int): trial splitting window length, the number of frames to load data from
+        pre (int): pre cut off before a trial starts, the number of frames to load data from before start time
+            For trial splitting
 
     Returns:
         exp_feat_array (list of arrays): dimensions Ntrials X Features X Length
@@ -543,8 +545,8 @@ def get_kinematic_block(kin_df_, rat, kdate, session):
         raise LookupError('Not in kinematic dataframe : Trial ' + rat + " " + kdate + " " + session) from None
 
 
-def make_s_f_trial_arrays_from_block(kin_df_, robot_df_, et, el, rat, date, kdate, session, wv=5, window_length=800,
-                                     pre=100):
+def make_s_f_trial_arrays_from_block(kin_df_, robot_df_, et, el, rat, date, kdate, session, wv=5, window_length=250,
+                                     pre=10):
     """ Returns trialized and formatted features from kinematic and experimental data
     
     Args:
@@ -559,8 +561,10 @@ def make_s_f_trial_arrays_from_block(kin_df_, robot_df_, et, el, rat, date, kdat
         kdate (str): block date in kin_df_
         session (str): block session
         wv (int): the wavelet # for the median filter applied to the positional data (default 5)
-        window_length (int): (default 800)
-        pre (int): (default 100)
+        window_length (int): trial splitting window length, the number of frames to load data from(default 250)
+            Set to 4-500. 900 is too long.
+        pre (int): pre cut off before a trial starts, the number of frames to load data from before start time
+            For trial splitting, set to 10. 50 is too long. (default 10)
     
     Returns:
         _hot_vector (array): one hot array of robot block data
@@ -588,9 +592,6 @@ def make_s_f_trial_arrays_from_block(kin_df_, robot_df_, et, el, rat, date, kdat
     # Finished trial splitting
     _hot_vector = onehot(r_block_df)
     return _hot_vector, _tt1, feature_names_list, exp_features
-
-####################################
-####################################
 
 def match_stamps(kinematic_array_, label_array, exp_array_):
     """ Matches kinematic and experimental feature arrays with feature names
@@ -669,6 +670,9 @@ def stack_ML_arrays(list_of_k, list_of_f):
 
     return ogk, ogf
 
+#########################
+# Classification_Structure helpers
+#########################
 
 def norm_and_zscore_ML_array(ML_array, robust=False, decomp=False, gauss=False):
     """
@@ -746,9 +750,6 @@ def run_classifier(_model, _X_train, _X_test, input_labels):
     type_pred = _model.predict(_X_test)
     type_feature_imp = pd.Series(_model.feature_importances_).sort_values(ascending=True)
     return [type_pred, type_feature_imp]
-
-
-### classification_structure helpers ###
 
 def do_constant_split(model_, ml, feature):
     """
