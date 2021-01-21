@@ -24,7 +24,10 @@ from yellowbrick.classifier import ClassificationReport
 import DataStream_Vis_Utils as utils
 from scipy import ndimage
 
-### Functions to load data into pandas DataFrames ###
+
+####################################
+# Functions to load data into pandas DataFrames
+####################################
 
 def unpack_pkl_df(rat_df1):
     """ Formats a pandas DataFrame.
@@ -105,6 +108,10 @@ def pkl_to_df(pickle_file):
     return df_to_return
 
 
+####################################
+# Functions for label processing
+####################################
+
 def make_vectorized_labels(blist):
     """ Vectorizes list of DLC video trial labels for use in ML-standard format
         Converts labels into numberic format.
@@ -169,8 +176,21 @@ def make_vectorized_labels(blist):
         new_list[ix, :] = blist[ix][0:9]
     return new_list, np.array(ind_total)
 
+####################################
+# Functions for Feature formatting
+####################################
 
 def xform_array(k_m, eit, cl):
+    """ Does nothing. Returns 'k_m' unchanged.
+
+    Args:
+        k_m (list of list of ints): list of three x, y, z lists
+        eit (int): et
+        cl (int): el
+
+    Returns:
+        k_m
+    """
     k = np.asarray(k_m)
     # rv=np.dot(k.reshape(k.shape[2],27,3),eit)+cl # good Xform value, then use this value
     return k_m
@@ -181,7 +201,7 @@ def transpose_kin_array(kc, et, el):
     # we want numpy data format
     # kc['colname'].to_numpy()
     for items in kc.items():
-        pdb.set_trace()
+        # pdb.set_trace()
         if 'X' in items[0][1]:
             kc[items[0]] = xform_array(kc[items[0]], et, el)
         if 'Y' in items[0][1]:
@@ -192,6 +212,24 @@ def transpose_kin_array(kc, et, el):
 
 
 def block_pos_extract(kin_df, et, el, wv):
+    """ Extracts a single block's posture data and feature names.
+
+    Args:
+        kin_df (df): kinematic DataFrame for a single block
+        et (int):
+        el (int):
+        wv (int):
+
+    Returns:
+        block (list of lists of array of ints): List of three lists for X,Y,Z column data.
+            Each list corresponding to X,Y, or Z contains filtered arrays for each feature.
+            Posture array is timexfeatx 3 x coords np array.
+        feat_name (list of str): collection of feature names.
+            For Example, feature names are 'Handle' and bodypart names
+    Notes:
+        make_s_f_trial_arrays_from_block helper
+        Excludes probability column data
+    """
     x_arr_ = []
     y_arr_ = []
     z_arr_ = []
@@ -207,29 +245,39 @@ def block_pos_extract(kin_df, et, el, wv):
                 z_arr_.append(ndimage.median_filter(columnData.values[0], wv))
         except:
             print('No filtering..')
-            pdb.set_trace()
-    try:
-        block = xform_array([x_arr_, y_arr_, z_arr_], et, el)
-    except:
-        print('o')
+            # pdb.set_trace()
+    block = [x_arr_, y_arr_, z_arr_]  # previously: xform_array([x_arr_, y_arr_, z_arr_], et, el)
     return block, feat_name
 
 
 def reshape_posture_trials(a):
-    pdb.set_trace()
+    # pdb.set_trace()
     for ix, array in enumerate(a):
         if ix == 0:
             arx = a
 
         else:
             ar = np.vstack((a))
-            pdb.set_trace()
+            # pdb.set_trace()
             arx = np.concatenate((arx, ar))
     return arx
 
 
 def split_trial(posture_array, _start, window_length, pre):
-    # posture array is timexfeatx 3 x coords np array
+    """ Formats posture array of kinematic data.
+
+    Args:
+        posture_array (list of lists of array of ints): is timexfeatx 3 x coords np array returned by block_pos_extract
+        _start: list of ints which represent video frame numbers
+        window_length (int):
+        pre (int):
+
+    Returns:
+        trials_list (array of arrays ... of ints): formatted arrays
+    Notes:
+        make_s_f_trial_arrays_from_block helper
+    """
+    # posture array is timexfeatx 3 x coords np array returned by block_pos_extract
     # ML format is time x feat x coords
     #
     posture_array = np.asarray(posture_array)
@@ -240,12 +288,18 @@ def split_trial(posture_array, _start, window_length, pre):
             trials_list[i, :, :, :] = c
         except:
             print('no Kinematic Data imported')
-            return 0
-
     return trials_list
 
 
 def onehot(r_df):
+    """ Returns one hot array for robot data.
+
+    Args:
+        r_df (df): robot Dataframe for a single trial
+
+    Returns:
+        one hot array
+    """
     try:
         m = len(r_df['r_start'].values[0])
     except:
@@ -357,7 +411,7 @@ def calculate_robot_features(xpot, ypot, zpot, mstart_, mstop_):
         r1, theta1, phi1, x1, y1, z1 = forward_xform_coords(xp, yp, zp)  # units of meters
     except:
         print('bad xform')
-        pdb.set_trace()
+        # pdb.set_trace()
     # vta = np.diff(vt)
     try:
         vx = np.diff(x1) / sample_rate  # units of seconds
@@ -365,14 +419,28 @@ def calculate_robot_features(xpot, ypot, zpot, mstart_, mstop_):
         vz = np.diff(z1) / sample_rate  # units of seconds
     except:
         print('bad potentiometer derivatives')
-        pdb.set_trace()
+        # pdb.set_trace()
     # ve=np.absolute(np.gradient(np.asarray([x1,y1,z1]),axis=0))/30000
     # ae = np.gradient(ve)/3000
     return vx, vy, vz, x1, y1, z1
 
 
 def import_experiment_features(exp_array, starts, window_length, pre):
-    # features to extract from experiment array : pot_x, pot_y, pot_z, lick_array, rew_zone robot features
+    """ Extracts features from experiment array.
+        Features to extract are pot_x, pot_y, pot_z, lick_array, rew_zone robot features.
+
+    Args:
+        exp_array (df): single trial from robot DataFrame
+        starts (list of ints): list of ints corresponding to video frame numbers
+        window_length (int):
+        pre (int):
+
+    Returns:
+        exp_feat_array (list of arrays): dimensions Ntrials X Features X Length
+
+    Notes:
+        make_s_f_trial_arrays_from_block helper
+    """
     wlength = (starts[0] + window_length) - (
             starts[0] - pre)  # get length of exposures we are using for trial classification
     exp_feat_array = np.empty((len(starts), 11, wlength))  # create empty np array Ntrials X Features X Length
@@ -383,7 +451,7 @@ def import_experiment_features(exp_array, starts, window_length, pre):
             rz = exp_array['RW'].to_numpy()[0]
         except:
             print('f1')
-            pdb.set_trace()
+            # pdb.set_trace()
         try:
             rz = rz[vals - pre:vals + window_length]
             lick = exp_array['lick'].to_numpy()[0]
@@ -395,7 +463,7 @@ def import_experiment_features(exp_array, starts, window_length, pre):
             np.delete(lick_mask_array, [-1])
         except:
             print('f2')
-            pdb.set_trace()
+            # pdb.set_trace()
         try:
             vcx, vcy, vcz, xp1, yp1, zp1 = calculate_robot_features(exp_array['x_pot'].to_numpy()[0],
                                                                     exp_array['y_pot'].to_numpy()[0],
@@ -405,7 +473,7 @@ def import_experiment_features(exp_array, starts, window_length, pre):
                                                                     )
         except:
             print('bad pot data')
-            pdb.set_trace()
+            # pdb.set_trace()
         # fill in array
         # decimate potentiometer from s to exposure !~ in frames (we dont have exact a-d-c)
         try:
@@ -417,7 +485,7 @@ def import_experiment_features(exp_array, starts, window_length, pre):
             vcz = vcz[::21]
         except:
             print('bad downsample')
-            pdb.set_trace()
+            # pdb.set_trace()
         # downsample potentiometer readings to match camera exposures
         # each exposure is ~ 21hz (we sample at 3khz)
         # make same length as other features, to avoid problems with ML (this means we will lose ~5 data points at end of experiment)
@@ -430,11 +498,12 @@ def import_experiment_features(exp_array, starts, window_length, pre):
             vcz = vcz[0:wlength]
         except:
             print('bad decimate')
-            pdb.set_trace()
+            # pdb.set_trace()
         try:
             exp_feat_array[ixs, 0:3, :] = [vcx, vcy, vcz]
         except:
             print(exp_feat_array[ixs, 0:3, :])
+            print('maybe an issue?')
             continue
         try:
             exp_feat_array[ixs, 6, :] = rz
@@ -444,7 +513,7 @@ def import_experiment_features(exp_array, starts, window_length, pre):
             exp_feat_array[ixs, 10, :] = lick_mask_array[vals - pre:vals + window_length]
         except:
             print('bad robot data fit')
-    print('Finished experimental feature generation')
+    # Finished experimental feature generation
     return exp_feat_array
 
 
@@ -472,13 +541,13 @@ def get_kinematic_trial(kin_df_, rat, kdate, session):
         raise LookupError('Not in kinematic dataframe : Trial ' + rat + " " + kdate + " " + session) from None
 
 
-def make_s_f_trial_arrays_from_block(kin_df_, robot_array_, et, el, rat, date, kdate, session, wv=5, window_length=800,
+def make_s_f_trial_arrays_from_block(kin_df_, robot_df_, et, el, rat, date, kdate, session, wv=5, window_length=800,
                                      pre=100):
     """ 
     
     Args:
-        kin_df_ (df): kinematic dataframe indexed by rat,date,session,dim
-        robot_array_ (df):
+        kin_df_ (df): kinematic DateFrame indexed by rat,date,session,dim
+        robot_df_ (df): robot experimental DataFrame
         et (int):
         el (int):
         rat (str): rat ID
@@ -490,27 +559,34 @@ def make_s_f_trial_arrays_from_block(kin_df_, robot_array_, et, el, rat, date, k
         pre (int): (default 100)
     
     Returns:
-        _hot_vector:
-        _tt1:
-        _feat_labels:
-        exp_features:
+        _hot_vector (array): one hot array of robot trial data
+        _tt1 (nested array of ints): trialized kinematic data
+        _feat_labels (list of str): list of feature names from 'kin_df_'
+        exp_features (list of arrays): experimental features with dimensions Ntrials X Features X Length
     """
-    ## repl kc with kin_trial_df
-    kc = get_kinematic_trial(kin_df_, rat, kdate, session)
-    _a, _feat_labels = block_pos_extract(kc, et, el, wv)
-    r_df = utils.get_single_trial(robot_array_, date, session, rat)
-    start = r_df['r_start'].values[0]
+    # get single trial from kinematic DataFrame
+    kin_trial_df = get_kinematic_trial(kin_df_, rat, kdate, session)
+    # extract posture arrays, and feature names
+    _a, _feat_labels = block_pos_extract(kin_trial_df, et, el, wv)
+
+    # get single trial from robot DataFrame
+    r_trial_df = utils.get_single_trial(robot_df_, date, session, rat)
+
+    # get start column value, which is a list of ints corresponding to video frame numbers
+    start = r_trial_df['r_start'].values[0]
     try:
-        exp_features = import_experiment_features(r_df, start, window_length, pre)
+        exp_features = import_experiment_features(r_trial_df, start, window_length, pre)
     except:
         print('bad robot feature extraction')
-        exp_features = 0
-        pdb.set_trace()
+
+    # trialized kinematic data
     _tt1 = split_trial(_a, start, window_length, pre)
-    print('Finished trial splitting')
-    _hot_vector = onehot(r_df)
+    # Finished trial splitting
+    _hot_vector = onehot(r_trial_df)
     return _hot_vector, _tt1, _feat_labels, exp_features
 
+####################################
+####################################
 
 def match_stamps(kinematic_array_, label_array, exp_array_):
     # Create trial arrays
@@ -520,12 +596,12 @@ def match_stamps(kinematic_array_, label_array, exp_array_):
                              kinematic_array_[0].shape[2]))
     except:
         print('No Kinematic Data to Match')
-        pdb.set_trace()
+        # pdb.set_trace()
     try:
         ez_array = np.empty((len_array, exp_array_.shape[1], exp_array_.shape[2]))
     except:
         print('Bad Robot Data Pass')
-        pdb.set_trace()
+        # pdb.set_trace()
     # From label array, first column states the trial # of the row
     for dr, tval in enumerate(label_array):
         # iterate over the index and value of each trial element
@@ -693,7 +769,7 @@ def simple_classification_verification(train_labels, classifier_pipeline, ml, fe
                 continue
         except:
             print('Bad Classifier Entry (Line 500)')
-            pdb.set_trace()
+            # pdb.set_trace()
     try:
         print_preds(preds, train_labels)
     except:
