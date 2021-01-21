@@ -111,6 +111,61 @@ class TestClassificationWorkflow(TestCase):
         self.assertNotEqual(0, len(e))
         self.assertNotEqual(0, len(feats3))
 
+    def test_trial_workflow_pipeline(self):
+        """
+        Tests: Generation of final ML and feature values its helpers return non-empty values
+
+        Notes:
+            Code is same as that found in ipynb
+        """
+        # Vectorize DLC labels into ML ready format
+        elists, ev = CU.make_vectorized_labels(elist)
+        labellist, edddd = CU.make_vectorized_labels(blist1)
+        nl1lists, ev1 = CU.make_vectorized_labels(nl1)
+        nl2lists, ev2 = CU.make_vectorized_labels(nl2)
+        l18l, ev18 = CU.make_vectorized_labels(l18)
+
+        # Define variables
+        et = 0
+        el = 0
+
+        # Trialize data
+        d = self.kinematic_df
+        hdf = self.robot_df
+        hot_vector, tt, feats, e = CU.make_s_f_trial_arrays_from_block(d, hdf, et, el, 'RM16', '0190920', '0190920',
+                                                                       'S3', 9, window_length=800, pre=100)
+        hot_vector3, tt3, feats3, e3 = CU.make_s_f_trial_arrays_from_block(d, hdf, et, el, 'RM16', '0190919', '0190919',
+                                                                           'S3', 9)  # Emily label trial list
+        hot_vectornl2, ttnl2, featsnl2, enl2 = CU.make_s_f_trial_arrays_from_block(d, hdf, et, el, 'RM16', '0190917',
+                                                                                   '0190917', 'S2', 9)
+        hot_vectornl1, ttnl1, featsnl1, enl1 = CU.make_s_f_trial_arrays_from_block(d, hdf, et, el, 'RM16', '0190917',
+                                                                                   '0190917', 'S1', 9)
+        hot_vectorl18, ttl18, featsl18, el18 = CU.make_s_f_trial_arrays_from_block(d, hdf, et, el, 'RM16', '0190918',
+                                                                                   '0190918', 'S1', 9)
+        # Match
+        matched_kin_b1, ez1 = CU.match_stamps(tt, blist1, e)  # Matched to blist1
+        matched_kin_e1, ez4 = CU.match_stamps(tt3, elists, e3)  # Matched to blist4
+        matched_kin_b1nl1, eznl1 = CU.match_stamps(ttnl1, nl1lists, enl1)  # Matched to blist1
+        matched_kin_b1nl2, eznl2 = CU.match_stamps(ttnl2, nl2lists, enl2)  # Matched to blist1
+        matched_kin_e1l18, ezl18 = CU.match_stamps(ttl18, l18l, el18)  # Matched to blist4
+
+        # Slice, reshape, and concat arrays
+        c = CU.create_ML_array(matched_kin_b1, ez1)
+        c1 = CU.create_ML_array(matched_kin_e1, ez4)
+        c2 = CU.create_ML_array(matched_kin_e1l18, ezl18)
+        c3 = CU.create_ML_array(matched_kin_b1nl1, eznl1)
+        c4 = CU.create_ML_array(matched_kin_b1nl2, eznl2)
+
+        # Create final ML arrays
+        final_ML_array, final_feature_array = CU.stack_ML_arrays([c, c1, c2, c3, c4],
+                                                                 [blist1, elists, l18l, nl1lists, nl2lists])
+
+        # check return values exist
+        self.assertNotEqual(0, len(final_feature_array))
+        self.assertNotEqual(0, len(final_feature_array))
+
+
+
 #####
 # DLC labels
 # accessible to all testing classes

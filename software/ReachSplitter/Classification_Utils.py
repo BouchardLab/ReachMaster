@@ -593,6 +593,17 @@ def make_s_f_trial_arrays_from_block(kin_df_, robot_df_, et, el, rat, date, kdat
 ####################################
 
 def match_stamps(kinematic_array_, label_array, exp_array_):
+    """ Matches kinematic and experimental feature arrays with feature names
+
+    Args:
+        kinematic_array_ (nested array of ints): trialized kinematic data
+        label_array (list of list of ints and str): unprocessed DLC video labels
+        exp_array_(list of arrays): experimental features with dimensions Ntrials X Features X Length
+
+    Returns:
+        mk_array (arr of lists of ints): formatted kin data
+        ez_array (arr of lists of ints): formatted exp data
+    """
     # Create trial arrays
     len_array = len(label_array)
     try:
@@ -620,6 +631,15 @@ def match_stamps(kinematic_array_, label_array, exp_array_):
 
 
 def create_ML_array(matched_kinematics_array, matched_exp_array):
+    """ Reshapes and concats kin and experimental matched ML arrays.
+
+    Args:
+        matched_kinematics_array (arr of lists of ints): matched kin data
+        matched_exp_array (arr of lists of ints): matched exp data
+
+    Returns:
+        ctc (array of lists of ints): reshaped ML arrays for kinematics and experimental data
+    """
     mid_amt = matched_kinematics_array.shape[1] * matched_kinematics_array.shape[2]
     l = matched_kinematics_array.shape[3]
     tl = matched_kinematics_array.shape[0]
@@ -628,6 +648,17 @@ def create_ML_array(matched_kinematics_array, matched_exp_array):
 
 
 def stack_ML_arrays(list_of_k, list_of_f):
+    """ Merges and reshapes ML arrays and DLC video labeling vectors for each block.
+
+    Args:
+        list_of_k (list of nested arrays of ints): list of ML arrays for each labeled block
+        list_of_f (list of lists of lists of int): list of unprocessed DLC video trial labels for each block
+
+    Returns:
+        ogk (array of nested arrays of ints): final_ML_array
+        ogf (array of lists of ints): final_feature_array
+
+    """
     for idd, valz in enumerate(list_of_k):
         if idd == 0:
             ogk = valz
