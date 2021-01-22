@@ -768,6 +768,9 @@ def norm_and_zscore_ML_array(ML_array, robust=False, decomp=False, gauss=False):
     robust: boolean flag, use sci-kit learn robust scaling to normalize our data
     decomp : boolean flag, post-processing step used to return first whitened 20 PCA components to remove linear dependence
     gauss : boolean flag, use sci-kit learn gaussian distribution scaling to normalize our data
+
+    Returns:
+         r_ML_array (2d array): shape cut trials by (num features * frames)
     """
     # ML_array
     if robust:
@@ -777,6 +780,7 @@ def norm_and_zscore_ML_array(ML_array, robust=False, decomp=False, gauss=False):
     else:
         pt = preprocessing.MinMaxScaler()
 
+    # reshape to be number cut trials by (num features * frames)
     r_ML_array = pt.fit_transform(ML_array.reshape(ML_array.shape[0], ML_array.shape[1] * ML_array.shape[2]))
     # apply normalization to feature axis
     if decomp:  # used to decomp linear correlations, if they exist.
@@ -1004,6 +1008,7 @@ def classification_structure(ml, feature, model_, kFold=False, LOO=False, PCA_da
     """
     Args:
         ml : ML-ready feature vector containing experimental and kinematic data
+            Shape (Cut Trials, Features, Frames)
         feature : labels for each class (vectorized using blist and get_ML_labels)
         model_ : classifier (sk-Learn compatible)
         kFold : int, number of folds if using kFold cross-validation from sk-Learn
@@ -1019,16 +1024,17 @@ def classification_structure(ml, feature, model_, kFold=False, LOO=False, PCA_da
         bal:
         conf:
     Variables:
-        X_train : ML_array : array shape : (Cut Trials, Features, Frames)
-        X_test : ML_array : array shape : (Cut Trials, Features, Frames)
-        y_train : array shape : (Trails, 9). dim 9 for
+        X_train : ML_array : array shape : shape num cut trials by (num features * frames) by norm_z function
+        X_test : ML_array : array shape : shape num cut trials by (num features * frames) by norm_z function
+        y_train : array shape : (Num Trails, 9). dim 9 for
              1 int trial_num, 2 int start, 3 int stop,
              4 int trial_type, 5 int num_reaches,6 str which_hand_reach,
              7 str tug_noTug, 8 int hand_switch, 9 int num_frames
-        y_test : array shape : (Trails, 9).
+        y_test : array shape : (num Trails, 9).
         train_labels : ML labels from y_train data.
             Format: list of arrays of 0s and 1s, where each array corresponds to
-               trial type, num reaches, reach with which hand, is tug, hand switch
+               trial type, num reaches, reach with which hand, is tug, hand switch.
+               Each arrays is of len num trials.
      Returns:
          preds: list of (3 arrays of 5 elems for each classifier in hierarchy) arrays of classifier predictions
          model_
