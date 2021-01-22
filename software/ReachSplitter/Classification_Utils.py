@@ -428,36 +428,6 @@ def calculate_robot_features(xpot, ypot, zpot, mstart_, mstop_):
     return vx, vy, vz, x1, y1, z1
 
 
-def is_tug_no_tug(moving_times):
-    """
-    Function to classify trials with post-reaching behavior from well-behaved handle release.
-    Gives a simple estimate of if theres tug of war or not
-    """
-    # ask if there is robot velocity after a trial ends (for around a second)
-    reward_end_times=np.argwhere(moving_times==1)[0] # take the first index when a robot movement command is issued
-    movement_end_times = np.argwhere(moving_times == 1)[-1]
-    # Handle Probability thresholding
-    #post_trial_robot_movement = robot_vector[:,:,reward_end_times:reward_end_times+100] # get all values from end of trial to +100
-    move_time = 20 # parameter threshold needed to evoke TOW
-    # Histogram total results of this parameter
-    if movement_end_times - reward_end_times > move_time:
-        tug_preds = 1 # tug of war
-    else:
-        tug_preds = 0 # no tug of war
-    return tug_preds, movement_end_times - reward_end_times
-
-def is_reach_rewarded(lick_data_):
-    """
-    Function to simply classify trials as rewarded with water or not using sensor data from ReachMaster (lick detector).
-    Tells if the reach was rewarded or not
-    """
-    rew_lick_=0
-    if lick_data_.any():
-        if np.where(lick_data_ == 1) > 3: # filter bad lick noise
-            rew_lick_ = 1
-    return rew_lick_
-
-
 def import_experiment_features(exp_array, starts, window_length, pre):
     """ Extracts features from experiment array.
         Features to extract are pot_x, pot_y, pot_z, lick_array, rew_zone robot features.
@@ -553,61 +523,6 @@ def import_experiment_features(exp_array, starts, window_length, pre):
             print('bad robot data fit')
     print('Finished experimental feature generation')
     return exp_feat_array
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 def get_kinematic_block(kin_df_, rat, kdate, session):
@@ -758,6 +673,87 @@ def stack_ML_arrays(list_of_k, list_of_f):
             ogf = np.vstack((ogf, list_of_f[idd]))
 
     return ogk, ogf
+
+
+###########################
+# Generate Features and Aid Classification Functions
+##########################
+
+def is_tug_no_tug(moving_times):
+    """
+    Function to classify trials with post-reaching behavior from well-behaved handle release.
+    Gives a simple estimate of if theres tug of war or not
+    """
+    # ask if there is robot velocity after a trial ends (for around a second)
+    reward_end_times=np.argwhere(moving_times==1)[0] # take the first index when a robot movement command is issued
+    movement_end_times = np.argwhere(moving_times == 1)[-1]
+    # Handle Probability thresholding
+    #post_trial_robot_movement = robot_vector[:,:,reward_end_times:reward_end_times+100] # get all values from end of trial to +100
+    move_time = 20 # parameter threshold needed to evoke TOW
+    # Histogram total results of this parameter
+    if movement_end_times - reward_end_times > move_time:
+        tug_preds = 1 # tug of war
+    else:
+        tug_preds = 0 # no tug of war
+    return tug_preds, movement_end_times - reward_end_times
+
+def is_reach_rewarded(lick_data_):
+    """
+    Function to simply classify trials as rewarded with water or not using sensor data from ReachMaster (lick detector).
+    Tells if the reach was rewarded or not
+    """
+    rew_lick_=0
+    if lick_data_.any():
+        if np.where(lick_data_ == 1) > 3: # filter bad lick noise
+            rew_lick_ = 1
+    return rew_lick_
+
+
+#####
+# Functions below generate some features with the positional data
+#####
+
+def right_arm_vector_from_kinematics(tka):
+    """
+    """
+    # shape of [N, 27,3, Win
+    tz=tka[:,:,15:27,:]
+    return tz
+
+#arms = arm_vector_from_kinematics(tt)
+#import h5py
+#with h5py.File('RM16_920_S3_exp_pos_data.h5', 'w') as hf:
+#    hf.create_dataset("timeseries",  data=tt)
+#    hf.create_dataset("experimental_data", data=e)
+#    hf.create_dataset("labels",data=blist1)
+## save arms and blist to avoid memory error
+#trial_seg=[]
+
+def left_arm_vector_from_kinematics(tka):
+    # shape of [N, 27,3, Win
+    tz=tka[:,:,3:15,:]
+    return tz
+def left_int_position(left_arm):
+    left_int_pos=np.mean(left_arm[:,:,:,:],axis=2) # shape Trials x dimensions x frames
+    return left_int_pos
+def left_int_velocity(left_int_pos,time_vector=False):
+    int_vel=np.diff(left_int_pos,axis=2)
+    if time_vector:
+        int_vel=int_vel/np.diff(time_vector) # dx /dt
+    return int_vel
+def left_hand(tka):
+    lh = tka[:,:,6:15,:]
+    return lh
+def left_skeleton(tka):
+    left_skeleton = tka[:,:,3:6,:]
+    return left_skeleton
+def right_skeleton(tka):
+    right_skeleton = tka[:,:,15:18,:]
+    return right_skeleton
+def right_skeleton_velocity(right_skeleton_):
+    right_skeleton_velocity = np.diff(right_skeleton_,axis=2)
+    return right_skeleton_velocity
+
 
 #########################
 # Classification_Structure helpers
