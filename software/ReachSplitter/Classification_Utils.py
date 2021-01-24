@@ -716,19 +716,9 @@ def is_reach_rewarded(lick_data_):
 def right_arm_vector_from_kinematics(tka):
     """
     """
-    # shape of [N, 27,3, Win
+    # shape of [N, 27,3] Win
     tz=tka[:,:,15:27,:]
     return tz
-
-#arms = arm_vector_from_kinematics(tt)
-#import h5py
-#with h5py.File('RM16_920_S3_exp_pos_data.h5', 'w') as hf:
-#    hf.create_dataset("timeseries",  data=tt)
-#    hf.create_dataset("experimental_data", data=e)
-#    hf.create_dataset("labels",data=blist1)
-## save arms and blist to avoid memory error
-#trial_seg=[]
-
 def left_arm_vector_from_kinematics(tka):
     # shape of [N, 27,3, Win
     tz=tka[:,:,3:15,:]
