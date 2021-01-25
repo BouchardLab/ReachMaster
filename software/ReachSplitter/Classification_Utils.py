@@ -490,10 +490,12 @@ def calculate_robot_features(xpot, ypot, zpot, mstart_, mstop_):
         
     Notes: 
         import_experiment_features helper.
-        making 'sample_rate' too big can cause index out of bounds and empty array errors
+        making 'sample_rate' too big can cause index out of bounds and empty array errors.
+        'sampe_rate': the adc rate is to take the analog trodes time (x.xxx seconds) and 
+            transform it into the digital bit time (frames at some exposure).
     """
     # print(mstart_,mstop_)
-    sample_rate = 3000  # sample rate from analog ### TODO make smaller
+    sample_rate =  3000  # sample rate from analog
     # split into sample
     try:
         start__ = int(mstart_ * sample_rate)
@@ -504,8 +506,11 @@ def calculate_robot_features(xpot, ypot, zpot, mstart_, mstop_):
         xp = xpot[start__:stop__]
         yp = ypot[start__:stop__]
         zp = zpot[start__:stop__]
+        if (len(xp)==0):
+            print("START:", start__, "STOP:", stop__, "LEN POT ARR:", len(xpot))
+            print("sample_rate too large or start>stop index")
     except:
-        print('sample_rate too large')
+        print('bad pot data')
     try:
         r1, theta1, phi1, x1, y1, z1 = forward_xform_coords(xp, yp, zp)  # units of meters
     except:
@@ -578,7 +583,7 @@ def import_experiment_features(exp_array, starts, window_length, pre):
                                                                     exp_array['r_stop'].to_numpy()[0][ixs]
                                                                     )
         except:
-            print('bad pot data, r/m_start and stop column name error")
+            print("bad pot data, r/m_start and stop column name error")
             #pdb.set_trace()
         # fill in array
         # decimate potentiometer from s to exposure !~ in frames (we dont have exact a-d-c)
@@ -608,7 +613,8 @@ def import_experiment_features(exp_array, starts, window_length, pre):
         try:
             exp_feat_array[ixs, 0:3, :] = [vcx, vcy, vcz]
         except:
-            print(exp_feat_array[ixs, 0:3, :])
+            #print(exp_feat_array[ixs, 0:3, :])
+            print(ixs, "cannot broad cast shape, empty array error")
             continue
         try:
             exp_feat_array[ixs, 6, :] = rz
@@ -684,10 +690,10 @@ def make_s_f_trial_arrays_from_block(kin_df_, robot_df_, et, el, rat, date, kdat
 
     # get starting_frames_list column value, which is a list of ints corresponding to video frame numbers
     start = r_block_df['r_start'].values[0]
-    try:
-        exp_features = import_experiment_features(r_block_df, start, window_length, pre)
-    except:
-        print('bad robot feature extraction')
+
+    exp_features = import_experiment_features(r_block_df, start, window_length, pre)
+
+    #    print('bad robot feature extraction')
 
     # trialized kinematic data
     _tt1 = split_trial(block_pos_arr, start, window_length, pre)
@@ -1171,6 +1177,144 @@ def classification_structure(ml, feature, model_, kFold=False, LOO=False, PCA_da
     else:
         return simple_classification_verification(train_labels, classifier_pipeline, ml, feature, kFold, model_, LOO,
                                                   X_train, X_test)
+
+###################################
+# Convert Nested lists/arrays into pandas DataFrames
+##################################
+
+
+def make_vectorized_labels_to_df(labels):
+    """ Convert return value from make_vectorized_labels into a pandas df
+    
+    Args:
+        labels (arr of lists): return value from make_vectorized_labels
+    
+    Returns:
+        newdf(df)
+    
+    Examples:
+        >>> l18l, ev18 = CU.make_vectorized_labels(l18)
+        >>> make_vectorized_labels_to_df(l18l)
+    """
+    newdf = pd.DataFrame(data=labels,
+                 columns=['Trial Num', 'Start Frame', 'Stop Frame', 'Trial Type',
+                         'Num Reaches', 'Which Hand', 'Tug', 'Hand Switch', 'Num Frames'])
+    return newdf 
+
+
+
+def block_pos_extract_to_df(block):
+    """ Converts return value of block_pos_extract to pandas dataframe.
+    Args: 
+        block (list of arr): return value of block_pos_extract 
+    
+    Returns:
+        block_df (df)
+        
+    Examples:
+        >>> block_pos_arr, feature_names_list = CU.block_pos_extract(kin_block_df, et, el, wv)
+        >>> block_pos_extract_to_df(block_pos_arr)
+    
+    """
+    pos_names = [ 'Handle', 'Back Handle', 'Nose', 
+             'Left Shoulder', 'Left Forearm', 'Left Wrist', 'Left Palm', 'Left Index Base', 'Left Index Tip',
+             'Left Middle Base', 'Left Middle Tip', 'Left Third Base',
+             'Left Third Tip', 'Left Fourth Finger Base', 'Left Fourth Finger Tip', 
+             'Right Shoulder', 'Right Forearm', 'Right Wrist', 'Right Palm', 'Right Index Base',
+             'Right Index Tip', 'Right Middle Base', 'Right Middle Tip', 'Right Third Base',
+             'Right Third Tip', 'Right Fourth Finger Base','Right Fourth Finger Tip']
+
+    block_df = pd.DataFrame(data=block,
+                       index = ['X', 'Y', 'Z'],
+               columns=pos_names)
+    return block_df
+
+
+def import_experiment_features_to_df(exp_features):
+    """ Converts return value of import_experiment_features to pandas dataframe.
+    Args: 
+        exp_features (nested arrays): return value of import_experiment_features
+    
+    Returns:
+        exp_df (df)
+        
+    Examples:
+        >>> exp_features = CU.import_experiment_features(r_block_df, start, window_length, pre)
+        >>> import_experiment_features_to_df(exp_features)
+        
+    Notes:
+        Each row is a trial. 
+        unused columns 4,5,6.
+    """
+    exp_features=exp_features.tolist()
+    exp_names = ['Robot Velocity X' , 'Robot Velocity Y' , 
+                 'Robot Velocity Z' , "unused idx 4", "unused idx 5", 
+                 "unused idx 6", 'Reward Zone' , 'Robot Position X' ,
+                 'Robot Position Y' , 'Robot Position Z' , 'Licking', 'Moving' ]
+    exp_df = pd.DataFrame(data=exp_features,
+
+               columns=exp_names)
+    return exp_df
+
+
+def split_kin_trial_to_df(trials_list,start):
+    """Converts return value of split_trial to pandas dataframe.
+    
+    Args: 
+        trials_list (nested arrays): return value of split_trial
+        start(arr): for determining the number of trials in block
+    
+    Returns:
+        trialized_df (df)
+        
+    Examples:
+        >>>_tt1 = CU.split_trial(block_pos_arr, start, window_length, pre)
+        >>> split_kin_trial_to_df(_tt1,start)
+        
+    """
+    # define column names
+    Trials = np.arange(len(start))
+    pos_names = [ 'Handle', 'Back Handle', 'Nose', 
+         'Left Shoulder', 'Left Forearm', 'Left Wrist', 'Left Palm', 'Left Index Base', 'Left Index Tip',
+         'Left Middle Base', 'Left Middle Tip', 'Left Third Base',
+         'Left Third Tip', 'Left Fourth Finger Base', 'Left Fourth Finger Tip', 
+         'Right Shoulder', 'Right Forearm', 'Right Wrist', 'Right Palm', 'Right Index Base',
+         'Right Index Tip', 'Right Middle Base', 'Right Middle Tip', 'Right Third Base',
+             'Right Third Tip', 'Right Fourth Finger Base','Right Fourth Finger Tip']
+    pos = ['X', 'Y', 'Z']
+
+    # initialize temp dictionary
+    d={} 
+    for idx1 in range(len(trials_list)): # num trials
+        t_key1 = Trials[idx1]
+        d[t_key1] = {} 
+        for idx2 in range(len(trials_list[0])): # XYZ
+            p_key2 = pos[idx2]
+            d[t_key1][p_key2] = {}
+            for idx3 in range(len(trials_list[0][0])):   # pos names 
+                p_key3 = pos_names[idx3] 
+                d[t_key1][p_key2][p_key3] = trials_list[idx1][idx2][idx3] # array value
+    
+    # create df
+    # reference: https://stackoverflow.com/questions/13575090/construct-pandas-dataframe-from-items-in-nested-dictionary
+    user_dict = d
+    trialized_df = pd.DataFrame.from_dict({(i,j): user_dict[i][j] 
+                               for i in user_dict.keys() 
+                               for j in user_dict[i].keys()},
+                           orient='index')
+    return trialized_df
+
+
+
+
+###############################
+
+
+###############################
+
+
+
+
 
 
 def pearson_features(ml_array_):
