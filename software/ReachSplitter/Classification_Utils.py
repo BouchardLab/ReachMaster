@@ -343,10 +343,7 @@ def split_trial(posture_array, _start, window_length, pre):
     # jx=starting frame number
     for i, jx in enumerate(_start):
         try:
-                # c =   # get time-series segment
-                # p = posture_array[1,:, :, jx-pre: jx + window_length]
             trials_list[:, i, :, :, :] = posture_array[:, :, :, jx - pre:jx + window_length]
-                # trials_list[i,:,:,:,1] = p
         except:
             print('no Kinematic Data imported')
 
@@ -395,7 +392,7 @@ def unwind_list(strial_list):
                 tsx = np.concatenate((tsx, trial), axis=0)
             except:
                 print('concat error in unwind_list')
-                # pdb.set_trace()
+
     return tsx
 
 
@@ -630,7 +627,6 @@ def import_experiment_features(exp_array, starts, window_length, pre):
         # vcz = vcz[0: window_length+pre]
         # except:
         # print('bad decimate')
-        # pdb.set_trace()
 
         try:
             #print(xp1.shape, vcz.shape, yp1.shape)
@@ -646,7 +642,6 @@ def import_experiment_features(exp_array, starts, window_length, pre):
             # exp_feat_array[ixs, 2, :] = vcy
             # exp_feat_array[ixs, 3, :] = vcz
             except:
-                # pdb.set_trace()
                 exp_feat_array[ixs, 7, :] = xp1[::ds_rate - 1]
                 exp_feat_array[ixs, 8, :] = yp1[::ds_rate - 1]
                 exp_feat_array[ixs, 9, :] = zp1[::ds_rate - 1]
@@ -704,9 +699,10 @@ def make_s_f_trial_arrays_from_block(kin_block_df, exp_block_df, et, el, wv=5, w
     Returns:
         _hot_vector (array): one hot array of robot block data of length num trials
         _tt1 (nested array of ints): trialized kinematic data
-            (2, NumTrials, 3 for XYZ positions or prob123, NumFeatures, NumFrames)
+            shape (2, NumTrials, 3 for XYZ positions or prob123, NumFeatures, NumFrames).
         feature_names_list (list of str): list of feature names from 'kin_block_df'
-        exp_features (list of arrays): experimental features with dimensions (Num trials X Features X 'pre'+'window_length)
+        exp_features (list of arrays): experimental features
+            shape (Num trials X Features X 'pre'+'window_length).
 
     """
     # extract posture arrays, and feature names
@@ -733,70 +729,110 @@ def make_s_f_trial_arrays_from_block(kin_block_df, exp_block_df, et, el, wv=5, w
 
 
 def match_stamps(kinematic_array_, label_array, exp_array_):
-    """ Matches kinematic and experimental feature arrays with feature names
+    """ Matches kinematic and experimental data with labeled trial vectors.
 
     Args:
-        kinematic_array_ (nested array of ints): trialized kinematic data
-        label_array (list of list of ints and str): unprocessed DLC video labels
-        exp_array_(list of arrays): experimental features with dimensions Ntrials X Features X Length
+        kinematic_array_ (nested array of ints): trialized kinematic data returned from make_s_f_trial_arrays_from_block
+            shape (2, NumTrials, 3 for XYZ positions or prob123, NumFeatures, NumFrames).
+        label_array (list of list of ints and str): vectorized DLC video labels returned from make_vectorized_labels
+            shape (num labeled trials x 9 labeling features).
+        exp_array_(list of arrays): experimental features returned from make_s_f_trial_arrays_from_block
+            shape (Num trials X Features X Length)
 
     Returns:
         mk_array (arr of lists of ints): formatted kin data
+            shape (2, Num labeled Trials, 3 for XYZ positions or prob123, NumFeatures, NumFrames).
         ez_array (arr of lists of ints): formatted exp data
+            shape (Num labeled trials X Features X Length)
+
+    Examples:
+        >>> kinematic_array_.shape, exp_array_.shape
+         (2, 26, 3, 27, 6) (26, 12, 6)
+        >>> len_array
+        19
+        >>> mk_array.shape, ez_array.shape
+        (2, 19, 3, 27, 6) (19, 12, 6)
     """
     # Create trial arrays
     len_array = len(label_array)
     try:
-        mk_array = np.empty((len_array, kinematic_array_[0].shape[0], kinematic_array_[0].shape[1],
-                             kinematic_array_[0].shape[2]))
+        # (2 for XYZ and prob123, num labeled trials, 3 for XYZ or prob123, kin features, window_length+pre)
+        mk_array = np.empty((2, len_array, kinematic_array_[0].shape[1], kinematic_array_[0].shape[2],
+                             kinematic_array_[0].shape[3]))
+
     except:
         print('No Kinematic Data to Match')
-        # pdb.set_trace()
+
     try:
+        # (num labeled trials, num exp features, window_length+pre)
         ez_array = np.empty((len_array, exp_array_.shape[1], exp_array_.shape[2]))
     except:
         print('Bad Robot Data Pass')
-        # pdb.set_trace()
+
     # From label array, first column states the trial # of the row
     for dr, tval in enumerate(label_array):
+
         # iterate over the index and value of each trial element
-        ixd = int(label_array[dr][0])  # get trial #
-        # pdb.set_trace()
+        ixd = int(label_array[dr][0])  # get trial
+
+        # reshape kin and exp data
         try:
-            mk_array[ixd, :, :, :] = kinematic_array_[ixd, :, :, :]
+            mk_array[:, ixd, :, :, :] = kinematic_array_[:, ixd, :, :, :]
             ez_array[ixd, :, :] = exp_array_[ixd, :, :]
         except:
             print('Cant set kinematic and robot arrays in place')
+
     return mk_array, ez_array
 
 
 def create_ML_array(matched_kinematics_array, matched_exp_array):
-    """ Reshapes and concats kin and experimental matched ML arrays.
+    """ Reshapes and combines kin and experimental features.
 
     Args:
-        matched_kinematics_array (arr of lists of ints): matched kin data
-        matched_exp_array (arr of lists of ints): matched exp data
+        matched_kinematics_array (arr of lists of ints): matched kin data returned by match_stamps
+            shape (2 for XYZ and prob123, num labeled trials, 3, num feat, window_length+pre)
+        matched_exp_array (arr of lists of ints): matched exp data returned by match_stamps
+            shape shape (Num labeled trials X Num exp Features X window_length+pre)
 
     Returns:
-        ctc (array of lists of ints): reshaped ML arrays for kinematics and experimental data
+        kin_exp_XYZ (array of lists of ints): reshaped ML arrays for kinematics and experimental data
+            shape (num labeled trials, 3*num kin feat + num exp features, window_length+pre)
+        kin_exp_prob123: same as 'kin_exp_XYZ' except with probability values
+
     """
-    mid_amt = matched_kinematics_array.shape[1] * matched_kinematics_array.shape[2]
-    l = matched_kinematics_array.shape[3]
-    tl = matched_kinematics_array.shape[0]
-    ctc = np.concatenate((matched_kinematics_array.reshape(tl, mid_amt, l), matched_exp_array), axis=1)
-    return ctc
+    num_feat_times_3 = matched_kinematics_array.shape[2] * matched_kinematics_array.shape[3]
+    length = matched_kinematics_array.shape[4]
+    num_labeled_trials = matched_kinematics_array.shape[1]
+
+    # reshape from shape (2 for XYZ and prob123, num labeled trials, 3, num feat, window_length+pre)
+    #    into shape (2 for XYZ and prob123, num labeled trials, 3*num feat, window_length+pre)
+    reshaped_kin = matched_kinematics_array.reshape(2, num_labeled_trials, num_feat_times_3, length)
+    kin_XYZ = reshaped_kin[0]
+    kin_prob123 = reshaped_kin[1]
+
+    # append kin and exp array features
+    kin_exp_XYZ = np.concatenate((kin_XYZ, matched_exp_array), axis=1)
+    kin_exp_prob123 = np.concatenate((kin_prob123, matched_exp_array), axis=1)
+
+    return np.array(kin_exp_XYZ), np.array(kin_exp_prob123)
 
 
 def stack_ML_arrays(list_of_k, list_of_f):
-    """ Merges and reshapes ML arrays and DLC video labeling vectors for each block.
+    """ Combines ML arrays and DLC video labeling vectors for each block.
 
     Args:
         list_of_k (list of nested arrays of ints): list of ML arrays for each labeled block
-        list_of_f (list of lists of lists of int): list of unprocessed DLC video trial labels for each block
+            return value of create_ML_array
+            shape (num labeled trials, 3*num kin feat + num exp features, window_length+pre)
+        list_of_f (list of lists of lists of int): list of vectorized DLC video trial labels for each block
+            return value of make_vectorized_labels
+            shape (num labeled trials, 3*num kin feat + num exp features window_length+pre)
 
     Returns:
         ogk (array of nested arrays of ints): final_ML_array
+            shape (, 9 for DLC label features)
         ogf (array of lists of ints): final_feature_array
+            shape (total num labeled trials, 3*num kin feat+num exp features=list_of_k.shape[1], 9 for num DLC label features)
 
     """
     for idd, valz in enumerate(list_of_k):
@@ -804,8 +840,8 @@ def stack_ML_arrays(list_of_k, list_of_f):
             ogk = valz
             ogf = list_of_f[idd]
         else:
-            ogk = np.vstack((ogk, valz))
-            ogf = np.vstack((ogf, list_of_f[idd]))
+           ogk = np.vstack((ogk, valz))
+           ogf = np.vstack((ogf, list_of_f[idd]))
 
     return ogk, ogf
 
