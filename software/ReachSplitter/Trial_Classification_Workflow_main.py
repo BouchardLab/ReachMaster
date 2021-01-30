@@ -185,7 +185,6 @@ if __name__ == "__main__":
         exp_block_df18 = pd.read_pickle('exp_block_RM160190918S1')
         kin_block_df18 = pd.read_pickle('kin_block_RM160190918S1')
 
-
         # define params
         et = 0
         el = 0
@@ -197,7 +196,8 @@ if __name__ == "__main__":
         hot_vector, tt, feats, e \
             = CU.make_s_f_trial_arrays_from_block(kin_block_df, exp_block_df, et, el, wv, window_length, pre)
         hot_vector3, tt3, feats3, e3 \
-            = CU.make_s_f_trial_arrays_from_block(kin_block_df3, exp_block_df3, et, el, wv, window_length,pre)  # Emily label trial list
+            = CU.make_s_f_trial_arrays_from_block(kin_block_df3, exp_block_df3, et, el, wv, window_length,
+                                                  pre)  # Emily label trial list
         hot_vectornl1, ttnl1, featsnl1, enl1 \
             = CU.make_s_f_trial_arrays_from_block(kin_block_df1, exp_block_df1, et, el, wv, window_length, pre)
         hot_vectornl2, ttnl2, featsnl2, enl2 \
@@ -218,23 +218,33 @@ if __name__ == "__main__":
         c, c_prob = CU.create_ML_array(matched_kin_b1, ez1)
         c1, c1_prob = CU.create_ML_array(matched_kin_e1, ez4)
         c2, c2_prob = CU.create_ML_array(matched_kin_e1l18, ezl18)
-        c3, c2_prob = CU.create_ML_array(matched_kin_b1nl1, eznl1)
+        c3, c3_prob = CU.create_ML_array(matched_kin_b1nl1, eznl1)
         c4, c4_prob = CU.create_ML_array(matched_kin_b1nl2, eznl2)
 
         # Create final ML arrays
-        final_ML_array, final_feature_array = CU.stack_ML_arrays([c, c1, c2, c3, c4],
-                                                                 [labellist, elists, l18l, nl1lists, nl2lists])
+        final_ML_feature_array_XYZ, final_labels_array \
+            = CU.stack_ML_arrays([c, c1, c2, c3, c4],
+                                 [labellist, elists, l18l, nl1lists, nl2lists])
+        final_ML_feature_array_prob, _ \
+            = CU.stack_ML_arrays([c_prob, c1_prob, c2_prob, c3_prob, c4_prob],
+                                 [labellist, elists, l18l, nl1lists, nl2lists])
+
+        # concat horizontally XYZ and prob123 ml feature arrays
+        # (total num labeled trials x (3*num kin feat)*2 +num exp feat = 174 for XYZ and prob, window_length+pre)
+        final_ML_feature_array = np.concatenate((final_ML_feature_array_XYZ, final_ML_feature_array_prob), axis=1)
+
+        print(final_ML_feature_array.shape, featsl18)
 
         # Save final_ML_array and final_feature_array in h5 file
         with h5py.File('ml_array_RM16.h5', 'w') as hf:
-            hf.create_dataset("RM16", data=final_ML_array)
-            hf.create_dataset("RM16_labels", data=final_feature_array)
+            hf.create_dataset("RM16", data=final_ML_feature_array)
+            hf.create_dataset("RM16_labels", data=final_labels_array)
 
     elif args.question == 4:
         # Load final_ML_array and final_feature_array in h5 file
         f = h5py.File('ml_array_RM16.h5', 'r')
-        final_ML_array = f['RM16'][:]
-        final_feature_array = f['RM16_labels'][:]
+        final_ML_feature_array = f['RM16'][:]
+        final_labels_array = f['RM16_labels'][:]
 
 
     # elif args.question == 5:

@@ -237,7 +237,8 @@ def block_pos_extract(kin_df, et, el, wv):
             (2) three lists for prob1,2,3 column data
             Each list corresponding to X,Y, or Z or prob1,2 or 3 contains filtered arrays for each feature.
             final Posture array is 2 x 3 x feat x coords np array.
-        feat_name (list of str): collection of feature names.
+        feat_name (list of str): collection of feature names for X,Y,Z followed by probabilities 1,2,3.
+            1 for Left bodypart, 2 for Right bodypart
     Notes:
         make_s_f_trial_arrays_from_block helper
         Excludes probability column data
@@ -260,27 +261,37 @@ def block_pos_extract(kin_df, et, el, wv):
     xp_ = []
     yp_ = []
     zp_ = []
-    feat_name = []
+
+    feat_name_X = []
+    feat_name_Y = []
+    feat_name_Z = []
+    feat_name_prob1 = []
+    feat_name_prob2 = []
+    feat_name_prob3 = []
 
     # iterate across columns
     for (columnName, columnData) in kin_df.iteritems():
-        # Update column name list
-        feat_name.append(columnName)
 
         # Apply median filter to X,Y,or Z array values
         try:
             if columnName[1] == 'X':
                 x_arr_.append(ndimage.median_filter(columnData.values[0], wv))
+                feat_name_X.append(columnName)
             elif '1' in columnName[1]:
                 xp_.append(columnData.values[0])
+                feat_name_prob1.append(columnName)
             elif columnName[1] == 'Y':
                 y_arr_.append(ndimage.median_filter(columnData.values[0], wv))
+                feat_name_Y.append(columnName)
             elif '2' in columnName[1]:
                 yp_.append(columnData.values[0])
+                feat_name_prob2.append(columnName)
             elif columnName[1] == 'Z':
                 z_arr_.append(ndimage.median_filter(columnData.values[0], wv))
+                feat_name_Z.append(columnName)
             elif '3' in columnName[1]:
                 zp_.append(columnData.values[0])
+                feat_name_prob3.append(columnName)
         except:
             print('No filtering..')
 
@@ -289,6 +300,7 @@ def block_pos_extract(kin_df, et, el, wv):
         [[x_arr_, y_arr_, z_arr_], [xp_, yp_, zp_]])  # previously: xform_array([x_arr_, y_arr_, z_arr_], et, el)
 
     # print(block.shape) = (2, 3, 27, 91580)
+    feat_name = feat_name_X+feat_name_Y+feat_name_Z+feat_name_prob1+feat_name_prob2+feat_name_prob3
     return block, feat_name
 
 
@@ -796,8 +808,9 @@ def create_ML_array(matched_kinematics_array, matched_exp_array):
 
     Returns:
         kin_exp_XYZ (array of lists of ints): reshaped ML arrays for kinematics and experimental data
-            shape (num labeled trials, 3*num kin feat + num exp features, window_length+pre)
+            shape (num labeled trials, 3*num kin feat, window_length+pre)
         kin_exp_prob123: same as 'kin_exp_XYZ' except with probability values
+             shape (num labeled trials, 3*num kin feat + num exp features, window_length+pre)
 
     """
     num_feat_times_3 = matched_kinematics_array.shape[2] * matched_kinematics_array.shape[3]
@@ -811,14 +824,15 @@ def create_ML_array(matched_kinematics_array, matched_exp_array):
     kin_prob123 = reshaped_kin[1]
 
     # append kin and exp array features
-    kin_exp_XYZ = np.concatenate((kin_XYZ, matched_exp_array), axis=1)
+    #   rm exp from kin because redundant exp feat when concat with prob later
+    kin_exp_XYZ = kin_XYZ # np.concatenate((kin_XYZ, matched_exp_array), axis=1)
     kin_exp_prob123 = np.concatenate((kin_prob123, matched_exp_array), axis=1)
 
     return np.array(kin_exp_XYZ), np.array(kin_exp_prob123)
 
 
 def stack_ML_arrays(list_of_k, list_of_f):
-    """ Combines ML arrays and DLC video labeling vectors for each block.
+    """ Vertically stacks ML arrays and DLC video labeling vectors for each block.
 
     Args:
         list_of_k (list of nested arrays of ints): list of ML arrays for each labeled block
@@ -830,10 +844,15 @@ def stack_ML_arrays(list_of_k, list_of_f):
 
     Returns:
         ogk (array of nested arrays of ints): final_ML_array
-            shape (, 9 for DLC label features)
+            shape (total num labeled trials, 3*num kin feat+num exp features=list_of_k.shape[1], window_length+pre)
         ogf (array of lists of ints): final_feature_array
-            shape (total num labeled trials, 3*num kin feat+num exp features=list_of_k.shape[1], 9 for num DLC label features)
+            shape (total num labeled trials, 9 for DLC label features)
 
+    Examples:
+        >>>final_ML_array, final_feature_array
+            = CU.stack_ML_arrays([c, c1, c2, c3, c4],[labellist, elists, l18l, nl1lists, nl2lists])
+        >>>print(final_ML_array.shape, final_feature_array.shape)
+            (175, 93, 6) (175, 9) # 93 because 3 for XYZ *27 kin feat + 12 exp feat
     """
     for idd, valz in enumerate(list_of_k):
         if idd == 0:
@@ -1318,30 +1337,41 @@ def make_vectorized_labels_to_df(labels):
     return newdf
 
 
-def block_pos_extract_to_df(block):
-    """ Converts return value of block_pos_extract to pandas dataframe.
+def block_pos_extract_to_df(block, xzy_or_prob):
+    """ Converts return value of block_pos_extract to pandas dataframe
+        for kinematic data. 
+        
     Args: 
         block (list of arr): return value of block_pos_extract 
+        xzy_or_prob (int): 0 for x,y,z data, else 1 for probability 1,2,3 data
     
     Returns:
         block_df (df)
         
     Examples:
         >>> block_pos_arr, feature_names_list = CU.block_pos_extract(kin_block_df, et, el, wv)
-        >>> block_pos_extract_to_df(block_pos_arr)
+        >>> block_pos_extract_to_df(block_pos_arr, 0) # to get XYZ data
     
     """
-    pos_names = ['Handle', 'Back Handle', 'Nose',
-                 'Left Shoulder', 'Left Forearm', 'Left Wrist', 'Left Palm', 'Left Index Base', 'Left Index Tip',
-                 'Left Middle Base', 'Left Middle Tip', 'Left Third Base',
-                 'Left Third Tip', 'Left Fourth Finger Base', 'Left Fourth Finger Tip',
-                 'Right Shoulder', 'Right Forearm', 'Right Wrist', 'Right Palm', 'Right Index Base',
-                 'Right Index Tip', 'Right Middle Base', 'Right Middle Tip', 'Right Third Base',
-                 'Right Third Tip', 'Right Fourth Finger Base', 'Right Fourth Finger Tip']
-
-    block_df = pd.DataFrame(data=block,
-                            index=['X', 'Y', 'Z'],
-                            columns=pos_names)
+    # define column names
+    pos_names = [ 'Handle', 'Back Handle', 'Nose', 
+             'Left Shoulder', 'Left Forearm', 'Left Wrist', 'Left Palm', 'Left Index Base', 'Left Index Tip',
+             'Left Middle Base', 'Left Middle Tip', 'Left Third Base',
+             'Left Third Tip', 'Left Fourth Finger Base', 'Left Fourth Finger Tip', 
+             'Right Shoulder', 'Right Forearm', 'Right Wrist', 'Right Palm', 'Right Index Base',
+             'Right Index Tip', 'Right Middle Base', 'Right Middle Tip', 'Right Third Base',
+             'Right Third Tip', 'Right Fourth Finger Base','Right Fourth Finger Tip']
+    
+    # define index values
+    if (xzy_or_prob):
+        index = ['prob1', 'prob2', 'prob3']
+    else:
+        index = ['X', 'Y', 'Z']
+    
+    # create DataFrame
+    block_df = pd.DataFrame(data=block[xzy_or_prob].tolist(),
+                       index = index,
+               columns=pos_names)
     return block_df
 
 
@@ -1372,23 +1402,26 @@ def import_experiment_features_to_df(exp_features):
     return exp_df
 
 
-def split_kin_trial_to_df(trials_list, start):
+def split_kin_trial_to_df(trials_list, num_trials, xzy_or_prob):
     """Converts return value of split_trial to pandas dataframe.
     
     Args: 
         trials_list (nested arrays): return value of split_trial
-        start(arr): for determining the number of trials in block
+        num_trials(int): number of trials in block 
+            (same as len of start array value in exp data block)
+        xzy_or_prob (int): 0 for x,y,z data, else 1 for probability 1,2,3 data
     
     Returns:
         trialized_df (df)
         
     Examples:
-        >>>_tt1 = CU.split_trial(block_pos_arr, start, window_length, pre)
-        >>> split_kin_trial_to_df(_tt1,start)
+        >>>_tt18 = CU.split_trial(block_pos_arr, start, window_length, pre)
+        >>> split_kin_trial_to_df(ttl18, num_labeled_trials, 1) # where num_labeled_trials = ttl18.shape[1]
+            # gets probability data
         
     """
     # define column names
-    Trials = np.arange(len(start))
+    Trials = np.arange(num_trials)
     pos_names = ['Handle', 'Back Handle', 'Nose',
                  'Left Shoulder', 'Left Forearm', 'Left Wrist', 'Left Palm', 'Left Index Base', 'Left Index Tip',
                  'Left Middle Base', 'Left Middle Tip', 'Left Third Base',
@@ -1396,7 +1429,12 @@ def split_kin_trial_to_df(trials_list, start):
                  'Right Shoulder', 'Right Forearm', 'Right Wrist', 'Right Palm', 'Right Index Base',
                  'Right Index Tip', 'Right Middle Base', 'Right Middle Tip', 'Right Third Base',
                  'Right Third Tip', 'Right Fourth Finger Base', 'Right Fourth Finger Tip']
-    pos = ['X', 'Y', 'Z']
+    if (xzy_or_prob):
+        trials_list = trials_list[xzy_or_prob]
+        pos =  ['prob1', 'prob2', 'prob3']
+    else:
+        trials_list = trials_list[xzy_or_prob]
+        pos = ['X', 'Y', 'Z']
 
     # initialize temp dictionary
     d = {}
@@ -1419,6 +1457,38 @@ def split_kin_trial_to_df(trials_list, start):
                                           orient='index')
     return trialized_df
 
+
+def final_ML_array_to_df(final_ML_feature_array, feat_names):
+    """ Converts return value of block_pos_extract to pandas dataframe.
+    Args:
+        final_ML_feature_array (list of arr):
+            shape (total num labeled trials
+            x (3*num kin feat)*2 +num exp feat = 174 for XYZ and prob, window_length+pre)
+        feat_names (array of str): X,Y,Z then prob1,2,3 feature names for kinematic data
+            return value of make_s_f_trial_arrays_from_block
+    Returns:
+        feat_df (df): rows are total number of trials
+
+    Examples:
+        >>> final_ML_feature_array_df = final_ML_array_to_df(final_ML_feature_array, featsl18)
+
+    """
+    # define column names
+    exp_names = ['Robot Velocity X', 'Robot Velocity Y',
+                 'Robot Velocity Z', "unused idx 4", "unused idx 5",
+                 "unused idx 6", 'Reward Zone', 'Robot Position X',
+                 'Robot Position Y', 'Robot Position Z', 'Licking', 'Moving']
+
+    column_names = feat_names + exp_names  # order is XYZ, prob123, exp features
+
+    # define index values
+    index = np.arange(final_ML_feature_array.shape[0])  # len total num labeled trials
+
+    # create DataFrame
+    feat_df = pd.DataFrame(data=final_ML_feature_array.tolist(),
+                           index=index,
+                           columns=column_names)
+    return feat_df
 
 ###############################
 # 
