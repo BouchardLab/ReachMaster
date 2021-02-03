@@ -233,7 +233,7 @@ if __name__ == "__main__":
         # (total num labeled trials x (3*num kin feat)*2 +num exp feat = 174 for XYZ and prob, window_length+pre)
         final_ML_feature_array = np.concatenate((final_ML_feature_array_XYZ, final_ML_feature_array_prob), axis=1)
 
-        print(final_ML_feature_array.shape, featsl18)
+        #print(final_ML_feature_array.shape, featsl18)
 
         # Save final_ML_array and final_feature_array in h5 file
         with h5py.File('ml_array_RM16.h5', 'w') as hf:

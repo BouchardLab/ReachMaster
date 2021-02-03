@@ -726,6 +726,11 @@ def make_s_f_trial_arrays_from_block(kin_block_df, exp_block_df, et, el, wv=5, w
     # trial-ize kinematic data
     _tt1 = split_trial(block_pos_arr, start, window_length, pre)
 
+    # swap pos and prob values for trialized kin data (corrects data mismatch)
+    pos_data = _tt1[0]
+    prob_data = _tt1[1]
+    _tt1 = merge_in_swap(pos_data, prob_data, plot=False)
+
     # format exp features
     exp_features = import_experiment_features(exp_block_df, start, window_length, pre)
 
@@ -1493,30 +1498,51 @@ def final_ML_array_to_df(final_ML_feature_array, feat_names):
 ###############################
 # 
 ###############################
-def merge_in_swap(init_arm_array, ip_array):
+def merge_in_swap(init_arm_array, ip_array, plot):
+    """ Swaps XYZ position and prob123 kinematic data to correct data mismatch.
+    prob values range from (0,1) and those position values range from ~ -0.1 to 0.3
+
+    Args:
+        init_arm_array (nested arr): CU.split_trial output of trailized XYZ position kinematic data
+        ip_array (nested arr): CU.split_trial output of trailized prob123 kinematic data
+        plot (bool): True to plot data ranges, False for no plotting
+
+    Returns:
+        trialized kinematic data with appropriate XYZ and prob values
+         shape (2, NumTrials, 3 for XYZ positions or prob123, NumFeatures, NumFrames).
+
+    Examples:
+        >>>  _tt1 = split_trial(block_pos_arr, start, window_length, pre)
+        >>>  _tt1 = merge_in_swap(_tt1[0], _tt1[1], plot=False)
     """
-    args: CU.make_s_f function output of kin
-    """
-    for trials in range(0, 5):
-        plt.plot(init_arm_array[trials, 0, 7, :])
-    plt.show()
+    # swap
     c = init_arm_array[:, :, 14:27, :]
-    for trials in range(0, init_arm_array.shape[0] - 40):
-        plt.plot(c[trials, 0, :, :])
-    plt.show()
     pc = ip_array[:, :, 0:13, :]
-    for trials in range(0, init_arm_array.shape[0] - 40):
-        plt.plot(pc[trials, 0, :, :])
-    plt.show()
-    # init_arm_array[:,:,14:27,:] = pc
-    # ip_array[:,:,0:13,:] = c
-    for trials in range(0, init_arm_array.shape[0] - 40):
-        plt.plot(ip_array[trials, 0, 0:13, :])
-    plt.show()
-    for trials in range(0, 5):
-        plt.plot(init_arm_array[trials, 0, 7, :])
-    plt.show()
-    return init_arm_array, ip_array
+    init_arm_array[:,:,14:27,:] = pc
+    ip_array[:,:,0:13,:] = c
+
+    # plot to view ranges
+    if plot:
+        for trials in range(0, 5):
+            plt.plot(init_arm_array[trials, 0, 7, :])
+        plt.show()
+
+        for trials in range(0, init_arm_array.shape[0] - 40):
+            plt.plot(c[trials, 0, :, :])
+        plt.show()
+
+        for trials in range(0, init_arm_array.shape[0] - 40):
+            plt.plot(pc[trials, 0, :, :])
+        plt.show()
+        # init_arm_array[:,:,14:27,:] = pc
+        # ip_array[:,:,0:13,:] = c
+        for trials in range(0, init_arm_array.shape[0] - 40):
+            plt.plot(ip_array[trials, 0, 0:13, :])
+        plt.show()
+        for trials in range(0, 5):
+            plt.plot(init_arm_array[trials, 0, 7, :])
+        plt.show()
+    return np.array([init_arm_array, ip_array])
 
 
 def pearson_features(ml_array_):
