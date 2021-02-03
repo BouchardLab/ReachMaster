@@ -1053,6 +1053,7 @@ def get_ML_labels(fv):
     # #[int trial_num, int start, int stop,
     # int trial_type, int num_reaches, str which_hand_reach, str tug_noTug, int hand_switch, int num_frames]
     # shape (Trials, 9 ^)
+    # TODO convert to sklearn one hot encoder?
     fv = fv[:, 3:-1]  # take label catagories necessary for trial classification
     type_labels = onehot_nulls(fv[:, 0])  # labels for trial type
     num_labels = onehot_num_reaches(fv[:, 1])  # labels for num reaches in trial

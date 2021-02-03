@@ -14,6 +14,9 @@ import os.path
 from networkx.drawing.tests.test_pylab import plt
 from scipy import ndimage
 import pickle
+
+from sklearn.ensemble import RandomForestClassifier
+
 from Analysis_Utils import preprocessing_df as preprocessing
 from Analysis_Utils import query_df
 import DataStream_Vis_Utils as utils
@@ -231,21 +234,46 @@ if __name__ == "__main__":
 
         # concat horizontally XYZ and prob123 ml feature arrays
         # (total num labeled trials x (3*num kin feat)*2 +num exp feat = 174 for XYZ and prob, window_length+pre)
-        final_ML_feature_array = np.concatenate((final_ML_feature_array_XYZ, final_ML_feature_array_prob), axis=1)
+        # TODO dont do this...
+        #final_ML_feature_array = np.concatenate((final_ML_feature_array_XYZ, final_ML_feature_array_prob), axis=1) # this causes issues with norm/zscore
+
 
         #print(final_ML_feature_array.shape, featsl18)
 
         # Save final_ML_array and final_feature_array in h5 file
         with h5py.File('ml_array_RM16.h5', 'w') as hf:
-            hf.create_dataset("RM16", data=final_ML_feature_array)
+            hf.create_dataset("RM16_XYZ", data=final_ML_feature_array_XYZ)
+            hf.create_dataset("RM16_prob", data=final_ML_feature_array_prob)
             hf.create_dataset("RM16_labels", data=final_labels_array)
 
     elif args.question == 4:
         # Load final_ML_array and final_feature_array in h5 file
         f = h5py.File('ml_array_RM16.h5', 'r')
-        final_ML_feature_array = f['RM16'][:]
+        final_ML_feature_array_XYZ = f['RM16_XYZ'][:]
+        final_ML_feature_array_prob = f['RM16_prob'][:]
         final_labels_array = f['RM16_labels'][:]
 
+        # prepare classification data
+
+
+        model = RandomForestClassifier(n_estimators=100, max_depth=5)  # default args
+        #preds, model = CU.do_constant_split(model, final_ML_feature_array, final_labels_array) #Input contains NaN, infinity or a value too large for dtype('float32').
+        print(model)
+        X_train, X_test, y_train, y_test = CU.split_ML_array(final_ML_feature_array_XYZ, final_labels_array, t=0.2)
+        X_train_p, X_test_p, y_train_p, y_test_p = CU.split_ML_array(final_ML_feature_array_prob, final_labels_array, t=0.2)
+        y_train = CU.get_ML_labels(y_train)
+        X_train = CU.norm_and_zscore_ML_array(X_train, robust=False, decomp=False, gauss=False)
+
+        ### norm XYZ but not prob? #TODO DONT norm/zscore probability values...
+        X_train_p = X_train_p.reshape(X_train_p.shape[0], X_train_p.shape[1] * X_train_p.shape[2])
+
+        print(X_train.shape, X_train_p.shape)
+        print(np.concatenate((X_train, X_train_p), axis=1).shape)
+        X_train = np.concatenate((X_train, X_train_p), axis=1)
+
+        for i, vals in enumerate(y_train):
+            model.fit(X_train, vals)
+        print(model)
 
     # elif args.question == 5:
     # main_q5()
