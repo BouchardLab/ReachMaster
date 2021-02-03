@@ -13,10 +13,10 @@ from software.preprocessing.trodes_data import experiment_data_parser as trodes_
 from software.preprocessing.trodes_data.experiment_data_parser import get_exposure_times
 
 
-def init_nwb_file(file_name, source_script, experimenter, session_start_time):
+def init_nwb_file(file_name, source_script, experimenter, session_start_time,metadata_list):
     subject_id, date, session_id = file_name.split("_")
     nwb_file = pynwb.NWBFile(
-        session_description='reaching without borders',  # required
+        session_description='reaching_without_borders',  # required
         identifier=file_name,  # required
         session_start_time=session_start_time,  # required
         experimenter=experimenter,
@@ -24,9 +24,23 @@ def init_nwb_file(file_name, source_script, experimenter, session_start_time):
         file_create_date=datetime.now(tzlocal()),
         source_script=source_script
     )
-    subject = pynwb.file.Subject(subject_id=subject_id)  # consider adding more metadata
-    nwb_file.subject = subject
     return nwb_file
+
+
+def add_metadata(list_of_metadata,nwb_file_):
+    """
+    Function to add metadata to block NWB file
+    Inputs:
+    list_of_metadata : List of metadata, [ Subject, ...]
+    nwb_file_: Nwb file being passed into metadata
+
+    Outputs:
+    nwb_file_: Nwb file being passed into metadata
+
+    """
+    subject = pynwb.file.Subject(subject_id=list_of_metadata[0])  # consider adding more metadata
+    nwb_file_.subject = subject
+    return nwb_file_
 
 
 def save_nwb_file(nwb_file, save_dir):
@@ -117,15 +131,52 @@ def add_controller_data(nwb_file, controller_data):
     return nwb_file
 
 
-def config_to_nwb(nwb_file, config_dir):
-    config_data = import_config_data(config_dir)
-    # session_id
-    # stimulus_notes
-    # devices
+def add_positional_data(nwb_file, position_block):
+    """
+
+    """
+    p_file = pynwb.behavior.BehavioralEpochs(name='positional_data') #
+    t=0
+    for key in position_block.columns():
+        if 'X' in key:
+
+        if 'Y' in key:
+
+        if 'Z' in key:
+
+        if 'c1' in key:
+
+        if 'c2' in key:
+
+        if 'c3' in key:
+
+        if 'rmse' in key:
+            continue
+
+            #interval_series = pynwb.misc.IntervalSeries(
+             #   name=key,
+              #  data=[1, -1],
+               # timestamps=[start_times[0], stop_times[0]]
+            #)
+            #for i in range(len(start_times))[1:]:
+            #    interval_series.add_interval(
+             #       start=float(start_times[i]),
+             #       stop=float(stop_times[i])
+             #   )
+            #p_file.add_interval_series(interval_series)
+    nwb_file.add_acquisition(p_file)
     return nwb_file
 
 
-def add_config(nwb_file, config_data):
+def config_to_nwb(nwb_file, config_dir):
+    config_data = import_config_data(config_dir)
+    for key in config_data.keys(): # each dict has a key,
+        parse = config_data[key]
+        for item in parse.keys():
+            # What to add, what class
+    # session_id
+    # stimulus_notes
+    # devices
     return nwb_file
 
 
