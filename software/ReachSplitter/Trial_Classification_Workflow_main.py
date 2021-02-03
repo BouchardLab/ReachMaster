@@ -31,70 +31,6 @@ import numpy as np
 import h5py
 
 
-def load_kin_exp_data(kin_name, robot_name):
-    """
-    Loads data.
-    Args:
-        kin_name (str): file path to kinematic data
-        robot_name (str): file path to robot experimental data
-
-    Returns:
-        kin (pandas DataFrame): kinematic data
-        exp (pandas DataFrame): experimental data
-    """
-    # read and format kinematic data
-    d = CU.pkl_to_df(kin_name)
-
-    # read robot experimental data
-    hdf = pd.read_pickle(robot_name)
-    hdf = hdf.reset_index(drop=True)
-
-    return d, hdf
-
-
-def save_to_hdf(file_name, key, data):
-    """
-    Saves data as HDF file in current working directory
-    Args:
-        file_name (str): name of saved file
-        key (str): group identifier to access data in file
-        data: data to save
-
-    Returns: None
-
-    Notes: check permissions
-        so do not overwrite previously written data
-
-    """
-    # non DataFrame types
-    if os.path.exists(file_name):
-        hf = h5py.File(file_name, 'r+')
-        if key in hf.keys():
-            # update data
-            hf[key][:] = data
-        else:
-            # add data to pre-existing file
-            hf[key] = data
-    else:
-        # create file and add data
-        hf = h5py.File(file_name, 'w')
-        hf[key] = data
-
-
-def load_hdf(file_name, key):
-    """
-    Loads a HDF file.
-    Args:
-        file_name: (str) name of file to load.
-        key (str): group identifier to access data in file
-
-    Returns: data in file.
-
-    """
-    read_file = h5py.File(file_name, 'r')
-    return read_file[key][:]
-
-
 #######################
 # MAIN
 #######################
@@ -118,12 +54,12 @@ if __name__ == "__main__":
         file_name = "vectorized_labels"
         key_names = ['elists', 'labellist', 'nl1lists', 'nl2lists', 'l18l']
         for i in np.arange(len(vectorized_labels)):
-            save_to_hdf(file_name, key_names[i], vectorized_labels[i])
+            CU.save_to_hdf(file_name, key_names[i], vectorized_labels[i])
 
 
     elif args.question == 2:
         # load kinematic and experimental data
-        kin_df, exp_df = load_kin_exp_data('tkd16.pkl', 'experimental_data.pickle')
+        kin_df, exp_df = CU.load_kin_exp_data('tkd16.pkl', 'experimental_data.pickle')
 
         # get blocks
         #   rat (str): rat ID
@@ -166,11 +102,11 @@ if __name__ == "__main__":
 
     elif args.question == 3:
         # load vectorized labels
-        l18l = load_hdf("vectorized_labels", 'l18l')
-        nl1lists = load_hdf("vectorized_labels", 'nl1lists')
-        elists = load_hdf("vectorized_labels", 'elists')
-        labellist = load_hdf("vectorized_labels", 'labellist')
-        nl2lists = load_hdf("vectorized_labels", 'nl2lists')
+        l18l = CU.load_hdf("vectorized_labels", 'l18l')
+        nl1lists = CU.load_hdf("vectorized_labels", 'nl1lists')
+        elists = CU.load_hdf("vectorized_labels", 'elists')
+        labellist = CU.load_hdf("vectorized_labels", 'labellist')
+        nl2lists = CU.load_hdf("vectorized_labels", 'nl2lists')
 
         # load saved block pickles
         exp_block_df = pd.read_pickle('exp_block_RM160190920S3')
@@ -257,22 +193,30 @@ if __name__ == "__main__":
 
 
         model = RandomForestClassifier(n_estimators=100, max_depth=5)  # default args
-        #preds, model = CU.do_constant_split(model, final_ML_feature_array, final_labels_array) #Input contains NaN, infinity or a value too large for dtype('float32').
-        print(model)
+
+        # partition data into test, train
         X_train, X_test, y_train, y_test = CU.split_ML_array(final_ML_feature_array_XYZ, final_labels_array, t=0.2)
         X_train_p, X_test_p, y_train_p, y_test_p = CU.split_ML_array(final_ML_feature_array_prob, final_labels_array, t=0.2)
-        y_train = CU.get_ML_labels(y_train)
-        X_train = CU.norm_and_zscore_ML_array(X_train, robust=False, decomp=False, gauss=False)
+        type_labels_y_train, num_labels_y_train, hand_labels_y_train, tug_labels_y_train, switch_labels_y_train \
+            = CU.get_ML_labels(y_train)
+        type_labels_y_test, num_labels_y_test, hand_labels_y_test, tug_labels_y_test, switch_labels_y_test \
+            = CU.get_ML_labels(y_test)
 
-        ### norm XYZ but not prob? #TODO DONT norm/zscore probability values...
+        # norm XYZ but NOT prob
+        # reshape to (cut trials, num features * frames)
+        X_train = CU.norm_and_zscore_ML_array(X_train, robust=False, decomp=False, gauss=False) # no need anymore
+
+        # reshape prob to (cut trials, num features * frames)
         X_train_p = X_train_p.reshape(X_train_p.shape[0], X_train_p.shape[1] * X_train_p.shape[2])
+
+        # create final X_train feature array
+       # X_train = np.concatenate((X_train, X_train_p), axis=1)
+
 
         print(X_train.shape, X_train_p.shape)
         print(np.concatenate((X_train, X_train_p), axis=1).shape)
-        X_train = np.concatenate((X_train, X_train_p), axis=1)
 
-        for i, vals in enumerate(y_train):
-            model.fit(X_train, vals)
+        model.fit(X_train, hand_labels_y_train)
         print(model)
 
     # elif args.question == 5:

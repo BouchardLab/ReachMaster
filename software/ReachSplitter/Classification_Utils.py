@@ -10,12 +10,13 @@
 """
 
 import numpy as np
+import pandas as pd
+
 from networkx.drawing.tests.test_pylab import plt
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.model_selection import train_test_split, KFold, cross_val_score
 from sklearn import decomposition
 from sklearn import preprocessing
-import pandas as pd
 import pdb
 from sklearn.pipeline import make_pipeline
 from yellowbrick.model_selection import CVScores
@@ -24,6 +25,10 @@ from Classification_Visualization import visualize_model, print_preds, plot_deci
 from yellowbrick.classifier import ClassificationReport
 import DataStream_Vis_Utils as utils
 from scipy import ndimage
+
+# for saving and loading files
+import h5py
+import os.path
 
 
 ####################################
@@ -980,8 +985,8 @@ def create_arm_feature_arrays_trial(a, e_d, p_d, ii, left=False, hand=False):
         else:
             a_ = a[ii, :, 16:19, :]  # sum over shoulder, forearm, palm, wrist
     # pdb.set_trace()
-    for tc in range(0, 3):
-        a_[:, tc, :] = prob_mask_segmentation(p_d[ii, :, :, :], a_[:, tc, :])  # threshold possible reach values
+    #for tc in range(0, 3):
+        #a_[:, tc, :] = prob_mask_segmentation(p_d[ii, :, :, :], a_[:, tc, :])  # threshold possible reach values
     # pdb.set_trace()
     return a_
 
@@ -991,17 +996,17 @@ def create_arm_feature_arrays_trial(a, e_d, p_d, ii, left=False, hand=False):
 #########################
 
 def norm_and_zscore_ML_array(ML_array, robust=False, decomp=False, gauss=False):
-    """
+    """ Unused. Replaced by sklearn pipeline.
     default preprocessing is simple MinMax L1 norm
-    input
-    ML_array : array shape : (Cut Trials, Features, Frames)   where Cut Trials refers to either the number of Trials
-    inside the testing data or training data (Don't call this function for just the total ML data, split beforehand..)
-    robust: boolean flag, use sci-kit learn robust scaling to normalize our data
-    decomp : boolean flag, post-processing step used to return first whitened 20 PCA components to remove linear dependence
-    gauss : boolean flag, use sci-kit learn gaussian distribution scaling to normalize our data
+    Args:
+        ML_array : array shape : (Cut Trials, Features, Frames)   where Cut Trials refers to either the number of Trials
+        inside the testing data or training data (Don't call this function for just the total ML data, split beforehand..)
+        robust: boolean flag, use sci-kit learn robust scaling to normalize our data
+        decomp : boolean flag, post-processing step used to return first whitened 20 PCA components to remove linear dependence
+        gauss : boolean flag, use sci-kit learn gaussian distribution scaling to normalize our data
 
     Returns:
-         r_ML_array (2d array): shape cut trials by (num features * frames)
+         r_ML_array (2d array): shape (cut trials, num features * frames)
     """
     # ML_array
     if robust:
@@ -1322,7 +1327,68 @@ def classification_structure(ml, feature, model_, kFold=False, LOO=False, PCA_da
 ###################################
 # Convert Nested lists/arrays into pandas DataFrames
 ##################################
+def load_kin_exp_data(kin_name, robot_name):
+    """
+    Loads data.
+    Args:
+        kin_name (str): file path to kinematic data
+        robot_name (str): file path to robot experimental data
 
+    Returns:
+        kin (pandas DataFrame): kinematic data
+        exp (pandas DataFrame): experimental data
+    """
+    # read and format kinematic data
+    d = pkl_to_df(kin_name)
+
+    # read robot experimental data
+    hdf = pd.read_pickle(robot_name)
+    hdf = hdf.reset_index(drop=True)
+
+    return d, hdf
+
+
+def save_to_hdf(file_name, key, data):
+    """
+    Saves data as HDF file in current working directory
+    Args:
+        file_name (str): name of saved file
+        key (str): group identifier to access data in file
+        data: data to save
+
+    Returns: None
+
+    Notes: check permissions
+        so do not overwrite previously written data
+
+    """
+    # non DataFrame types
+    if os.path.exists(file_name):
+        hf = h5py.File(file_name, 'r+')
+        if key in hf.keys():
+            # update data
+            hf[key][:] = data
+        else:
+            # add data to pre-existing file
+            hf[key] = data
+    else:
+        # create file and add data
+        hf = h5py.File(file_name, 'w')
+        hf[key] = data
+
+
+def load_hdf(file_name, key):
+    """
+    Loads a HDF file.
+    Args:
+        file_name: (str) name of file to load.
+        key (str): group identifier to access data in file
+
+    Returns: data in file.
+
+    """
+    read_file = h5py.File(file_name, 'r')
+    return read_file[key][:]
 
 def make_vectorized_labels_to_df(labels):
     """ Convert return value from make_vectorized_labels into a pandas df
