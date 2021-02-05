@@ -20,7 +20,7 @@ from sklearn.ensemble import RandomForestClassifier
 from Analysis_Utils import preprocessing_df as preprocessing
 from Analysis_Utils import query_df
 import DataStream_Vis_Utils as utils
-import Classification_Utils as CU
+import CU_SCRIPT.Classification_Utils as CU
 import pandas as pd
 import pdb
 import matplotlib
@@ -30,7 +30,11 @@ from Classification_Visualization import visualize_models
 import numpy as np
 import h5py
 
-
+# classification
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.model_selection import cross_val_score
+from sklearn.pipeline import make_pipeline
+from sklearn import preprocessing
 #######################
 # MAIN
 #######################
@@ -171,32 +175,36 @@ if __name__ == "__main__":
         # concat horizontally XYZ and prob123 ml feature arrays
         # (total num labeled trials x (3*num kin feat)*2 +num exp feat = 174 for XYZ and prob, window_length+pre)
         # TODO dont do this...
-        #final_ML_feature_array = np.concatenate((final_ML_feature_array_XYZ, final_ML_feature_array_prob), axis=1) # this causes issues with norm/zscore
+        final_ML_feature_array = np.concatenate((final_ML_feature_array_XYZ, final_ML_feature_array_prob), axis=1) # this causes issues with norm/zscore
 
 
         #print(final_ML_feature_array.shape, featsl18)
 
         # Save final_ML_array and final_feature_array in h5 file
         with h5py.File('ml_array_RM16.h5', 'w') as hf:
-            hf.create_dataset("RM16_XYZ", data=final_ML_feature_array_XYZ)
-            hf.create_dataset("RM16_prob", data=final_ML_feature_array_prob)
+            hf.create_dataset("RM16_features", data=final_ML_feature_array)
             hf.create_dataset("RM16_labels", data=final_labels_array)
 
     elif args.question == 4:
         # Load final_ML_array and final_feature_array in h5 file
-        f = h5py.File('ml_array_RM16.h5', 'r')
-        final_ML_feature_array_XYZ = f['RM16_XYZ'][:]
-        final_ML_feature_array_prob = f['RM16_prob'][:]
-        final_labels_array = f['RM16_labels'][:]
-
+        with h5py.File('ml_array_RM16.h5', 'r') as f:
+            final_ML_feature_array = f['RM16_features'][:]
+            final_labels_array = f['RM16_labels'][:]
         # prepare classification data
 
 
         model = RandomForestClassifier(n_estimators=100, max_depth=5)  # default args
 
+
+        # reshape features to be (num trials, num feat * num frames)
+        final_ML_feature_array = final_ML_feature_array.reshape(final_ML_feature_array.shape[0],
+                                                                final_ML_feature_array.shape[1] *
+                                                                final_ML_feature_array.shape[2])
+
+
         # partition data into test, train
-        X_train, X_test, y_train, y_test = CU.split_ML_array(final_ML_feature_array_XYZ, final_labels_array, t=0.2)
-        X_train_p, X_test_p, y_train_p, y_test_p = CU.split_ML_array(final_ML_feature_array_prob, final_labels_array, t=0.2)
+        X_train, X_test, y_train, y_test = CU.split_ML_array(final_ML_feature_array, final_labels_array, t=0.2)
+
         type_labels_y_train, num_labels_y_train, hand_labels_y_train, tug_labels_y_train, switch_labels_y_train \
             = CU.get_ML_labels(y_train)
         type_labels_y_test, num_labels_y_test, hand_labels_y_test, tug_labels_y_test, switch_labels_y_test \
@@ -204,17 +212,21 @@ if __name__ == "__main__":
 
         # norm XYZ but NOT prob
         # reshape to (cut trials, num features * frames)
-        X_train = CU.norm_and_zscore_ML_array(X_train, robust=False, decomp=False, gauss=False) # no need anymore
+        #X_train = CU.norm_and_zscore_ML_array(X_train, robust=False, decomp=False, gauss=False) # no need anymore
 
         # reshape prob to (cut trials, num features * frames)
-        X_train_p = X_train_p.reshape(X_train_p.shape[0], X_train_p.shape[1] * X_train_p.shape[2])
+        #X_train_p = X_train_p.reshape(X_train_p.shape[0], X_train_p.shape[1] * X_train_p.shape[2])
 
         # create final X_train feature array
        # X_train = np.concatenate((X_train, X_train_p), axis=1)
 
+        classifier_pipeline = make_pipeline(preprocessing.StandardScaler(), model)
+        score = cross_val_score(classifier_pipeline, X_train, hand_labels_y_train, cv=3)
+        print(np.mean(score))
 
-        print(X_train.shape, X_train_p.shape)
-        print(np.concatenate((X_train, X_train_p), axis=1).shape)
+
+        print(X_train.shape, X_train.shape)
+        #print(np.concatenate((X_train, X_train), axis=1).shape)
 
         model.fit(X_train, hand_labels_y_train)
         print(model)
