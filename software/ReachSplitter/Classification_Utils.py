@@ -1048,9 +1048,9 @@ def hand_type_onehot(hand_labels_, simple=True):
     # 'lr': 2 , 'l' : 1, 'bi' : 3 , 'lbi' : 4, 'r': 0,
     hand_type_label = np.zeros((hand_labels_.shape[0]))
     if simple:
-        hand_type_label[np.where(hand_labels_ > 1)] = 1  # classify all non r,l reaches as 0 vector
+        hand_type_label[np.where(hand_labels_ > 1)] = 1  # classify all non r,l reaches as 1
     else:
-        hand_type_label[np.where(hand_labels_ > 2)] = 1  # classify 0 as r, l + 'rl'
+        hand_type_label[np.where(hand_labels_ > 2)] = 1  # classify 0 as r/l
     return hand_type_label
 
 
@@ -1322,6 +1322,8 @@ def classification_structure(ml, feature, model_, kFold=False, LOO=False, PCA_da
     else:
         return simple_classification_verification(train_labels, classifier_pipeline, ml, feature, kFold, model_, LOO,
                                                   X_train, X_test)
+
+
 
 
 ###################################

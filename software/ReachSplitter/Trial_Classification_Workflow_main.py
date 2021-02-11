@@ -35,6 +35,140 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import cross_val_score
 from sklearn.pipeline import make_pipeline
 from sklearn import preprocessing
+
+
+def classify(model, X, Y, k):
+    """
+    Classifies trials as null vs not null.
+    Args:
+        model: sklearn model
+        X_train (array): features, shape (num trials, num feat*num frames)
+        hand_labels_y_train (array): labels shape (num trials)
+        k (int): number of kfolds for cross validation score
+
+    Returns:
+        classifier_pipeline (pipeline): trained model
+        predictions (array): classifier trial predictions
+        score (int): mean of cross validation scores
+    """
+    # create pipeline
+    classifier_pipeline = make_pipeline(preprocessing.StandardScaler(), model)
+
+    # fit to training data
+    classifier_pipeline.fit(X, Y)
+
+    # calculate mean of kfold cv
+    score = np.mean(cross_val_score(classifier_pipeline, X, Y, cv=k))
+
+    # predict X_train data
+    predictions = classifier_pipeline.predict(X)
+
+    return classifier_pipeline, predictions, score
+
+
+def remove_trials(X, Y, preds, toRemove):
+    """
+    Removes trials from labels after classification.
+    Used to prepare data for next classification in hierarchy.
+    Args:
+        X (array): features, shape (num trials, num feat*num frames)
+        Y (array): labels
+        shape # type_labels_y_train, num_labels_y_train, hand_labels_y_train, tug_labels_y_train, switch_labels_y_train
+        preds (array): classifier trial predictions
+        toRemove: 0 to remove trials classified as 0, 1 otherwise
+
+    Returns:
+        X (array): filtered
+        Y (array): filtered
+
+    Notes:
+        Preserves order of values
+        Careful to remove values in X and corresponding Y labels for each class!
+    """
+    new_X = []
+    new_Y = []
+    trial_indices_X = len(X)
+    # delete trials backwards
+    # for each class of labels
+    for y_arr in Y:
+        i = trial_indices_X - 1
+        new = []
+        for _ in np.arange(trial_indices_X):
+            if preds[i] != toRemove:
+                new.append(y_arr[i])
+            i = i - 1
+        new_Y.append(new)
+
+    # remove x trials
+    j = trial_indices_X - 1
+    for _ in np.arange(trial_indices_X):
+        if preds[j] != toRemove:
+            new_X.append(X[j])
+        j = j - 1
+    return np.array(new_X), np.array(new_Y)
+
+
+def main_4():
+    # Load final_ML_array and final_feature_array in h5 file
+    with h5py.File('ml_array_RM16.h5', 'r') as f:
+        final_ML_feature_array = f['RM16_features'][:]
+        final_labels_array = f['RM16_labels'][:]
+
+    # TODO feature engineering
+
+    ### prepare classification data ###
+
+    # reshape features to be (num trials, num feat * num frames)
+    final_ML_feature_array = final_ML_feature_array.reshape(final_ML_feature_array.shape[0],
+                                                            final_ML_feature_array.shape[1] *
+                                                            final_ML_feature_array.shape[2])
+
+    # partition data into test, train
+    X_train, X_test, y_train, y_test = CU.split_ML_array(final_ML_feature_array, final_labels_array, t=0.2)
+
+    # type_labels_y_train, num_labels_y_train, hand_labels_y_train, tug_labels_y_train, switch_labels_y_train \
+    y_train = CU.get_ML_labels(y_train)
+    y_test = CU.get_ML_labels(y_test)
+
+
+    ### classify ###
+
+    # init basic variables
+    model = RandomForestClassifier(n_estimators=100, max_depth=5)  # default args
+    k = 3
+
+    # 1. NULL V NOT NULL
+    type_labels_y_train = y_train[0]
+    classifier_pipeline_null, predictions_null, score_null = classify(model, X_train, type_labels_y_train, k)
+
+    #print(predictions_null, score_null)
+
+    # REMOVE NULL TRIALS
+    toRemove = 1  # remove null trials # 1 if null, 0 if real trial
+    print(np.array(X_train).shape, np.array(y_train).shape)
+    X_train_null, y_train_null = remove_trials(X_train, y_train, predictions_null, toRemove)
+    print(X_train_null.shape, y_train_null.shape)
+
+    # 2. NUM REACHES
+    num_labels_y_train = y_train_null[1]
+    classifier_pipeline_reaches, predictions_reaches, score_reaches = classify(model, X_train_null, num_labels_y_train,
+                                                                               k)
+    # REMOVE >1 REACH TRIALS
+    toRemove = 1  # remove >1 reaches # 0 if <1, 1 if > 1 reaches
+    X_train_reaches, y_train_reaches = remove_trials(X_train_null, y_train_null, predictions_reaches, toRemove)
+    print(X_train_reaches.shape, y_train_reaches.shape)
+
+    # 2. WHICH HAND
+    hand_labels_y_train = y_train_reaches[2]
+    classifier_pipeline_hand, predictions_hand, score_hand = classify(model, X_train_reaches, hand_labels_y_train,
+                                                                               k)
+    # REMOVE lra/rla/bi HAND TRIALS
+    toRemove = 1  # remove lra/rla/bi reaches # 1 if lra/rla/bi, 0 l/r reaches
+    X_train_hand, y_train_hand = remove_trials(X_train_reaches, y_train_reaches, predictions_hand, toRemove)
+    print(X_train_hand.shape, y_train_hand.shape)
+
+    print(score_null, score_hand, score_reaches)
+
 #######################
 # MAIN
 #######################
@@ -174,11 +308,10 @@ if __name__ == "__main__":
 
         # concat horizontally XYZ and prob123 ml feature arrays
         # (total num labeled trials x (3*num kin feat)*2 +num exp feat = 174 for XYZ and prob, window_length+pre)
-        # TODO dont do this...
-        final_ML_feature_array = np.concatenate((final_ML_feature_array_XYZ, final_ML_feature_array_prob), axis=1) # this causes issues with norm/zscore
+        final_ML_feature_array = np.concatenate((final_ML_feature_array_XYZ, final_ML_feature_array_prob),
+                                                axis=1)  # this causes issues with norm/zscore
 
-
-        #print(final_ML_feature_array.shape, featsl18)
+        # print(final_ML_feature_array.shape, featsl18)
 
         # Save final_ML_array and final_feature_array in h5 file
         with h5py.File('ml_array_RM16.h5', 'w') as hf:
@@ -186,50 +319,8 @@ if __name__ == "__main__":
             hf.create_dataset("RM16_labels", data=final_labels_array)
 
     elif args.question == 4:
-        # Load final_ML_array and final_feature_array in h5 file
-        with h5py.File('ml_array_RM16.h5', 'r') as f:
-            final_ML_feature_array = f['RM16_features'][:]
-            final_labels_array = f['RM16_labels'][:]
-        # prepare classification data
 
-
-        model = RandomForestClassifier(n_estimators=100, max_depth=5)  # default args
-
-
-        # reshape features to be (num trials, num feat * num frames)
-        final_ML_feature_array = final_ML_feature_array.reshape(final_ML_feature_array.shape[0],
-                                                                final_ML_feature_array.shape[1] *
-                                                                final_ML_feature_array.shape[2])
-
-
-        # partition data into test, train
-        X_train, X_test, y_train, y_test = CU.split_ML_array(final_ML_feature_array, final_labels_array, t=0.2)
-
-        type_labels_y_train, num_labels_y_train, hand_labels_y_train, tug_labels_y_train, switch_labels_y_train \
-            = CU.get_ML_labels(y_train)
-        type_labels_y_test, num_labels_y_test, hand_labels_y_test, tug_labels_y_test, switch_labels_y_test \
-            = CU.get_ML_labels(y_test)
-
-        # norm XYZ but NOT prob
-        # reshape to (cut trials, num features * frames)
-        #X_train = CU.norm_and_zscore_ML_array(X_train, robust=False, decomp=False, gauss=False) # no need anymore
-
-        # reshape prob to (cut trials, num features * frames)
-        #X_train_p = X_train_p.reshape(X_train_p.shape[0], X_train_p.shape[1] * X_train_p.shape[2])
-
-        # create final X_train feature array
-       # X_train = np.concatenate((X_train, X_train_p), axis=1)
-
-        classifier_pipeline = make_pipeline(preprocessing.StandardScaler(), model)
-        score = cross_val_score(classifier_pipeline, X_train, hand_labels_y_train, cv=3)
-        print(np.mean(score))
-
-
-        print(X_train.shape, X_train.shape)
-        #print(np.concatenate((X_train, X_train), axis=1).shape)
-
-        model.fit(X_train, hand_labels_y_train)
-        print(model)
+        main_4()
 
     # elif args.question == 5:
     # main_q5()
