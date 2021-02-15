@@ -1612,6 +1612,65 @@ def remove_trials(X, Y, preds, toRemove):
     return np.array(new_X), np.array(new_Y)
 
 
+def reshape_final_ML_array_to_df(num_frames, X, feat_names):
+    """ Returns final feature df reshaped.
+
+    Args:
+        num_frames (int): number of frames taken
+        X (arr): (num trials, num feat * num frames)
+        feat_names (list): kin names
+
+    Returns a df.
+    """
+    exp_names = ['Robot Velocity X', 'Robot Velocity Y',
+                 'Robot Velocity Z', "unused idx 4", "unused idx 5",
+                 "unused idx 6", 'Reward Zone', 'Robot Position X',
+                 'Robot Position Y', 'Robot Position Z', 'Licking', 'Moving']
+    exp_names = exp_names
+    column_names = feat_names + exp_names
+    reshaped_col_names = []
+
+    # make col names
+    for i in np.arange(len(column_names)):
+        for j in np.arange(num_frames):
+            s = column_names[i]
+            new_s = str(s) + " f" + str(j)
+            reshaped_col_names.append(str(new_s))
+
+    # define index values
+    index = np.arange(X.shape[0])  # len total num labeled trials
+
+    # create DataFrame
+    feat_df = pd.DataFrame(data=X,
+                           index=index,
+                           columns=reshaped_col_names)
+    return feat_df
+
+
+def select_feat_by_keyword(feat_df, keywords):
+    """ Returns data from selected features.
+    Args:
+        feat_df(df): df of features
+        keywords(list of str): list of feature column names to select
+
+    Returns:
+        df: of selected features
+        arr: same data as df, just in array form
+
+    """
+    feat_names_arr = np.array(feat_df.columns)
+    selected_data = []
+
+    # select data
+    for keyword in keywords:
+        selected_cols = np.array([s for s in feat_names_arr if keyword in s])
+        new_feat_arr = feat_df[selected_cols]
+        selected_data.append(new_feat_arr)
+
+    df = pd.concat(selected_data, axis=1)
+    arr = df.values
+    return df, arr
+
 ###############################
 # Other
 ###############################

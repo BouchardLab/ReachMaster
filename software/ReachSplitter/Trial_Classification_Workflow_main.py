@@ -11,6 +11,7 @@
 import argparse
 import os.path
 
+import sklearn
 from networkx.drawing.tests.test_pylab import plt
 from scipy import ndimage
 import pickle
@@ -193,6 +194,8 @@ def main_3_ml_feat_labels(save=False):
             hf.create_dataset("RM16_features", data=final_ML_feature_array)
             hf.create_dataset("RM16_labels", data=final_labels_array)
         print("Saved final ml feat and label arrays.")
+        with open('feat_names.npy', 'wb') as f:
+            np.save(f, feats)
 
     print("Finished creating final ML feat and labels.")
     return final_ML_feature_array, final_labels_array
@@ -232,12 +235,18 @@ def main_4_classify(save=False):
     with h5py.File('ml_array_RM16.h5', 'r') as f:
         final_ML_feature_array = f['RM16_features'][:]
         final_labels_array = f['RM16_labels'][:]
+    with open('feat_names.npy', 'rb') as f:
+        feat_names = np.load(f)
+    feat_names = [str(t[0]) for t in feat_names]  # un-nest
+
 
     # TODO feature engineering
+    # TODO test set format
 
     ### prepare classification data ###
 
     # reshape features to be (num trials, num feat * num frames)
+    num_frames = final_ML_feature_array.shape[2]
     final_ML_feature_array = final_ML_feature_array.reshape(final_ML_feature_array.shape[0],
                                                             final_ML_feature_array.shape[1] *
                                                             final_ML_feature_array.shape[2])
@@ -252,35 +261,58 @@ def main_4_classify(save=False):
     ### classify ###
 
     # init basic variables
-    model = RandomForestClassifier(n_estimators=100, max_depth=5)  # default args
     k = 3
 
     # 1. NULL V NOT NULL
+    model = RandomForestClassifier(n_estimators=100, max_depth=5)  # default args
+
+    # 1a. feature selection
+    keywords = ['Nose', 'Handle']
+    feat_df = CU.reshape_final_ML_array_to_df(num_frames, X_train, feat_names)
+    _, X_train_selected = CU.select_feat_by_keyword(feat_df, keywords)
+
+    # 1b.
     type_labels_y_train = y_train[0]
-    classifier_pipeline_null, predictions_null, score_null = classify(model, X_train, type_labels_y_train, k)
+    classifier_pipeline_null, predictions_null, score_null = classify(model, X_train_selected, type_labels_y_train, k)
 
     # print(predictions_null, score_null)
 
-    # REMOVE NULL TRIALS
+    # 1c. REMOVE NULL TRIALS
     toRemove = 1  # remove null trials # 1 if null, 0 if real trial
     print(np.array(X_train).shape, np.array(y_train).shape)
     X_train_null, y_train_null = CU.remove_trials(X_train, y_train, predictions_null, toRemove)
     print(X_train_null.shape, y_train_null.shape)
 
     # 2. NUM REACHES
+    model = sklearn.svm.SVC()
+
+    # 2a. feature selection
+    keywords = ['Palm', 'Handle', 'Robot']
+    feat_df = CU.reshape_final_ML_array_to_df(num_frames, X_train_null, feat_names)
+    _, X_train_selected = CU.select_feat_by_keyword(feat_df, keywords)
+
+    # 2b. classify
     num_labels_y_train = y_train_null[1]
-    classifier_pipeline_reaches, predictions_reaches, score_reaches = classify(model, X_train_null, num_labels_y_train,
+    classifier_pipeline_reaches, predictions_reaches, score_reaches = classify(model, X_train_selected, num_labels_y_train,
                                                                                k)
-    # REMOVE >1 REACH TRIALS
+    # 2c. REMOVE >1 REACH TRIALS
     toRemove = 1  # remove >1 reaches # 0 if <1, 1 if > 1 reaches
     X_train_reaches, y_train_reaches = CU.remove_trials(X_train_null, y_train_null, predictions_reaches, toRemove)
     print(X_train_reaches.shape, y_train_reaches.shape)
 
-    # 2. WHICH HAND
+    # 3. WHICH HAND
+    model = RandomForestClassifier()
+
+    # 3a. feature selection
+    keywords = ['Robot', 'Palm']
+    feat_df = CU.reshape_final_ML_array_to_df(num_frames, X_train_reaches, feat_names)
+    _, X_train_selected = CU.select_feat_by_keyword(feat_df, keywords)
+
+    # 3b. classify
     hand_labels_y_train = y_train_reaches[2]
-    classifier_pipeline_hand, predictions_hand, score_hand = classify(model, X_train_reaches, hand_labels_y_train,
+    classifier_pipeline_hand, predictions_hand, score_hand = classify(model, X_train_selected, hand_labels_y_train,
                                                                       k)
-    # REMOVE lra/rla/bi HAND TRIALS
+    # 3c. REMOVE lra/rla/bi HAND TRIALS
     toRemove = 1  # remove lra/rla/bi reaches # 1 if lra/rla/bi, 0 l/r reaches
     X_train_hand, y_train_hand = CU.remove_trials(X_train_reaches, y_train_reaches, predictions_hand, toRemove)
     print(X_train_hand.shape, y_train_hand.shape)
