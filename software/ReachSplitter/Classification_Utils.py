@@ -305,7 +305,7 @@ def block_pos_extract(kin_df, et, el, wv):
         [[x_arr_, y_arr_, z_arr_], [xp_, yp_, zp_]])  # previously: xform_array([x_arr_, y_arr_, z_arr_], et, el)
 
     # print(block.shape) = (2, 3, 27, 91580)
-    feat_name = feat_name_X+feat_name_Y+feat_name_Z+feat_name_prob1+feat_name_prob2+feat_name_prob3
+    feat_name = feat_name_X + feat_name_Y + feat_name_Z + feat_name_prob1 + feat_name_prob2 + feat_name_prob3
     return block, feat_name
 
 
@@ -534,7 +534,7 @@ def calculate_robot_features(xpot, ypot, zpot, mstart_, mstop_, etimes, wle, pre
         # pdb.set_trace()
         print('bad sampling conversion')
 
-    #print(start__, stop__)
+    # print(start__, stop__)
     try:
         # print("START:", start__, "STOP:", stop__, "LEN POT ARR:", len(xpot))
         xp = xpot[start__:stop__]
@@ -585,7 +585,7 @@ def import_experiment_features(exp_array, starts, window_length, pre):
     """
     # features to extract from experiment array : pot_x, pot_y, pot_z, lick_array, rew_zone robot features
     wlength = (starts[0] + window_length) - (
-                starts[0] - pre)  # get length of exposures we are using for trial classification
+            starts[0] - pre)  # get length of exposures we are using for trial classification
 
     # create empty np array Ntrials X Features X wlength
     exp_feat_array = np.empty((len(starts), 12, wlength))
@@ -646,7 +646,7 @@ def import_experiment_features(exp_array, starts, window_length, pre):
         # print('bad decimate')
 
         try:
-            #print(xp1.shape, vcz.shape, yp1.shape)
+            # print(xp1.shape, vcz.shape, yp1.shape)
             ds_rate = int(xp1.shape[0] / (window_length + pre))  # n frames of analog / n frames of digital
             exp_feat_array[ixs, 0, :] = exp_save_time
             exp_feat_array[ixs, 6, :] = rz
@@ -668,7 +668,7 @@ def import_experiment_features(exp_array, starts, window_length, pre):
         except:
             print('bad robot data fit')
 
-    #print('Finished experimental feature generation')
+    # print('Finished experimental feature generation')
     return exp_feat_array
 
 
@@ -723,7 +723,7 @@ def make_s_f_trial_arrays_from_block(kin_block_df, exp_block_df, et, el, wv=5, w
 
     """
     # extract posture arrays, and feature names
-    block_pos_arr, feature_names_list = block_pos_extract(kin_block_df, et, el, wv) # TODO fix feat names lists?
+    block_pos_arr, feature_names_list = block_pos_extract(kin_block_df, et, el, wv)  # TODO fix feat names lists?
 
     # get starting_frames_list column value, which is a list of ints corresponding to video frame numbers
     start = exp_block_df['r_start'].values[0]
@@ -744,6 +744,7 @@ def make_s_f_trial_arrays_from_block(kin_block_df, exp_block_df, et, el, wv=5, w
 
     # Finished trial splitting
     return _hot_vector, _tt1, feature_names_list, exp_features
+
 
 ################################
 # 4. Create ML and Feature arrays
@@ -835,7 +836,7 @@ def create_ML_array(matched_kinematics_array, matched_exp_array):
 
     # append kin and exp array features
     #   rm exp from kin because redundant exp feat when concat with prob later
-    kin_exp_XYZ = kin_XYZ # np.concatenate((kin_XYZ, matched_exp_array), axis=1)
+    kin_exp_XYZ = kin_XYZ  # np.concatenate((kin_XYZ, matched_exp_array), axis=1)
     kin_exp_prob123 = np.concatenate((kin_prob123, matched_exp_array), axis=1)
 
     return np.array(kin_exp_XYZ), np.array(kin_exp_prob123)
@@ -869,8 +870,8 @@ def stack_ML_arrays(list_of_k, list_of_f):
             ogk = valz
             ogf = list_of_f[idd]
         else:
-           ogk = np.vstack((ogk, valz))
-           ogf = np.vstack((ogf, list_of_f[idd]))
+            ogk = np.vstack((ogk, valz))
+            ogf = np.vstack((ogf, list_of_f[idd]))
 
     return ogk, ogf
 
@@ -985,8 +986,8 @@ def create_arm_feature_arrays_trial(a, e_d, p_d, ii, left=False, hand=False):
         else:
             a_ = a[ii, :, 16:19, :]  # sum over shoulder, forearm, palm, wrist
     # pdb.set_trace()
-    #for tc in range(0, 3):
-        #a_[:, tc, :] = prob_mask_segmentation(p_d[ii, :, :, :], a_[:, tc, :])  # threshold possible reach values
+    # for tc in range(0, 3):
+    # a_[:, tc, :] = prob_mask_segmentation(p_d[ii, :, :, :], a_[:, tc, :])  # threshold possible reach values
     # pdb.set_trace()
     return a_
 
@@ -1324,8 +1325,6 @@ def classification_structure(ml, feature, model_, kFold=False, LOO=False, PCA_da
                                                   X_train, X_test)
 
 
-
-
 ###################################
 # Convert Nested lists/arrays into pandas DataFrames
 ##################################
@@ -1390,8 +1389,9 @@ def load_hdf(file_name, key):
     """
     read_file = h5py.File(file_name, 'r')
     rv = read_file[key][:]
-    read_file.close()
+    read_file.close()  # so don't corrupt files
     return rv
+
 
 def make_vectorized_labels_to_df(labels):
     """ Convert return value from make_vectorized_labels into a pandas df
@@ -1429,24 +1429,24 @@ def block_pos_extract_to_df(block, xzy_or_prob):
     
     """
     # define column names
-    pos_names = [ 'Handle', 'Back Handle', 'Nose', 
-             'Left Shoulder', 'Left Forearm', 'Left Wrist', 'Left Palm', 'Left Index Base', 'Left Index Tip',
-             'Left Middle Base', 'Left Middle Tip', 'Left Third Base',
-             'Left Third Tip', 'Left Fourth Finger Base', 'Left Fourth Finger Tip', 
-             'Right Shoulder', 'Right Forearm', 'Right Wrist', 'Right Palm', 'Right Index Base',
-             'Right Index Tip', 'Right Middle Base', 'Right Middle Tip', 'Right Third Base',
-             'Right Third Tip', 'Right Fourth Finger Base','Right Fourth Finger Tip']
-    
+    pos_names = ['Handle', 'Back Handle', 'Nose',
+                 'Left Shoulder', 'Left Forearm', 'Left Wrist', 'Left Palm', 'Left Index Base', 'Left Index Tip',
+                 'Left Middle Base', 'Left Middle Tip', 'Left Third Base',
+                 'Left Third Tip', 'Left Fourth Finger Base', 'Left Fourth Finger Tip',
+                 'Right Shoulder', 'Right Forearm', 'Right Wrist', 'Right Palm', 'Right Index Base',
+                 'Right Index Tip', 'Right Middle Base', 'Right Middle Tip', 'Right Third Base',
+                 'Right Third Tip', 'Right Fourth Finger Base', 'Right Fourth Finger Tip']
+
     # define index values
     if (xzy_or_prob):
         index = ['prob1', 'prob2', 'prob3']
     else:
         index = ['X', 'Y', 'Z']
-    
+
     # create DataFrame
     block_df = pd.DataFrame(data=block[xzy_or_prob].tolist(),
-                       index = index,
-               columns=pos_names)
+                            index=index,
+                            columns=pos_names)
     return block_df
 
 
@@ -1506,7 +1506,7 @@ def split_kin_trial_to_df(trials_list, num_trials, xzy_or_prob):
                  'Right Third Tip', 'Right Fourth Finger Base', 'Right Fourth Finger Tip']
     if (xzy_or_prob):
         trials_list = trials_list[xzy_or_prob]
-        pos =  ['prob1', 'prob2', 'prob3']
+        pos = ['prob1', 'prob2', 'prob3']
     else:
         trials_list = trials_list[xzy_or_prob]
         pos = ['X', 'Y', 'Z']
@@ -1565,8 +1565,55 @@ def final_ML_array_to_df(final_ML_feature_array, feat_names):
                            columns=column_names)
     return feat_df
 
+
 ###############################
-# 
+# Classification Hierarchy
+###############################
+
+def remove_trials(X, Y, preds, toRemove):
+    """
+    Removes trials from labels after classification.
+    Used to prepare data for next classification in hierarchy.
+    Args:
+        X (array): features, shape (num trials, num feat*num frames)
+        Y (array): labels
+        shape # type_labels_y_train, num_labels_y_train, hand_labels_y_train, tug_labels_y_train, switch_labels_y_train
+        preds (array): classifier trial predictions
+        toRemove: 0 to remove trials classified as 0, 1 otherwise
+
+    Returns:
+        X (array): filtered
+        Y (array): filtered
+
+    Notes:
+        Preserves order of values
+        Careful to remove values in X and corresponding Y labels for each class!
+    """
+    new_X = []
+    new_Y = []
+    trial_indices_X = len(X)
+    # delete trials backwards
+    # for each class of labels
+    for y_arr in Y:
+        i = trial_indices_X - 1
+        new = []
+        for _ in np.arange(trial_indices_X):
+            if preds[i] != toRemove:
+                new.append(y_arr[i])
+            i = i - 1
+        new_Y.append(new)
+
+    # remove x trials
+    j = trial_indices_X - 1
+    for _ in np.arange(trial_indices_X):
+        if preds[j] != toRemove:
+            new_X.append(X[j])
+        j = j - 1
+    return np.array(new_X), np.array(new_Y)
+
+
+###############################
+# Other
 ###############################
 def merge_in_swap(init_arm_array, ip_array, plot):
     """ Swaps XYZ position and prob123 kinematic data to correct data mismatch.
@@ -1588,8 +1635,8 @@ def merge_in_swap(init_arm_array, ip_array, plot):
     # swap
     c = init_arm_array[:, :, 14:27, :]
     pc = ip_array[:, :, 0:13, :]
-    init_arm_array[:,:,14:27,:] = pc
-    ip_array[:,:,0:13,:] = c
+    init_arm_array[:, :, 14:27, :] = pc
+    ip_array[:, :, 0:13, :] = c
 
     # plot to view ranges
     if plot:
