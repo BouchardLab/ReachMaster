@@ -41,11 +41,12 @@ def main_1_vec_labels(save=False):
     # vectorize DLC labels into ML ready format
     # make_vectorized_labels returns list: vectorized list of labels,
     # e: vectorized array of reading indices (unused variables)
-    elists, ev = CU.make_vectorized_labels(CU.elist)
-    labellist, edddd = CU.make_vectorized_labels(CU.blist1)
-    nl1lists, ev1 = CU.make_vectorized_labels(CU.nl1)
-    nl2lists, ev2 = CU.make_vectorized_labels(CU.nl2)
-    l18l, ev18 = CU.make_vectorized_labels(CU.l18)
+    elists, ev = CU.make_vectorized_labels(CU.elist)  # RM16, 09-19-2019, S3
+    labellist, edddd = CU.make_vectorized_labels(CU.blist1)  # RM16, DATE 9-20, S3
+    nl1lists, ev1 = CU.make_vectorized_labels(CU.nl1)  # RM16, 9-18, S1
+    nl2lists, ev2 = CU.make_vectorized_labels(CU.nl2)  # RM16, 9-17, S2
+    l18l, ev18 = CU.make_vectorized_labels(CU.l18)  # RM16, 9-17, S1
+
     vectorized_labels = [elists, labellist, nl1lists, nl2lists, l18l]
 
     if save:
@@ -61,6 +62,7 @@ def main_1_vec_labels(save=False):
     print("Finished vectorizing labels.")
     return vectorized_labels
 
+
 def main_2_kin_exp_blocks(save=False):
     # load kinematic and experimental data
     kin_df, exp_df = CU.load_kin_exp_data('tkd16.pkl', 'experimental_data.pickle')
@@ -75,7 +77,7 @@ def main_2_kin_exp_blocks(save=False):
         ['RM16', '0190919', '0190919', 'S3'],
         ['RM16', '0190917', '0190917', 'S2'],
         ['RM16', '0190917', '0190917', 'S1'],
-        ['RM16', '0190918', '0190918', 'S1']
+        ['RM16', '0190918', '0190918', 'S1'],
     ]
     kin_blocks = []
     exp_blocks = []
@@ -110,12 +112,15 @@ def main_2_kin_exp_blocks(save=False):
 
 
 def main_3_ml_feat_labels(save=False):
+    # TODO make it easier to add more labels?
+
     # load vectorized labels
     l18l = CU.load_hdf("vectorized_labels", 'l18l')
     nl1lists = CU.load_hdf("vectorized_labels", 'nl1lists')
     elists = CU.load_hdf("vectorized_labels", 'elists')
     labellist = CU.load_hdf("vectorized_labels", 'labellist')
     nl2lists = CU.load_hdf("vectorized_labels", 'nl2lists')
+
 
     # load saved block pickles
     exp_block_df = pd.read_pickle('exp_block_RM160190920S3')
@@ -133,12 +138,13 @@ def main_3_ml_feat_labels(save=False):
     exp_block_df18 = pd.read_pickle('exp_block_RM160190918S1')
     kin_block_df18 = pd.read_pickle('kin_block_RM160190918S1')
 
+
     # define params
     et = 0
     el = 0
     wv = 5
-    window_length = 4
-    pre = 2
+    window_length = 4  # TODO change to preferences, default = 250
+    pre = 2  # TODO change to preferences, default = 10
 
     # trial-ize data
     hot_vector, tt, feats, e \
@@ -156,10 +162,10 @@ def main_3_ml_feat_labels(save=False):
     # Match with trial labeled vectors
     # match_stamps args: kin array, label array, exp array
     matched_kin_b1, ez1 = CU.match_stamps(tt, labellist, e)  # Matched to blist1
-    matched_kin_e1, ez4 = CU.match_stamps(tt3, elists, e3)  # Matched to blist4
-    matched_kin_b1nl1, eznl1 = CU.match_stamps(ttnl1, nl1lists, enl1)  # Matched to blist1
-    matched_kin_e1l18, ezl18 = CU.match_stamps(ttl18, l18l, el18)  # Matched to blist4
-    matched_kin_b1nl2, eznl2 = CU.match_stamps(ttnl2, nl2lists, enl2)  # Matched to blist1
+    matched_kin_e1, ez4 = CU.match_stamps(tt3, elists, e3)  # Matched to
+    matched_kin_b1nl1, eznl1 = CU.match_stamps(ttnl1, nl1lists, enl1)  # Matched to
+    matched_kin_e1l18, ezl18 = CU.match_stamps(ttl18, l18l, el18)  # Matched to
+    matched_kin_b1nl2, eznl2 = CU.match_stamps(ttnl2, nl2lists, enl2)  # Matched to
 
     # match kin and exp features
     # create_ML_array args: matched kin array, matched ez array
@@ -170,12 +176,11 @@ def main_3_ml_feat_labels(save=False):
     c4, c4_prob = CU.create_ML_array(matched_kin_b1nl2, eznl2)
 
     # Create final ML arrays
+    vectorized_labels = [labellist, elists, l18l, nl1lists, nl2lists]
     final_ML_feature_array_XYZ, final_labels_array \
-        = CU.stack_ML_arrays([c, c1, c2, c3, c4],
-                             [labellist, elists, l18l, nl1lists, nl2lists])
+        = CU.stack_ML_arrays([c, c1, c2, c3, c4], vectorized_labels)
     final_ML_feature_array_prob, _ \
-        = CU.stack_ML_arrays([c_prob, c1_prob, c2_prob, c3_prob, c4_prob],
-                             [labellist, elists, l18l, nl1lists, nl2lists])
+        = CU.stack_ML_arrays([c_prob, c1_prob, c2_prob, c3_prob, c4_prob], vectorized_labels)
 
     # concat horizontally XYZ and prob123 ml feature arrays
     # (total num labeled trials x (3*num kin feat)*2 +num exp feat = 174 for XYZ and prob, window_length+pre)
@@ -289,23 +294,23 @@ def main_4_classify(save=False):
 #######################
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--question", "-q", type=int, default=1, help="Specify which function to run")
+    parser.add_argument("--function", "-f", type=int, default=1, help="Specify which function to run")
     args = parser.parse_args()
 
-    if args.question == 1:
+    if args.function == 1:
         main_1_vec_labels(save=True)
 
-    elif args.question == 2:
+    elif args.function == 2:
         main_2_kin_exp_blocks(save=True)
 
-    elif args.question == 3:
+    elif args.function == 3:
         main_3_ml_feat_labels(save=True)
 
-    elif args.question == 4:
+    elif args.function == 4:
         main_4_classify(save=True)
 
-    elif args.question == 5:
-        run_all_and_save = False # change to preferences
+    elif args.function == 5:
+        run_all_and_save = True  # change to preferences
 
         # MUST DELETE ALL OLD DATA FILES BEFORE RUNNING if NOT using default args
         # run all
