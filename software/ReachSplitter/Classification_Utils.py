@@ -723,7 +723,7 @@ def make_s_f_trial_arrays_from_block(kin_block_df, exp_block_df, et, el, wv=5, w
 
     """
     # extract posture arrays, and feature names
-    block_pos_arr, feature_names_list = block_pos_extract(kin_block_df, et, el, wv)
+    block_pos_arr, feature_names_list = block_pos_extract(kin_block_df, et, el, wv) # TODO fix feat names lists?
 
     # get starting_frames_list column value, which is a list of ints corresponding to video frame numbers
     start = exp_block_df['r_start'].values[0]
@@ -1176,7 +1176,7 @@ def structured_classification(ml, feature, model_,
         # check for important class, then train inputs
         if idx == 0:  # Reach vs Null
 
-            #
+            # TODO
             # predict null or reach trial type
             # update preds == ...
             # split_n_reaches(ml)
@@ -1197,7 +1197,7 @@ def structured_classification(ml, feature, model_,
 
         if idx == 1:  # num reaches, 1 vs >1
 
-            #
+            # TODO
             # predict num reaches=1 or >1
             # n_zero_ml_array = get_nreach_classification()
             # if trial contains > int x reaches,
@@ -1219,7 +1219,7 @@ def structured_classification(ml, feature, model_,
 
         if idx == 2:  # which hand reaches: l/r vs lra,bi,rla
 
-            #
+            # TODO
             # for isx in range(0, ml_cut.shape[0]):
             # classify LR or [LRA, RLA, BI]
             # preds_arm1 = pred_arm(ml_cut[isx,:,:,:])
@@ -1324,54 +1324,6 @@ def classification_structure(ml, feature, model_, kFold=False, LOO=False, PCA_da
                                                   X_train, X_test)
 
 
-###############################
-# Classification Hierarchy
-###############################
-def remove_trials(X, Y, preds, toRemove):
-    """
-    Removes trials from labels after classification.
-    Used to prepare data for next classification in hierarchy.
-    Args:
-        X (array): features, shape (num trials, num feat*num frames)
-        Y (array): labels
-        shape # type_labels_y_train, num_labels_y_train, hand_labels_y_train, tug_labels_y_train, switch_labels_y_train
-        preds (array): classifier trial predictions
-        toRemove: 0 to remove trials classified as 0, 1 otherwise
-
-    Returns:
-        X (array): filtered
-        Y (array): filtered
-
-    Notes:
-        Preserves order of values
-        Careful to remove values in X and corresponding Y labels for each class!
-    """
-    new_X = []
-    new_Y = []
-    trial_indices_X = len(X)
-    # delete trials backwards
-    # for each class of labels
-    for y_arr in Y:
-        i = trial_indices_X - 1
-        new = []
-        for _ in np.arange(trial_indices_X):
-            if preds[i] != toRemove:
-                new.append(y_arr[i])
-            i = i - 1
-        new_Y.append(new)
-
-    # remove x trials
-    j = trial_indices_X - 1
-    for _ in np.arange(trial_indices_X):
-        if preds[j] != toRemove:
-            new_X.append(X[j])
-        j = j - 1
-    return np.array(new_X), np.array(new_Y)
-
-
-
-
-
 
 
 ###################################
@@ -1399,7 +1351,7 @@ def load_kin_exp_data(kin_name, robot_name):
 
 
 def save_to_hdf(file_name, key, data):
-    """
+    """ Un-used.
     Saves data as HDF file in current working directory
     Args:
         file_name (str): name of saved file
@@ -1408,9 +1360,8 @@ def save_to_hdf(file_name, key, data):
 
     Returns: None
 
-    Notes:
-        Check permissions so do not overwrite previously written data
-        Ensure proper open/closing so do not corrupt file.
+    Notes: check permissions
+        so do not overwrite previously written data
 
     """
     # non DataFrame types
@@ -1436,10 +1387,11 @@ def load_hdf(file_name, key):
         key (str): group identifier to access data in file
 
     Returns: data in file.
-
     """
     read_file = h5py.File(file_name, 'r')
-    return read_file[key][:]
+    rv = read_file[key][:]
+    read_file.close()
+    return rv
 
 def make_vectorized_labels_to_df(labels):
     """ Convert return value from make_vectorized_labels into a pandas df
