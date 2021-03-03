@@ -70,12 +70,13 @@ def main_1_vec_labels(labels, key_names, save=False, ):
     return vectorized_labels
 
 
-def main_2_kin_exp_blocks(kin_data, exp_data, block_names, save=False):
+def main_2_kin_exp_blocks(kin_data, exp_data, all_block_names, save=False):
     """ Gets blocks from kinematic and experimental data.
     Args:
-        kin_data (str): path to kinematic data file
+        kin_data (list of str): path to kinematic data files
         exp_data (str): path to kinematic data file
-        block_names (list of lists of str): block keys corresponding to those in data
+        block_names (list of lists of str): for each rat, block keys corresponding to those in data
+            shape num kin data files by num blocks to take from that data file by
         save (bool): True to save, False (default) otherwise
 
     Returns:
@@ -84,44 +85,60 @@ def main_2_kin_exp_blocks(kin_data, exp_data, block_names, save=False):
         kin_file_names (list of str)
         exp_file_names (list of str)
     """
-    # load kinematic and experimental data
-    kin_df, exp_df = CU.load_kin_exp_data(kin_data, exp_data)
+    all_kin_blocks = []
+    all_exp_blocks = []
+    all_kin_file_names = []
+    all_exp_file_names = []
 
-    # get blocks
-    #   rat (str): rat ID
-    #   date (str): block date in robot_df_
-    #   kdate (str): block date in kin_df_
-    #   session (str): block session
-    kin_blocks = []
-    exp_blocks = []
-    for i in np.arange(len(block_names)):
+    # for each rat
+    for i in np.arange(len(kin_data)):
+        # load kinematic and experimental data
+        kin_df, exp_df = CU.load_kin_exp_data(kin_data[i], exp_data)
+        block_names = all_block_names[i]
+
         # get blocks
-        rat, kdate, date, session = block_names[i]
-        kin_block_df = CU.get_kinematic_block(kin_df, rat, kdate, session)
-        exp_block_df = utils.get_single_block(exp_df, date, session, rat)
+        #   rat (str): rat ID
+        #   date (str): block date in robot_df_
+        #   kdate (str): block date in kin_df_
+        #   session (str): block session
+        kin_blocks = []
+        exp_blocks = []
+        for i in np.arange(len(block_names)):
+            # get blocks
+            rat, kdate, date, session = block_names[i]
+            kin_block_df = CU.get_kinematic_block(kin_df, rat, kdate, session)
+            exp_block_df = utils.get_single_block(exp_df, date, session, rat)
 
-        # append blocks
-        kin_blocks.append(kin_block_df)
-        exp_blocks.append(exp_block_df)
+            # append blocks
+            kin_blocks.append(kin_block_df)
+            exp_blocks.append(exp_block_df)
 
-    # save kinematic and experimental blocks
-    kin_file_names = []
-    exp_file_names = []
-    for i in np.arange(len(block_names)):
-        rat, kdate, date, session = block_names[i]
-        key = rat + kdate + session
-        kin_block_name = 'kin_block' + "_" + key
-        exp_block_name = 'exp_block' + "_" + key
-        kin_file_names.append(kin_block_name)
-        exp_file_names.append(exp_block_name)
-        if save:
-            kin_blocks[i].to_pickle(kin_block_name)
-            exp_blocks[i].to_pickle(exp_block_name)
+        # save kinematic and experimental blocks
+        kin_file_names = []
+        exp_file_names = []
+        for i in np.arange(len(block_names)):
+            rat, kdate, date, session = block_names[i]
+            kin_key = rat + kdate + session
+            exp_key = rat + date + session
+            kin_block_name = 'kin_block' + "_" + kin_key
+            exp_block_name = 'exp_block' + "_" + exp_key
+            kin_file_names.append(kin_block_name)
+            exp_file_names.append(exp_block_name)
+            if save:
+                kin_blocks[i].to_pickle(kin_block_name)
+                exp_blocks[i].to_pickle(exp_block_name)
+
+        # append results
+        all_kin_blocks = all_kin_blocks + kin_blocks
+        all_exp_blocks = all_exp_blocks + exp_blocks
+        all_kin_file_names = all_kin_file_names + kin_file_names
+        all_exp_file_names = all_exp_file_names + exp_file_names
 
     if save:
         print("Saved kin & exp blocks.")
     print("Finished creating kin & exp blocks.")
-    return kin_blocks, exp_blocks, kin_file_names, exp_file_names
+
+    return all_kin_blocks, all_exp_blocks, all_kin_file_names, all_exp_file_names
 
 
 def main_3_ml_feat_labels(vectorized_labels, label_key_names,
@@ -353,14 +370,15 @@ if __name__ == "__main__":
                        'rm16_9_18_s1_label'
                        ]
     # blocks
-    kin_data_path = 'tkd16.pkl'
+    kin_data_path = ['tkd16.pkl']
     exp_data_path = 'experimental_data.pickle'
     block_names = [
-        ['RM16', '0190920', '0190920', 'S3'],
-        ['RM16', '0190919', '0190919', 'S3'],
-        ['RM16', '0190917', '0190917', 'S2'],
-        ['RM16', '0190917', '0190917', 'S1'],
-        ['RM16', '0190918', '0190918', 'S1'],
+        [['RM16', '0190920', '0190920', 'S3'],
+         ['RM16', '0190919', '0190919', 'S3'],
+         ['RM16', '0190917', '0190917', 'S2'],
+         ['RM16', '0190917', '0190917', 'S1'],
+         ['RM16', '0190918', '0190918', 'S1']]
+
     ]
 
     # define params for trializing blocks
@@ -377,18 +395,20 @@ if __name__ == "__main__":
         main_2_kin_exp_blocks(kin_data_path, exp_data_path, block_names, save=True)
 
     elif args.function == 3:
-        kin_blocks, exp_blocks, kin_file_names, exp_file_names = main_2_kin_exp_blocks(kin_data_path, exp_data_path, block_names, save=False)
+        kin_blocks, exp_blocks, kin_file_names, exp_file_names = main_2_kin_exp_blocks(kin_data_path, exp_data_path,
+                                                                                       block_names, save=False)
         main_3_ml_feat_labels([], label_key_names,
                               [], [], kin_file_names, exp_file_names,
-                               et, el, wv, window_length, pre,
+                              et, el, wv, window_length, pre,
                               load=True, save=True)
     elif args.function == 4:
         main_4_classify(save=True)
 
     elif args.function == 5:
-        run_all_and_save = False # change to preferences
+        run_all_and_save = False  # change to preferences
 
         # MUST DELETE ALL OLD DATA FILES BEFORE RUNNING if NOT using default args
+        # TODO make an os assert for this
         # run all
         if run_all_and_save:
             main_1_vec_labels(save=True)
@@ -399,11 +419,12 @@ if __name__ == "__main__":
             vectorized_labels = main_1_vec_labels(labels, label_key_names, save=False)
             kin_blocks, exp_blocks, kin_file_names, exp_file_names = main_2_kin_exp_blocks(kin_data_path, exp_data_path,
                                                                                            block_names, save=False)
-            final_ML_feature_array, final_labels_array, feat_names = main_3_ml_feat_labels(vectorized_labels, label_key_names,
-                                  kin_blocks, exp_blocks, kin_file_names, exp_file_names,
-                                   et, el, wv, window_length, pre,
-                                  load=False, save=True)
+            final_ML_feature_array, final_labels_array, feat_names = \
+                main_3_ml_feat_labels(vectorized_labels, label_key_names,
+                                      kin_blocks, exp_blocks, kin_file_names, exp_file_names,
+                                      et, el, wv, window_length, pre,
+                                      load=False, save=True)
             main_4_classify()
 
     else:
-        raise ValueError("Cannot find specified question number")
+        raise ValueError("Cannot find specified function number")
