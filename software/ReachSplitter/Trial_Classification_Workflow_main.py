@@ -124,7 +124,7 @@ def main_2_kin_exp_blocks(kin_data, exp_data, block_names, save=False):
     return kin_blocks, exp_blocks, kin_file_names, exp_file_names
 
 
-def main_3_ml_feat_labels(save=False):
+def main_3_ml_feat_labels(label_key_names, kin_file_names, exp_file_names, save=False):
     """
     Args:
         save:
@@ -135,21 +135,29 @@ def main_3_ml_feat_labels(save=False):
         labels and blocks must match!
 
     """
-    # TODO make it easier to add more labels?
 
+
+    # define params
+    et = 0
+    el = 0
+    wv = 5
+    window_length = 4  # TODO change to preferences, default = 250
+    pre = 2  # TODO change to preferences, default = 10
+
+
+    """
     # load vectorized labels
-   # l18l = CU.load_hdf("vectorized_labels", 'l18l')
-   # nl1lists = CU.load_hdf("vectorized_labels", 'nl1lists')
-   # elists = CU.load_hdf("vectorized_labels", 'elists')
-   # labellist = CU.load_hdf("vectorized_labels", 'labellist')
-   # nl2lists = CU.load_hdf("vectorized_labels", 'nl2lists')
+    # l18l = CU.load_hdf("vectorized_labels", 'l18l')
+    # nl1lists = CU.load_hdf("vectorized_labels", 'nl1lists')
+    # elists = CU.load_hdf("vectorized_labels", 'elists')
+    # labellist = CU.load_hdf("vectorized_labels", 'labellist')
+    # nl2lists = CU.load_hdf("vectorized_labels", 'nl2lists')
 
     l18l = CU.load_hdf("vectorized_labels", 'rm16_9_18_s1_label')
     nl1lists = CU.load_hdf("vectorized_labels", 'rm16_9_17_s1_label')
     elists = CU.load_hdf("vectorized_labels", 'rm16_9_19_s3_label')
     labellist = CU.load_hdf("vectorized_labels", 'rm16_9_20_s3_label')
     nl2lists = CU.load_hdf("vectorized_labels", 'rm16_9_17_s2_label')
-
 
     # load saved block pickles
     exp_block_df = pd.read_pickle('exp_block_RM160190920S3')
@@ -202,6 +210,7 @@ def main_3_ml_feat_labels(save=False):
     c2, c2_prob = CU.create_ML_array(matched_kin_e1l18, ezl18)
     c3, c3_prob = CU.create_ML_array(matched_kin_b1nl1, eznl1)
     c4, c4_prob = CU.create_ML_array(matched_kin_b1nl2, eznl2)
+    """
 
     # Create final ML arrays
     vectorized_labels = [labellist, elists, l18l, nl1lists, nl2lists]
@@ -357,21 +366,22 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     if args.function == 1:
-        labels = [CU.rm16_9_19_s3_label,
-                  CU.rm16_9_20_s3_label,
-                  CU.rm16_9_18_s1_label,
+        labels = [CU.rm16_9_20_s3_label,
+                  CU.rm16_9_19_s3_label,
                   CU.rm16_9_17_s2_label,
-                  CU.rm16_9_17_s1_label
+                  CU.rm16_9_17_s1_label,
+                  CU.rm16_9_18_s1_label
 
                   # CU.rm15_9_25_s3_label,
                   # CU.rm15_9_17_s4_label
                   ]
-        key_names = ['rm16_9_19_s3_label',
-                     'rm16_9_20_s3_label',
-                     'rm16_9_18_s1_label',
-                     'rm16_9_17_s2_label',
-                     'rm16_9_17_s1_label']
-        main_1_vec_labels(labels, key_names, save=True)
+        label_key_names = ['rm16_9_20_s3_label',
+                           'rm16_9_19_s3_label',
+                           'rm16_9_17_s2_label',
+                           'rm16_9_17_s1_label',
+                           'rm16_9_18_s1_label'
+                           ]
+        main_1_vec_labels(labels, label_key_names, save=True)
 
     elif args.function == 2:
         kin_data = 'tkd16.pkl'
