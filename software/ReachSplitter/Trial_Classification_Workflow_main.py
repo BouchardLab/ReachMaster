@@ -79,7 +79,10 @@ def main_2_kin_exp_blocks(kin_data, exp_data, block_names, save=False):
         save (bool): True to save, False (default) otherwise
 
     Returns:
-        kin_blocks, exp_blocks
+        kin_blocks (list of df)
+        exp_blocks (list of df)
+        kin_file_names (list of str)
+        exp_file_names (list of str)
     """
     # load kinematic and experimental data
     kin_df, exp_df = CU.load_kin_exp_data(kin_data, exp_data)
@@ -101,24 +104,24 @@ def main_2_kin_exp_blocks(kin_data, exp_data, block_names, save=False):
         kin_blocks.append(kin_block_df)
         exp_blocks.append(exp_block_df)
 
+    # save kinematic and experimental blocks
+    kin_file_names = []
+    exp_file_names = []
+    for i in np.arange(len(block_names)):
+        rat, kdate, date, session = block_names[i]
+        key = rat + kdate + session
+        kin_block_name = 'kin_block' + "_" + key
+        exp_block_name = 'exp_block' + "_" + key
+        kin_file_names.append(kin_block_name)
+        exp_file_names.append(exp_block_name)
+        if save:
+            kin_blocks[i].to_pickle(kin_block_name)
+            exp_blocks[i].to_pickle(exp_block_name)
+
     if save:
-        # save kinematic blocks
-        file_name = 'kin_block'
-        for i in np.arange(len(block_names)):
-            rat, kdate, date, session = block_names[i]
-            key = rat + kdate + session
-            kin_blocks[i].to_pickle(file_name + "_" + key)
-
-        # save experimental blocks
-        file_name = 'exp_block'
-        for i in np.arange(len(block_names)):
-            rat, kdate, date, session = block_names[i]
-            key = rat + date + session
-            exp_blocks[i].to_pickle(file_name + "_" + key)
         print("Saved kin & exp blocks.")
-
     print("Finished creating kin & exp blocks.")
-    return kin_blocks, exp_blocks
+    return kin_blocks, exp_blocks, kin_file_names, exp_file_names
 
 
 def main_3_ml_feat_labels(save=False):
@@ -383,7 +386,7 @@ if __name__ == "__main__":
             main_4_classify(save=True)
         else:
             vectorized_labels = main_1_vec_labels()
-            main_2_kin_exp_blocks()
+            kin_blocks, exp_blocks, kin_file_names, exp_file_names = main_2_kin_exp_blocks()
             main_3_ml_feat_labels()
             main_4_classify()
 
