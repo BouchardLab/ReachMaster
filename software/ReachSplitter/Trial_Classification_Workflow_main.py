@@ -254,14 +254,15 @@ def classify(model, X, Y, k):
     return classifier_pipeline, predictions, score
 
 
-def main_4_classify(save=False):
-    # Load final_ML_array and final_feature_array in h5 file
-    with h5py.File('ml_array_RM16.h5', 'r') as f:
-        final_ML_feature_array = f['RM16_features'][:]
-        final_labels_array = f['RM16_labels'][:]
-    with open('feat_names.npy', 'rb') as f:
-        feat_names = np.load(f)
-    feat_names = [str(t[0]) for t in feat_names]  # un-nest
+def main_4_classify(final_ML_feature_array, final_labels_array, feat_names, load=False, save=False):
+    if load:
+        # Load final_ML_array and final_feature_array in h5 file
+        with h5py.File('ml_array_RM16.h5', 'r') as f:
+            final_ML_feature_array = f['RM16_features'][:]
+            final_labels_array = f['RM16_labels'][:]
+        with open('feat_names.npy', 'rb') as f:
+            feat_names = np.load(f)
+        feat_names = [str(t[0]) for t in feat_names]  # un-nest
 
     # TODO feature engineering
     # TODO test set format
@@ -378,8 +379,19 @@ if __name__ == "__main__":
          ['RM16', '0190917', '0190917', 'S2'],
          ['RM16', '0190917', '0190917', 'S1'],
          ['RM16', '0190918', '0190918', 'S1']]
-
     ]
+
+    kin_file_names = ['kin_block_RM160190920S3',
+                      'kin_block_RM160190919S3',
+                      'kin_block_RM160190917S2',
+                      'kin_block_RM160190917S1',
+                      'kin_block_RM160190918S1']
+
+    exp_file_names = ['exp_block_RM160190920S3',
+                      'exp_block_RM160190919S3',
+                      'exp_block_RM160190917S2',
+                      'exp_block_RM160190917S1',
+                      'exp_block_RM160190918S1']
 
     # define params for trializing blocks
     et = 0
@@ -389,42 +401,34 @@ if __name__ == "__main__":
     pre = 2  # TODO change to preferences, default = 10
 
     if args.function == 1:
-        main_1_vec_labels(labels, label_key_names, save=True)
+        vectorized_labels = main_1_vec_labels(labels, label_key_names, save=True)
 
     elif args.function == 2:
-        main_2_kin_exp_blocks(kin_data_path, exp_data_path, block_names, save=True)
+        kin_blocks, exp_blocks, kin_file_names, exp_file_names = \
+            main_2_kin_exp_blocks(kin_data_path, exp_data_path, block_names, save=True)
 
     elif args.function == 3:
-        kin_blocks, exp_blocks, kin_file_names, exp_file_names = main_2_kin_exp_blocks(kin_data_path, exp_data_path,
-                                                                                       block_names, save=False)
-        main_3_ml_feat_labels([], label_key_names,
-                              [], [], kin_file_names, exp_file_names,
-                              et, el, wv, window_length, pre,
-                              load=True, save=True)
-    elif args.function == 4:
-        main_4_classify(save=True)
-
-    elif args.function == 5:
-        run_all_and_save = False  # change to preferences
-
         # MUST DELETE ALL OLD DATA FILES BEFORE RUNNING if NOT using default args
         # TODO make an os assert for this
-        # run all
-        if run_all_and_save:
-            main_1_vec_labels(save=True)
-            main_2_kin_exp_blocks(save=True)
-            main_3_ml_feat_labels(save=True)
-            main_4_classify(save=True)
-        else:
-            vectorized_labels = main_1_vec_labels(labels, label_key_names, save=False)
-            kin_blocks, exp_blocks, kin_file_names, exp_file_names = main_2_kin_exp_blocks(kin_data_path, exp_data_path,
-                                                                                           block_names, save=False)
-            final_ML_feature_array, final_labels_array, feat_names = \
-                main_3_ml_feat_labels(vectorized_labels, label_key_names,
-                                      kin_blocks, exp_blocks, kin_file_names, exp_file_names,
-                                      et, el, wv, window_length, pre,
-                                      load=False, save=True)
-            main_4_classify()
+        final_ML_feature_array, final_labels_array, feat_names = \
+            main_3_ml_feat_labels([], label_key_names,
+                                  [], [], kin_file_names, exp_file_names,
+                                  et, el, wv, window_length, pre,
+                                  load=True, save=True)
+    elif args.function == 4:
+        main_4_classify([], [], [], load=True, save=True)
+
+    elif args.function == 5:
+        # runs all without saving files into current working directory
+        vectorized_labels = main_1_vec_labels(labels, label_key_names, save=False)
+        kin_blocks, exp_blocks, kin_file_names, exp_file_names = main_2_kin_exp_blocks(kin_data_path, exp_data_path,
+                                                                                       block_names, save=False)
+        final_ML_feature_array, final_labels_array, feat_names = \
+            main_3_ml_feat_labels(vectorized_labels, label_key_names,
+                                  kin_blocks, exp_blocks, kin_file_names, exp_file_names,
+                                  et, el, wv, window_length, pre,
+                                  load=False, save=False)
+        main_4_classify(final_ML_feature_array, final_labels_array, feat_names, load=False, save=False)
 
     else:
         raise ValueError("Cannot find specified function number")
