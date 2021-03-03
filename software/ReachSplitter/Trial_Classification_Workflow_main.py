@@ -39,10 +39,10 @@ from sklearn import preprocessing
 
 
 def main_1_vec_labels(labels, key_names, save=False, ):
-    """
+    """ Processes DLC trial labels.
     Args:
-        labels(list of lists): list of unprocessed trial labels
-        key_names(list of str): key names to save in file
+        labels (list of lists): list of unprocessed trial labels
+        key_names (list of str): ordered file key names that must correspond to labels
         save (boolean): True to save, False (default) otherwise
 
     Returns:
@@ -70,22 +70,25 @@ def main_1_vec_labels(labels, key_names, save=False, ):
     return vectorized_labels
 
 
-def main_2_kin_exp_blocks(save=False):
+def main_2_kin_exp_blocks(kin_data, exp_data, block_names, save=False):
+    """ Gets blocks from kinematic and experimental data.
+    Args:
+        kin_data (str): path to kinematic data file
+        exp_data (str): path to kinematic data file
+        block_names (list of lists of str): block keys corresponding to those in data
+        save (bool): True to save, False (default) otherwise
+
+    Returns:
+        kin_blocks, exp_blocks
+    """
     # load kinematic and experimental data
-    kin_df, exp_df = CU.load_kin_exp_data('tkd16.pkl', 'experimental_data.pickle')
+    kin_df, exp_df = CU.load_kin_exp_data(kin_data, exp_data)
 
     # get blocks
     #   rat (str): rat ID
     #   date (str): block date in robot_df_
     #   kdate (str): block date in kin_df_
     #   session (str): block session
-    block_names = [
-        ['RM16', '0190920', '0190920', 'S3'],
-        ['RM16', '0190919', '0190919', 'S3'],
-        ['RM16', '0190917', '0190917', 'S2'],
-        ['RM16', '0190917', '0190917', 'S1'],
-        ['RM16', '0190918', '0190918', 'S1'],
-    ]
     kin_blocks = []
     exp_blocks = []
     for i in np.arange(len(block_names)):
@@ -351,7 +354,16 @@ if __name__ == "__main__":
         main_1_vec_labels(labels, key_names, save=True)
 
     elif args.function == 2:
-        main_2_kin_exp_blocks(save=True)
+        kin_data = 'tkd16.pkl'
+        exp_data = 'experimental_data.pickle'
+        block_names = [
+            ['RM16', '0190920', '0190920', 'S3'],
+            ['RM16', '0190919', '0190919', 'S3'],
+            ['RM16', '0190917', '0190917', 'S2'],
+            ['RM16', '0190917', '0190917', 'S1'],
+            ['RM16', '0190918', '0190918', 'S1'],
+        ]
+        main_2_kin_exp_blocks(kin_data, exp_data, block_names, save=True)
 
     elif args.function == 3:
         main_3_ml_feat_labels(save=True)
