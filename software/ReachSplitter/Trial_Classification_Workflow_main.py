@@ -126,7 +126,11 @@ def main_2_kin_exp_blocks(kin_data, exp_data, block_names, save=False):
 
 def main_3_ml_feat_labels(label_key_names, kin_file_names, exp_file_names, save=False):
     """
+
     Args:
+        label_key_names:
+        kin_file_names:
+        exp_file_names:
         save:
 
     Returns:
@@ -135,14 +139,43 @@ def main_3_ml_feat_labels(label_key_names, kin_file_names, exp_file_names, save=
         labels and blocks must match!
 
     """
-
-
     # define params
     et = 0
     el = 0
     wv = 5
     window_length = 4  # TODO change to preferences, default = 250
     pre = 2  # TODO change to preferences, default = 10
+
+    # init data handling variables
+    vectorized_labels = []
+    c_positions = []
+    c_probabilities = []
+
+    # for each block
+    assert (len(label_key_names) == len(kin_file_names))
+    num_blocks = len(label_key_names)
+    for i in np.arange(num_blocks):
+        # load vectorized labels, kin block, and exp block data
+        block_label = CU.load_hdf("vectorized_labels", label_key_names[i])
+        kin_block_df = pd.read_pickle(kin_file_names[i])
+        exp_block_df = pd.read_pickle(exp_file_names[i])
+
+        # trial-ize data
+        hot_vector, trialized_kin_data, feat_names, exp_data \
+            = CU.make_s_f_trial_arrays_from_block(kin_block_df, exp_block_df, et, el, wv, window_length, pre)
+
+        # Match with label
+        matched_kin_data, matched_exp_data = CU.match_stamps(trialized_kin_data, block_label, exp_data)
+
+        # match kin and exp features
+        # create_ML_array args: matched kin array, matched ez array
+        c_pos, c_prob = CU.create_ML_array(matched_kin_data, matched_exp_data)
+
+        # append results
+        vectorized_labels.append(block_label)
+        c_positions.append(c_pos)
+        c_probabilities.append(c_prob)
+
 
 
     """
@@ -213,11 +246,16 @@ def main_3_ml_feat_labels(label_key_names, kin_file_names, exp_file_names, save=
     """
 
     # Create final ML arrays
-    vectorized_labels = [labellist, elists, l18l, nl1lists, nl2lists]
+    #vectorized_labels = [labellist, elists, l18l, nl1lists, nl2lists]
+    #final_ML_feature_array_XYZ, final_labels_array \
+    #    = CU.stack_ML_arrays([c, c1, c2, c3, c4], vectorized_labels)
+    #final_ML_feature_array_prob, _ \
+    #    = CU.stack_ML_arrays([c_prob, c1_prob, c2_prob, c3_prob, c4_prob], vectorized_labels)
+
     final_ML_feature_array_XYZ, final_labels_array \
-        = CU.stack_ML_arrays([c, c1, c2, c3, c4], vectorized_labels)
+        = CU.stack_ML_arrays(c_positions, vectorized_labels)
     final_ML_feature_array_prob, _ \
-        = CU.stack_ML_arrays([c_prob, c1_prob, c2_prob, c3_prob, c4_prob], vectorized_labels)
+        = CU.stack_ML_arrays(c_probabilities, vectorized_labels)
 
     # concat horizontally XYZ and prob123 ml feature arrays
     # (total num labeled trials x (3*num kin feat)*2 +num exp feat = 174 for XYZ and prob, window_length+pre)
@@ -231,7 +269,7 @@ def main_3_ml_feat_labels(label_key_names, kin_file_names, exp_file_names, save=
             hf.create_dataset("RM16_labels", data=final_labels_array)
         print("Saved final ml feat and label arrays.")
         with open('feat_names.npy', 'wb') as f:
-            np.save(f, feats)
+            np.save(f, feat_names)
 
     print("Finished creating final ML feat and labels.")
     return final_ML_feature_array, final_labels_array
@@ -396,7 +434,23 @@ if __name__ == "__main__":
         main_2_kin_exp_blocks(kin_data, exp_data, block_names, save=True)
 
     elif args.function == 3:
-        main_3_ml_feat_labels(save=True)
+        label_key_names = ['rm16_9_20_s3_label',
+                           'rm16_9_19_s3_label',
+                           'rm16_9_17_s2_label',
+                           'rm16_9_17_s1_label',
+                           'rm16_9_18_s1_label'
+                           ]
+        kin_data = 'tkd16.pkl'
+        exp_data = 'experimental_data.pickle'
+        block_names = [
+            ['RM16', '0190920', '0190920', 'S3'],
+            ['RM16', '0190919', '0190919', 'S3'],
+            ['RM16', '0190917', '0190917', 'S2'],
+            ['RM16', '0190917', '0190917', 'S1'],
+            ['RM16', '0190918', '0190918', 'S1'],
+        ]
+        kin_blocks, exp_blocks, kin_file_names, exp_file_names = main_2_kin_exp_blocks(kin_data, exp_data, block_names, save=False)
+        main_3_ml_feat_labels(label_key_names, kin_file_names, exp_file_names, save=True)
 
     elif args.function == 4:
         main_4_classify(save=True)
