@@ -124,7 +124,9 @@ def main_2_kin_exp_blocks(kin_data, exp_data, block_names, save=False):
     return kin_blocks, exp_blocks, kin_file_names, exp_file_names
 
 
-def main_3_ml_feat_labels(label_key_names, kin_file_names, exp_file_names, save=False):
+def main_3_ml_feat_labels(vectorized_labels, label_key_names,
+                          kin_blocks, exp_blocks, kin_file_names, exp_file_names,
+                          load=False, save=False):
     """
 
     Args:
@@ -147,7 +149,8 @@ def main_3_ml_feat_labels(label_key_names, kin_file_names, exp_file_names, save=
     pre = 2  # TODO change to preferences, default = 10
 
     # init data handling variables
-    vectorized_labels = []
+    if load:
+        vectorized_labels = []
     c_positions = []
     c_probabilities = []
 
@@ -156,9 +159,15 @@ def main_3_ml_feat_labels(label_key_names, kin_file_names, exp_file_names, save=
     num_blocks = len(label_key_names)
     for i in np.arange(num_blocks):
         # load vectorized labels, kin block, and exp block data
-        block_label = CU.load_hdf("vectorized_labels", label_key_names[i])
-        kin_block_df = pd.read_pickle(kin_file_names[i])
-        exp_block_df = pd.read_pickle(exp_file_names[i])
+        if load:
+            block_label = CU.load_hdf("vectorized_labels", label_key_names[i])
+            kin_block_df = pd.read_pickle(kin_file_names[i])
+            exp_block_df = pd.read_pickle(exp_file_names[i])
+            vectorized_labels.append(block_label)
+        else:
+            block_label = vectorized_labels[i]
+            kin_block_df = kin_blocks[i]
+            exp_block_df = exp_blocks[i]
 
         # trial-ize data
         hot_vector, trialized_kin_data, feat_names, exp_data \
@@ -172,86 +181,10 @@ def main_3_ml_feat_labels(label_key_names, kin_file_names, exp_file_names, save=
         c_pos, c_prob = CU.create_ML_array(matched_kin_data, matched_exp_data)
 
         # append results
-        vectorized_labels.append(block_label)
         c_positions.append(c_pos)
         c_probabilities.append(c_prob)
 
-
-
-    """
-    # load vectorized labels
-    # l18l = CU.load_hdf("vectorized_labels", 'l18l')
-    # nl1lists = CU.load_hdf("vectorized_labels", 'nl1lists')
-    # elists = CU.load_hdf("vectorized_labels", 'elists')
-    # labellist = CU.load_hdf("vectorized_labels", 'labellist')
-    # nl2lists = CU.load_hdf("vectorized_labels", 'nl2lists')
-
-    l18l = CU.load_hdf("vectorized_labels", 'rm16_9_18_s1_label')
-    nl1lists = CU.load_hdf("vectorized_labels", 'rm16_9_17_s1_label')
-    elists = CU.load_hdf("vectorized_labels", 'rm16_9_19_s3_label')
-    labellist = CU.load_hdf("vectorized_labels", 'rm16_9_20_s3_label')
-    nl2lists = CU.load_hdf("vectorized_labels", 'rm16_9_17_s2_label')
-
-    # load saved block pickles
-    exp_block_df = pd.read_pickle('exp_block_RM160190920S3')
-    kin_block_df = pd.read_pickle('kin_block_RM160190920S3')
-
-    exp_block_df3 = pd.read_pickle('exp_block_RM160190919S3')
-    kin_block_df3 = pd.read_pickle('kin_block_RM160190919S3')
-
-    exp_block_df1 = pd.read_pickle('exp_block_RM160190917S1')
-    kin_block_df1 = pd.read_pickle('kin_block_RM160190917S1')
-
-    exp_block_df2 = pd.read_pickle('exp_block_RM160190917S2')
-    kin_block_df2 = pd.read_pickle('kin_block_RM160190917S2')
-
-    exp_block_df18 = pd.read_pickle('exp_block_RM160190918S1')
-    kin_block_df18 = pd.read_pickle('kin_block_RM160190918S1')
-
-    # define params
-    et = 0
-    el = 0
-    wv = 5
-    window_length = 4  # TODO change to preferences, default = 250
-    pre = 2  # TODO change to preferences, default = 10
-
-    # trial-ize data
-    hot_vector, tt, feats, e \
-        = CU.make_s_f_trial_arrays_from_block(kin_block_df, exp_block_df, et, el, wv, window_length, pre)
-    hot_vector3, tt3, feats3, e3 \
-        = CU.make_s_f_trial_arrays_from_block(kin_block_df3, exp_block_df3, et, el, wv, window_length,
-                                              pre)  # Emily label trial list
-    hot_vectornl1, ttnl1, featsnl1, enl1 \
-        = CU.make_s_f_trial_arrays_from_block(kin_block_df1, exp_block_df1, et, el, wv, window_length, pre)
-    hot_vectornl2, ttnl2, featsnl2, enl2 \
-        = CU.make_s_f_trial_arrays_from_block(kin_block_df2, exp_block_df2, et, el, wv, window_length, pre)
-    hot_vectorl18, ttl18, featsl18, el18 \
-        = CU.make_s_f_trial_arrays_from_block(kin_block_df18, exp_block_df18, et, el, wv, window_length, pre)
-
-    # Match with trial labeled vectors
-    # match_stamps args: kin array, label array, exp array
-    matched_kin_b1, ez1 = CU.match_stamps(tt, labellist, e)  # Matched to blist1
-    matched_kin_e1, ez4 = CU.match_stamps(tt3, elists, e3)  # Matched to
-    matched_kin_b1nl1, eznl1 = CU.match_stamps(ttnl1, nl1lists, enl1)  # Matched to
-    matched_kin_e1l18, ezl18 = CU.match_stamps(ttl18, l18l, el18)  # Matched to
-    matched_kin_b1nl2, eznl2 = CU.match_stamps(ttnl2, nl2lists, enl2)  # Matched to
-
-    # match kin and exp features
-    # create_ML_array args: matched kin array, matched ez array
-    c, c_prob = CU.create_ML_array(matched_kin_b1, ez1)
-    c1, c1_prob = CU.create_ML_array(matched_kin_e1, ez4)
-    c2, c2_prob = CU.create_ML_array(matched_kin_e1l18, ezl18)
-    c3, c3_prob = CU.create_ML_array(matched_kin_b1nl1, eznl1)
-    c4, c4_prob = CU.create_ML_array(matched_kin_b1nl2, eznl2)
-    """
-
-    # Create final ML arrays
-    #vectorized_labels = [labellist, elists, l18l, nl1lists, nl2lists]
-    #final_ML_feature_array_XYZ, final_labels_array \
-    #    = CU.stack_ML_arrays([c, c1, c2, c3, c4], vectorized_labels)
-    #final_ML_feature_array_prob, _ \
-    #    = CU.stack_ML_arrays([c_prob, c1_prob, c2_prob, c3_prob, c4_prob], vectorized_labels)
-
+    # resize data
     final_ML_feature_array_XYZ, final_labels_array \
         = CU.stack_ML_arrays(c_positions, vectorized_labels)
     final_ML_feature_array_prob, _ \
@@ -272,7 +205,7 @@ def main_3_ml_feat_labels(label_key_names, kin_file_names, exp_file_names, save=
             np.save(f, feat_names)
 
     print("Finished creating final ML feat and labels.")
-    return final_ML_feature_array, final_labels_array
+    return final_ML_feature_array, final_labels_array, feat_names
 
 
 def classify(model, X, Y, k):
@@ -422,8 +355,8 @@ if __name__ == "__main__":
         main_1_vec_labels(labels, label_key_names, save=True)
 
     elif args.function == 2:
-        kin_data = 'tkd16.pkl'
-        exp_data = 'experimental_data.pickle'
+        kin_data_path = 'tkd16.pkl'
+        exp_data_path = 'experimental_data.pickle'
         block_names = [
             ['RM16', '0190920', '0190920', 'S3'],
             ['RM16', '0190919', '0190919', 'S3'],
@@ -431,9 +364,18 @@ if __name__ == "__main__":
             ['RM16', '0190917', '0190917', 'S1'],
             ['RM16', '0190918', '0190918', 'S1'],
         ]
-        main_2_kin_exp_blocks(kin_data, exp_data, block_names, save=True)
+        main_2_kin_exp_blocks(kin_data_path, exp_data_path, block_names, save=True)
 
     elif args.function == 3:
+        labels = [CU.rm16_9_20_s3_label,
+                  CU.rm16_9_19_s3_label,
+                  CU.rm16_9_17_s2_label,
+                  CU.rm16_9_17_s1_label,
+                  CU.rm16_9_18_s1_label
+
+                  # CU.rm15_9_25_s3_label,
+                  # CU.rm15_9_17_s4_label
+                  ]
         label_key_names = ['rm16_9_20_s3_label',
                            'rm16_9_19_s3_label',
                            'rm16_9_17_s2_label',
@@ -449,8 +391,11 @@ if __name__ == "__main__":
             ['RM16', '0190917', '0190917', 'S1'],
             ['RM16', '0190918', '0190918', 'S1'],
         ]
+        vectorized_labels = main_1_vec_labels(labels, label_key_names, save=False)
         kin_blocks, exp_blocks, kin_file_names, exp_file_names = main_2_kin_exp_blocks(kin_data, exp_data, block_names, save=False)
-        main_3_ml_feat_labels(label_key_names, kin_file_names, exp_file_names, save=True)
+        main_3_ml_feat_labels(vectorized_labels, label_key_names,
+                              kin_blocks, exp_blocks, kin_file_names, exp_file_names,
+                              load=True, save=True)
 
     elif args.function == 4:
         main_4_classify(save=True)
