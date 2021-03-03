@@ -125,6 +125,16 @@ def main_2_kin_exp_blocks(kin_data, exp_data, block_names, save=False):
 
 
 def main_3_ml_feat_labels(save=False):
+    """
+    Args:
+        save:
+
+    Returns:
+
+    Notes:
+        labels and blocks must match!
+
+    """
     # TODO make it easier to add more labels?
 
     # load vectorized labels
