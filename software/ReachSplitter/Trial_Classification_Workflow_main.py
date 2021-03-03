@@ -126,28 +126,28 @@ def main_2_kin_exp_blocks(kin_data, exp_data, block_names, save=False):
 
 def main_3_ml_feat_labels(vectorized_labels, label_key_names,
                           kin_blocks, exp_blocks, kin_file_names, exp_file_names,
+                          et, el, wv, window_length, pre,
                           load=False, save=False):
     """
-
+    Returns ml feature and label arrays.
     Args:
-        label_key_names:
-        kin_file_names:
-        exp_file_names:
-        save:
+        vectorized_labels: return value from main_1
+        label_key_names: key names in 'vectorized_labels'
+        kin_blocks: return value from main_2
+        exp_blocks: return value from main_2
+        kin_file_names: kin block file names
+        exp_file_names: exp block file names
+        et, el, wv, window_length, pre (int): 'make_s_f_trial_arrays_from_block' args
+        load (bool): True to load file names, False (default) otherwise
+        save (bool): True to save results, False (default) otherwise
 
     Returns:
+        final_ML_feature_array, final_labels_array, feat_names
 
     Notes:
         labels and blocks must match!
 
     """
-    # define params
-    et = 0
-    el = 0
-    wv = 5
-    window_length = 4  # TODO change to preferences, default = 250
-    pre = 2  # TODO change to preferences, default = 10
-
     # init data handling variables
     if load:
         vectorized_labels = []
@@ -336,72 +336,57 @@ if __name__ == "__main__":
     parser.add_argument("--function", "-f", type=int, default=1, help="Specify which function to run")
     args = parser.parse_args()
 
-    if args.function == 1:
-        labels = [CU.rm16_9_20_s3_label,
-                  CU.rm16_9_19_s3_label,
-                  CU.rm16_9_17_s2_label,
-                  CU.rm16_9_17_s1_label,
-                  CU.rm16_9_18_s1_label
+    # labels
+    labels = [CU.rm16_9_20_s3_label,
+              CU.rm16_9_19_s3_label,
+              CU.rm16_9_17_s2_label,
+              CU.rm16_9_17_s1_label,
+              CU.rm16_9_18_s1_label
 
-                  # CU.rm15_9_25_s3_label,
-                  # CU.rm15_9_17_s4_label
-                  ]
-        label_key_names = ['rm16_9_20_s3_label',
-                           'rm16_9_19_s3_label',
-                           'rm16_9_17_s2_label',
-                           'rm16_9_17_s1_label',
-                           'rm16_9_18_s1_label'
-                           ]
+              # CU.rm15_9_25_s3_label,
+              # CU.rm15_9_17_s4_label
+              ]
+    label_key_names = ['rm16_9_20_s3_label',
+                       'rm16_9_19_s3_label',
+                       'rm16_9_17_s2_label',
+                       'rm16_9_17_s1_label',
+                       'rm16_9_18_s1_label'
+                       ]
+    # blocks
+    kin_data_path = 'tkd16.pkl'
+    exp_data_path = 'experimental_data.pickle'
+    block_names = [
+        ['RM16', '0190920', '0190920', 'S3'],
+        ['RM16', '0190919', '0190919', 'S3'],
+        ['RM16', '0190917', '0190917', 'S2'],
+        ['RM16', '0190917', '0190917', 'S1'],
+        ['RM16', '0190918', '0190918', 'S1'],
+    ]
+
+    # define params for trializing blocks
+    et = 0
+    el = 0
+    wv = 5
+    window_length = 4  # TODO change to preferences, default = 250
+    pre = 2  # TODO change to preferences, default = 10
+
+    if args.function == 1:
         main_1_vec_labels(labels, label_key_names, save=True)
 
     elif args.function == 2:
-        kin_data_path = 'tkd16.pkl'
-        exp_data_path = 'experimental_data.pickle'
-        block_names = [
-            ['RM16', '0190920', '0190920', 'S3'],
-            ['RM16', '0190919', '0190919', 'S3'],
-            ['RM16', '0190917', '0190917', 'S2'],
-            ['RM16', '0190917', '0190917', 'S1'],
-            ['RM16', '0190918', '0190918', 'S1'],
-        ]
         main_2_kin_exp_blocks(kin_data_path, exp_data_path, block_names, save=True)
 
     elif args.function == 3:
-        labels = [CU.rm16_9_20_s3_label,
-                  CU.rm16_9_19_s3_label,
-                  CU.rm16_9_17_s2_label,
-                  CU.rm16_9_17_s1_label,
-                  CU.rm16_9_18_s1_label
-
-                  # CU.rm15_9_25_s3_label,
-                  # CU.rm15_9_17_s4_label
-                  ]
-        label_key_names = ['rm16_9_20_s3_label',
-                           'rm16_9_19_s3_label',
-                           'rm16_9_17_s2_label',
-                           'rm16_9_17_s1_label',
-                           'rm16_9_18_s1_label'
-                           ]
-        kin_data = 'tkd16.pkl'
-        exp_data = 'experimental_data.pickle'
-        block_names = [
-            ['RM16', '0190920', '0190920', 'S3'],
-            ['RM16', '0190919', '0190919', 'S3'],
-            ['RM16', '0190917', '0190917', 'S2'],
-            ['RM16', '0190917', '0190917', 'S1'],
-            ['RM16', '0190918', '0190918', 'S1'],
-        ]
-        vectorized_labels = main_1_vec_labels(labels, label_key_names, save=False)
-        kin_blocks, exp_blocks, kin_file_names, exp_file_names = main_2_kin_exp_blocks(kin_data, exp_data, block_names, save=False)
-        main_3_ml_feat_labels(vectorized_labels, label_key_names,
-                              kin_blocks, exp_blocks, kin_file_names, exp_file_names,
+        kin_blocks, exp_blocks, kin_file_names, exp_file_names = main_2_kin_exp_blocks(kin_data_path, exp_data_path, block_names, save=False)
+        main_3_ml_feat_labels([], label_key_names,
+                              [], [], kin_file_names, exp_file_names,
+                               et, el, wv, window_length, pre,
                               load=True, save=True)
-
     elif args.function == 4:
         main_4_classify(save=True)
 
     elif args.function == 5:
-        run_all_and_save = True  # change to preferences
+        run_all_and_save = False # change to preferences
 
         # MUST DELETE ALL OLD DATA FILES BEFORE RUNNING if NOT using default args
         # run all
@@ -411,9 +396,13 @@ if __name__ == "__main__":
             main_3_ml_feat_labels(save=True)
             main_4_classify(save=True)
         else:
-            vectorized_labels = main_1_vec_labels()
-            kin_blocks, exp_blocks, kin_file_names, exp_file_names = main_2_kin_exp_blocks()
-            main_3_ml_feat_labels()
+            vectorized_labels = main_1_vec_labels(labels, label_key_names, save=False)
+            kin_blocks, exp_blocks, kin_file_names, exp_file_names = main_2_kin_exp_blocks(kin_data_path, exp_data_path,
+                                                                                           block_names, save=False)
+            final_ML_feature_array, final_labels_array, feat_names = main_3_ml_feat_labels(vectorized_labels, label_key_names,
+                                  kin_blocks, exp_blocks, kin_file_names, exp_file_names,
+                                   et, el, wv, window_length, pre,
+                                  load=False, save=True)
             main_4_classify()
 
     else:
