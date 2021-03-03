@@ -128,11 +128,18 @@ def main_3_ml_feat_labels(save=False):
     # TODO make it easier to add more labels?
 
     # load vectorized labels
-    l18l = CU.load_hdf("vectorized_labels", 'l18l')
-    nl1lists = CU.load_hdf("vectorized_labels", 'nl1lists')
-    elists = CU.load_hdf("vectorized_labels", 'elists')
-    labellist = CU.load_hdf("vectorized_labels", 'labellist')
-    nl2lists = CU.load_hdf("vectorized_labels", 'nl2lists')
+   # l18l = CU.load_hdf("vectorized_labels", 'l18l')
+   # nl1lists = CU.load_hdf("vectorized_labels", 'nl1lists')
+   # elists = CU.load_hdf("vectorized_labels", 'elists')
+   # labellist = CU.load_hdf("vectorized_labels", 'labellist')
+   # nl2lists = CU.load_hdf("vectorized_labels", 'nl2lists')
+
+    l18l = CU.load_hdf("vectorized_labels", 'rm16_9_18_s1_label')
+    nl1lists = CU.load_hdf("vectorized_labels", 'rm16_9_17_s1_label')
+    elists = CU.load_hdf("vectorized_labels", 'rm16_9_19_s3_label')
+    labellist = CU.load_hdf("vectorized_labels", 'rm16_9_20_s3_label')
+    nl2lists = CU.load_hdf("vectorized_labels", 'rm16_9_17_s2_label')
+
 
     # load saved block pickles
     exp_block_df = pd.read_pickle('exp_block_RM160190920S3')
@@ -380,7 +387,7 @@ if __name__ == "__main__":
         # MUST DELETE ALL OLD DATA FILES BEFORE RUNNING if NOT using default args
         # run all
         if run_all_and_save:
-            #main_1_vec_labels(save=True)
+            main_1_vec_labels(save=True)
             main_2_kin_exp_blocks(save=True)
             main_3_ml_feat_labels(save=True)
             main_4_classify(save=True)

@@ -1749,7 +1749,8 @@ def is_tug_no_tug():
 #########################################
 
 # RM16, 9-17, S1
-nl1 = [
+# nl1
+rm16_9_17_s1_label = [
     [1, 0, 0, 1, 1, 'l', 'Tug', 0, 0],  # single left rew tug
     [2, 0, 0, 1, 1, 'l', 'Tug', 0, 0],  # single left rew tug
     [3, 0, 0, 1, 1, 'rla', 'noTug', 0, 0],  # rl assist, 1 , notug, rew
@@ -1781,7 +1782,8 @@ nl1 = [
 ]
 
 # RM16, 9-18, S1
-l18 = [
+# l18
+rm16_9_18_s1_label = [
     [1, 0, 0, 1, 1, 'l', 'noTug', 0, 0],  # l 1 rew notug
     [2, 0, 0, 1, 3, 'l', 'noTug', 0, 0],  # l 3 rew notug
     [4, 0, 0, 1, 3, 'lr', 'noTug', 1, 0],  # lr 3 switching rew notug
@@ -1804,7 +1806,8 @@ l18 = [
 ]
 
 # RM16, 9-17, S2
-nl2 = [
+# nl2
+rm16_9_17_s2_label = [
     [1, 0, 0, 1, 1, 'l', 'noTug', 0, 0],  # l 1 rew notug
     [2, 0, 0, 1, 1, 'lra', 'Tug', 0, 0],  # lr 1 rew tug
     [3, 0, 0, 1, 2, 'lra', 'Tug', 0, 0],  # lr 2 rew tug
@@ -1846,7 +1849,8 @@ nl2 = [
 ]
 
 # RM16, DATE 9-20, S3
-blist1 = [
+# blist1
+rm16_9_20_s3_label = [
     [1, 1, 1, 4, 1, 'l', 'Tug', 0, 0]  # succ tugg, left hand, single reach,
     , [2, 1, 1, 3, 1, 'l', 'noTug', 0, 0]  # left handed reach, no tug of war, 1 reach, no switch,
     , [3, 1, 1, 3, 2, 'bi', 0, 1, 0]
@@ -1899,7 +1903,8 @@ blist1 = [
     , [49, 1, 1, 2, 4, 'lr', 0, 0, 0]]
 
 # RM16, 09-19-2019, S3
-elist = [
+# elist
+rm16_9_19_s3_label = [
     [0, 1723, 2284, 0, 0, 0, 'no_tug', 0, 30]  # null
     , [1, 5593, 6156, 0, 0, 0, 'no_tug', 0, 27]  # null
     , [2, 7866, 8441, 3, 2, 'l', 'no_tug', 0, 14]  # success
@@ -1952,7 +1957,8 @@ elist = [
     , [40, 91818, 92387, 1, 7, 'l', 'no_tug', 0, 6]]  # fail # starts mid reach
 
 # RM15, 25, S3
-blist2 = [
+# blist2
+rm15_9_25_s3_label = [
     [3, 1, 1, 3, 1, 'r', 'noTug', 0, 0, 16360, 16400],
     [2, 1, 1, 3, 1, 'r', 'noTug', 0, 0, 15375, 15470],
     [4, 1, 1, 3, 1, 'r', 'Tug', 0, 0, 20555, 20600],
@@ -1974,7 +1980,8 @@ blist2 = [
     [18, 1, 1, 2, 1, 'r', 'Tug', 0, 0, 87495, 87555]]
 
 # RM15, 17, S4
-blist3 = [
+# blist3
+rm15_9_17_s4_label = [
     [0, 1, 1, 3, 1, 'lbi', 'tug', 0, 0, 9470, 9610],
     [1, 1, 1, 3, 2, 'lbi', 'noTug', 1, 0, 10605, 10880, 10675, 10940],
     [2, 1, 1, 3, 2, 'lbi', 'noTug', 1, 0, 11630, 11675, 11676, 11720],
