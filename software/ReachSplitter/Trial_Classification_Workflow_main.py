@@ -38,22 +38,28 @@ from sklearn.pipeline import make_pipeline
 from sklearn import preprocessing
 
 
-def main_1_vec_labels(save=False):
+def main_1_vec_labels(labels, key_names, save=False, ):
+    """
+    Args:
+        labels(list of lists): list of unprocessed trial labels
+        key_names(list of str): key names to save in file
+        save (boolean): True to save, False (default) otherwise
+
+    Returns:
+        vectorized_labels (list of lists)
+    """
     # vectorize DLC labels into ML ready format
-    # make_vectorized_labels returns list: vectorized list of labels,
-    # e: vectorized array of reading indices (unused variables)
-    elists, ev = CU.make_vectorized_labels(CU.elist)  # RM16, 09-19-2019, S3
-    labellist, edddd = CU.make_vectorized_labels(CU.blist1)  # RM16, DATE 9-20, S3
-    nl1lists, ev1 = CU.make_vectorized_labels(CU.nl1)  # RM16, 9-18, S1
-    nl2lists, ev2 = CU.make_vectorized_labels(CU.nl2)  # RM16, 9-17, S2
-    l18l, ev18 = CU.make_vectorized_labels(CU.l18)  # RM16, 9-17, S1
+    # function make_vectorized_labels returns
+    #   (1) list: vectorized list of labels,
+    #   (2) e: vectorized array of reading indices (unused variable)
+    vectorized_labels = []
+    for label in labels:
+        vectorized_label, _ = CU.make_vectorized_labels(label)
+        vectorized_labels.append(vectorized_label)
 
-    vectorized_labels = [elists, labellist, nl1lists, nl2lists, l18l]
-
+    # save each vectorized label
     if save:
-        # save each vectorized label
         file_name = "vectorized_labels"
-        key_names = ['elists', 'labellist', 'nl1lists', 'nl2lists', 'l18l']
         hf = h5py.File(file_name, 'w')
         for i in np.arange(len(vectorized_labels)):
             hf.create_dataset(key_names[i], data=vectorized_labels[i])
@@ -122,7 +128,6 @@ def main_3_ml_feat_labels(save=False):
     labellist = CU.load_hdf("vectorized_labels", 'labellist')
     nl2lists = CU.load_hdf("vectorized_labels", 'nl2lists')
 
-
     # load saved block pickles
     exp_block_df = pd.read_pickle('exp_block_RM160190920S3')
     kin_block_df = pd.read_pickle('kin_block_RM160190920S3')
@@ -138,7 +143,6 @@ def main_3_ml_feat_labels(save=False):
 
     exp_block_df18 = pd.read_pickle('exp_block_RM160190918S1')
     kin_block_df18 = pd.read_pickle('kin_block_RM160190918S1')
-
 
     # define params
     et = 0
@@ -239,7 +243,6 @@ def main_4_classify(save=False):
         feat_names = np.load(f)
     feat_names = [str(t[0]) for t in feat_names]  # un-nest
 
-
     # TODO feature engineering
     # TODO test set format
 
@@ -293,7 +296,8 @@ def main_4_classify(save=False):
 
     # 2b. classify
     num_labels_y_train = y_train_null[1]
-    classifier_pipeline_reaches, predictions_reaches, score_reaches = classify(model, X_train_selected, num_labels_y_train,
+    classifier_pipeline_reaches, predictions_reaches, score_reaches = classify(model, X_train_selected,
+                                                                               num_labels_y_train,
                                                                                k)
     # 2c. REMOVE >1 REACH TRIALS
     toRemove = 1  # remove >1 reaches # 0 if <1, 1 if > 1 reaches
@@ -330,7 +334,21 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     if args.function == 1:
-        main_1_vec_labels(save=True)
+        labels = [CU.rm16_9_19_s3_label,
+                  CU.rm16_9_20_s3_label,
+                  CU.rm16_9_18_s1_label,
+                  CU.rm16_9_17_s2_label,
+                  CU.rm16_9_17_s1_label
+
+                  # CU.rm15_9_25_s3_label,
+                  # CU.rm15_9_17_s4_label
+                  ]
+        key_names = ['rm16_9_19_s3_label',
+                     'rm16_9_20_s3_label',
+                     'rm16_9_18_s1_label',
+                     'rm16_9_17_s2_label',
+                     'rm16_9_17_s1_label']
+        main_1_vec_labels(labels, key_names, save=True)
 
     elif args.function == 2:
         main_2_kin_exp_blocks(save=True)
@@ -347,12 +365,12 @@ if __name__ == "__main__":
         # MUST DELETE ALL OLD DATA FILES BEFORE RUNNING if NOT using default args
         # run all
         if run_all_and_save:
-            main_1_vec_labels(save=True)
+            #main_1_vec_labels(save=True)
             main_2_kin_exp_blocks(save=True)
             main_3_ml_feat_labels(save=True)
             main_4_classify(save=True)
         else:
-            main_1_vec_labels()
+            vectorized_labels = main_1_vec_labels()
             main_2_kin_exp_blocks()
             main_3_ml_feat_labels()
             main_4_classify()
