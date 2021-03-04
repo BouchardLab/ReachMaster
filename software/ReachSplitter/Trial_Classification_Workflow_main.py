@@ -137,7 +137,6 @@ def main_2_kin_exp_blocks(kin_data, exp_data, all_block_names, save=False):
     if save:
         print("Saved kin & exp blocks.")
     print("Finished creating kin & exp blocks.")
-
     return all_kin_blocks, all_exp_blocks, all_kin_file_names, all_exp_file_names
 
 
@@ -359,39 +358,49 @@ if __name__ == "__main__":
               CU.rm16_9_19_s3_label,
               CU.rm16_9_17_s2_label,
               CU.rm16_9_17_s1_label,
-              CU.rm16_9_18_s1_label
+              CU.rm16_9_18_s1_label,
 
               # CU.rm15_9_25_s3_label,
               # CU.rm15_9_17_s4_label
+
+              CU.rm14_9_20_s1_label
               ]
     label_key_names = ['rm16_9_20_s3_label',
                        'rm16_9_19_s3_label',
                        'rm16_9_17_s2_label',
                        'rm16_9_17_s1_label',
-                       'rm16_9_18_s1_label'
+                       'rm16_9_18_s1_label',
+
+                       'rm14_9_20_s1_label'
                        ]
     # blocks
-    kin_data_path = ['tkd16.pkl']
+    kin_data_path = ['tkd16.pkl', 'tkd14.pkl']
     exp_data_path = 'experimental_data.pickle'
     block_names = [
         [['RM16', '0190920', '0190920', 'S3'],
          ['RM16', '0190919', '0190919', 'S3'],
          ['RM16', '0190917', '0190917', 'S2'],
          ['RM16', '0190917', '0190917', 'S1'],
-         ['RM16', '0190918', '0190918', 'S1']]
+         ['RM16', '0190918', '0190918', 'S1']],
+
+        [['RM14', '0190920', '0190920', 'S1']]
     ]
 
     kin_file_names = ['kin_block_RM160190920S3',
                       'kin_block_RM160190919S3',
                       'kin_block_RM160190917S2',
                       'kin_block_RM160190917S1',
-                      'kin_block_RM160190918S1']
+                      'kin_block_RM160190918S1',
+
+                      'kin_block_RM140190920S1']
 
     exp_file_names = ['exp_block_RM160190920S3',
                       'exp_block_RM160190919S3',
                       'exp_block_RM160190917S2',
                       'exp_block_RM160190917S1',
-                      'exp_block_RM160190918S1']
+                      'exp_block_RM160190918S1',
+
+                      'exp_block_RM140190920S1']
 
     # define params for trializing blocks
     et = 0
