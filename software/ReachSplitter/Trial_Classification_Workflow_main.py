@@ -37,6 +37,8 @@ from sklearn.model_selection import cross_val_score
 from sklearn.pipeline import make_pipeline
 from sklearn import preprocessing
 
+# set global random seed #
+np.random.seed(42)
 
 def main_1_vec_labels(labels, key_names, save=False, ):
     """ Processes DLC trial labels.
@@ -162,7 +164,6 @@ def main_3_ml_feat_labels(vectorized_labels, label_key_names,
 
     Notes:
         labels and blocks must match!
-
     """
     # init data handling variables
     if load:
