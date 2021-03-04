@@ -310,7 +310,7 @@ def main_4_classify(final_ML_feature_array, final_labels_array, feat_names, load
     model = sklearn.svm.SVC()
 
     # 2a. feature selection
-    keywords = ['Palm', 'Handle', 'Robot']
+    keywords = ['Handle', 'Palm'] # ["'Handle', 'X'", "'Palm', 'X'"]
     feat_df = CU.reshape_final_ML_array_to_df(num_frames, X_train_null, feat_names)
     _, X_train_selected = CU.select_feat_by_keyword(feat_df, keywords)
 
@@ -363,7 +363,8 @@ if __name__ == "__main__":
               # CU.rm15_9_25_s3_label,
               # CU.rm15_9_17_s4_label
 
-              CU.rm14_9_20_s1_label
+              CU.rm14_9_20_s1_label,
+              CU.rm14_9_18_s2_label
               ]
     label_key_names = ['rm16_9_20_s3_label',
                        'rm16_9_19_s3_label',
@@ -371,7 +372,8 @@ if __name__ == "__main__":
                        'rm16_9_17_s1_label',
                        'rm16_9_18_s1_label',
 
-                       'rm14_9_20_s1_label'
+                       'rm14_9_20_s1_label',
+                       'rm14_9_18_s2_label'
                        ]
     # blocks
     kin_data_path = ['tkd16.pkl', 'tkd14.pkl']
@@ -383,7 +385,8 @@ if __name__ == "__main__":
          ['RM16', '0190917', '0190917', 'S1'],
          ['RM16', '0190918', '0190918', 'S1']],
 
-        [['RM14', '0190920', '0190920', 'S1']]
+        [['RM14', '0190920', '0190920', 'S1'],
+         ['RM14', '0190918', '0190918', 'S2']]
     ]
 
     kin_file_names = ['kin_block_RM160190920S3',
@@ -392,7 +395,8 @@ if __name__ == "__main__":
                       'kin_block_RM160190917S1',
                       'kin_block_RM160190918S1',
 
-                      'kin_block_RM140190920S1']
+                      'kin_block_RM140190920S1',
+                      'kin_block_RM140190918S2']
 
     exp_file_names = ['exp_block_RM160190920S3',
                       'exp_block_RM160190919S3',
@@ -400,7 +404,8 @@ if __name__ == "__main__":
                       'exp_block_RM160190917S1',
                       'exp_block_RM160190918S1',
 
-                      'exp_block_RM140190920S1']
+                      'exp_block_RM140190920S1',
+                      'exp_block_RM140190918S2']
 
     # define params for trializing blocks
     et = 0

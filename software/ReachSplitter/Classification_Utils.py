@@ -2043,3 +2043,47 @@ rm14_9_20_s1_label = [
     [47, 88275, 88849, 1, 4, 'r', 'no_tug', 1, 0],  # failed, interrupted
     [48, 90043, 90620, 3, 1, 'l', 'no_tug', 0, 0],  # success
     [49, 91675, 92251, 3, 2, 'l', 'no_tug', 0, 0]]  # success
+
+# 2019-09-18-S2-RM14-cam2
+rm14_9_18_s2_label = [
+    [0, 3144, 3708, 0, 0, 0, 'no_tug', 0, 0],  # null
+    [1, 6876, 7735, 3, 2, 'bi', 'no_tug', 1, 0],  # success, bi
+    [2, 9931, 10499, 3, 2, 'bi', 'no_tug', 1, 0],  # success, bi
+    [3, 12640, 13206, 1, 1, 'l', 'no_tug', 0, 0],  # failed
+    [4, 13703, 14446, 3, 3, 'lra', 'no_tug', 1, 0],  # success, interrupted
+    [5, 14895, 15445, 3, 3, 'bi', 'no_tug', 1, 0],  # success, bi
+    [6, 15893, 16457, 0, 0, 0, 'no_tug', 0, 0],  # null
+    [7, 16874, 17465, 1, 2, 'r', 'no_tug', 1, 0],  # failed, reach 1 r, 1 l
+    [8, 21293, 21792, 3, 2, 'rla', 'no_tug', 1, 0],  # success
+    [9, 22507, 23014, 3, 2, 'bi', 'no_tug', 1, 0],  # success, bi
+    [10, 23638, 24203, 1, 2, 'l', 'no_tug', 0, 0],  # failed
+    [11, 24730, 25296, 3, 1, 'r', 'no_tug', 0, 0],  # success, not quite in reward zone
+    [12, 26751, 27319, 0, 0, 0, 'no_tug', 0, 0],  # null
+    [13, 29469, 30040, 0, 0, 0, 'no_tug', 0, 0],  # null
+    [14, 30505, 31091, 0, 0, 0, 'no_tug', 0, 0],  # null
+    [15, 31689, 32276, 3, 1, 'l', 'no_tug', 0, 0],  # success
+    [16, 35532, 36112, 1, 5, 'r', 'no_tug', 1, 0],  # failed
+    [17, 36593, 37174, 0, 0, 0, 'no_tug', 0, 0],  # null
+    [18, 38288, 38927, 3, 2, 'r', 'no_tug', 0, 0],  # success
+    [19, 39478, 40047, 1, 2, 'l', 'no_tug', 0, 0],  # failed
+    [20, 43806, 44379, 0, 0, 0, 'no_tug', 0, 0],  # null
+    [21, 46307, 46888, 1, 1, 'r', 'no_tug', 0, 0],  # failed
+    [22, 47932, 48511, 0, 0, 0, 'no_tug', 0, 0],  # null
+    [23, 48947, 49591, 3, 2, 'bi', 'no_tug', 1, 0],  # success, bi
+    [24, 54297, 54875, 1, 3, 'l', 'no_tug', 1, 0],  # failed
+    [25, 55317, 55894, 0, 0, 0, 'no_tug', 0, 0],  # null
+    [26, 68274, 69141, 3, 3, 'l', 'no_tug', 1, 0],  # success
+    [27, 69617, 70207, 3, 2, 'r', 'no_tug', 0, 0],  # success
+    [28, 72591, 73164, 3, 2, 'rla', 'no_tug', 1, 0],  # success
+    [29, 73719, 74223, 3, 2, 'rla', 'no_tug', 1, 0],  # success
+    [30, 79481, 80078, 3, 2, 'bi', 'no_tug', 1, 0],  # success
+    [31, 80529, 81127, 0, 0, 0, 'no_tug', 0, 0],  # null
+    [32, 83369, 83963, 1, 4, 'r', 'no_tug', 1, 0],  # failed, reach 2 l , 2 r
+    [33, 84447, 85042, 1, 4, 'r', 'no_tug', 1, 0],  # failed, interrupted
+    [34, 85491, 86088, 1, 3, 'r', 'no_tug', 0, 0],  # failed
+    [35, 86539, 87139, 3, 5, 'bi', 'no_tug', 1, 0],  # success, interrupted bi
+    [36, 88801, 89422, 3, 4, 'lra', 'no_tug', 1, 0],  # success, interrupted
+    [37, 89877, 90689, 3, 3, 'l', 'no_tug', 1, 0],  # success
+    [38, 91302, 91901, 3, 1, 'r', 'no_tug', 1, 0],  # success, interrupted
+    [39, 96013, 96611, 1, 4, 'r', 'no_tug', 1, 0]]  # failed, reach 2 l , 2 r
+
