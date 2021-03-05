@@ -10,13 +10,15 @@
 """
 import argparse
 import os.path
+from joblib import dump, load
 
-import sklearn
+from sklearn.svm import SVC
 from networkx.drawing.tests.test_pylab import plt
 from scipy import ndimage
 import pickle
 
-from sklearn.ensemble import RandomForestClassifier
+from sklearn.svm import LinearSVC
+from sklearn.metrics import accuracy_score
 
 from Analysis_Utils import preprocessing_df as preprocessing
 from Analysis_Utils import query_df
@@ -32,13 +34,14 @@ import numpy as np
 import h5py
 
 # classification
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.model_selection import cross_val_score
+from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor
+from sklearn.model_selection import cross_val_score, RandomizedSearchCV, train_test_split, GridSearchCV
 from sklearn.pipeline import make_pipeline
 from sklearn import preprocessing
 
 # set global random seed #
 np.random.seed(42)
+
 
 def main_1_vec_labels(labels, key_names, save=False, ):
     """ Processes DLC trial labels.
@@ -225,6 +228,11 @@ def main_3_ml_feat_labels(vectorized_labels, label_key_names,
     return final_ML_feature_array, final_labels_array, feat_names
 
 
+########################
+# Classification
+########################
+
+
 def classify(model, X, Y, k):
     """
     Classifies trials as null vs not null.
@@ -254,6 +262,106 @@ def classify(model, X, Y, k):
     return classifier_pipeline, predictions, score
 
 
+def classify_null_trials(X_train, y_train, feat_names, num_frames):
+    # Create the RF grid
+    # TODO more models
+    max_depth = [int(x) for x in np.linspace(10, 110, num=11)]  # Maximum number of levels in tree
+    max_depth.append(None)
+    param_grid = {'n_estimators': [int(x) for x in np.linspace(start=200, stop=2000, num=10)],
+                  # Number of trees in random forest
+                  'max_depth': max_depth,
+                  'min_samples_split': [2, 5, 10, 15, 100],  # Minimum number of samples required to split a node
+                  'min_samples_leaf': [1, 2, 5, 10]}  # Minimum number of samples required at each leaf node
+    model = RandomForestClassifier()  # default args
+
+    # 1a. feature selection
+    # TODO fix
+    keywords = ["Nose", "Handle"]
+    feat_df = CU.reshape_final_ML_array_to_df(num_frames, X_train, feat_names)
+    _, X_train_selected = CU.select_feat_by_keyword(feat_df, keywords)
+
+    print(X_train_selected)
+
+    # partion into validation set
+    X_train_selected_paritioned, X_val, y_train_paritioned, y_val = train_test_split(X_train_selected, y_train,
+                                                                                     test_size=0.2)
+
+    # 1b. hyperparameter tuning
+    # TODO make optional
+    best_grid, best_params_, tuned_accuracy = \
+        hyperparameter_tuning(model, param_grid, X_train_selected_paritioned, y_train_paritioned, X_val, y_val,
+                              fullGridSearch=False)
+
+    # classify all training data
+    classifier_pipeline_null, predictions_null, cv_score_null = classify(model, X_train_selected, y_train, k=3)
+
+    # print(predictions_null, score_null)
+    return classifier_pipeline_null, predictions_null, cv_score_null
+
+
+def evaluate(model, test_features, test_labels):
+    predictions = model.predict(test_features)
+    accuracy = accuracy_score(test_labels, predictions)
+    # model.score(test_features, test_labels)
+    # np.mean(cross_val_score(model, test_features, test_labels, cv=3))
+
+    print('Accuracy', accuracy)
+
+    return accuracy
+
+
+def hyperparameter_tuning(model, param_grid, train_features, train_labels, val_features, val_labels,
+                          fullGridSearch=False, save=False):
+    """
+    Performs hyperparameter tuning and returns best trained model.
+    Args:
+        model:
+        param_grid:
+        train_features:
+        train_labels:
+        val_features:
+        val_labels:
+        fullGridSearch: True to run exhaustive param search, False runs RandomizedSearchCV
+        save (bool): True to save model, False otherwise
+
+    Returns:
+        tuned model
+        parameters found through search
+        accuracy of tuned model
+
+    Reference: https://towardsdatascience.com/hyperparameter-tuning-the-random-forest-in-python-using-scikit-learn-28d2aa77dd74
+    """
+    # Use the random grid to search for best hyperparameters
+    if fullGridSearch:
+        # Instantiate the grid search model
+        grid_search = GridSearchCV(estimator=model, param_grid=param_grid,
+                                   cv=3, n_jobs=-1, verbose=2)
+    else:
+        # Random search of parameters, using 3 fold cross validation,
+        # search across 100 different combinations, and use all available cores
+        grid_search = RandomizedSearchCV(estimator=model, param_distributions=param_grid, n_iter=2, cv=5,
+                                         random_state=42, verbose=2, n_jobs=-1)
+
+    # print(train_features.shape, train_labels.shape)
+    # print(val_features.shape, val_labels.shape)
+
+    # Fit the random search model
+    grid_search.fit(train_features, train_labels)
+
+    # print(grid_search.best_params_)
+
+    base_model = RandomForestClassifier()
+    base_model.fit(train_features, train_labels)
+    base_accuracy = evaluate(base_model, val_features, val_labels)
+
+    best_grid = grid_search.best_estimator_
+    tuned_accuracy = evaluate(best_grid, val_features, val_labels)
+
+    print('Improvement % of', (100 * (tuned_accuracy - base_accuracy) / base_accuracy))
+
+    return best_grid, grid_search.best_params_, tuned_accuracy
+
+
 def main_4_classify(final_ML_feature_array, final_labels_array, feat_names, load=False, save=False):
     if load:
         # Load final_ML_array and final_feature_array in h5 file
@@ -264,10 +372,7 @@ def main_4_classify(final_ML_feature_array, final_labels_array, feat_names, load
             feat_names = np.load(f)
         feat_names = [str(t[0]) for t in feat_names]  # un-nest
 
-    # TODO feature engineering
-    # TODO test set format
-
-    ### prepare classification data ###
+    ### prepare data ###
 
     # reshape features to be (num trials, num feat * num frames)
     num_frames = final_ML_feature_array.shape[2]
@@ -275,31 +380,16 @@ def main_4_classify(final_ML_feature_array, final_labels_array, feat_names, load
                                                             final_ML_feature_array.shape[1] *
                                                             final_ML_feature_array.shape[2])
 
-    # partition data into test, train
-    X_train, X_test, y_train, y_test = CU.split_ML_array(final_ML_feature_array, final_labels_array, t=0.2)
-
-    # type_labels_y_train, num_labels_y_train, hand_labels_y_train, tug_labels_y_train, switch_labels_y_train \
+    # partition data into test, train, and validation sets
+    X_train, X_test, y_train, y_test = train_test_split(final_ML_feature_array, final_labels_array,
+                                                        test_size=0.2)
+    # type_labels_y_train, num_labels_y_train, hand_labels_y_train, tug_labels_y_train, switch_labels_y_train
     y_train = CU.get_ML_labels(y_train)
     y_test = CU.get_ML_labels(y_test)
 
-    ### classify ###
-
-    # init basic variables
-    k = 3
-
-    # 1. NULL V NOT NULL
-    model = RandomForestClassifier(n_estimators=100, max_depth=5)  # default args
-
-    # 1a. feature selection
-    keywords = ['Nose', 'Handle']
-    feat_df = CU.reshape_final_ML_array_to_df(num_frames, X_train, feat_names)
-    _, X_train_selected = CU.select_feat_by_keyword(feat_df, keywords)
-
-    # 1b.
-    type_labels_y_train = y_train[0]
-    classifier_pipeline_null, predictions_null, score_null = classify(model, X_train_selected, type_labels_y_train, k)
-
-    # print(predictions_null, score_null)
+    ### classify null trials ###
+    classifier_pipeline_null, predictions_null, score_null = classify_null_trials(X_train, y_train[0], feat_names,
+                                                                                  num_frames)
 
     # 1c. REMOVE NULL TRIALS
     toRemove = 1  # remove null trials # 1 if null, 0 if real trial
@@ -308,14 +398,17 @@ def main_4_classify(final_ML_feature_array, final_labels_array, feat_names, load
     print(X_train_null.shape, y_train_null.shape)
 
     # 2. NUM REACHES
-    model = sklearn.svm.SVC()
+    # model = sklearn.svm.SVC()
 
     # 2a. feature selection
-    keywords = ['Handle', 'Palm'] # ["'Handle', 'X'", "'Palm', 'X'"]
+    keywords = ['Handle', 'Palm']  # ["'Handle', 'X'", "'Palm', 'X'"]
     feat_df = CU.reshape_final_ML_array_to_df(num_frames, X_train_null, feat_names)
     _, X_train_selected = CU.select_feat_by_keyword(feat_df, keywords)
 
     # 2b. classify
+    model = RandomForestClassifier()
+    k = 5
+
     num_labels_y_train = y_train_null[1]
     classifier_pipeline_reaches, predictions_reaches, score_reaches = classify(model, X_train_selected,
                                                                                num_labels_y_train,
