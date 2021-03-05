@@ -10,7 +10,11 @@
 """
 import argparse
 import os.path
-from joblib import dump, load
+from imblearn.over_sampling import SMOTE  # for adjusting class imbalances
+
+import sklearn
+import joblib  # for saving sklearn models
+from sklearn.preprocessing import StandardScaler
 
 from sklearn.svm import SVC
 from networkx.drawing.tests.test_pylab import plt
@@ -19,8 +23,10 @@ import pickle
 
 from sklearn.svm import LinearSVC
 from sklearn.metrics import accuracy_score
+from sklearn import preprocessing
+from sklearn.linear_model import LogisticRegression
 
-from Analysis_Utils import preprocessing_df as preprocessing
+from Analysis_Utils import preprocessing_df as preprocessing # for normalizing data
 from Analysis_Utils import query_df
 import DataStream_Vis_Utils as utils
 import Classification_Utils as CU
@@ -36,7 +42,7 @@ import h5py
 # classification
 from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor
 from sklearn.model_selection import cross_val_score, RandomizedSearchCV, train_test_split, GridSearchCV
-from sklearn.pipeline import make_pipeline
+from sklearn.pipeline import make_pipeline, Pipeline
 from sklearn import preprocessing
 
 # set global random seed #
@@ -262,51 +268,44 @@ def classify(model, X, Y, k):
     return classifier_pipeline, predictions, score
 
 
-def classify_null_trials(X_train, y_train, feat_names, num_frames):
-    # Create the RF grid
-    # TODO more models
-    max_depth = [int(x) for x in np.linspace(10, 110, num=11)]  # Maximum number of levels in tree
-    max_depth.append(None)
-    param_grid = {'n_estimators': [int(x) for x in np.linspace(start=200, stop=2000, num=10)],
-                  # Number of trees in random forest
-                  'max_depth': max_depth,
-                  'min_samples_split': [2, 5, 10, 15, 100],  # Minimum number of samples required to split a node
-                  'min_samples_leaf': [1, 2, 5, 10]}  # Minimum number of samples required at each leaf node
-    model = RandomForestClassifier()  # default args
+def train_and_save_model(model, param_grid, X_train, y_train, feat_names, num_frames, file_name, save=False):
+    """
+    Args:
+        X_train:
+        y_train:
+        feat_names:
+        num_frames:
 
-    # 1a. feature selection
-    # TODO fix
-    keywords = ["Nose", "Handle"]
-    feat_df = CU.reshape_final_ML_array_to_df(num_frames, X_train, feat_names)
-    _, X_train_selected = CU.select_feat_by_keyword(feat_df, keywords)
+    Returns:
 
-    print(X_train_selected)
+    Reference: https://towardsdatascience.com/logistic-regression-model-tuning-with-scikit-learn-part-1-425142e01af5
+    """
 
-    # partion into validation set
-    X_train_selected_paritioned, X_val, y_train_paritioned, y_val = train_test_split(X_train_selected, y_train,
-                                                                                     test_size=0.2)
+    # partition into validation set
+    X_train_paritioned, X_val, y_train_paritioned, y_val = train_test_split(X_train, y_train, test_size=0.2)
+    # adjust for class imbalance
+    #   oversamples the minority class by synthetically generating additional samples
+    sm = SMOTE(random_state=42)
+    X_train_res, y_train_res = sm.fit_resample(X_train_paritioned, y_train_paritioned)
 
     # 1b. hyperparameter tuning
-    # TODO make optional
     best_grid, best_params_, tuned_accuracy = \
-        hyperparameter_tuning(model, param_grid, X_train_selected_paritioned, y_train_paritioned, X_val, y_val,
+        hyperparameter_tuning(model, param_grid, X_train_res, y_train_res, X_val, y_val,
                               fullGridSearch=False)
 
-    # classify all training data
-    classifier_pipeline_null, predictions_null, cv_score_null = classify(model, X_train_selected, y_train, k=3)
+    if save:
+        joblib.dump(best_grid, file_name+'.joblib')
 
-    # print(predictions_null, score_null)
+        # classify all training data
+    classifier_pipeline_null, predictions_null, cv_score_null = classify(model, X_train, y_train, k=3)
+
     return classifier_pipeline_null, predictions_null, cv_score_null
 
 
 def evaluate(model, test_features, test_labels):
     predictions = model.predict(test_features)
     accuracy = accuracy_score(test_labels, predictions)
-    # model.score(test_features, test_labels)
-    # np.mean(cross_val_score(model, test_features, test_labels, cv=3))
-
     print('Accuracy', accuracy)
-
     return accuracy
 
 
@@ -342,13 +341,8 @@ def hyperparameter_tuning(model, param_grid, train_features, train_labels, val_f
         grid_search = RandomizedSearchCV(estimator=model, param_distributions=param_grid, n_iter=2, cv=5,
                                          random_state=42, verbose=2, n_jobs=-1)
 
-    # print(train_features.shape, train_labels.shape)
-    # print(val_features.shape, val_labels.shape)
-
     # Fit the random search model
     grid_search.fit(train_features, train_labels)
-
-    # print(grid_search.best_params_)
 
     base_model = RandomForestClassifier()
     base_model.fit(train_features, train_labels)
@@ -387,9 +381,35 @@ def main_4_classify(final_ML_feature_array, final_labels_array, feat_names, load
     y_train = CU.get_ML_labels(y_train)
     y_test = CU.get_ML_labels(y_test)
 
+    # Create first pipeline for base without reducing features.
+    model = Pipeline(steps=[('standardscaler', StandardScaler()),
+                            ('classifier', RandomForestClassifier())])
+
+    # Create param grid.
+    # TODO expand search
+    param_grid = [
+        {'classifier': [LogisticRegression()],
+         'classifier__penalty': ['l1', 'l2'],
+         'classifier__C': np.logspace(-4, 4, 20),
+         'classifier__solver': ['liblinear']},
+        {'classifier': [RandomForestClassifier()],
+         'classifier__n_estimators': list(range(10, 101, 10)),
+         'classifier__max_features': list(range(6, 32, 5))},
+        {'classifier': [sklearn.svm.SVC()],
+         'classifier__C': list(range(1, 10, 1))}
+    ]
+
+    # 1a. feature selection
+    # TODO adjust
+    keywords = ["Nose", "Handle"]
+    feat_df = CU.reshape_final_ML_array_to_df(num_frames, X_train, feat_names)
+    _, X_train_selected = CU.select_feat_by_keyword(feat_df, keywords)
+
     ### classify null trials ###
-    classifier_pipeline_null, predictions_null, score_null = classify_null_trials(X_train, y_train[0], feat_names,
-                                                                                  num_frames)
+    type_labels_y_train = y_train[0]
+    classifier_pipeline_null, predictions_null, score_null =\
+        train_and_save_model(model, param_grid, X_train_selected, type_labels_y_train, feat_names, num_frames,
+                             "null_classifier", save=True)
 
     # 1c. REMOVE NULL TRIALS
     toRemove = 1  # remove null trials # 1 if null, 0 if real trial
@@ -398,45 +418,49 @@ def main_4_classify(final_ML_feature_array, final_labels_array, feat_names, load
     print(X_train_null.shape, y_train_null.shape)
 
     # 2. NUM REACHES
-    # model = sklearn.svm.SVC()
 
     # 2a. feature selection
+    # TODO adjust
     keywords = ['Handle', 'Palm']  # ["'Handle', 'X'", "'Palm', 'X'"]
     feat_df = CU.reshape_final_ML_array_to_df(num_frames, X_train_null, feat_names)
     _, X_train_selected = CU.select_feat_by_keyword(feat_df, keywords)
 
     # 2b. classify
-    model = RandomForestClassifier()
-    k = 5
-
     num_labels_y_train = y_train_null[1]
-    classifier_pipeline_reaches, predictions_reaches, score_reaches = classify(model, X_train_selected,
-                                                                               num_labels_y_train,
-                                                                               k)
+    classifier_pipeline_reaches, predictions_reaches, score_reaches = \
+        train_and_save_model(model, param_grid, X_train_selected, num_labels_y_train, feat_names, num_frames,
+                             "num_reaches_classifier", save=True)
+
     # 2c. REMOVE >1 REACH TRIALS
     toRemove = 1  # remove >1 reaches # 0 if <1, 1 if > 1 reaches
     X_train_reaches, y_train_reaches = CU.remove_trials(X_train_null, y_train_null, predictions_reaches, toRemove)
     print(X_train_reaches.shape, y_train_reaches.shape)
 
     # 3. WHICH HAND
-    model = RandomForestClassifier()
 
     # 3a. feature selection
+    # TODO adjust
     keywords = ['Robot', 'Palm']
     feat_df = CU.reshape_final_ML_array_to_df(num_frames, X_train_reaches, feat_names)
     _, X_train_selected = CU.select_feat_by_keyword(feat_df, keywords)
 
     # 3b. classify
     hand_labels_y_train = y_train_reaches[2]
-    classifier_pipeline_hand, predictions_hand, score_hand = classify(model, X_train_selected, hand_labels_y_train,
-                                                                      k)
+    classifier_pipeline_hand, predictions_hand, score_hand = \
+        train_and_save_model(model, param_grid, X_train_selected, hand_labels_y_train, feat_names, num_frames,
+                             "which_hand_classifier", save=True)
+
     # 3c. REMOVE lra/rla/bi HAND TRIALS
     toRemove = 1  # remove lra/rla/bi reaches # 1 if lra/rla/bi, 0 l/r reaches
     X_train_hand, y_train_hand = CU.remove_trials(X_train_reaches, y_train_reaches, predictions_hand, toRemove)
     print(X_train_hand.shape, y_train_hand.shape)
 
+    #clf = joblib.load('which_hand_classifier.joblib')
+    #print(clf)
+
     print(score_null, score_hand, score_reaches)
     print("Finished classification.")
+
 
 
 #######################

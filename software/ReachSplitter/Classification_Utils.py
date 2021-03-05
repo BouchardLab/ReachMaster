@@ -19,10 +19,10 @@ from sklearn import decomposition
 from sklearn import preprocessing
 import pdb
 from sklearn.pipeline import make_pipeline
-from yellowbrick.model_selection import CVScores
-from yellowbrick.features import Rank2D
+#from yellowbrick.model_selection import CVScores
+#from yellowbrick.features import Rank2D
 from Classification_Visualization import visualize_model, print_preds, plot_decision_tree
-from yellowbrick.classifier import ClassificationReport
+#from yellowbrick.classifier import ClassificationReport
 import DataStream_Vis_Utils as utils
 from scipy import ndimage
 
@@ -1028,6 +1028,7 @@ def norm_and_zscore_ML_array(ML_array, robust=False, decomp=False, gauss=False):
 
 
 def split_ML_array(Ml_array, labels_array, t=0.2):
+    # unused
     X_train, X_test, y_train, y_test = train_test_split(Ml_array, labels_array, test_size=t, random_state=0)
     return X_train, X_test, y_train, y_test
 
