@@ -461,6 +461,33 @@ def main_4_classify(final_ML_feature_array, final_labels_array, feat_names, load
     print(score_null, score_hand, score_reaches)
     print("Finished classification.")
 
+    return [predictions_null, predictions_reaches, predictions_hand]  # TODO fix mismatched dim
+
+def results_to_csv(results, reachIDs, file_name):
+    """
+    Saves classification predictions to CSV in current working directory.
+    :param results: data to save
+    :param file_name: for unique csv file naming
+    :param reachIDs: predicted reach index start times
+    :return: none
+    """
+    df = pd.DataFrame({'Null Preds': results[0],
+                       'Num Reach Preds': results[1],
+                       'Which Hand Preds': results[2],
+                       'Reach ID Preds': reachIDs})
+    df.index += 1  # Ensures that the index starts at 1.
+    df.to_csv(file_name + '.csv', index_label='Trial Num')
+
+
+def main_5_save_results():
+    # TODO fix
+    # gen dummy results for e.g # RM16, 9-17, S2, 37 trials total, 1-indexed
+    numTrials = 37
+    results = np.random.randint(low=-1, high=2, size=(3, numTrials))  # high exclusive # if no classification, preds=-1
+    reachIDs = np.random.randint(low=0, high=10000, size=numTrials)  # predicted start indices
+
+    file_name = 'trialClassification'
+    results_to_csv(results, reachIDs, file_name)
 
 
 #######################
@@ -541,7 +568,7 @@ if __name__ == "__main__":
 
     elif args.function == 3:
         # MUST DELETE ALL OLD DATA FILES BEFORE RUNNING if NOT using default args
-        # TODO make an os assert for this
+        # TODO make an os assert for this or fix
         final_ML_feature_array, final_labels_array, feat_names = \
             main_3_ml_feat_labels([], label_key_names,
                                   [], [], kin_file_names, exp_file_names,
@@ -549,8 +576,10 @@ if __name__ == "__main__":
                                   load=True, save=True)
     elif args.function == 4:
         main_4_classify([], [], [], load=True, save=True)
-
+        # TODO given rat or block, return classification labels (no shuffling!)
     elif args.function == 5:
+        main_5_save_results()
+    elif args.function == 6:
         # runs all without saving files into current working directory
         vectorized_labels = main_1_vec_labels(labels, label_key_names, save=False)
         kin_blocks, exp_blocks, kin_file_names, exp_file_names = main_2_kin_exp_blocks(kin_data_path, exp_data_path,
