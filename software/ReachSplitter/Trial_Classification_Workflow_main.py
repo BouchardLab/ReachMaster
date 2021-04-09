@@ -475,7 +475,7 @@ def results_to_csv(results, reachIDs, file_name):
                        'Num Reach Preds': results[1],
                        'Which Hand Preds': results[2],
                        'Reach ID Preds': reachIDs})
-    df.index += 1  # Ensures that the index starts at 1.
+    #df.index += 1  # Ensures that the index starts at 1.
     df.to_csv(file_name + '.csv', index_label='Trial Num')
 
 
