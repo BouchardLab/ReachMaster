@@ -20,7 +20,7 @@ import pandas as pd
 
 
 # dlt reconstruct adapted by An Chi Chen from DLTdv5 by Tyson Hedrick
-def dlt_reconstruct(c, camPts):
+def dlt_reconstruct(c, camPts, weights=None):
     """
     Function to reconstruct multi-camera predictions from 2-D camera space into 3-D euclidean space
     Credit: adapted by An Chi Chen from DLTdv5 by Tyson Hedrick, edited by BN 8/3/2020
@@ -79,6 +79,11 @@ def dlt_reconstruct(c, camPts):
                     temp2 = temp2 + 1
 
             # get the least squares solution to the reconstruction
+            if isinstance(weights, np.ndarray):
+                w = np.sqrt(np.diag(weights[i - 1, :]))
+                # print(w.shape,m1.shape,m2.shape)
+                m1 = np.matmul(w, m1)
+                m2 = np.matmul(w, m2)
             Q, R = np.linalg.qr(m1)  # QR decomposition with qr function
             y = np.dot(Q.T, m2)  # Let y=Q'.B using matrix multiplication
             x = np.linalg.solve(R, y)  # Solve Rx=y
@@ -98,7 +103,7 @@ def dlt_reconstruct(c, camPts):
     return xyz
 
 
-def reconstruct_3d(dlt_coefs_file, dlc_files, output_format, plotting=False):
+def reconstruct_3d(dlt_coefs_file, dlc_files, output_format, plotting=False, weighted=False):
     """Perform 3-D reconstruction using DLT co-effecients and extracted multi-camera predictions
     Parameters
     ----------
@@ -124,7 +129,7 @@ def reconstruct_3d(dlt_coefs_file, dlc_files, output_format, plotting=False):
     frames = first_dataset.shape[0] - 3
     cameras = len(dlc_files)
 
-    xyz_all = np.empty([frames, 3, len(names)])
+    xyz_all = np.empty([frames, 4, len(names)])
 
     if plotting:
         # Color Settings for Figure
@@ -141,16 +146,23 @@ def reconstruct_3d(dlt_coefs_file, dlc_files, output_format, plotting=False):
     for k in range(len(names)):
         # read in data from DLC
         cam_data = np.empty([frames, 2 * cameras], dtype=float)
+        weights = np.empty([frames, 2 * cameras], dtype=float)
         csv_index = int((k * 3) + 1)
         for cam in range(cameras):
             col = cam * 2
             cam_data[:, col] = np.loadtxt(dlc_files[cam], dtype=float, delimiter=',', skiprows=3, usecols=csv_index)
             cam_data[:, col + 1] = np.loadtxt(dlc_files[cam], dtype=float, delimiter=',', skiprows=3,
                                               usecols=(csv_index + 1))
+            weights[:, col] = np.loadtxt(dlc_files[cam], dtype=float, delimiter=',', skiprows=3, usecols=(csv_index + 2))
+            weights[:, col + 1] = np.loadtxt(dlc_files[cam], dtype=float, delimiter=',', skiprows=3, usecols=(csv_index + 2))
 
         # combine
-        xyz = dlt_reconstruct(dlt_coefs, cam_data)
-        xyz_all[:, :, k] = np.copy(xyz)
+        if weighted:
+            xyz = dlt_reconstruct(dlt_coefs, cam_data, weights)
+        else:
+            xyz = dlt_reconstruct(dlt_coefs, cam_data)
+        xyz_k = np.append(xyz, np.mean(weights, axis=1)[:, np.newaxis], axis=1)
+        xyz_all[:, :, k] = xyz_k
         if plotting:
             xs = np.copy(xyz[:, 0])
             ys = np.copy(xyz[:, 1])
@@ -159,7 +171,7 @@ def reconstruct_3d(dlt_coefs_file, dlc_files, output_format, plotting=False):
 
         # save xyz coords in csv file
         out_filename = (output_format + names[k] + '.csv')
-        np.savetxt(out_filename, xyz, delimiter=',', fmt='%1.4f')
+        np.savetxt(out_filename, xyz_k, delimiter=',', fmt='%1.4f')
 
     if plotting:
         plt.legend(names)
