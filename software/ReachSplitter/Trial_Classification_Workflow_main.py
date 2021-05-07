@@ -401,7 +401,7 @@ def main_4_classify(final_ML_feature_array, final_labels_array, feat_names, load
 
     # 1a. feature selection
     # TODO adjust
-    keywords = ["Nose", "Handle"]
+    keywords = ["Nose", "Palm"]
     feat_df = CU.reshape_final_ML_array_to_df(num_frames, X_train, feat_names)
     _, X_train_selected = CU.select_feat_by_keyword(feat_df, keywords)
 
