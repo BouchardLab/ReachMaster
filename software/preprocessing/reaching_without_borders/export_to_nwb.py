@@ -18,17 +18,36 @@ for s in pns_session_dirs:
     nwb_file = rwb.init_nwb_file(file_name=rat + "_" + date + "_" + s,
                                  source_script=__file__,
                                  experimenter=experimenter,
-                                 session_start_time=start_time)
+                                 session_start_time=0000)
     if 'controller_data' in data_dirs:
         controller_dir = session_dir + "\\controller_data\\"
-        nwb_file = rwb.controller_to_nwb(nwb_file, dir=controller_dir)
+        nwb_file = rwb.controller_to_nwb(nwb_file, controller_dir)
     if 'config' in data_dirs:
-        nwb_file = rwb.config_to_nwb(nwb_file, dir=config_dir)
+        config_dir = session_dir + "\\config_data\\"
+        nwb_file = rwb.config_to_nwb(nwb_file, config_dir)
     if 'videos' in data_dirs:
-        nwb_file = rwb.link_video(nwb_file, dir=video_dir)
-    if 'calibration_videos' in pns_dirs:
-        nwb_file = rwb.link_video(nwb_file, dir=video_dir)
-    # trodes data
+        video_dir = session_dir + "\\videos\\"
+        nwb_file = rwb.link_videos(nwb_file, video_dir)
+        try:
+            nwb_file = rwb.link_DLC_predictions(nwb_file, video_dir)
+        except:
+            print('Cant add DLC predictions to NWB')
+        try:
+            nwb_file = rwb.link_DLC_predictions(nwb_file, video_dir)
+        except:
+            print('Cant add filtered DLC predictions to NWB')
+        try:
+            nwb_file = rwb.link_3d_coordinates(nwb_file, video_dir)
+        except:
+            print('Cant fetch 3d coordinates')
+        try:
+            nwb_file = rwb.add_reachsplitter_predictions(nwb_file, video_dir)
+        except:
+            print('Couldnt find classification vector')
+
+    if 'calibration_videos' in data_dirs:
+        calibration_video_dir = session_dir + "\\calibration_videos\\"
+        nwb_file = rwb.link_calibration_videos(nwb_file, calibration_video_dir)
     if s in cns_session_dirs:
         session_dir = root_dir + "cns\\" + rat + "\\" + date + "\\" + s + '\\'
         trodes_name = os.listdir(session_dir)[0]

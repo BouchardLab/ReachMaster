@@ -131,48 +131,11 @@ def add_controller_data(nwb_file, controller_data):
     return nwb_file
 
 
-def add_positional_data(nwb_file, position_block):
-    """
-
-    """
-    p_file = pynwb.behavior.BehavioralEpochs(name='positional_data') #
-    t=0
-    for key in position_block.columns():
-        if 'X' in key:
-
-        if 'Y' in key:
-
-        if 'Z' in key:
-
-        if 'c1' in key:
-
-        if 'c2' in key:
-
-        if 'c3' in key:
-
-        if 'rmse' in key:
-            continue
-
-            #interval_series = pynwb.misc.IntervalSeries(
-             #   name=key,
-              #  data=[1, -1],
-               # timestamps=[start_times[0], stop_times[0]]
-            #)
-            #for i in range(len(start_times))[1:]:
-            #    interval_series.add_interval(
-             #       start=float(start_times[i]),
-             #       stop=float(stop_times[i])
-             #   )
-            #p_file.add_interval_series(interval_series)
-    nwb_file.add_acquisition(p_file)
-    return nwb_file
-
-
-def config_to_nwb(nwb_file, config_dir):
+def config_to_nwb(nwb_file, config_dir): ### HERE is where you can add the config data
     config_data = import_config_data(config_dir)
     for key in config_data.keys(): # each dict has a key,
-        parse = config_data[key]
-        for item in parse.keys():
+        key_parse = config_data[key]
+        for item in key_parse.keys():
             # What to add, what class
     # session_id
     # stimulus_notes
@@ -181,12 +144,61 @@ def config_to_nwb(nwb_file, config_dir):
 
 
 def link_videos(nwb_file, video_dir):
+    # get cam1,2,3 videos
+    for vfiles in os.listdir(video_dir):
+        if '_cam1.mp4' in vfiles:
+            pass
+        if '_cam2.mp4' in vfiles:
+            pass
+        if '_cam3.mp4' in vfiles:
+            pass
     return nwb_file
 
 
-def add_videos(nwb_file, video_data):
+def link_calibration_videos(nwb_file, cal_dir):
+    for vfiles in os.listdir(cal_dir):
+        if ".mp4" in vfiles:
+            # append it
+            pass
     return nwb_file
 
+
+def link_3d_coordinates(nwb_file,video_dir): # this is where you can merge your code billy for holding our 3-D values
+    # ReachMaster3D saves a pandas dataframe for each session inside the video directory
+    for vfiles in os.listdir(video_dir):
+        if 'fullReconstruction3D' in vfiles:
+            # add positions to NWB
+            pass
+    return nwb_file
+
+
+def add_reachsplitter_predictions(nwb_file,video_dir):# Reachsplitter vector added here
+    # ReachSplitter iterates over each session and performs classification
+    # this is then saved as a .csv dictionary
+    for vfiles in os.listdir(video_dir):
+        if "splitpredictions" in vfiles:
+            # add prediction indices to NWB
+            pass
+    return nwb_file
+
+
+def link_DLC_predictions(nwb_file,video_dir): # add the DLC files (need code/write code)
+    for vfiles in os.listdir(video_dir):
+        if ""
+    return nwb_file
+
+
+def link_filtered_DLC_predictions(nwb_file,video_dir): # add the DLC files (need code/write code)
+
+    return nwb_file
+
+
+def convertToDateTime(date):
+    date = "2" + str(date)
+    date_time_obj = datetime.strptime(date, '%Y%m%d')
+    return date_time_obj
+
+# this function retrieves the correct position block from a dataframe for a rat, date, and session.
 
 def make_trial_masks(controller_data, experiment_data):
     """
@@ -316,3 +328,5 @@ def match_times(controller_data, experiment_data):
     exposures = get_exposure_times(exposures)
     controller_time_normalized = controller_time - controller_time[-1] + exposures[-1]
     return controller_time_normalized
+
+

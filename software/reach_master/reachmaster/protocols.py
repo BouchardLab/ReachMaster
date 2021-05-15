@@ -21,6 +21,7 @@ from time import time, sleep
 import datetime
 import os 
 import numpy as np
+import threading
 
 def list_protocols():
     """Generate a list of the available protocol types. Currently 
@@ -104,15 +105,16 @@ class Protocols(tk.Toplevel):
             self.rob_connected = True     
             print("loading robot settings...")
             self.config = robint.set_rob_controller(self.rob_controller, self.config)      
-            self.cams = camint.CameraInterface(self.config) 
-            self.cams_connected = True 
-            self.cams.start_protocol_interface() 
-            sleep(10) #allow cameras time to setup                              
-            self._acquire_baseline()                       
+            self.cams = camint.CameraInterface(self.config)
+            self.cams_connected = True
+            self.cam_thread = threading.Thread(target=self.cam_init())
+            self.cam_thread.start()
+            sleep(30) # give the cameras time to start
+            self._acquire_baseline()
         except Exception as err:
             print(err)
             self.on_quit()  
-            return                  
+            return
         self._init_data_output()      
         self._configure_window() 
         self.control_message = 'b'
@@ -120,6 +122,11 @@ class Protocols(tk.Toplevel):
             pass
         self.exp_response = expint.start_experiment(self.exp_controller)    
         self.ready = True                         
+
+
+    def cam_init(self):
+        self.cams.start_protocol_interface()
+
 
     def on_quit(self):
         """Called prior to destruction protocol window.
@@ -133,6 +140,7 @@ class Protocols(tk.Toplevel):
         if self.rob_connected:
             robint.stop_interface(self.rob_controller)
         if self.cams_connected:
+            self.cam_thread.join()
             self.cams.stop_interface()
         self.destroy()
 
@@ -161,6 +169,7 @@ class Protocols(tk.Toplevel):
             self.cams.triggered()
         self.baseline_acquired = True
         print("Baseline acquired!")
+        return 1
         
     def _init_data_output(self):
         self.controller_data_path = self.config['ReachMaster']['data_dir'] + "/controller_data/"
