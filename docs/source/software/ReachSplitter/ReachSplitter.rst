@@ -30,6 +30,7 @@ As trials are classified in our datastream, an appropriate class defined
 is the number of reaches in a trial. From this point, the start indices of each
 changepoint are predicted using [method etc]
 
+
 Overall Reach Extraction Pipeline Structure
 ############################################
 
