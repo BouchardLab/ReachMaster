@@ -1,8 +1,7 @@
 Tutorials
 =======================================
 Here we provide instructions for performing common tasks and 
-analyses with the ReachMaster system. More tutorials should
-be added over time.
+analyses with the ReachMaster experimental system.
 
 .. toctree::
     :maxdepth: 3
@@ -11,3 +10,5 @@ be added over time.
     camera_calibration/camera_calibration
     robot_workspace/robot_workspace
     experiment_data_extraction/data_extraction
+    ReachPredict3D/ReachPredict3D
+    ReachSplitter/ReachSplitter

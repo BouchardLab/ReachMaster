@@ -20,7 +20,6 @@ convenience in assigning various pieces of information, like the hand
 of a reach. To automate this tiresome process, ReachSplitter leverages
 supervised classification to train models to classify reaches.
 
-Our approach...
 Within-Trial Reach Segmentation
 ################################
 Time-series anomaly detection and segmentation is a well-established problem.
@@ -30,8 +29,6 @@ data stream like our predicted kinematic positions. One such package is...
 As trials are classified in our datastream, an appropriate class defined
 is the number of reaches in a trial. From this point, the start indices of each
 changepoint are predicted using [method etc]
-
-
 
 Overall Reach Extraction Pipeline Structure
 ############################################
@@ -44,9 +41,15 @@ are integrated into a block-by-block classification and segmentation pipeline.
 
 Inputs, Outputs and Local Data File Requirements
 ################################################
-ReachSplitter is designed to work with two files as input, a dataframe containing predicted positions for various end-effectors and a dataframe containing raw sensor and interpreted data from the ReachMaster system. *In order to run ReachSplitter, one needs these files*. 
-ReachSplitter outputs predicted reach start indices from a given trial block, hierarchal classification of each reach segment, and metadata necessary for transmission of data into Neurodata Without Borders. Additional functionality includes direct extraction of data into Neurodata Without Borders.
+ReachSplitter is designed to work with two files as input, a dataframe containing predicted
+positions for various end-effectors and a dataframe containing raw sensor and interpreted data
+from the ReachMaster system. *In order to run ReachSplitter, one needs these files*.
+ReachSplitter outputs predicted reach start indices from a given trial block,
+hierarchal classification of each reach segment, and metadata necessary for transmission of data into Neurodata
+Without Borders. Additional functionality includes direct extraction of data into Neurodata Without Borders.
 ReachSplitter is designed to work within Bouchard Lab's data interface system.
+
+
 ReachSplitter Main Function
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 .. automodule:: _main.py
