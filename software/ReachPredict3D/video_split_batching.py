@@ -8,7 +8,7 @@ import pdb
 import numpy as np
 
 
-    def conver2bgr(frame):
+def conver2bgr(frame):
         """Function to convert image to bgr color scheme
 
         Attributes
@@ -19,7 +19,7 @@ import numpy as np
         return frame
 
 
-    def enhanceImage(frame):
+def enhanceImage(frame):
         cols, rows, ch = frame.shape
         brightness = np.sum(frame) / (ch * 255 * cols * rows)
         minimum_brightness = 0.2
@@ -27,7 +27,6 @@ import numpy as np
         ratio = brightness / minimum_brightness
         frame = cv2.convertScaleAbs(frame, alpha=1, beta=255 * (minimum_brightness - brightness))
         return frame
-
 
 
 def mainrun_split(self,input):
