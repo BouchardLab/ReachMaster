@@ -13,7 +13,21 @@ from software.preprocessing.trodes_data import experiment_data_parser as trodes_
 from software.preprocessing.trodes_data.experiment_data_parser import get_exposure_times
 
 
-def init_nwb_file(file_name, source_script, experimenter, session_start_time,metadata_list):
+def init_nwb_file(file_name, source_script, experimenter, session_start_time):
+    """ Function intended to initialize NWB file
+    Attributes
+    ---------------
+    file_name:
+    source_script:
+    experimenter:
+    session_start_time:
+
+    Returns
+    ---------------
+    nwb_file:
+
+
+        """
     subject_id, date, session_id = file_name.split("_")
     nwb_file = pynwb.NWBFile(
         session_description='reaching_without_borders',  # required
@@ -30,11 +44,13 @@ def init_nwb_file(file_name, source_script, experimenter, session_start_time,met
 def add_metadata(list_of_metadata,nwb_file_):
     """
     Function to add metadata to block NWB file
-    Inputs:
+    Attributes
+    -----------------
     list_of_metadata : List of metadata, [ Subject, ...]
     nwb_file_: Nwb file being passed into metadata
 
-    Outputs:
+    Returns
+    -----------------
     nwb_file_: Nwb file being passed into metadata
 
     """
@@ -44,6 +60,15 @@ def add_metadata(list_of_metadata,nwb_file_):
 
 
 def save_nwb_file(nwb_file, save_dir):
+    """ Function to save NWB file
+    Attributes
+    ----------------
+    nwb_file:
+    save_dir:
+
+    Returns
+    ----------------
+    """
     filename = save_dir + '\\' + nwb_file.identifier + '.nwb'
     io = pynwb.NWBHDF5IO(filename, mode='w')
     io.write(nwb_file)
@@ -51,6 +76,17 @@ def save_nwb_file(nwb_file, save_dir):
 
 
 def add_trodes_analog(nwb_file, trodes_data):
+    """ Function to add trodes analog data from an experimental session
+    Attributes
+    --------------
+    nwb_file:
+    trodes_data:
+
+    Returns
+    --------------
+    nwb_file:
+
+    """
     analog_keys = [*trodes_data['analog']]
     pot_keys = [key for key in analog_keys if '_pot' in key]
     analog = pynwb.behavior.Position(name='trodes analog')
@@ -75,6 +111,17 @@ def add_trodes_analog(nwb_file, trodes_data):
 
 
 def add_trodes_dio(nwb_file, trodes_data):
+    """ function to add digital IO data from our trodes/spikegadgets experimental system
+    Attributes
+    ------------
+    nwb_file:
+    trodes_data:
+
+    Returns
+    ---------------
+    nwb_file:
+
+    """
     dio_keys = [*trodes_data['DIO']]
     dio = pynwb.behavior.BehavioralEpochs(name='trodes dio')
     for key in dio_keys:
@@ -97,6 +144,17 @@ def add_trodes_dio(nwb_file, trodes_data):
 
 
 def trodes_to_nwb(nwb_file, data_dir, trodes_name):
+    """ function to export all trodes data (analog/digital data)
+    Attributes
+    ----------------
+    nwb_file:
+    data_dir:
+    trodes_name:
+
+    Returns
+    ------------
+    nwb_file:
+    """
     trodes_data = trodes_edp.import_trodes_data(data_dir, trodes_name)
     nwb_file = add_trodes_analog(nwb_file, trodes_data)
     nwb_file = add_trodes_dio(nwb_file, trodes_data)
@@ -104,12 +162,34 @@ def trodes_to_nwb(nwb_file, data_dir, trodes_name):
 
 
 def controller_to_nwb(nwb_file, controller_dir):
+    """ Function to export controller data to NWB
+    Attributes
+    ------------
+    nwb_file:
+    controller_dir:
+
+    Returns
+    ------------
+    nwb_file:
+
+    """
     controller_data = import_controller_data(controller_dir)
     nwb_file = add_controller_data(nwb_file, controller_data)
     return nwb_file
 
 
 def add_controller_data(nwb_file, controller_data):
+    """ Function to add complete arduino micro-controller data stream from a given experiment.
+    Attributes
+    -------------
+    nwb_file:
+    controller_data:
+
+    Returns
+    ----------
+    nwb_file:
+
+    """
     controller_keys = ['time', 'trial', 'exp_response', 'rob_moving', 'image_triggered', 'in_Reward_Win', 'z_POI']
     c_file = pynwb.behavior.BehavioralEpochs(name='controller_data')
     for key in controller_keys:
@@ -131,7 +211,19 @@ def add_controller_data(nwb_file, controller_data):
     return nwb_file
 
 
-def config_to_nwb(nwb_file, config_dir): ### HERE is where you can add the config data
+def config_to_nwb(nwb_file, config_dir):
+    """ Function to extract config data into NWB file for a given experimental session
+
+    Attributes
+    -------------
+    nwb_file:
+    config_dir:
+
+    Returns
+    -------------
+    nwb_file:
+
+    """
     config_data = import_config_data(config_dir)
     for key in config_data.keys(): # each dict has a key,
         key_parse = config_data[key]
@@ -144,6 +236,17 @@ def config_to_nwb(nwb_file, config_dir): ### HERE is where you can add the confi
 
 
 def link_videos(nwb_file, video_dir):
+    """ Function to link videos to NWB file
+    Attributes
+    -------------
+    nwb_file:
+    video_dir:
+
+    Returns
+    -----------
+    nwb_file:
+
+    """
     # get cam1,2,3 videos
     for vfiles in os.listdir(video_dir):
         if '_cam1.mp4' in vfiles:
@@ -156,6 +259,18 @@ def link_videos(nwb_file, video_dir):
 
 
 def link_calibration_videos(nwb_file, cal_dir):
+    """ Function to link individual day calibration videos to a given NWB file
+
+    Attributes
+    -----------
+    nwb_file:
+    cal_dir:
+
+    Returns
+    -------------
+    nwb_file:
+
+    """
     for vfiles in os.listdir(cal_dir):
         if ".mp4" in vfiles:
             # append it
@@ -163,7 +278,18 @@ def link_calibration_videos(nwb_file, cal_dir):
     return nwb_file
 
 
-def link_3d_coordinates(nwb_file,video_dir): # this is where you can merge your code billy for holding our 3-D values
+def link_3d_coordinates(nwb_file,video_dir):
+    """ Function to link 3-D positional coordinates across a given experimental session to a NWB file
+    Attributes
+    ------------
+    nwb_file:
+    video_dir:
+
+    Returns
+    -------------
+    nwb_file:
+
+    """
     # ReachMaster3D saves a pandas dataframe for each session inside the video directory
     for vfiles in os.listdir(video_dir):
         if 'fullReconstruction3D' in vfiles:
@@ -173,8 +299,7 @@ def link_3d_coordinates(nwb_file,video_dir): # this is where you can merge your 
 
 
 def add_reachsplitter_predictions(nwb_file,video_dir):# Reachsplitter vector added here
-    # ReachSplitter iterates over each session and performs classification
-    # this is then saved as a .csv dictionary
+    """ Function to add our lab's custom-built ReachSplitter predictions to NWB file. """
     for vfiles in os.listdir(video_dir):
         if "splitpredictions" in vfiles:
             # add prediction indices to NWB
@@ -182,14 +307,26 @@ def add_reachsplitter_predictions(nwb_file,video_dir):# Reachsplitter vector add
     return nwb_file
 
 
-def link_DLC_predictions(nwb_file,video_dir): # add the DLC files (need code/write code)
+def link_DLC_predictions(nwb_file,video_dir):
+    """ Function to link non-filtered DLC predictions from a given network to a NWB file
+
+    Attributes
+    ---------------
+    nwb_file:
+    video_dir:
+
+    Returns
+    ------------
+    nwb_file:
+
+    """
     for vfiles in os.listdir(video_dir):
         if ""
     return nwb_file
 
 
 def link_filtered_DLC_predictions(nwb_file,video_dir): # add the DLC files (need code/write code)
-
+    """ Function to link filtered DLC predictions to a NWB file"""
     return nwb_file
 
 
@@ -202,7 +339,6 @@ def convertToDateTime(date):
 
 def make_trial_masks(controller_data, experiment_data):
     """
-
     Parameters
     ----------
     controller_data : list
@@ -229,7 +365,6 @@ def make_trial_masks(controller_data, experiment_data):
 
 def get_successful_trials(controller_data, matched_time, experiment_data):
     """
-
     Parameters
     ----------
     controller_data : list
