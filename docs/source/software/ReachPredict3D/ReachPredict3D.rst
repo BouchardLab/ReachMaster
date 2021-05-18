@@ -9,15 +9,15 @@ using DeepLabCut ( https://github.com/DeepLabCut/DeepLabCut ) .
 
 Find Cam Files
 ^^^^^^^^^^^^^
-.. automodule:: find_cam_files
+.. automodule:: predictions.find_cam_files
     :members:
 Analyze Experimental Videos
 ^^^^^^^^^^^^^^^^^^^
-.. automodule:: run_analysis_videos
+.. automodule:: predictions.run_analysis_videos
     :members:
 Main function
 ^^^^^^^^^^^^^^^^^
-.. automodule:: run_main
+.. automodule:: predictions.run_main
     :members:
 
 Reach3D

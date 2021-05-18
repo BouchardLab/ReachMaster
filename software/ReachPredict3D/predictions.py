@@ -11,9 +11,7 @@ import glob
 
 
 def find_cam_files(root_dir):
-    """
-    Function to find cam files for DeepLabCut to run our predictive network on!
-
+    """Function to find cam files for DeepLabCut to run our predictive network on!
     Attributes
     ----------
     root_dir : path directory
@@ -22,6 +20,7 @@ def find_cam_files(root_dir):
     cam1_array: list of paths to experimental video files from camera1
     cam2_array: list of paths to experimental video files from camera2
     cam3_array: list of paths to experimental video files from camera3
+
     """
     cam1_array = []
     cam2_array = []
@@ -47,7 +46,8 @@ def find_cam_files(root_dir):
 
 
 def run_analysis_videos(cam_video_paths, config_path, filtering=False):
-    """ function to run deeplabcut on a list of videos from a single cam
+    """function to run deeplabcut on a list of videos from a single cam
+
     Attributes
     -------------
     cam_video_paths: list of video paths from individual cams
@@ -63,12 +63,14 @@ def run_analysis_videos(cam_video_paths, config_path, filtering=False):
 
 
 def run_main(root_dir, config, fset=False):
-    """ function intended to loop over PNS directory, obtain each camera's files, and send them to DLC.
+    """function intended to loop over PNS directory, obtain each camera's files, and send them to DLC.
+
     Attributes
     ------------
     root_dir: path to PNS root_dir to iterate over
     config: path to DLC config file
     fset: boolean, filtering flag
+
     """
     pathList = []
     cam1_array, cam2_array, cam3_array = find_cam_files(root_dir, config)
@@ -87,8 +89,9 @@ def run_main(root_dir, config, fset=False):
 
 
 class GetPredictions:
-    """ Class to run DLC over a given Rat's PNS directory containing experimental video. Resulting
-    files are saved inside of the PNS folder, filtering is optional!"""
+    """Class to run DLC over a given Rat's PNS directory containing experimental video. Resulting
+    files are saved inside of the PNS folder, filtering is optional!
+    """
     def __init__(self,root_dir,config_dir, GPU_num=0):
         os.environ["CUDA_VISIBLE_DEVICES"] = GPU_num
         gpu_options = tf.GPUOptions(per_process_gpu_memory_fraction=0.75)
