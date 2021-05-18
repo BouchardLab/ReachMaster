@@ -4,17 +4,20 @@ ReachPredict3D
 Reach Prediction
 ------------------
 Here we outline our process to predict user-chosen appendage locations with marker-less pose estimation
-using DeepLabCut ( https://github.com/DeepLabCut/DeepLabCut ) .
+using DeepLabCut ( https://github.com/DeepLabCut/DeepLabCut ).
 
 
 Find Cam Files
 ^^^^^^^^^^^^^^^^^^
+
 .. automodule:: predictions.find_cam_files
     :members:
+
 Analyze Experimental Videos
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 .. automodule:: predictions.run_analysis_videos
     :members:
+
 Main function
 ^^^^^^^^^^^^^^^^^
 .. automodule:: predictions.run_main

@@ -9,14 +9,14 @@ import pandas as pd
 
 
 def read_controller_file(controller_path):
-    """ Read Microcontroller Metadata file into a pandas data frame
-        Parameters
-        ----------
+    """Read Microcontroller Metadata file into a pandas data frame
+        Attributes
+        -----------
         controller_path: str
             path to Microcontroller metadata file
 
         Returns
-        -------
+        ---------
         params : pandas data frame
             Microcontroller Metadata  ['time', 'trial', 'exp_response', 'rob_moving', 'image_triggered', 'in_Reward_Win', 'z_POI']
 
@@ -29,7 +29,7 @@ def read_controller_file(controller_path):
 
 
 def import_controller_data(mc_path):
-    """
+    """Function to import arduino microcontroller data.
 
     Parameters
     ----------
@@ -37,7 +37,7 @@ def import_controller_data(mc_path):
         full path of microcontroller data file
 
     Returns
-    -------
+    ---------
     controller_data : list
         list of arrays containing controller data (reach events, robot movement etc)
     """
@@ -46,17 +46,17 @@ def import_controller_data(mc_path):
 
 
 def get_reach_indices(controller_data):
-    """
+    """Function to return reach indices for a given session (in seconds)
 
-    Parameters
-    ----------
+    Attributes
+    ------------
     controller_data : list
         list containing data from experimental microcontroller
 
     Returns
-    -------
+    ---------
     reach_indices : list
-        list containinng start and stop indices of the controller data
+        list containing start and stop indices of the controller data
     """
     # to:do for checks on if robot is moving while in reward window
     # moving = True to moving = False, what is indice for position?
@@ -64,8 +64,6 @@ def get_reach_indices(controller_data):
     end_index = []
     start_index = []
     rewarded = []
-    moved = []
-    move_rz = []
 
     for i, j in enumerate(controller_data['exp_response']):
         if j == 'e':
@@ -78,27 +76,24 @@ def get_reach_indices(controller_data):
                     rewarded.append(i)
                 else:
                     continue
-            # if controller_data
             else:
                 start_index.append(i)
-    for g, k in enumerate(start_index):
-
     reach_indices = {'start': start_index, 'stop': end_index}
     return reach_indices
 
 
 def get_reach_times(controller_time, reach_indices):
-    """
+    """Fetch reach times from experimental DIO/analog/microcontroller data sources
 
-    Parameters
-    ----------
+    Attributes
+    ------------
     controller_time : list
         list containing CONVERTED controller times (use match_times first!)
     reach_indices : list
         list containing reach indices corresponding to entries in controller data
 
     Returns
-    -------
+    ---------
     reach_times : list
         list containing start and stop reach times in trodes time
     """
@@ -113,16 +108,16 @@ def get_reach_times(controller_time, reach_indices):
 
 
 def make_reach_masks(reach_times, time):
-    """
+    """Function to make reach masks for our data
 
     Parameters
-    ----------
+    ------------
     reach_times : list
         list of array of reach times in converted trodes time
     time : array
         reach times converted into trodes time
     Returns
-    -------
+    ---------
     mask_array : array
         array containing  binary mask for reach events (1 indicates ongoing reach)
     """
