@@ -25,6 +25,6 @@ Each datatype has a well-defined path within for a given session, which is used 
 
 Initialization an of NWB file
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automodule:: preprocessing.reaching_without_borders.rwb_utils.init_nwb_file
+.. automodule:: software.preprocessing.reaching_without_borders.rwb_utils.init_nwb_file
     :members:
 
