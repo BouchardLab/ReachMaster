@@ -227,6 +227,7 @@ def config_to_nwb(nwb_file, config_dir):
     for key in config_data.keys(): # each dict has a key,
         key_parse = config_data[key]
         for item in key_parse.keys():
+            print(item)
             # What to add, what class
     # session_id
     # stimulus_notes
@@ -320,7 +321,8 @@ def link_DLC_predictions(nwb_file,video_dir):
 
     """
     for vfiles in os.listdir(video_dir):
-        if ""
+        if "":
+            print(vfiles)
     return nwb_file
 
 

@@ -42,5 +42,5 @@ from a single video into individual camera videos.
 
 Video Splitter
 ^^^^^^^^^^^^^^^^^
-.. automodule:: video_split_batching.mainrun_split
+.. automodule:: software.ReachPredict3D.video_split_batching.mainrun_split
     :members:
