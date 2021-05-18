@@ -5,7 +5,6 @@ import cv2
 import numpy as np
 import pynwb
 from dateutil.tz import tzlocal
-
 from software.preprocessing.config_data.config_parser import import_config_data
 from software.preprocessing.controller_data.controller_data_parser import get_reach_indices, get_reach_times
 from software.preprocessing.controller_data.controller_data_parser import import_controller_data

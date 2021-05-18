@@ -2,11 +2,13 @@
 
 import os
 import os
-import software.preprocessing.reaching_without_borders.rwb as rwb
+import software.preprocessing.reaching_without_borders.rwb_utils as rwb
 
 
 class RWB:
     def __init__(self):
+        """ Class intended to initiate, per Rat session, data managers to load and save individual
+        data objects into the NWB data format across sessions."""
         self.experimenter = "Brian Gereke"
         self.rat = "RM17"
         self.date = "040120"
@@ -18,10 +20,13 @@ class RWB:
         self.fetch_rwb()
     # create a separate nwb file per session
     def fetch_rwb(self):
+        """ Function intended to fetch, using a root directory, individual instances of experimental data
+        collected in our lab.
+        Each function has a specific doc-string, called from within the rwb_utils directory.
+        """
         for s in self.pns_session_dirs:
             session_dir = self.root_dir + "pns\\" + self.rat + "\\" + self.date + "\\" + s
             data_dirs = os.listdir(session_dir)
-            # initialize nwb file
             nwb_file = rwb.init_nwb_file(file_name=self.rat + "_"+ self.date + "_" + s,
                                          source_script=__file__,
                                          experimenter=self.experimenter,
