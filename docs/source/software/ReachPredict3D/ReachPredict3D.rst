@@ -23,10 +23,6 @@ Main function
 .. automodule:: predictions.run_main
     :members:
 
-Reach3D
-----------
-Here we outline the process to transform our 2-D predictions into
-3-D euclidean predictions using Direct Linear Transformation (DLT)
 
 Main Session 3D loader
 ^^^^^^^^^^^^^^^^^^^^^^^^
@@ -38,12 +34,8 @@ Function to save list of dataframes as big DF
 .. automodule:: reconstruct_predictions.save_kinematics
     :members:
 
-Video Splitting
------------------
-Here we outline a now redundant process to split experimental videos
-from a single video into individual camera videos.
 
 Video Splitter
 ^^^^^^^^^^^^^^^^^
-.. automodule:: software.ReachPredict3D.video_split_batching.mainrun_split
+.. automodule:: video_split_batching.mainrun_split
     :members:
