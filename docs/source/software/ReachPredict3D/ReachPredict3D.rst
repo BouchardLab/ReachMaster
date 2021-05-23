@@ -4,12 +4,12 @@ ReachPredict3D
 Reach Prediction
 ------------------
 Here we outline our process to predict user-chosen appendage locations with marker-less pose estimation
-using DeepLabCut ( https://github.com/DeepLabCut/DeepLabCut ).
+using DeepLabCut ( https://github.com/DeepLabCut/DeepLabCut ). We choose 27 unique positions to track across
+all rats in our experiments. These positions form the basis for our pose estimation during reaching behavior.
 
 
 Find Cam Files
 ^^^^^^^^^^^^^^^^^^
-
 .. automodule:: predictions.find_cam_files
     :members:
 
@@ -22,7 +22,6 @@ Main function
 ^^^^^^^^^^^^^^^^^
 .. automodule:: predictions.run_main
     :members:
-
 
 Main Session 3D loader
 ^^^^^^^^^^^^^^^^^^^^^^^^
