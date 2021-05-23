@@ -53,12 +53,12 @@ Further tutorials can be found in the tutorials section.
     :members:
 
 Create Probability and Position Objects, per Session
-^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 .. automodule:: video_data.DLC.Reconstruction.loop_pdata
     :members:
 
 Create Multiprocessing Function Object
-^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 .. automodule:: video_data.DLC.Reconstruction.r_d_i
     :members:
 
@@ -73,7 +73,7 @@ Find Each Session's File Set's
     :members:
 
 Obtain Each Rat's Kinematic 3-D Reconstructions
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 .. automodule:: video_data.DLC.Reconstruction.get_kinematic_data
     :members:
 
