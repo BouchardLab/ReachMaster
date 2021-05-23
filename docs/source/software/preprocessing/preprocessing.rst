@@ -1,41 +1,41 @@
-Data Preprocessing
-=======================================
+ Raw Data Preprocessing and Neurodata Without Borders Functionality
+========================================================================
 
-Trodes Data Extraction
----------------------------------------
+Trodes SpikeGadgets DIO/ANALOG Data Extraction
+---------------------------------------------------
 Here we go over a collection of modules for extracting,
-reading, parsing and preprocessing trodes data produced
-by various ReachMaster routines. This data forms the backbone of the
-experimental dataframe used to contain our sensor data.
+reading, parsing and preprocessing analog and DIO trodes data produced
+by various ReachMaster routines during each experiment. This data forms the backbone of the
+experimental dataframe containing our various sensor data streams.
 
 Extract trodes data to python
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 .. automodule:: trodes_data.readTrodesExtractedDataFile3
     :members:
 
-Calibration data parser
+Calibration Data Parser
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 .. automodule:: trodes_data.calibration_data_parser
     :members:
 
-Experimental data parser
+Experimental DIO/ANALOG Data Parser
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 .. automodule:: trodes_data.experiment_data_parser
     :members:
 
 
-Controller Data
+Controller Data Loader
 ---------------------------------------
 .. automodule:: controller_data.controller_data_parser
     :members:
 
-ReachMaster Configuration Data
+ReachMaster Configuration Data Loader
 ---------------------------------------
 .. automodule:: config_data.config_parser
     :members:
 
-3D Reconstruction
-------------------------
+3D Reconstruction Functions
+=======================================
 Here we go over the functions that take our 2-D DLC predictions
 from 2-D to 3-D using Direct Linear Transformations.
 The documentation for DLT can be found http://www.kwon3d.com/theory/dlt/dlt.html
