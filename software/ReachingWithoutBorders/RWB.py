@@ -1,4 +1,5 @@
-"""Functions intended to run RWB (Reaching Without Borders) across multiple session directories across rats."""
+"""Functions intended to run RWB (Reaching Without Borders) across multiple session directories across rats.
+Code developed by Brett Nelson, Billy Lin."""
 
 import os
 import os

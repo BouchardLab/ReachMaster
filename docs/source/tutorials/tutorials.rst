@@ -10,5 +10,5 @@ analyses with the ReachMaster experimental system.
     camera_calibration/camera_calibration
     robot_workspace/robot_workspace
     experiment_data_extraction/data_extraction
-    ReachPredict3D/ReachPredict3D_Tutorial
-    ReachSplitter/ReachSplitter_Tutorial
+    ReachPredict3D_Tutorial/ReachPredict3D_tutorial
+    ReachSplitter_Tutorial/ReachSplitter_tutorial
