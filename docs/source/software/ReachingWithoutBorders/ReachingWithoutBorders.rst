@@ -11,18 +11,11 @@ Loading our data into RWB utilizes a class manager to handle data instances acro
 
 Initiate Manager
 ^^^^^^^^^^^^^^^^^^^^
-.. automodule:: ReachingWithoutBorders.RWB.__init__
+.. automodule:: RWB.__init__
     :members:
 
 Run Function
 ^^^^^^^^^^^^^^^
-.. automodule:: ReachingWithoutBorders.RWB.fetch_rwb
+.. automodule:: RWB.fetch_rwb
     :members:
 
-Functionalized RWB integrators
-------------------------------------
-For a given session, we have several experimental datatypes across multiple levels of preprocessing we wish to extract.
-Each datatype has a well-defined path within for a given session, which is used to load and save the data.
-
-Initialization an of NWB file
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
