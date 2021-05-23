@@ -18,6 +18,7 @@ preprocessing_root = os.path.join(os.path.dirname(os.path.dirname(os.getcwd())),
 software_root = os.path.join(os.path.dirname(os.path.dirname(os.getcwd())), "software")
 RPredict3D = os.path.join(os.path.dirname(os.path.dirname(os.getcwd())), "software/ReachPredict3D")
 RSplitter = os.path.join(os.path.dirname(os.path.dirname(os.getcwd())), "software/ReachSplitter")
+RWB = os.path.join(os.path.dirname(os.path.dirname(os.getcwd())), "software/ReachingWithoutBorders")
 # Insert the project root dir as the first element in the PYTHONPATH.
 # This lets us ensure that the source package is imported, and that its
 # version is used.
@@ -26,6 +27,7 @@ sys.path.append(preprocessing_root)
 sys.path.append(software_root)
 sys.path.append(RSplitter)
 sys.path.append(RPredict3D)
+sys.path.append(RWB)
 # -- Project information -----------------------------------------------------
 project = 'ReachMaster'
 copyright = 'The Regents of the University of California, through Lawrence Berkeley National Laboratory'

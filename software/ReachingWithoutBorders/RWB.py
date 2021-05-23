@@ -2,7 +2,6 @@
 Code developed by Brett Nelson, Billy Lin."""
 
 import os
-import os
 import software.preprocessing.reaching_without_borders.rwb_utils as rwb
 
 

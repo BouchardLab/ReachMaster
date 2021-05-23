@@ -12,10 +12,15 @@ Arduino Code
 
 Experiment Arduino Code
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automodule:: experiment_controller.experiment_controller
-    :members:
-Robot Controller Arduino Code
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automodule:: robot_controller.robot_controller
+.. automodule:: software.controller_scripts.experiment_controller.experiment_controller.ino
     :members:
 
+Robot Controller Arduino Code
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. automodule:: robot_controller.robot_controller.ino
+    :members:
+
+3-D Robot Controller Arduino Code
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. automodule:: 3D_robot_controller.3D_robot_controller.ino
+    :members:

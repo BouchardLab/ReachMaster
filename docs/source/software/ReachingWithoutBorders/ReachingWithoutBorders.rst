@@ -11,7 +11,7 @@ Loading our data into RWB utilizes a class manager to handle data instances acro
 
 Initiate Manager
 ^^^^^^^^^^^^^^^^^^^^
-.. automodule:: software.ReachingWithoutBorders.RWB.__init__
+.. automodule:: ReachingWithoutBorders.RWB.__init__
     :members:
 
 Run Function
