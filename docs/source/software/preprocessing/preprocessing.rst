@@ -83,6 +83,21 @@ Check to see if we have all 3 predictions inside the directory
     :members:
 
 
+Reaching Without Borders Utilities
+========================================
+
+Reaching Without Borders is our labs software platform to preprocess and ready behavioral time-series data
+for use in NWB format. In this section, we go over basic utilities that import, export, and save each portion
+of our data. The full workflow is described in more detail in our tutorial.
+
+Initialize RWB file
+^^^^^^^^^^^^^^^^^^^^^^^^
+.. automodule:: reaching_without_borders.rwb_utils.init_nwb_file
+    :members:
+
+
+
+
 
 
 

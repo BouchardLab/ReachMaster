@@ -7,15 +7,15 @@ format of Neurodata Without Borders (NWB). For more documentation on NWB, please
 RWB class manager
 -------------------
 Loading our data into RWB utilizes a class manager to handle data instances across sessions.
-.. automodule:: RWB
+.. automodule:: ReachingWithoutBorders.RWB
 
 Initiate Manager
 ^^^^^^^^^^^^^^^^^^^^
-.. automodule:: RWB.__init__
+.. automodule:: ReachingWithoutBorders.RWB.__init__
     :members:
 
 Run Function
 ^^^^^^^^^^^^^^^
-.. automodule:: RWB.fetch_rwb
+.. automodule:: software.ReachingWithoutBorders.RWB.fetch_rwb
     :members:
 
