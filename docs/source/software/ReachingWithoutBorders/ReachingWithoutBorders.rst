@@ -10,12 +10,12 @@ Loading our data into RWB utilizes a class manager to handle data instances acro
 
 Initiate Manager
 ^^^^^^^^^^^^^^^^^^^^
-.. automodule:: __init__
+.. automodule:: RWB.__init__
     :members:
 
 Run Function
 ^^^^^^^^^^^^^^^
-.. automodule:: fetch_rwb
+.. automodule:: RWB.fetch_rwb
     :members:
 
 Functionalized RWB integrators
