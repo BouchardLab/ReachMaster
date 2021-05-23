@@ -1,5 +1,0 @@
-ReachSplitter
-=================
-
-Splitting our trials
-----------------
