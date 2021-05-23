@@ -16,6 +16,6 @@ Initiate Manager
 
 Run Function
 ^^^^^^^^^^^^^^^
-.. automodule:: software.ReachingWithoutBorders.RWB.fetch_rwb
+.. automodule:: ReachingWithoutBorders.RWB.fetch_rwb
     :members:
 

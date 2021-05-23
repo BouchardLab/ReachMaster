@@ -18,11 +18,11 @@ class RWB:
         self.pns_session_dirs = [d for d in self.pns_dirs if d.startswith('S')]
         self.cns_session_dirs = [d for d in self.cns_dirs if d.startswith('S')]
         self.fetch_rwb()
-    # create a separate nwb file per session
+
+
     def fetch_rwb(self):
         """ Function intended to fetch, using a root directory, individual instances of experimental data
-        collected in our lab.
-        Each function has a specific doc-string, called from within the rwb_utils directory.
+        collected in our lab. Each function has a specific doc-string, called from within the rwb_utils directory.
         """
         for s in self.pns_session_dirs:
             session_dir = self.root_dir + "pns\\" + self.rat + "\\" + self.date + "\\" + s
@@ -65,10 +65,6 @@ class RWB:
                 trodes_name = os.listdir(session_dir)[0]
                 nwb_file = rwb.trodes_to_nwb(nwb_file, data_dir=session_dir, trodes_name=trodes_name)
         rwb.save_nwb_file(nwb_file, save_dir=self.root_dir)
-
-
-
-
 
 
 

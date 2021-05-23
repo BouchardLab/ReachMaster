@@ -1,6 +1,5 @@
 """ This module provides functions to split un-split recorded experimental videos
 using ffmpeg and vidgear options
-
 """
 import cv2
 from vidgear.gears import WriteGear
@@ -12,6 +11,12 @@ def conver2bgr(frame):
         """Function to convert image to bgr color scheme
 
         Attributes
+        ----------------
+        frame: array, openCV generated np array
+
+        Returns
+        -------------
+        frame: array, color-corrected numpy array
 
         """
         frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
@@ -23,13 +28,11 @@ def enhanceImage(frame):
         cols, rows, ch = frame.shape
         brightness = np.sum(frame) / (ch * 255 * cols * rows)
         minimum_brightness = 0.2
-        alpha = brightness / minimum_brightness
-        ratio = brightness / minimum_brightness
         frame = cv2.convertScaleAbs(frame, alpha=1, beta=255 * (minimum_brightness - brightness))
         return frame
 
 
-def mainrun_split(self,input):
+def mainrun_split(input):
         intput_filename = input[0]
         no_of_cam = 3
         crf = '2'
@@ -42,7 +45,6 @@ def mainrun_split(self,input):
         fps = int(cap.get(5))
         width = int(cap.get(3) / no_of_cam)
         height = int(cap.get(4))
-        nframes = int(cap.get(7))
         output_params = {'-c:v': 'h264', '-crf': crf, '-input_framerate': fps, '-pix_fmt': pix_Format, \
                          '-preset': 'fast', '-tune': 'zerolatency', '-output_dimensions': (width, height)}
         print('Start converting...      ', end='', flush=True)

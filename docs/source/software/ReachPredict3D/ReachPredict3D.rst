@@ -34,6 +34,9 @@ Function to save list of dataframes as big DF
 .. automodule:: reconstruct_predictions.save_kinematics
     :members:
 
+Main Class
+^^^^^^^^^^^^^^^^^^^^^
+.. automodule:: reconstruct_predictions.Reconstruct3D
 
 Video Splitter
 ^^^^^^^^^^^^^^^^^

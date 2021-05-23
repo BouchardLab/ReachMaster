@@ -1,8 +1,6 @@
+"""Module intended to reconstruct DLC inferred positional predictions into 3-D Euclidean Space using
+DLT (Direct Linear Transformation) method.
 """
-
-"""
-
-from predictions import find_cam_files
 import os
 import glob
 import tqdm
@@ -21,6 +19,7 @@ def return_block_kinematic_df(f):
     Returns
     -----------
     kd : 3-D predictions for a given session, pandas dataframe
+
     """
     file_ = f[0]
     dlt_path = f[1]
@@ -33,14 +32,16 @@ def return_block_kinematic_df(f):
 
 
 def save_kinematics(unpickled_list):
-    """ function intended to save list of dataframes from a given rat as a single dataframe
+    """function intended to save list of dataframes from a given rat as a single dataframe
     Attributes
     ------------
     unpickled_list: list containing all N dataframes from a given rat's session
 
     Returns
     -------------
-    df1: dataframe containing all N dataframes for a given rat"""
+    df1: dataframe containing all N dataframes for a given rat
+
+    """
     encountered_df = False
     for i in range(len(unpickled_list)):
         rat_df1 = unpickled_list[i]
@@ -68,7 +69,7 @@ def save_kinematics(unpickled_list):
 
 
 class Reconstruct3D:
-    """ Class to iterate over PNS directory sessions and return/save 3-D positional predictions from individual session files. At the
+    """Class to iterate over PNS directory sessions and return/save 3-D positional predictions from individual session files. At the
     end of iterating over a PNS directory, the entire dataframe is saved.
     """
     def __init__(self):
