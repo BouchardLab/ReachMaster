@@ -40,7 +40,7 @@ Here we go over the functions that take our 2-D DLC predictions
 from 2-D to 3-D using Direct Linear Transformations.
 The documentation for DLT can be found http://www.kwon3d.com/theory/dlt/dlt.html
 Our lab uses the workflow described here https://biomech.web.unc.edu/dltdv/
-Further tutorials can be found in the tutorials section.
+Further tutorials on camera calibration, 3-D reconstruction, and our pipeline can be found in the tutorials section.
 
 3-D Reconstruction
 ^^^^^^^^^^^^^^^^^^^^
@@ -86,9 +86,9 @@ Check to see if we have all 3 predictions inside the directory
 Reaching Without Borders Utilities
 ========================================
 
-Reaching Without Borders is our labs software platform to preprocess and ready behavioral time-series data
-for use in NWB format. In this section, we go over basic utilities that import, export, and save each portion
-of our data. The full workflow is described in more detail in our tutorial.
+Reaching Without Borders is our labs custom-built software platform to preprocess and ready behavioral time-series data
+for use in the Neurodata Without Borders data format. In this section, we go over basic utilities that import,
+export, and save each portion of our data. The full workflow is described in more detail in our tutorial.
 
 Initialize RWB file
 ^^^^^^^^^^^^^^^^^^^^^^^^

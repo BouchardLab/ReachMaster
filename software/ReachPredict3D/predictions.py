@@ -11,19 +11,19 @@ import glob
 
 
 def find_cam_files(root_dir):
-    """Function to find cam files for DeepLabCut to run our predictive network on!
+    """Function to find single camera .mp4 files for DeepLabCut to run a given predictive network on!
+
     Attributes
     --------------
     root_dir : path directory
 
-
     Returns
     ----------------
-    cam1_array: list of paths to experimental video files from camera1
+    cam1_array: list, paths to experimental video files from camera1
 
-    cam2_array: list of paths to experimental video files from camera2
+    cam2_array: list, paths to experimental video files from camera2
 
-    cam3_array: list of paths to experimental video files from camera3
+    cam3_array: list, paths to experimental video files from camera3
 
     """
     cam1_array = []
@@ -48,13 +48,13 @@ def find_cam_files(root_dir):
 
 
 def run_analysis_videos(cam_video_paths, config_path, filtering=False):
-    """function to run deeplabcut on a list of videos from a single cam
+    """Function to run DeepLabCut on a list of videos from a single camera view.
 
     Attributes
     -------------
-    cam_video_paths: list of video paths from individual cams
+    cam_video_paths: list, contains video paths from individual camera's .mp4 files
 
-    config_path: DLC config path
+    config_path: str, path to DeepLabCut config file
 
     filtering: boolean, uses (at the moment) median filtering from DLC
 
@@ -71,9 +71,9 @@ def run_main(root_dir, config, fset=False):
 
     Attributes
     --------------
-    root_dir: path to PNS root_dir to iterate over
+    root_dir: str, path to PNS (video, controller data..) root directory
 
-    config: path to DLC config file
+    config: str, path to DeepLabCut config file
 
     fset: boolean, filtering flag
 
