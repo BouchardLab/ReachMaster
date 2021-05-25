@@ -51,6 +51,14 @@ coverage.xml
 *.mo
 *.pot
 
+# Images/Videos
+*.png
+*.gif
+*.mp4
+
+# CSVs
+*.csv
+
 # Django stuff:
 *.log
 local_settings.py
@@ -103,3 +111,6 @@ venv.bak/
 
 # mypy
 .mypy_cache/
+
+# System Files
+*.DS_Store

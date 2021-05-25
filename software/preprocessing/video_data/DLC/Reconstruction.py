@@ -47,7 +47,7 @@ def dlt_reconstruct(c, camPts, weights=None):
 
         # get a list of cameras with non-NaN [u,v]
         cdx_size = 0
-        cdx_temp = np.where(np.isnan(camPts[i - 1, 0:int(nCams * 2) - 1:2]) == False, 1, 0)
+        cdx_temp = np.where(np.isnan(camPts[i, 0:int(nCams * 2) - 1:2]) == False, 1, 0)
         for x in range(len(cdx_temp)):
             if cdx_temp[x - 1] == 1:
                 cdx_size = cdx_size + 1
@@ -66,21 +66,21 @@ def dlt_reconstruct(c, camPts, weights=None):
             temp2 = 1
             for z in range(cdx_size * 2):
                 if z % 2 == 0:
-                    m1[z, 0] = camPts[i - 1, (temp1 * 2) - 2] * c[8, (temp1 - 1)] - c[0, (temp1 - 1)]
-                    m1[z, 1] = camPts[i - 1, (temp1 * 2) - 2] * c[9, (temp1 - 1)] - c[1, (temp1 - 1)]
-                    m1[z, 2] = camPts[i - 1, (temp1 * 2) - 2] * c[10, (temp1 - 1)] - c[2, (temp1 - 1)]
-                    m2[z, 0] = c[3, temp1 - 1] - camPts[i - 1, (temp1 * 2) - 2]
+                    m1[z, 0] = camPts[i, (temp1 * 2) - 2] * c[8, (temp1 - 1)] - c[0, (temp1 - 1)]
+                    m1[z, 1] = camPts[i, (temp1 * 2) - 2] * c[9, (temp1 - 1)] - c[1, (temp1 - 1)]
+                    m1[z, 2] = camPts[i, (temp1 * 2) - 2] * c[10, (temp1 - 1)] - c[2, (temp1 - 1)]
+                    m2[z, 0] = c[3, temp1 - 1] - camPts[i, (temp1 * 2) - 2]
                     temp1 = temp1 + 1
                 else:
-                    m1[z, 0] = camPts[i - 1, (temp2 * 2) - 1] * c[8, temp2 - 1] - c[4, temp2 - 1]
-                    m1[z, 1] = camPts[i - 1, (temp2 * 2) - 1] * c[9, temp2 - 1] - c[5, temp2 - 1]
-                    m1[z, 2] = camPts[i - 1, (temp2 * 2) - 1] * c[10, temp2 - 1] - c[6, temp2 - 1]
-                    m2[z, 0] = c[7, temp2 - 1] - camPts[i - 1, (temp2 * 2) - 1]
+                    m1[z, 0] = camPts[i, (temp2 * 2) - 1] * c[8, temp2 - 1] - c[4, temp2 - 1]
+                    m1[z, 1] = camPts[i, (temp2 * 2) - 1] * c[9, temp2 - 1] - c[5, temp2 - 1]
+                    m1[z, 2] = camPts[i, (temp2 * 2) - 1] * c[10, temp2 - 1] - c[6, temp2 - 1]
+                    m2[z, 0] = c[7, temp2 - 1] - camPts[i, (temp2 * 2) - 1]
                     temp2 = temp2 + 1
 
             # get the least squares solution to the reconstruction
             if isinstance(weights, np.ndarray):
-                w = np.sqrt(np.diag(weights[i - 1, :]))
+                w = np.sqrt(np.diag(weights[i, :]))
                 # print(w.shape,m1.shape,m2.shape)
                 m1 = np.matmul(w, m1)
                 m2 = np.matmul(w, m2)
