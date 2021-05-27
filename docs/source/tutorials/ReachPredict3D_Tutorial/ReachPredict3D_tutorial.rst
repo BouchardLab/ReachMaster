@@ -23,10 +23,19 @@ format. These .csv files form the backbone of our positional data: These are the
 
 Current Lab BenchMarks of DeepLabCut
 ---------------------------------------
+Currently, for our pilot data we have constructed a network containing 3,360 images across 3 cameras.
+These labels are broken down below!
+
+.. image:: /art/DLC_currentlabels_cams.png
+	:align: center
+	:width: 400
+
+Basic benchmarks for a resnet-101 with generic network configuration are shown as well. We choose to use the
+500,000 training iteration to output predictions for our reaching behaviors.
 
 .. image:: /art/Summary_plot_3way_1m.png
 	:align: center
-	:width: 800
+	:width: 500
 
 2-D Filtering
 ------------------
@@ -34,7 +43,7 @@ Generally our network produces reliable positional predictions during reaching b
 we adapt a 2-D filtering scheme that takes into account both positions and camera probabilities for a given camera. While
 our benchmarks of DeepLabCut inspire confidence that there are few outliers in predictions, smoothing our 2-D estimates
 is an excellent way to smooth our generated 3-D trajectories or time-series components of reaching behavior. Filtering
-is toggleable post-prediction during 3-D reconstruction (link function).
+is toggleable post-prediction during 3-D reconstruction.
 
 3-D Reconstruction
 ---------------------
@@ -50,8 +59,6 @@ coordinates for a given experimental session, we may run a function (extract_kin
 dlt calibration co-efficients, and a save directory. Inside of our root directory, we require that the video .mp4 files for a
 given experimental session's camera be in the same folder. The resulting .csv predictions (filtered or unfiltered) are then
 translated into 3-D using the experimentally derived DLT co-efficients, then saved to our specified save directory.
-
-A resulting transformation from 2-D to 3-D is shown below..........
 
 Our lab also saves a copy of these 3-D predictions to a local Neurodata Without Borders (NWB) file, using the Reaching Without
 Borders pipeline.

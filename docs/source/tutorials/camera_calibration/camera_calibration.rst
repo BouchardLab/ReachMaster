@@ -33,13 +33,13 @@ Our lab uses the software DLTdv to label daily approximately minute-long pre-rec
 
 .. image:: /art/DLTDV.png
 	:align: center
-	:width: 800
+	:width: 400
 
 Tutorials and software can be found at https://biomech.web.unc.edu/dltdv/ .
 
 .. image:: /art/DLTDV_I.png
 	:align: center
-	:width: 800
+	:width: 400
 
 
 We label between 50-100 images that capture a robust span of the reaching volume. These labels are then
@@ -48,7 +48,7 @@ found at https://biomech.web.unc.edu/wand-calibration-tools/ .
 
 .. image:: /art/EASYWAND_VOLUME.png
 	:align: center
-	:width: 800
+	:width: 600
 
 
 DLT matrix coefficients for translation and rotation
@@ -65,16 +65,17 @@ For our lab's initial pilot behavioral data, we have benchmarked a series of dai
 
 .. image:: /art/CAL_ACC.png
 	:align: center
-	:width: 800
+	:width: 400
 
 We then compared calibrations across days, using a random daily calibration to determine changes in in the root-mean
 square error.
 
 .. image:: /art/ACROSS_CALS.png
 	:align: center
-	:width: 800
+	:width: 400
 
 
-We have included our most accurate calibration file for general reconstruction
+We have included our most accurate calibration file for general reconstruction. Time-specific reconstruction is not supported
+at this time in the general software pipeline.
 
 
