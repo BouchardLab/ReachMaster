@@ -20,11 +20,17 @@ Direct Linear Transformation (DLT)
 -------------------------------------
 
 Direct Linear Transformation is an algorithmic approach to transform multiple 2-D poses, or scenes,  into a 3-D volume.
-Here, we go into some of the basic theory behind DLT. For a more detailed conversation, refer to http://www.kwon3d.com/theory/dlt/dlt.html#3d .
+Here, we overview some basic theory behind DLT. For a more detailed, mathematical conversation,
+refer to http://www.kwon3d.com/theory/dlt/dlt.html#3d .
 
 
 The projected plane (camera) is related to an object within the frame. This object (a wand, for our purpose!) is captured
-across each scene.
+across each scene. We seek to relate the object-space reference frame to the image-plane reference frame using the fact that
+the mapping between images of our object is co-linear. Describing this mapping, then, is our challenge.
+
+Briefly, there exists some transformation for our system that will transform multiple image-plane coordinates
+([u1,v1], [u2,v2]..) into object-space coordinates [x,y,z]. This is done by finding, using algorithmic approaches or
+Sparse Bundle Adjustment, transformations of low or lowest error.
 
 EasyWand and DLTdv7: Field Calibration Software for the People
 -------------------------------------------------------------------
