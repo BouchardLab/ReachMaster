@@ -14,14 +14,19 @@ DeepLabCut (https://github.com/DeepLabCut/DeepLabCut) utilizes unsupervised deep
 user-defined positional predictions. For our lab's use, we track 27 unique body parts inside of our behavioral
 experiments. These body parts are across the entire animal, and include major markers of both hands and general
 animal position.
+
 DeepLabCut requires an initial investment of training labels (~1000 per camera has worked for our DLC networks)
 for highly accurate positional inferences. Our lab's benchmarked network is below, as well as some experimental results.
 
 DeepLabCut is run across each of our experimental videos. The results are saved in a .csv file as well as in the NWB
 format. These .csv files form the backbone of our positional data: These are the files that we use to create 3-D positions.
 
-Lab BenchMarks of DeepLabCut
--------------------------------
+Current Lab BenchMarks of DeepLabCut
+---------------------------------------
+
+.. image:: /art/Summary_plot_3way_1m.png
+	:align: center
+	:width: 800
 
 2-D Filtering
 ------------------
@@ -51,12 +56,6 @@ A resulting transformation from 2-D to 3-D is shown below..........
 Our lab also saves a copy of these 3-D predictions to a local Neurodata Without Borders (NWB) file, using the Reaching Without
 Borders pipeline.
 
-3-D Filtering and Interpolation
-------------------------------------
-While in most cases we have well-defined marker predictions, outliers must be dealt with. We approach the problem
-by using a weighted interpolation that takes into account 2-D and 3-D positional data as well as camera probabilities.
-
-More to come...
 
 
 

@@ -4,16 +4,10 @@ Use with DLT co-effecients obtained through easyWand or other procedures + multi
 Author: Brett Nelson, NSDS Lab 2020
 
 """
-#imports
+from errno import EEXIST, ENOENT
 import numpy as np
-from numpy.random import normal as normal
-import matplotlib
 import matplotlib.pyplot as plt
-import matplotlib.cm as cm
-import matplotlib.colors as mcolors
-from mpl_toolkits.mplot3d import Axes3D
-import matplotlib.pyplot as plt
-import matplotlib.animation as animation
+import shutil
 import os
 import glob
 import pandas as pd
@@ -317,5 +311,3 @@ def filter_cam_lists(cam_list):
         print('Video File(s) are not available')
         cu = 1
     return cu
-
-
