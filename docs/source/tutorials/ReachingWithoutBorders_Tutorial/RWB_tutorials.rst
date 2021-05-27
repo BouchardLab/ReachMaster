@@ -2,22 +2,21 @@ Reaching Without Borders
 =============================
 
 Why Neurodata Without Borders (NWB)?
-------------------------------------
-
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Loading data into NWB
----------------------------------------
+^^^^^^^^^^^^^^^^^^^^^^
 
 
-What's in our NWB file?
-----------------------------
+What's in our RWB file?
+------------------------
 
 
-What gets saved in our NWB file, for every session?
------------------------------------------------------
+What gets saved in our RWB file, for every session?
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 
-Post-Processing NWB files
------------------------------
+Post-Processing RWB files with DataJoint
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 

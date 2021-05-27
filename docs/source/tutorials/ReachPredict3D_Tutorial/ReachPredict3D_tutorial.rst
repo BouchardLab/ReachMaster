@@ -1,15 +1,18 @@
 ReachPredict3D: A Software Platform to Robustly Extract 3-D Reaches
-=======================================================================
+====================================================================
 
 Predicting individual marker positions in a high-throughput manner is a requirement for thoroughly analyzing reaching behavior.
 In order to predict positions accurately, we use a pre-trained DeepLabCut network to generate positional inferences for
-user-defined markers. In all, we label 27 unique markers [[Handle, Back Handle, Nose, Shoulder 1, Forearm 1, Wrist 1, Palm 1,
-Index Base 1, Index Tip 1, Middle Base 1, Middle Tip 1, Third Base 1, Third Tip 1, Fourth Base 1, Fourth Tip 1,
-Shoulder 2, Forearm 2, Wrist 2, Palm 2, Index Base 2, Index Tip 2, Middle Base 2, Middle Tip 2, Third Base 2,
-Third Tip 2, Fourth Base 2, Fourth Tip 2]] across all of our continuous experimental videos.
+user-defined markers. In all, we continuously label 27 unique markers across each experimental video.
+Our Lab's Markers
+^^^^^^^^^^^^^^^^^^^
+Handle, Back Handle, Nose, Shoulder 1, Forearm 1, Wrist 1, Palm 1, Index Base 1, Index Tip 1, Middle Base 1, Middle Tip 1,
+Third Base 1, Third Tip 1, Fourth Base 1, Fourth Tip 1, Shoulder 2, Forearm 2, Wrist 2, Palm 2, Index Base 2, Index Tip 2,
+Middle Base 2, Middle Tip 2, Third Base 2, Third Tip 2, Fourth Base 2, Fourth Tip 2
 
-DeepLabCut
---------------------
+
+DeepLabCut and 3-D Reconstruction
+---------------------------------
 DeepLabCut (https://github.com/DeepLabCut/DeepLabCut) utilizes unsupervised deep learning methods to generate
 user-defined positional predictions. For our lab's use, we track 27 unique body parts inside of our behavioral
 experiments. These body parts are across the entire animal, and include major markers of both hands and general
@@ -22,7 +25,7 @@ DeepLabCut is run across each of our experimental videos. The results are saved 
 format. These .csv files form the backbone of our positional data: These are the files that we use to create 3-D positions.
 
 Current Lab BenchMarks of DeepLabCut
----------------------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Currently, for our pilot data we have constructed a network containing 3,360 images across 3 cameras.
 These labels are broken down below!
 
@@ -38,7 +41,7 @@ Basic benchmarks for a resnet-101 with generic network configuration are shown a
 	:width: 500
 
 2-D Filtering
-------------------
+^^^^^^^^^^^^^
 Generally our network produces reliable positional predictions during reaching behaviors, but in the case of outliers
 we adapt a 2-D filtering scheme that takes into account both positions and camera probabilities for a given camera. While
 our benchmarks of DeepLabCut inspire confidence that there are few outliers in predictions, smoothing our 2-D estimates
@@ -46,7 +49,7 @@ is an excellent way to smooth our generated 3-D trajectories or time-series comp
 is toggleable post-prediction during 3-D reconstruction.
 
 3-D Reconstruction
----------------------
+^^^^^^^^^^^^^^^^^^
 Once we have filtered our positions in 2-D camera space, we are now able to reconstruct our 2-D coordinates into
 an appropriate 3-D euclidean space with high temporal (ms) and spatial (mm) resolution. Our lab uses DLT to reconstruct
 our coordinates into a proper euclidean space. DLT is a robust, established method that utilizes linear transformations
