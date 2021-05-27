@@ -11,22 +11,13 @@
 
 import numpy as np
 import pandas as pd
-
 from networkx.drawing.tests.test_pylab import plt
-from sklearn.tree import DecisionTreeClassifier
 from sklearn.model_selection import train_test_split, KFold, cross_val_score
 from sklearn import decomposition
 from sklearn import preprocessing
-import pdb
 from sklearn.pipeline import make_pipeline
-#from yellowbrick.model_selection import CVScores
-#from yellowbrick.features import Rank2D
-from Classification_Visualization import visualize_model, print_preds, plot_decision_tree
-#from yellowbrick.classifier import ClassificationReport
-import DataStream_Vis_Utils as utils
+from Classification_Visualization import visualize_model, print_preds
 from scipy import ndimage
-
-# for saving and loading files
 import h5py
 import os.path
 

@@ -9,7 +9,6 @@
 
 from sklearn.metrics import f1_score
 from yellowbrick.classifier import ClassificationReport, DiscriminationThreshold, ConfusionMatrix, ClassBalance, ClassPredictionError
-import DataStream_Vis_Utils as utils
 import numpy as np
 from sklearn import metrics
 
@@ -180,7 +179,7 @@ def plot_decision_tree(estimator,X_test):
     return
 
 
-def print_preds(predictions_,y_lab):
+def print_preds(predictions_, y_lab):
     for i, m in enumerate(predictions_):
         m=m[0] # get pred entry
         if i ==0:

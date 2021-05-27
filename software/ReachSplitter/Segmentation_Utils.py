@@ -12,8 +12,6 @@
 # Trial Classification -> provides raw trial features for NWB
 # ToDo:
 import numpy as np
-import DataStream_Vis_Utils as utils
-import Classification_Utils as CU
 import matplotlib.pyplot as plt
 import ruptures as rpt
 

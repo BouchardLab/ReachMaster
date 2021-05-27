@@ -9,44 +9,41 @@
     Edited: 12/8/2020
 """
 import argparse
-import os.path
 from imblearn.over_sampling import SMOTE  # for adjusting class imbalances
-
 import sklearn
 import joblib  # for saving sklearn models
 from sklearn.preprocessing import StandardScaler
-
-from sklearn.svm import SVC
-from networkx.drawing.tests.test_pylab import plt
-from scipy import ndimage
-import pickle
-
-from sklearn.svm import LinearSVC
 from sklearn.metrics import accuracy_score
-from sklearn import preprocessing
 from sklearn.linear_model import LogisticRegression
-
-from Analysis_Utils import preprocessing_df as preprocessing # for normalizing data
-from Analysis_Utils import query_df
-import DataStream_Vis_Utils as utils
 import Classification_Utils as CU
 import pandas as pd
-import pdb
-import matplotlib
-import matplotlib.pyplot as plt
-import seaborn as sns
-from Classification_Visualization import visualize_models
 import numpy as np
 import h5py
-
 # classification
-from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor
+from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import cross_val_score, RandomizedSearchCV, train_test_split, GridSearchCV
 from sklearn.pipeline import make_pipeline, Pipeline
 from sklearn import preprocessing
 
 # set global random seed #
 np.random.seed(42)
+
+def get_single_trial(df,date,session,rat):
+    rr = df.loc[df['Date'] == date]
+    rr = rr.loc[rr['S'] == session]
+    new_df = rr.loc[rr['rat'] == rat]
+    return new_df
+
+
+def preprocessing_df(df):
+    d=[]
+    for index, row_value in df['Date'].iteritems():
+        if "_" in row_value:
+            d.append((row_value)[4:6])
+        else:
+            d.append((row_value)[5:7])
+    df['Date']=d
+    return df
 
 
 def main_1_vec_labels(labels, key_names, save=False, ):
@@ -118,7 +115,7 @@ def main_2_kin_exp_blocks(kin_data, exp_data, all_block_names, save=False):
             # get blocks
             rat, kdate, date, session = block_names[i]
             kin_block_df = CU.get_kinematic_block(kin_df, rat, kdate, session)
-            exp_block_df = utils.get_single_block(exp_df, date, session, rat)
+            exp_block_df = get_single_trial(exp_df, date, session, rat)
 
             # append blocks
             kin_blocks.append(kin_block_df)
