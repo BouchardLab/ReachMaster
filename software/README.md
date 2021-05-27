@@ -9,3 +9,12 @@ robot_calibration - R and Python scripts for parsing and analysing robot calibra
 
 preprocessing - utilities for reading, parsing, and exporting various types of ReachMaster data
 
+ReachingWithoutBorders - our Neurodata Without Borders pipeline
+
+ReachSplitter - software pipeline to extract discrete reaches from continous data
+
+ReachPredict3D - pipeline to extract DeepLabCut-generated predictions of bodyparts, then
+transform these predictions into 3-D.
+
+visualizations - sets of visualizations to determine accuracy and scale of 
+our predicted coordinates in 2 and 3-D, using ground truth labels.

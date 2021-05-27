@@ -1,3 +1,4 @@
+"""Function intended to ? """
 from unittest import TestCase
 
 from sklearn.ensemble import RandomForestClassifier
@@ -10,6 +11,10 @@ import pandas as pd
 
 
 class TestFileLoading(TestCase):
+    """
+
+
+    """
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         """ Initialize unchanged class attributes for testing
