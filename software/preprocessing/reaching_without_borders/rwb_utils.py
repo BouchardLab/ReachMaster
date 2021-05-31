@@ -13,7 +13,7 @@ from software.preprocessing.trodes_data.experiment_data_parser import get_exposu
 
 
 def init_nwb_file(file_name, source_script, experimenter, session_start_time):
-    """ Function intended to initialize NWB file
+    """Function intended to initialize NWB file
     Attributes
     ---------------
     file_name:
@@ -41,8 +41,7 @@ def init_nwb_file(file_name, source_script, experimenter, session_start_time):
 
 
 def add_metadata(list_of_metadata,nwb_file_):
-    """
-    Function to add metadata to block NWB file
+    """Function to add metadata to block NWB file
     Attributes
     -----------------
     list_of_metadata : List of metadata, [ Subject, ...]
@@ -59,7 +58,7 @@ def add_metadata(list_of_metadata,nwb_file_):
 
 
 def save_nwb_file(nwb_file, save_dir):
-    """ Function to save NWB file
+    """Function to save NWB file
     Attributes
     ----------------
     nwb_file:

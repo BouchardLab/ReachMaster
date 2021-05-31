@@ -67,7 +67,7 @@ def run_analysis_videos(cam_video_paths, config_path, filtering=False):
 
 
 def run_main(root_dir, config, fset=False):
-    """function intended to loop over PNS directory, obtain each camera's files, and send them to DLC.
+    """Function intended to loop over PNS directory, obtain each camera's files, and send them to DLC.
 
     Attributes
     --------------

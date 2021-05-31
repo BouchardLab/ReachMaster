@@ -1,14 +1,11 @@
 """
     Written by Brett Nelson, UC Berkeley/ Lawrence Berkeley National Labs, NSDS Lab 12/8/2020
                Emily Nguyen, UC Berkeley
-
     This code is intended to create and implement structure supervised classification of coarsely
     segmented trial behavior from the ReachMaster experimental system.
     Functions are designed to work with a classifier of your choice.
-
     Edited: 12/8/2020
 """
-
 import numpy as np
 import pandas as pd
 from networkx.drawing.tests.test_pylab import plt
@@ -16,10 +13,10 @@ from sklearn.model_selection import train_test_split, KFold, cross_val_score
 from sklearn import decomposition
 from sklearn import preprocessing
 from sklearn.pipeline import make_pipeline
+from yellowbrick.model_selection import CVScores
 from Classification_Visualization import visualize_model, print_preds
 from scipy import ndimage
 import h5py
-import os.path
 
 
 ####################################
@@ -27,38 +24,33 @@ import os.path
 ####################################
 
 def unpack_pkl_df(rat_df1):
-    """ Formats a pandas DataFrame.
+    """Formats a pandas DataFrame.
         rat,date,session,dim levels are converted to columns.
         Each column's values (except rat,date,session,dim) are stored in a single array.
 
-    Args:
-        rat_df1 (df):  a multi-level DataFrame corresponding to an element in an un-pickled list
+    Attributes
+    ------------
+    rat_df1: dataframe, a multi-level DataFrame corresponding to an element in an un-pickled list
 
-    Returns:
-        new_df (df): a new formatted DataFrame with only 1 row for a specific rat,date,session,dim
-    Notes:
-        pkl_to_df helper
+    Returns
+    ----------
+        new_df: a new formatted DataFrame with only 1 row for a specific rat,date,session,dim
+
     """
     # create a new DataFrame (copy of original), then removes levels corresponding to (rat, date, session, dim)
-    df1 = rat_df1.droplevel([0, 1, 2, 3], axis=1)
-
-    # stores final row values for each rat,date,session
+    df1 = rat_df1.droplevel([0, 1, 2, 3], axis=1)  # stores final row values for each rat,date,session
     newlist = []
-
     # create empty df by removing all rows
     new_df = df1[0:0]
-
     # inserts rat, date, session, dim columns
     for i in range(4):
         col_name = rat_df1.columns.names[i]
         val = rat_df1.columns.levels[i][0]
         newlist.append(val)
         new_df.insert(i, col_name, val)
-
     # turn each column's values into an array
     for i in range(len(df1.columns)):
         newlist.append(df1[df1.columns[i]].values)
-
     # append list of values into empty df
     to_append = newlist
     a_series = pd.Series(to_append, index=new_df.columns)
@@ -67,39 +59,36 @@ def unpack_pkl_df(rat_df1):
 
 
 def pkl_to_df(pickle_file):
-    """ Converts a pickle files into a pandas DataFrame indexed by rat,date,session,dim
+    """Converts a pickle files into a pandas DataFrame indexed by rat,date,session,dim
 
-    Args:
-        pickle_file (str): file path to pickle file that contains a list of DataFrames
+    Attributes
+    ------------
+    pickle_file: file path to pickle file that contains a list of DataFrames
 
-    Returns:
-        df_to_return (df): DataFrame indexed by rat,date,session,dim
+    Returns
+    ---------
+    df_to_return: DataFrame indexed by rat,date,session,dim
             with one row corresponding to one element in 'unpickled_list'
+
     """
     # unpickle file
     unpickled_list = pd.read_pickle(pickle_file)
-
     # true if have encountered a DataFrame in list
     encountered_df = False
-
     # iterate through list
     for i in range(len(unpickled_list)):
         try:
             rat_df1 = unpickled_list[i]
-
             # create new df with 1 row
-            if (not encountered_df):
+            if not encountered_df:
                 encountered_df = True
                 df_to_return = unpack_pkl_df(rat_df1)
-
             # concat new df to existing df
             else:
                 df_to_append = unpack_pkl_df(rat_df1)
                 df_to_return = pd.concat([df_to_return, df_to_append], axis=0, sort=False)
-
         except:
             print("do nothing, not a valid df")
-
     # sets index of new df
     df_to_return = df_to_return.set_index(['rat', 'date', 'session', 'dim'])
     return df_to_return
@@ -109,29 +98,22 @@ def pkl_to_df(pickle_file):
 # 2. Label processing
 ####################################
 
+
 def make_vectorized_labels(blist):
-    """ Vectorizes list of DLC video trial labels for use in ML-standard format
+    """Vectorizes list of DLC video trial labels for use in ML-standard format
         Converts labels which hand and tug vs no tug string labels into numbers.
 
-    Args:
-        blist (list of str and int): list of trial labels for a specific rat,date,session
+    Attributes
+    -------------
+    blist: list, of trial labels for a specific rat,date,session
             For more robust description please see github
 
-    Returns:
-        new_list (arr of lists): array of lists of numeric labels.
+    Returns
+    ----------
+    new_list: array, of lists of numeric labels.
             One list corresponds to one labeled trial.
-        ind_total (arr of list): array of lists of reaching indices .
+    ind_total: array of lists of reaching indices .
             Currently all empty.
-
-    Notes:
-         Each index in a labeled trial are as follows: [int trial_num, int start, int stop, int trial_type,
-         int num_reaches, str which_hand_reach, str tug_noTug, int hand_switch, int num_frames]
-
-    Example:
-    >>> l18=[[1,0,0,1,1,'l','noTug',0,0]]
-    >>> l18l, ev18 = make_vectorized_labels(l18)
-    >>> display(l18l)
-    array([[ 1.,  0.,  0.,  1.,  1.,  1.,  1.,  0.,  0.]])
 
     """
     ll = len(blist)
@@ -181,59 +163,22 @@ def make_vectorized_labels(blist):
     return new_list, np.array(ind_total)
 
 
-####################################
-# 3. Format Blocks into Trial-ized Data
-####################################
-
-def xform_array(k_m, eit, cl):
-    """ Does nothing. Returns 'k_m' unchanged.
-
-    Args:
-        k_m (list of list of ints): list of three x, y, z lists
-        eit (int): et
-        cl (int): el
-
-    Returns:
-        k_m
-    """
-    k = np.asarray(k_m)
-    # rv=np.dot(k.reshape(k.shape[2],27,3),eit)+cl # good Xform value, then use this value
-    return k_m
-
-
-def transpose_kin_array(kc, et, el):
-    # kc is dtype pandas dataframe
-    # we want numpy data format
-    # kc['colname'].to_numpy()
-    for items in kc.items():
-        # pdb.set_trace()
-        if 'X' in items[0][1]:
-            kc[items[0]] = xform_array(kc[items[0]], et, el)
-        if 'Y' in items[0][1]:
-            kc[items[0]] = xform_array(kc[items[0]], et, el)
-        if 'Z' in items[0][1]:
-            kc[items[0]] = xform_array(kc[items[0]], et, el)
-    return kc
-
-
-def block_pos_extract(kin_df, et, el, wv):
-    """ Extracts a single block's posture data (X,Y,Z and prob1,2,3) and feature names.
+def block_pos_extract(kin_df, wv):
+    """Extracts a single block's posture data (X,Y,Z and prob1,2,3) and feature names.
         
-    Args:
-        kin_df (df): kinematic DataFrame for a single block
-        et (int): coordinate change variable
-            Will take the positional coordinates and put them into the robot reference frame.
-        el (int): coordinate change variable
-            Will take the positional coordinates and put them into the robot reference frame.
-        wv (int): the wavelet # for the median filter applied to the positional data
+    Attributes
+    -----------
+    kin_df: dataframe, kinematic DataFrame for a single block
+    wv: int, wavelet # for the median filter applied to the positional data
 
-    Returns:
-        block (list of lists of arrays of ints): List of two lists:
+    Returns
+    ----------
+    block: list, List of two lists:
             (1) three lists for X,Y,Z column data.
             (2) three lists for prob1,2,3 column data
             Each list corresponding to X,Y, or Z or prob1,2 or 3 contains filtered arrays for each feature.
             final Posture array is 2 x 3 x feat x coords np array.
-        feat_name (list of str): collection of feature names for X,Y,Z followed by probabilities 1,2,3.
+    feat_name:list, collection of feature names for X,Y,Z followed by probabilities 1,2,3.
             1 for Left bodypart, 2 for Right bodypart
     Notes:
         make_s_f_trial_arrays_from_block helper
@@ -257,17 +202,14 @@ def block_pos_extract(kin_df, et, el, wv):
     xp_ = []
     yp_ = []
     zp_ = []
-
     feat_name_X = []
     feat_name_Y = []
     feat_name_Z = []
     feat_name_prob1 = []
     feat_name_prob2 = []
     feat_name_prob3 = []
-
     # iterate across columns
     for (columnName, columnData) in kin_df.iteritems():
-
         # Apply median filter to X,Y,or Z array values
         try:
             if columnName[1] == 'X':
@@ -290,45 +232,40 @@ def block_pos_extract(kin_df, et, el, wv):
                 feat_name_prob3.append(columnName)
         except:
             print('No filtering..')
-
     # Concat all XYZ lists and probability lists of column values
     block = np.asarray(
         [[x_arr_, y_arr_, z_arr_], [xp_, yp_, zp_]])  # previously: xform_array([x_arr_, y_arr_, z_arr_], et, el)
-
     # print(block.shape) = (2, 3, 27, 91580)
     feat_name = feat_name_X + feat_name_Y + feat_name_Z + feat_name_prob1 + feat_name_prob2 + feat_name_prob3
     return block, feat_name
 
 
 def reshape_posture_trials(a):
-    # pdb.set_trace()
+    arx = 0
     for ix, array in enumerate(a):
         if ix == 0:
             arx = a
-
         else:
-            ar = np.vstack((a))
-            # pdb.set_trace()
+            ar = np.vstack(a)
             arx = np.concatenate((arx, ar))
     return arx
 
 
 def split_trial(posture_array, _start, window_length, pre):
-    """ Splits posture array of kinematic data into trials
+    """Splits posture array of kinematic data into trials
             based on '_start' values.
 
-    Args:
-        posture_array (list of lists of array of ints): 2x3xfeatxcoords np array.
-            Return value from block_pos_extract.
-        _start (list of ints): video frame numbers for the start of each trial.
-        window_length (int): number of frames to take from a trial
-        pre (int): pre cut off before a trial starts, the number of frames to load data from before start time
-            For trial splitting
+    Attributes
+    ------------
+    posture_array: list, 2x3xfeatxcoords np array. Return value from block_pos_extract.
+    _start: list, video frame numbers for the start of each trial.
+    window_length: int, number of frames to take from a trial
+    pre : int, pre cut off before a trial starts, the number of frames to load data from before start time
 
-    Returns:
-        trials_list (nested arrays of ints): trial-ized kinematic data
-            Shape (2, NumTrials, 3 for XYZ positions or prob123, NumFeatures or posture_array.shape[2], NumFrames)
-            where NumFrames='window_length' + 'pre'
+    Returns
+    ----------
+    trials_list (nested arrays of ints): trial-ized kinematic data. Shape (2, NumTrials, 3 for XYZ positions or prob123, NumFeatures or posture_array.shape[2], NumFrames)
+
     Notes:
         make_s_f_trial_arrays_from_block helper
         ML format is time x feat x coords
@@ -343,10 +280,8 @@ def split_trial(posture_array, _start, window_length, pre):
     """
     # convert list to np array
     posture_array = np.asarray(posture_array)
-
     # create e.g (2 for xyz and prob123, e.g 26 trials, 3 for XYZ, 27 pos names, num frames + num pre frames to take) empty list
     trials_list = np.empty((2, len(_start), posture_array.shape[1], posture_array.shape[2], window_length + pre))
-
     # iterate over starting frames
     # jx=starting frame number
     for i, jx in enumerate(_start):
@@ -359,13 +294,15 @@ def split_trial(posture_array, _start, window_length, pre):
 
 
 def onehot(r_df):
-    """ Returns one hot array for robot data.
+    """Returns one hot array for robot data.
 
-    Args:
-        r_df (df): robot DataFrame for a single block
+    Attributes
+    -----------
+    r_df: dataframe, sensor dataframe for single block
 
-    Returns:
-        one hot array of length number of trials in block
+    Returns
+    -----------
+    hot_vec: array, one-hot encoding array of length number of trials in block
         
     Examples:
         >>> display(r_df['r_start'].values[0]) # sf variable
@@ -380,12 +317,7 @@ def onehot(r_df):
         m = len(r_df['r_start'].values[0])
     except:
         print('onehot vector error')
-        # pdb.set_trace()
-
-    # get SF values
     sf = r_df['SF'].values[0]
-
-    # create empty array of size num trials
     hot_vec = np.zeros(m, dtype=int)
     hot_vec[sf] = 1
     return np.asarray(hot_vec)
@@ -400,12 +332,10 @@ def unwind_list(strial_list):
                 tsx = np.concatenate((tsx, trial), axis=0)
             except:
                 print('concat error in unwind_list')
-
     return tsx
 
 
 def reshape_list(strial_list):
-    # pdb.set_trace()
     try:
         length, width, height = np.array(strial_list[0]).shape
         num_trials = len(strial_list)
@@ -419,21 +349,27 @@ def reshape_list(strial_list):
             except:
                 emp[iterz, :, :, :] = np.zeros((length, width, height))
     except:
-        # pdb.set_trace()
         print('Problem with reshaping the list..')
     return emp
 
 
 def forward_xform_coords(x, y, z):
-    """ Calculates x,y,z pot arrays to help with convertings units in meters to seconds. 
+    """Calculates x,y,z pot arrays to help with convertings units in meters to seconds.
     
-    Args:
-        x (arr): split x pot array in block from (starting frame*sample_rate to stop frame * sampple_rate)
-        y (arr): split y pot array in block
-        z (arr): split z pot array in block
+    Attributes
+    --------------
+        x: array, split x pot array in block from (starting frame*sample_rate to stop frame * sampple_rate)
+        y: array, split y pot array in block
+        z: array, split z pot array in block
     
-    Returns:
-           r, theta, phi, x, y, z
+    Returns
+    ---------------
+    r: array
+    theta: array
+    phi: array
+    x: array
+    y: array
+    z: array
     
     Notes: 
         calculate_robot_features helper. 
@@ -463,8 +399,6 @@ def forward_xform_coords(x, y, z):
     U3 = np.dot(c3, u)
     V3 = np.dot(c3, v)
     sd = np.dot(c3, c3)
-    cos_top = (Az_est ** 2 + Lz ** 2 - sd)
-    cos_bot = (2 * Az_est * Lz)
     r3 = np.sqrt(
         Az_est ** 2 + (Ly - Lz) ** 2 - (2 * Az_est * (Ly - Lz) * np.cos(np.pi - np.arccos((Az_est ** 2 + Lz ** 2 - sd)
                                                                                           / (2 * Az_est * Lz)))))
@@ -487,103 +421,83 @@ def forward_xform_coords(x, y, z):
 
 
 def calculate_robot_features(xpot, ypot, zpot, mstart_, mstop_, etimes, wle, pre_):
-    """ Calculates robot features.
-    
-    Args:
-        xpot(arr): x pot array in robot block
-        ypot(arr): y pot array in robot block
-        zpot(arr): z pot array in robot block
-        mstart_ (arr): r_start array in robot block
-        mstop_ (arr): r_stop array in robot block
-        etimes (arr) : experimental times
-    Returns:
-        vx (arr): units of seconds
-        vy (arr): units of seconds
-        vz (arr): units of seconds
-        x1 (arr): units of meters
-        y1 (arr):  units of meters
-        z1 (arr): units of meters
-        
-    Notes: 
+    """Calculates robot features.
+
+    Attributes
+    ---------------
+    xpot: x pot array in robot block
+    ypot: y pot array in robot block
+    zpot: z pot array in robot block
+    mstart_: r_start array in robot block
+    mstop_: r_stop array in robot block
+    etimes: experimental times
+
+    Returns
+    ----------
+    vx: units of seconds
+    vy: units of seconds
+    vz: units of seconds
+    x1: units of meters
+    y1:  units of meters
+    z1: units of meters
+
+    Notes:
         import_experiment_features helper.
         making 'sample_rate' too big can cause index out of bounds and empty array errors.
-        'sampe_rate': the adc rate is to take the analog trodes time (x.xxx seconds) and 
+        'sampe_rate': the adc rate is to take the analog trodes time (x.xxx seconds) and
             transform it into the digital bit time (frames at some exposure).
     """
-    # print(len(etimes))
-    # pdb.set_trace()
     etimes = etimes[mstart_ - pre_: mstart_ + wle]
-    # print len
-    # print(mstart_,mstop_)
     sample_rate = 3000  # sample rate per second
-    # take event time, multiply by sample rate
-    # split into sample
     try:
         start__ = int(etimes[0] * sample_rate)
         stop__ = int(etimes[-1] * sample_rate)
     except:
-        # pdb.set_trace()
         print('bad sampling conversion')
-
-    # print(start__, stop__)
     try:
-        # print("START:", start__, "STOP:", stop__, "LEN POT ARR:", len(xpot))
         xp = xpot[start__:stop__]
         yp = ypot[start__:stop__]
         zp = zpot[start__:stop__]
-        # if (len(xp)==0):
-        # print("START:", start__, "STOP:", stop__, "LEN POT ARR:", len(xpot))
-        # print("sample_rate too large or start>stop index")
     except:
         print('bad pot data')
-        # pdb.set_trace()
     try:
         r1, theta1, phi1, x1, y1, z1 = forward_xform_coords(xp, yp, zp)  # units of meters
     except:
         print('bad xform')
-        # pdb.set_trace()
-    # vta = np.diff(vt)
     try:
         vx = np.diff(x1) / sample_rate  # units of seconds
         vy = np.diff(y1) / sample_rate  # units of seconds
         vz = np.diff(z1) / sample_rate  # units of seconds
     except:
         print('bad potentiometer derivatives')
-        # pdb.set_trace()
-    # ve=np.absolute(np.gradient(np.asarray([x1,y1,z1]),axis=0))/30000
-    # ae = np.gradient(ve)/3000
     return vx, vy, vz, x1, y1, z1
 
 
 def import_experiment_features(exp_array, starts, window_length, pre):
-    """ Extracts features from experiment array.
+    """Extracts features from experiment array.
         Features to extract are pot_x, pot_y, pot_z, lick_array, rew_zone robot features.
 
-    Args:
-        exp_array (df): single block from robot DataFrame
-        starts (list of ints): list of ints corresponding to video frame numbers for each trial
-        window_length (int): trial splitting window length, the number of frames to load data from
-        pre (int): pre cut off before a trial starts, the number of frames to load data from before start time
+    Attributes
+    -----------
+    exp_array: single block from robot DataFrame
+    starts: list of ints corresponding to video frame numbers for each trial
+    window_length: trial splitting window length, the number of frames to load data from
+    pre: pre cut off before a trial starts, the number of frames to load data from before start time
             For trial splitting
 
-    Returns:
-        exp_feat_array (list of arrays): dimensions Num trials X num robot Features X wlength
+    Returns
+    ----------
+    exp_feat_array: dimensions Num trials X num robot Features X wlength
 
     Notes:
         make_s_f_trial_arrays_from_block helper
         making 'window_length' or 'pre' too big can cause index out of bounds errors
         
     """
-    # features to extract from experiment array : pot_x, pot_y, pot_z, lick_array, rew_zone robot features
     wlength = (starts[0] + window_length) - (
             starts[0] - pre)  # get length of exposures we are using for trial classification
-
-    # create empty np array Ntrials X Features X wlength
     exp_feat_array = np.empty((len(starts), 12, wlength))
-
-    # loop over each trial
     for ixs, vals in enumerate(starts):
-        # get experimental feature values
         try:
             time_ = exp_array['time'].to_numpy()[0]
             moving = exp_array['moving'].to_numpy()[0]
@@ -596,21 +510,12 @@ def import_experiment_features(exp_array, starts, window_length, pre):
         exp_time = np.asarray(time_, dtype=float) - time_[0]
         exp_save_time = exp_time[vals - pre:vals + window_length]
         lmi = np.searchsorted(exp_time, lick)
-
-        # get lick times, subtract time[0] from lick times (this normalizes them to cam data), then make your vector
         lick_mask_array = np.zeros(exp_time.shape[0] + 1, dtype=int)
         lick_mask_array[lmi] = 1
-
-        # FutureWarning: in the future negative indices will not be ignored by `numpy.delete`.
-        #   np.delete(lick_mask_array, [-1])
         np.delete(lick_mask_array, [-1])
-
         lick_mask_array = lick_mask_array[vals - pre:vals + window_length]
-
-        # moving = moving[vals-pre:vals+window_length] # TODO repl with is_reach_rewarded
         moving = is_reach_rewarded(lick_mask_array)  ### is int 0
         try:
-            # get robot data
             vcx, vcy, vcz, xp1, yp1, zp1 = calculate_robot_features(exp_array['x_pot'].to_numpy()[0],
                                                                     exp_array['y_pot'].to_numpy()[0],
                                                                     exp_array['z_pot'].to_numpy()[0],
@@ -621,61 +526,41 @@ def import_experiment_features(exp_array, starts, window_length, pre):
                                                                     )
         except:
             print("bad pot data, r/m_start and stop column name error")
-
-        # fill in array
-        # decimate potentiometer from s to exposure !~ in frames (we dont have exact a-d-c)
-        # make same length as other features, to avoid problems with ML (this means we will lose ~5 data points at end of experiment)
-        # try:
-        #   pdb.set_trace()
-        # xp1 = xp1[0: window_length+pre]
-        # yp1 = yp1[0: window_length+pre]
-        # zp1 = zp1[0: window_length+pre]
-        # vcx = vcz[0: window_length+pre]
-        # vcy = vcy[0: window_length+pre]
-        # vcz = vcz[0: window_length+pre]
-        # except:
-        # print('bad decimate')
-
         try:
-            # print(xp1.shape, vcz.shape, yp1.shape)
             ds_rate = int(xp1.shape[0] / (window_length + pre))  # n frames of analog / n frames of digital
             exp_feat_array[ixs, 0, :] = exp_save_time
             exp_feat_array[ixs, 6, :] = rz
-
             try:
                 exp_feat_array[ixs, 7, :] = xp1[::ds_rate][0:window_length + pre]
                 exp_feat_array[ixs, 8, :] = yp1[::ds_rate][0:window_length + pre]
                 exp_feat_array[ixs, 9, :] = zp1[::ds_rate][0:window_length + pre]
-            # exp_feat_array[ixs, 1, :] = vcx
-            # exp_feat_array[ixs, 2, :] = vcy
-            # exp_feat_array[ixs, 3, :] = vcz
             except:
                 exp_feat_array[ixs, 7, :] = xp1[::ds_rate - 1]
                 exp_feat_array[ixs, 8, :] = yp1[::ds_rate - 1]
                 exp_feat_array[ixs, 9, :] = zp1[::ds_rate - 1]
-
             exp_feat_array[ixs, 10, :] = lick_mask_array
             exp_feat_array[ixs, 11, :] = moving
         except:
             print('bad robot data fit')
-
-    # print('Finished experimental feature generation')
     return exp_feat_array
 
 
 def get_kinematic_block(kin_df_, rat, kdate, session):
-    """ Retrieves a single block (row) in a kinematic dataframe for given rat,date,session
+    """Retrieves a single block (row) in a kinematic dataframe for given rat,date,session
         
-    Args:
-        kin_df_ (df): kinematic dataframe indexed by 'rat','date','session',dim
-        rat (str): rat ID
-        kdate (str): block date in 'kin_df_'
-        session (str): block session
+    Attributes
+    ------------
+    kin_df_: dataframe, kinematic dataframe indexed by 'rat','date','session',dim
+    rat: str, rat ID
+    kdate: str, block date in 'kin_df_'
+    session: str, block session
         
-    Returns:
-        kin_block_df (df): desired block row in 'kin_df_' indexed by rat,date,session,dim
+    Returns
+    --------
+    kin_block_df: dataframe, desired block row in 'kin_df_' indexed by rat,date,session,dim
     
-    Raises:
+    Raises
+    --------
         LookupError: If desired block does not exist
     """
     try:
@@ -689,51 +574,41 @@ def get_kinematic_block(kin_df_, rat, kdate, session):
 
 def make_s_f_trial_arrays_from_block(kin_block_df, exp_block_df, et, el, wv=5, window_length=250,
                                      pre=10):
-    """ Returns trialized and formatted features from kinematic and experimental data
+    """Returns trialized and formatted features from kinematic and experimental data
     
-    Args:
-        kin_block_df (df): kinematic DateFrame block indexed by rat,date,session,dim
-        exp_block_df (df): robot experimental DataFrame block
-        et (int): coordinate change variable
+    Attributes
+    ------------
+
+    kin_block_df: dataframe, kinematic DateFrame block indexed by rat,date,session,dim
+    exp_block_df: dataframe, robot experimental DataFrame block
+    et: int, coordinate change variable
             Will take the positional coordinates and put them into the robot reference frame.
-        el (int): coordinate change variable
+    el: int, coordinate change variable
             Will take the positional coordinates and put them into the robot reference frame.
-        wv (int): the wavelet # for the median filter applied to the positional data (default 5)
+    wv: int, the wavelet # for the median filter applied to the positional data (default 5)
         window_length (int): trial splitting window length, the number of frames to load data from(default 250)
             Set to 4-500. 900 is too long.
-        pre (int): pre cut off before a trial starts, the number of frames to load data from before start time
+    pre: int, pre cut off before a trial starts, the number of frames to load data from before start time
             For trial splitting, set to 10. 50 is too long. (default 10)
     
-    Returns:
-        _hot_vector (array): one hot array of robot block data of length num trials
-        _tt1 (nested array of ints): trialized kinematic data
-            shape (2, NumTrials, 3 for XYZ positions or prob123, NumFeatures, NumFrames).
-        feature_names_list (list of str): list of feature names from 'kin_block_df'
-        exp_features (list of arrays): experimental features
-            shape (Num trials X Features X 'pre'+'window_length).
+    Returns
+    --------
+    _hot_vector: array, one hot array of robot block data of length num trials
+    _tt1: array, trialized kinematic data
+        shape (2, NumTrials, 3 for XYZ positions or prob123, NumFeatures, NumFrames)
+    feature_names_list: list of feature names from 'kin_block_df'
+    exp_features: list, experimental features
+            shape (Num trials X Features X 'pre'+'window_length)
 
     """
-    # extract posture arrays, and feature names
-    block_pos_arr, feature_names_list = block_pos_extract(kin_block_df, et, el, wv)  # TODO fix feat names lists?
-
-    # get starting_frames_list column value, which is a list of ints corresponding to video frame numbers
+    block_pos_arr, feature_names_list = block_pos_extract(kin_block_df, et, el, wv)
     start = exp_block_df['r_start'].values[0]
-
-    # trial-ize kinematic data
     _tt1 = split_trial(block_pos_arr, start, window_length, pre)
-
-    # swap pos and prob values for trialized kin data (corrects data mismatch)
     pos_data = _tt1[0]
     prob_data = _tt1[1]
     _tt1 = merge_in_swap(pos_data, prob_data, plot=False)
-
-    # format exp features
     exp_features = import_experiment_features(exp_block_df, start, window_length, pre)
-
-    # One hot exp data
     _hot_vector = onehot(exp_block_df)
-
-    # Finished trial splitting
     return _hot_vector, _tt1, feature_names_list, exp_features
 
 
@@ -743,20 +618,23 @@ def make_s_f_trial_arrays_from_block(kin_block_df, exp_block_df, et, el, wv=5, w
 
 
 def match_stamps(kinematic_array_, label_array, exp_array_):
-    """ Matches kinematic and experimental data with labeled trial vectors.
+    """Matches kinematic and experimental data with labeled trial vectors.
 
-    Args:
-        kinematic_array_ (nested array of ints): trialized kinematic data returned from make_s_f_trial_arrays_from_block
+    Attributes
+    -------------
+
+        kinematic_array_: array, trialized kinematic data returned from make_s_f_trial_arrays_from_block
             shape (2, NumTrials, 3 for XYZ positions or prob123, NumFeatures, NumFrames).
-        label_array (list of list of ints and str): vectorized DLC video labels returned from make_vectorized_labels
+        label_array: list, vectorized DLC video labels returned from make_vectorized_labels
             shape (num labeled trials x 9 labeling features).
-        exp_array_(list of arrays): experimental features returned from make_s_f_trial_arrays_from_block
+        exp_array_: list, experimental features returned from make_s_f_trial_arrays_from_block
             shape (Num trials X Features X Length)
 
-    Returns:
-        mk_array (arr of lists of ints): formatted kin data
+    Returns
+    -----------
+    mk_array: array, formatted kin data
             shape (2, Num labeled Trials, 3 for XYZ positions or prob123, NumFeatures, NumFrames).
-        ez_array (arr of lists of ints): formatted exp data
+    ez_array: array, formatted exp data
             shape (Num labeled trials X Features X Length)
 
     Examples:
@@ -766,88 +644,79 @@ def match_stamps(kinematic_array_, label_array, exp_array_):
         19
         >>> mk_array.shape, ez_array.shape
         (2, 19, 3, 27, 6) (19, 12, 6)
+
     """
-    # Create trial arrays
     len_array = len(label_array)
     try:
-        # (2 for XYZ and prob123, num labeled trials, 3 for XYZ or prob123, kin features, window_length+pre)
         mk_array = np.empty((2, len_array, kinematic_array_[0].shape[1], kinematic_array_[0].shape[2],
                              kinematic_array_[0].shape[3]))
-
     except:
         print('No Kinematic Data to Match')
-
     try:
-        # (num labeled trials, num exp features, window_length+pre)
         ez_array = np.empty((len_array, exp_array_.shape[1], exp_array_.shape[2]))
     except:
         print('Bad Robot Data Pass')
-
-    # From label array, first column states the trial # of the row
     for dr, tval in enumerate(label_array):
-
         # iterate over the index and value of each trial element
         ixd = int(label_array[dr][0])  # get trial
-
-        # reshape kin and exp data
         try:
             mk_array[:, ixd, :, :, :] = kinematic_array_[:, ixd, :, :, :]
             ez_array[ixd, :, :] = exp_array_[ixd, :, :]
         except:
             print('Cant set kinematic and robot arrays in place')
-
     return mk_array, ez_array
 
 
 def create_ML_array(matched_kinematics_array, matched_exp_array):
-    """ Reshapes and combines kin and experimental features.
+    """Reshapes and combines kin and experimental features.
 
-    Args:
-        matched_kinematics_array (arr of lists of ints): matched kin data returned by match_stamps
+    Attributes
+    ------------
+
+    matched_kinematics_array: array, matched kin data returned by match_stamps
             shape (2 for XYZ and prob123, num labeled trials, 3, num feat, window_length+pre)
-        matched_exp_array (arr of lists of ints): matched exp data returned by match_stamps
+    matched_exp_array: array, matched exp data returned by match_stamps
             shape shape (Num labeled trials X Num exp Features X window_length+pre)
 
-    Returns:
-        kin_exp_XYZ (array of lists of ints): reshaped ML arrays for kinematics and experimental data
+    Returns
+    ----------
+
+    kin_exp_XYZ: array, reshaped ML arrays for kinematics and experimental data
             shape (num labeled trials, 3*num kin feat, window_length+pre)
-        kin_exp_prob123: same as 'kin_exp_XYZ' except with probability values
+    kin_exp_prob123: array, same as 'kin_exp_XYZ' except with probability values
              shape (num labeled trials, 3*num kin feat + num exp features, window_length+pre)
 
     """
     num_feat_times_3 = matched_kinematics_array.shape[2] * matched_kinematics_array.shape[3]
     length = matched_kinematics_array.shape[4]
     num_labeled_trials = matched_kinematics_array.shape[1]
-
-    # reshape from shape (2 for XYZ and prob123, num labeled trials, 3, num feat, window_length+pre)
-    #    into shape (2 for XYZ and prob123, num labeled trials, 3*num feat, window_length+pre)
     reshaped_kin = matched_kinematics_array.reshape(2, num_labeled_trials, num_feat_times_3, length)
     kin_XYZ = reshaped_kin[0]
     kin_prob123 = reshaped_kin[1]
-
-    # append kin and exp array features
-    #   rm exp from kin because redundant exp feat when concat with prob later
     kin_exp_XYZ = kin_XYZ  # np.concatenate((kin_XYZ, matched_exp_array), axis=1)
     kin_exp_prob123 = np.concatenate((kin_prob123, matched_exp_array), axis=1)
-
     return np.array(kin_exp_XYZ), np.array(kin_exp_prob123)
 
 
 def stack_ML_arrays(list_of_k, list_of_f):
-    """ Vertically stacks ML arrays and DLC video labeling vectors for each block.
+    """Vertically stacks ML arrays and DLC video labeling vectors for each block.
 
-    Args:
-        list_of_k (list of nested arrays of ints): list of ML arrays for each labeled block
+    Attributes
+    ------------
+
+    list_of_k: list of ML arrays for each labeled block
             return value of create_ML_array
             shape (num labeled trials, 3*num kin feat + num exp features, window_length+pre)
-        list_of_f (list of lists of lists of int): list of vectorized DLC video trial labels for each block
+    list_of_f: list of vectorized DLC video trial labels for each block
             return value of make_vectorized_labels
             shape (num labeled trials, 3*num kin feat + num exp features window_length+pre)
 
-    Returns:
-        ogk (array of nested arrays of ints): final_ML_array
+    Returns
+    ---------
+
+    ogk: array, final_ML_array
             shape (total num labeled trials, 3*num kin feat+num exp features=list_of_k.shape[1], window_length+pre)
-        ogf (array of lists of ints): final_feature_array
+    ogf: array, final_feature_array
             shape (total num labeled trials, 9 for DLC label features)
 
     Examples:
@@ -872,28 +741,42 @@ def stack_ML_arrays(list_of_k, list_of_f):
 ##########################
 
 def is_tug_no_tug(moving_times):
-    """
-    Function to classify trials with post-reaching behavior from well-behaved handle release.
+    """Function to classify trials with post-reaching behavior from well-behaved handle release.
     Gives a simple estimate of if theres tug of war or not
+
+    Attributes
+    ------------
+    moving_times: array, array of times the handle moves
+
+    Returns
+    ----------
+    tug_preds: one-hot encoding of if there is a simple tug-of-war behavior recorded from handle sensor data
+    ind_trial_times: int, time (in seconds) of trial from start of reward (lick) to beginning of reach
+
     """
-    # ask if there is robot velocity after a trial ends (for around a second)
     reward_end_times = np.argwhere(moving_times == 1)[0]  # take the first index when a robot movement command is issued
     movement_end_times = np.argwhere(moving_times == 1)[-1]
-    # Handle Probability thresholding
-    # post_trial_robot_movement = robot_vector[:,:,reward_end_times:reward_end_times+100] # get all values from end of trial to +100
     move_time = 20  # parameter threshold needed to evoke TOW
-    # Histogram total results of this parameter
     if movement_end_times - reward_end_times > move_time:
         tug_preds = 1  # tug of war
     else:
         tug_preds = 0  # no tug of war
-    return tug_preds, movement_end_times - reward_end_times
+    ind_trial_times = movement_end_times - reward_end_times
+    return tug_preds, ind_trial_times
 
 
 def is_reach_rewarded(lick_data_):
-    """
-    Function to simply classify trials as rewarded with water or not using sensor data from ReachMaster (lick detector).
+    """Function to simply classify trials as rewarded with water or not using sensor data from ReachMaster (lick detector).
     Tells if the reach was rewarded or not
+
+    Attributes
+    -----------
+    lick_data_: array, times that our licking sensor is activated during a trial
+
+    Returns
+    ---------
+    rew_lick_: int, flag to determine if a trial has been rewarded
+
     """
     rew_lick_ = 0
     if lick_data_.any():
@@ -909,16 +792,34 @@ def is_reach_rewarded(lick_data_):
 # Functions below generate some features with the positional data
 #####
 
+
 def right_arm_vector_from_kinematics(tka):
+    """Function to extract positions from the right arm of a rat.
+
+    Attributes
+    ------------
+    tka: full positional array
+
+    Returns
+    -----------
+    tz: array containing positions from right arm
+
     """
-    """
-    # shape of [N, 27,3] Win
     tz = tka[:, :, 15:27, :]
     return tz
 
 
 def left_arm_vector_from_kinematics(tka):
-    # shape of [N, 27,3, Win
+    """Function to extract positions of the left arm from a rat's experimental block
+    Attributes
+    -------------
+    tka: array, complete positional data
+
+    Returns
+    ---------
+    tz: array, positional data from left arm
+
+    """
     tz = tka[:, :, 3:15, :]
     return tz
 
@@ -956,16 +857,19 @@ def right_skeleton_velocity(right_skeleton_):
 
 
 def create_arm_feature_arrays_trial(a, e_d, p_d, ii, left=False, hand=False):
+    """Function to create arm and hand objects from DLC-generated positional data on a per-trial basis.
+
+    Attributes
+    -----------
+    a: Array size [Trials, Dims, BParts, WLen + Pre)
+    e_d: (Trials, 12,  WLen+Pre)
+    p_d: (Trials, Dims, BParts, WLen+Pre)
+
+    Returns
+    ---------
+    a_: unique type of feature vector (Trials, Dims, features, WLen+Pre)
+
     """
-    Function to create arm and hand objects from DLC-generated positional data on a per-trial basis.
-    Inputs:
-    a : Array size [Trials, Dims, BParts, WLen + Pre) 
-    e_d : (Trials, 12,  WLen+Pre)
-    p_d : (Trials, Dims, BParts, WLen+Pre)
-    Outputs:
-    a_ : unique type of feature vector (Trials, Dims, features, WLen+Pre)
-    """
-    # pdb.set_trace()
     if left:
         if hand:
             a_ = a[ii, :, 7:15, :]
@@ -976,52 +880,12 @@ def create_arm_feature_arrays_trial(a, e_d, p_d, ii, left=False, hand=False):
             a_ = a[ii, :, 19:27, :]
         else:
             a_ = a[ii, :, 16:19, :]  # sum over shoulder, forearm, palm, wrist
-    # pdb.set_trace()
-    # for tc in range(0, 3):
-    # a_[:, tc, :] = prob_mask_segmentation(p_d[ii, :, :, :], a_[:, tc, :])  # threshold possible reach values
-    # pdb.set_trace()
     return a_
 
 
 #########################
 # Classification_Structure helpers
 #########################
-
-def norm_and_zscore_ML_array(ML_array, robust=False, decomp=False, gauss=False):
-    """ Unused. Replaced by sklearn pipeline.
-    default preprocessing is simple MinMax L1 norm
-    Args:
-        ML_array : array shape : (Cut Trials, Features, Frames)   where Cut Trials refers to either the number of Trials
-        inside the testing data or training data (Don't call this function for just the total ML data, split beforehand..)
-        robust: boolean flag, use sci-kit learn robust scaling to normalize our data
-        decomp : boolean flag, post-processing step used to return first whitened 20 PCA components to remove linear dependence
-        gauss : boolean flag, use sci-kit learn gaussian distribution scaling to normalize our data
-
-    Returns:
-         r_ML_array (2d array): shape (cut trials, num features * frames)
-    """
-    # ML_array
-    if robust:
-        pt = preprocessing.robust_scale()
-    elif gauss:
-        pt = preprocessing.PowerTransformer(method='box-cox', standardize=False)
-    else:
-        pt = preprocessing.MinMaxScaler()
-
-    # reshape to be number cut trials by (num features * frames)
-    r_ML_array = pt.fit_transform(ML_array.reshape(ML_array.shape[0], ML_array.shape[1] * ML_array.shape[2]))
-    # apply normalization to feature axis
-    if decomp:  # used to decomp linear correlations, if they exist.
-        pca = decomposition.PCA(n=20, whiten=True)
-        r_ML_array = pca.fit(r_ML_array)
-
-    return r_ML_array
-
-
-def split_ML_array(Ml_array, labels_array, t=0.2):
-    # unused
-    X_train, X_test, y_train, y_test = train_test_split(Ml_array, labels_array, test_size=t, random_state=0)
-    return X_train, X_test, y_train, y_test
 
 
 def onehot_nulls(type_labels_):
@@ -1038,7 +902,7 @@ def onehot_num_reaches(num_labels_):
 
 
 def hand_type_onehot(hand_labels_, simple=True):
-    # 'lr': 2 , 'l' : 1, 'bi' : 3 , 'lbi' : 4, 'r': 0,
+
     hand_type_label = np.zeros((hand_labels_.shape[0]))
     if simple:
         hand_type_label[np.where(hand_labels_ > 1)] = 1  # classify all non r,l reaches as 1
@@ -1048,10 +912,6 @@ def hand_type_onehot(hand_labels_, simple=True):
 
 
 def get_ML_labels(fv):
-    # #[int trial_num, int start, int stop,
-    # int trial_type, int num_reaches, str which_hand_reach, str tug_noTug, int hand_switch, int num_frames]
-    # shape (Trials, 9 ^)
-    # TODO convert to sklearn one hot encoder?
     fv = fv[:, 3:-1]  # take label catagories necessary for trial classification
     type_labels = onehot_nulls(fv[:, 0])  # labels for trial type
     num_labels = onehot_num_reaches(fv[:, 1])  # labels for num reaches in trial
@@ -1062,8 +922,7 @@ def get_ML_labels(fv):
 
 
 def run_classifier(_model, _X_train, _X_test, input_labels):
-    """
-    Function for manually running a given model, intended for hard-code/troubleshooting.
+    """Function for manually running a given model, intended for hard-code/troubleshooting.
     """
     _model.fit(_X_train, input_labels)
     type_pred = _model.predict(_X_test)
@@ -1072,15 +931,20 @@ def run_classifier(_model, _X_train, _X_test, input_labels):
 
 
 def do_constant_split(model_, ml, feature):
-    """
-    classification_structure helper
-    Args:
+    """classification_structure helper
+    Attributes
+    ------------
+
         ml : ML-ready feature vector containing experimental and kinematic data
         feature : labels for each class (vectorized using blist and get_ML_labels)
         model_ : classifier (sk-Learn compatible)
-    Returns: 
+
+    Returns
+    ---------
+
         cs: list of arrays of classifier predictions
         model_
+
     """
     classifier_pipeline = make_pipeline(preprocessing.StandardScaler(), model_)
     cs = []
@@ -1102,8 +966,7 @@ def do_constant_split(model_, ml, feature):
 
 def simple_classification_verification(train_labels, classifier_pipeline, ml, feature, kFold, model_, LOO, X_train,
                                        X_test):
-    """
-    classification_structure helper
+    """classification_structure helper
     else case for verification and clarity
     
     Returns: 
@@ -1135,8 +998,7 @@ def simple_classification_verification(train_labels, classifier_pipeline, ml, fe
 
 
 def save_CV_score_to_preds(preds, classifier_pipeline, ml, feature, idx, kFold):
-    """
-    helper for structured_classification
+    """helper for structured_classification
     Appends return value of sklearn.model_selection.cross_val_score to preds
     
     Args:
@@ -1151,11 +1013,58 @@ def save_CV_score_to_preds(preds, classifier_pipeline, ml, feature, idx, kFold):
     return preds, classifier_pipeline
 
 
-def structured_classification(ml, feature, model_,
-                              X_train, X_test, y_train, y_test, train_labels, classifier_pipeline,
-                              kFold, pred, disc, bal, conf):
+def split_ML_array(Ml_array, labels_array, t=0.2):
+    """Function to split our sensor and positional data into trialized blocks
+    Attributes
+    -------------
+
+    Ml_array: array, sensor and positional data
+    labels_array:
+    t:
+
+    Returns
+    ---------
+    X_train:
+    X_test:
+    y_train:
+    y_test:
+
     """
-    classification_structure helper
+    X_train, X_test, y_train, y_test = train_test_split(Ml_array, labels_array, test_size=t, random_state=0)
+    return X_train, X_test, y_train, y_test
+
+
+def norm_and_zscore_ML_array(ML_array, robust=False, decomp=False, gauss=False):
+    """ Function to manually norm/Zscore classifier raw data
+
+    Attributes
+    ------------
+    ML_array: array, (Cut Trials, Features, Frames)   where Cut Trials refers to either the number of Trials
+        inside the testing data or training data (Don't call this function for just the total ML data, split beforehand..)
+    robust: boolean, use sci-kit learn robust scaling to normalize our data
+    decomp: boolean, post-processing step used to return first whitened 20 PCA components to remove linear dependence
+    gauss: boolean, use sci-kit learn gaussian distribution scaling to normalize our data
+
+    Returns
+    ---------
+    r_ML_array: array, shape (cut trials, num features * frames)
+    """
+    if robust:
+        pt = preprocessing.robust_scale()
+    elif gauss:
+        pt = preprocessing.PowerTransformer(method='box-cox', standardize=False)
+    else:
+        pt = preprocessing.MinMaxScaler()
+    r_ML_array = pt.fit_transform(ML_array.reshape(ML_array.shape[0], ML_array.shape[1] * ML_array.shape[2]))
+    if decomp:  # used to decomp linear correlations, if they exist.
+        pca = decomposition.PCA(n=20, whiten=True)
+        r_ML_array = pca.fit(r_ML_array)
+    return r_ML_array
+
+
+def structured_classification(ml, feature, model_, train_labels, classifier_pipeline,
+                              kFold, pred, disc, bal, conf):
+    """classification_structure helper
     Performs classification for each level in hierarchy
     
     Variables:
@@ -1234,11 +1143,11 @@ def structured_classification(ml, feature, model_,
     return preds, model_
 
 
-def classification_structure(ml, feature, model_, kFold=False, LOO=False, PCA_data=False, constant_split=False,
-                             structured=True,
-                             plot_correlation_matrix=False, pred=False, disc=True, bal=True, conf=True):
-    """
-    Args:
+def classification_structure(ml, feature, model_, kFold=False, LOO=False, PCA_data=False, structured=True, pred=False,
+                             disc=True, bal=True, conf=True):
+    """Classification structure for use in behavioral characterization.
+    Attributes
+    -----------
         ml : ML-ready feature vector containing experimental and kinematic data
             Shape (Cut Trials, Features, Frames)
         feature : labels for each class (vectorized using blist and get_ML_labels)
@@ -1246,16 +1155,11 @@ def classification_structure(ml, feature, model_, kFold=False, LOO=False, PCA_da
         kFold : int, number of folds if using kFold cross-validation from sk-Learn
         LOO : boolean flag, set True if using LOO cross-validation from sk-Learn
         PCA : boolean flag, set True if using PCA to reduce dimensions of feature vectors
-        constant_split : boolean flag, set True if comparing results between classifiers
+        constant_split: boolean flag, set True if comparing results between classifiers
         structured: boolean flag, set True to do multiple binary classifications
 
-    Args for yellowbrick visualizations
-        plot_correlation_matrix:
-        pred:
-        disc:
-        bal:
-        conf:
-    Variables:
+    Variables
+    ---------------
         X_train : ML_array : array shape : shape num cut trials by (num features * frames) by norm_z function
         X_test : ML_array : array shape : shape num cut trials by (num features * frames) by norm_z function
         y_train : array shape : (Num Trails, 9). dim 9 for
@@ -1267,47 +1171,25 @@ def classification_structure(ml, feature, model_, kFold=False, LOO=False, PCA_da
             Format: list of arrays of 0s and 1s, where each array corresponds to
                trial type, num reaches, reach with which hand, is tug, hand switch.
                Each arrays is of len num trials.
-     Returns:
+
+     Returns
+     ----------
          preds: list of (3 arrays of 5 elems for each classifier in hierarchy) arrays of classifier predictions
-         model_
+         model_: array, final ML model
 
       Notes:
         kfold boolean arg vs KFold for sklearn.model_selection._split.KFold
-    """
-    # split before norming to prevent bias in test data
-    if constant_split:
-        return do_constant_split(model_, ml, feature)
 
-    # Create Classifier Pipeline Object in SciKit Learn
+    """
+    X_train, X_test, y_train, y_test = split_ML_array(ml, feature, t=0.2)
+    train_labels = get_ML_labels(y_train)
+    X_train = norm_and_zscore_ML_array(X_train, robust=False, decomp=False, gauss=False)
+    X_test = norm_and_zscore_ML_array(X_test, robust=False, decomp=False, gauss=False)
     if PCA_data:
         classifier_pipeline = make_pipeline(preprocessing.StandardScaler(),
                                             decomposition.PCA(n_components=int(PCA_data)), model_)
     else:
         classifier_pipeline = make_pipeline(preprocessing.StandardScaler(), model_)
-
-    # For simple Classifier:
-    X_train, X_test, y_train, y_test = split_ML_array(ml, feature, t=0.2)
-    # generate correct labels for test/train labels
-    train_labels = get_ML_labels(y_train)
-    # norm and z-score test/train features
-    X_train = norm_and_zscore_ML_array(X_train, robust=False, decomp=False, gauss=False)
-    X_test = norm_and_zscore_ML_array(X_test, robust=False, decomp=False, gauss=False)
-
-    # Feature Work
-    if PCA_data:
-        pcs = decomposition.PCA()
-        X_train = pcs.fit(X_train)
-        X_test = pcs.fit(X_test)
-        for ii, mi in enumerate(pcs.explained_variance_ratio_[:].sum()):
-            if mi > .99:
-                n_comps = ii
-        X_train = X_train[0:ii, :]
-        X_test = X_test[0:ii, :]
-
-    if plot_correlation_matrix:
-        pearson_features(X_train)
-
-    # Run classification hierarchy
     if structured:
         return structured_classification(ml, feature, model_,
                                          X_train, X_test, y_train, y_test, train_labels, classifier_pipeline,
@@ -1320,59 +1202,29 @@ def classification_structure(ml, feature, model_, kFold=False, LOO=False, PCA_da
 ###################################
 # Convert Nested lists/arrays into pandas DataFrames
 ##################################
+
+
 def load_kin_exp_data(kin_name, robot_name):
-    """
+    """Function to load kinematic and experimental data.
     Loads data.
-    Args:
-        kin_name (str): file path to kinematic data
-        robot_name (str): file path to robot experimental data
+    Attributes
+    ------------
+    kin_name: str, file path to kinematic data
+    robot_name: str, file path to robot experimental data
 
-    Returns:
-        kin (pandas DataFrame): kinematic data
-        exp (pandas DataFrame): experimental data
+    Returns
+    ----------
+    kin: DataFrame, kinematic positional prediction data
+    exp: Dataframe, experimental data
     """
-    # read and format kinematic data
     d = pkl_to_df(kin_name)
-
-    # read robot experimental data
     hdf = pd.read_pickle(robot_name)
     hdf = hdf.reset_index(drop=True)
-
     return d, hdf
 
 
-def save_to_hdf(file_name, key, data):
-    """ Un-used.
-    Saves data as HDF file in current working directory
-    Args:
-        file_name (str): name of saved file
-        key (str): group identifier to access data in file
-        data: data to save
-
-    Returns: None
-
-    Notes: check permissions
-        so do not overwrite previously written data
-
-    """
-    # non DataFrame types
-    if os.path.exists(file_name):
-        hf = h5py.File(file_name, 'r+')
-        if key in hf.keys():
-            # update data
-            hf[key][:] = data
-        else:
-            # add data to pre-existing file
-            hf[key] = data
-    else:
-        # create file and add data
-        hf = h5py.File(file_name, 'w')
-        hf[key] = data
-
-
 def load_hdf(file_name, key):
-    """
-    Loads a HDF file.
+    """Loads a HDF file.
     Args:
         file_name: (str) name of file to load.
         key (str): group identifier to access data in file
@@ -1386,7 +1238,7 @@ def load_hdf(file_name, key):
 
 
 def make_vectorized_labels_to_df(labels):
-    """ Convert return value from make_vectorized_labels into a pandas df
+    """Convert return value from make_vectorized_labels into a pandas df
     
     Args:
         labels (arr of lists): return value from make_vectorized_labels
@@ -1405,7 +1257,7 @@ def make_vectorized_labels_to_df(labels):
 
 
 def block_pos_extract_to_df(block, xzy_or_prob):
-    """ Converts return value of block_pos_extract to pandas dataframe
+    """Converts return value of block_pos_extract to pandas dataframe
         for kinematic data. 
         
     Args: 
@@ -1443,7 +1295,7 @@ def block_pos_extract_to_df(block, xzy_or_prob):
 
 
 def import_experiment_features_to_df(exp_features):
-    """ Converts return value of import_experiment_features to pandas dataframe.
+    """Converts return value of import_experiment_features to pandas dataframe.
     Args: 
         exp_features (nested arrays): return value of import_experiment_features
     
@@ -1526,7 +1378,7 @@ def split_kin_trial_to_df(trials_list, num_trials, xzy_or_prob):
 
 
 def final_ML_array_to_df(final_ML_feature_array, feat_names):
-    """ Converts return value of block_pos_extract to pandas dataframe.
+    """Converts return value of block_pos_extract to pandas dataframe.
     Args:
         final_ML_feature_array (list of arr):
             shape (total num labeled trials
@@ -1563,21 +1415,22 @@ def final_ML_array_to_df(final_ML_feature_array, feat_names):
 ###############################
 
 def remove_trials(X, Y, preds, toRemove):
-    """
-    Removes trials from labels after classification.
-    Used to prepare data for next classification in hierarchy.
-    Args:
+    """Removes trials from labels after classification. Used to prepare data for next classification in hierarchy.
+    Attributes
+    -------------
         X (array): features, shape (num trials, num feat*num frames)
         Y (array): labels
         shape # type_labels_y_train, num_labels_y_train, hand_labels_y_train, tug_labels_y_train, switch_labels_y_train
         preds (array): classifier trial predictions
         toRemove: 0 to remove trials classified as 0, 1 otherwise
 
-    Returns:
+    Returns
+    ----------
         X (array): filtered
         Y (array): filtered
 
-    Notes:
+    Notes
+    ----------
         Preserves order of values
         Careful to remove values in X and corresponding Y labels for each class!
     """
@@ -1605,14 +1458,18 @@ def remove_trials(X, Y, preds, toRemove):
 
 
 def reshape_final_ML_array_to_df(num_frames, X, feat_names):
-    """ Returns final feature df reshaped.
+    """Returns final feature df reshaped.
 
-    Args:
+    Attributes
+    -------------
         num_frames (int): number of frames taken
         X (arr): (num trials, num feat * num frames)
         feat_names (list): kin names
 
-    Returns a df.
+    Returns
+    ---------
+    df: pandas dataframe,
+    arr:
     """
     exp_names = ['Robot Velocity X', 'Robot Velocity Y',
                  'Robot Velocity Z', "unused idx 4", "unused idx 5",
@@ -1640,14 +1497,16 @@ def reshape_final_ML_array_to_df(num_frames, X, feat_names):
 
 
 def select_feat_by_keyword(feat_df, keywords):
-    """ Returns data from selected features.
-    Args:
-        feat_df(df): df of features
-        keywords(list of str): list of feature column names to select
+    """Returns data from selected features.
+    Attributes
+    -----------
+    feat_df(df): df of features
+    keywords(list of str): list of feature column names to select
 
-    Returns:
-        df: of selected features
-        arr: same data as df, just in array form
+    Returns
+    ----------
+    df: of selected features
+    arr: same data as df, just in array form
 
     """
     feat_names_arr = np.array(feat_df.columns)
@@ -1663,19 +1522,22 @@ def select_feat_by_keyword(feat_df, keywords):
     arr = df.values
     return df, arr
 
+
 ###############################
 # Other
 ###############################
 def merge_in_swap(init_arm_array, ip_array, plot):
-    """ Swaps XYZ position and prob123 kinematic data to correct data mismatch.
+    """Swaps XYZ position and prob123 kinematic data to correct data mismatch.
     prob values range from (0,1) and those position values range from ~ -0.1 to 0.3
 
-    Args:
-        init_arm_array (nested arr): CU.split_trial output of trailized XYZ position kinematic data
-        ip_array (nested arr): CU.split_trial output of trailized prob123 kinematic data
-        plot (bool): True to plot data ranges, False for no plotting
+    Attributes
+    -------------
+    init_arm_array (nested arr): CU.split_trial output of trailized XYZ position kinematic data
+    ip_array (nested arr): CU.split_trial output of trailized prob123 kinematic data
+    plot (bool): True to plot data ranges, False for no plotting
 
-    Returns:
+    Returns
+    ------------
         trialized kinematic data with appropriate XYZ and prob values
          shape (2, NumTrials, 3 for XYZ positions or prob123, NumFeatures, NumFrames).
 
@@ -1713,35 +1575,14 @@ def merge_in_swap(init_arm_array, ip_array, plot):
     return np.array([init_arm_array, ip_array])
 
 
-def pearson_features(ml_array_):
-    feat_visualizer = Rank2D(algorithm="pearson")
-    feat_visualizer.fit_transform(ml_array_)
-    feat_visualizer.show()
-
-
 def is_tug_no_tug():
-    """
-    Function to classify trials with post-reaching behavior from well-behaved handle release.
+    """Function to classify trials with post-reaching behavior from well-behaved handle release.
     """
     # ask if there is robot velocity after a trial ends (for around a second)
     tug_preds = []
     return tug_preds
 
 
-# def is_reach_rewarded(lick_data, start, stop):
-#    """
-#    Function to simply classify trials as rewarded with water or not using sensor data from ReachMaster (lick detector).
-
-#    """
-#    reward_vector = []
-#    return reward_vector
-
-#########################################
-# DLC Video Labels (unprocessed)
-#########################################
-
-# RM16, 9-17, S1
-# nl1
 rm16_9_17_s1_label = [
     [1, 0, 0, 1, 1, 'l', 'Tug', 0, 0],  # single left rew tug
     [2, 0, 0, 1, 1, 'l', 'Tug', 0, 0],  # single left rew tug
@@ -1998,40 +1839,40 @@ rm14_9_20_s1_label = [
     [10, 18557, 19083, 3, 2, 'bi', 'no_tug', 1, 0],  # success, bi
     [11, 19543, 20104, 1, 4, 'r', 'no_tug', 1, 0],  # failed, reach 2 l, 2 r
     [12, 25112, 25756, 3, 3, 'bi', 'no_tug', 1, 0],  # success, bi
-    [13, 26288, 26847, 1, 4, 'r', 'no_tug', 0, 0] , # failed, reach 2 l, 2 r
+    [13, 26288, 26847, 1, 4, 'r', 'no_tug', 0, 0],  # failed, reach 2 l, 2 r
     [14, 30104, 30667, 1, 1, 'l', 'no_tug', 0, 0],  # failed
     [15, 31876, 32426, 0, 0, 0, 'no_tug', 0, 0],  # null
     [16, 33928, 34448, 3, 2, 'lra', 'no_tug', 1, 0],  # success, lra
     [17, 34880, 35461, 3, 2, 'lra', 'no_tug', 1, 0],  # success, lra
     [18, 36083, 36707, 3, 3, 'lra', 'no_tug', 1, 0],  # success, lra
-    [19, 37190, 37781, 1, 3, 'l', 'no_tug', 0, 0] , # failed
+    [19, 37190, 37781, 1, 3, 'l', 'no_tug', 0, 0],  # failed
     [20, 38580, 39172, 3, 2, 'l', 'no_tug', 1, 0],  # success
     [21, 42519, 43217, 3, 2, 'r', 'no_tug', 1, 0],  # success
     [22, 44318, 44887, 3, 6, 'rla', 'no_tug', 1, 0],  # success
     [23, 45311, 45784, 3, 1, 'l', 'no_tug', 0, 0],  # success
     [24, 46207, 46755, 3, 2, 'l', 'no_tug', 0, 0],  # success
-    [25, 47341, 47885, 3, 1, 'l', 'no_tug', 0, 0], # success
-    [26, 48442, 49004, 3, 1, 'l', 'no_tug', 0, 0] , # success
-    [27, 49425, 49987, 3, 1, 'l', 'no_tug', 0, 0] , # success, interrupted
-    [28, 50410, 50970, 3, 6, 'r', 'no_tug', 1, 0] , # success, not quite in reward zone, but there's licking
-    [29, 55926, 56488, 3, 1, 'r', 'no_tug', 0, 0] , # success
+    [25, 47341, 47885, 3, 1, 'l', 'no_tug', 0, 0],  # success
+    [26, 48442, 49004, 3, 1, 'l', 'no_tug', 0, 0],  # success
+    [27, 49425, 49987, 3, 1, 'l', 'no_tug', 0, 0],  # success, interrupted
+    [28, 50410, 50970, 3, 6, 'r', 'no_tug', 1, 0],  # success, not quite in reward zone, but there's licking
+    [29, 55926, 56488, 3, 1, 'r', 'no_tug', 0, 0],  # success
     [30, 56911, 57404, 3, 2, 'lra', 'no_tug', 1, 0],  # success, interrupted
     [31, 58700, 59261, 3, 5, 'r', 'no_tug', 1, 0],  # success, in reward zone, no licking
     [32, 59708, 60271, 1, 3, 'r', 'no_tug', 1, 0],  # failed
     [33, 68042, 68618, 1, 3, 'r', 'no_tug', 0, 0],  # failed
     [34, 69121, 69697, 3, 3, 'rla', 'no_tug', 1, 0],  # success
-    [35, 70242, 70816, 3, 4, 'l', 'no_tug', 1, 0] , # success
+    [35, 70242, 70816, 3, 4, 'l', 'no_tug', 1, 0],  # success
     [36, 71549, 72109, 3, 1, 'l', 'no_tug', 0, 0],  # success
-    [37, 72541, 73115, 3, 1, 'l', 'no_tug', 0, 0] , # success, interrupted
-    [38, 75805, 76325, 3, 1, 'l', 'no_tug', 0, 0] , # success
+    [37, 72541, 73115, 3, 1, 'l', 'no_tug', 0, 0],  # success, interrupted
+    [38, 75805, 76325, 3, 1, 'l', 'no_tug', 0, 0],  # success
     [39, 76756, 77326, 3, 4, 'lra', 'no_tug', 1, 0],  # success, interrupted
-    [40, 78866, 79439, 3, 2, 'l', 'no_tug', 0, 0] , # success
+    [40, 78866, 79439, 3, 2, 'l', 'no_tug', 0, 0],  # success
     [41, 80692, 811893, 3, 2, 'l', 'no_tug', 1, 0],  # success
-    [42, 82560, 83181, 3, 2, 'bi', 'no_tug', 1, 0] , # success, is bi reach
-    [43, 83612, 84096, 3, 1, 'l', 'no_tug', 0, 0] , # success, interupted
+    [42, 82560, 83181, 3, 2, 'bi', 'no_tug', 1, 0],  # success, is bi reach
+    [43, 83612, 84096, 3, 1, 'l', 'no_tug', 0, 0],  # success, interupted
     [44, 84527, 85046, 3, 1, 'l', 'no_tug', 0, 0],  # success, interupted
     [45, 85475, 85992, 3, 1, 'r', 'no_tug', 0, 0],  # success, interupted
-    [46, 87271, 87844, 3, 2, 'bi', 'no_tug', 1, 0] , # success, is bi
+    [46, 87271, 87844, 3, 2, 'bi', 'no_tug', 1, 0],  # success, is bi
     [47, 88275, 88849, 1, 4, 'r', 'no_tug', 1, 0],  # failed, interrupted
     [48, 90043, 90620, 3, 1, 'l', 'no_tug', 0, 0],  # success
     [49, 91675, 92251, 3, 2, 'l', 'no_tug', 0, 0]]  # success
@@ -2078,4 +1919,3 @@ rm14_9_18_s2_label = [
     [37, 89877, 90689, 3, 3, 'l', 'no_tug', 1, 0],  # success
     [38, 91302, 91901, 3, 1, 'r', 'no_tug', 1, 0],  # success, interrupted
     [39, 96013, 96611, 1, 4, 'r', 'no_tug', 1, 0]]  # failed, reach 2 l , 2 r
-
