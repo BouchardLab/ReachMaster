@@ -3,10 +3,8 @@ collected during experiments.
 
 """
 
-import json
-import os
 import numpy as np
-import pandas as pd
+import pdb
 from . import readTrodesExtractedDataFile3 as read_trodes
 
 
@@ -17,12 +15,13 @@ def get_trodes_files(data_dir, trodes_name, win_dir=False):  # pass in data dire
 
        Parameters
        ----------
+       win_dir : boolean
+            Flag, True if using a windows directory system
        data_dir : str
            Parent directory where the trodes data lives
        trodes_name : str
            Name of original .rec trodes file
-        win_dir : boolean
-            Flag, True if using a windows directory system
+
        Returns
        -------
        trodes_files : dict
@@ -31,7 +30,7 @@ def get_trodes_files(data_dir, trodes_name, win_dir=False):  # pass in data dire
            'solenoid' would contain data from the .dat file containing experimental information about the
            solenoid used to deliver water as a reward during experiments.
 
-    """
+       """
     if win_dir:
         trodes_files = {
             'time_file': data_dir + '\\%s\\%s.analog\\%s.timestamps.dat' % (trodes_name, trodes_name, trodes_name),
@@ -56,30 +55,30 @@ def get_trodes_files(data_dir, trodes_name, win_dir=False):  # pass in data dire
         }
     else:
         trodes_files = {
-            'time_file': data_dir + '/%s/%s.analog/%s.timestamps.dat' % (trodes_name, trodes_name, trodes_name),
-            'x_push_file': data_dir + '/%s/%s.DIO/%s.dio_xPush.dat' % (trodes_name, trodes_name, trodes_name),
-            'x_pull_file': data_dir + '/%s/%s.DIO/%s.dio_xPull.dat' % (trodes_name, trodes_name, trodes_name),
-            'y_push_file': data_dir + '/%s/%s.DIO/%s.dio_yPush.dat' % (trodes_name, trodes_name, trodes_name),
-            'y_pull_file': data_dir + '/%s/%s.DIO/%s.dio_yPull.dat' % (trodes_name, trodes_name, trodes_name),
-            'z_push_file': data_dir + '/%s/%s.DIO/%s.dio_zPush.dat' % (trodes_name, trodes_name, trodes_name),
-            'z_pull_file': data_dir + '/%s/%s.DIO/%s.dio_zPull.dat' % (trodes_name, trodes_name, trodes_name),
-            'moving_file': data_dir + '/%s/%s.DIO/%s.dio_moving.dat' % (trodes_name, trodes_name, trodes_name),
-            'triggers_file': data_dir + '/%s/%s.DIO/%s.dio_triggers.dat' % (trodes_name, trodes_name, trodes_name),
-            'IR_beam_file': data_dir + '/%s/%s.DIO/%s.dio_IRbeam.dat' % (trodes_name, trodes_name, trodes_name),
-            'led_file': data_dir + '/%s/%s.DIO/%s.dio_led.dat' % (trodes_name, trodes_name, trodes_name),
-            'left_cam_file': data_dir + '/%s/%s.DIO/%s.dio_leftCam.dat' % (trodes_name, trodes_name, trodes_name),
-            'right_cam_file': data_dir + '/%s/%s.DIO/%s.dio_rightCam.dat' % (trodes_name, trodes_name, trodes_name),
-            'top_cam_file': data_dir + '/%s/%s.DIO/%s.dio_topCam.dat' % (trodes_name, trodes_name, trodes_name),
-            'lights_file': data_dir + '/%s/%s.DIO/%s.dio_lights.dat' % (trodes_name, trodes_name, trodes_name),
-            'solenoid_file': data_dir + '/%s/%s.DIO/%s.dio_solenoid.dat' % (trodes_name, trodes_name, trodes_name),
-            'x_pot_file': data_dir + '/%s/%s.analog/%s.analog_potX.dat' % (trodes_name, trodes_name, trodes_name),
-            'y_pot_file': data_dir + '/%s/%s.analog/%s.analog_potY.dat' % (trodes_name, trodes_name, trodes_name),
-            'z_pot_file': data_dir + '/%s/%s.analog/%s.analog_potZ.dat' % (trodes_name, trodes_name, trodes_name)
+            'time_file': data_dir + '/%s.analog/%s.timestamps.dat' % ( trodes_name, trodes_name),
+            'x_push_file': data_dir + '/%s.DIO/%s.dio_xPush.dat' % ( trodes_name, trodes_name),
+            'x_pull_file': data_dir + '/%s.DIO/%s.dio_xPull.dat' % ( trodes_name, trodes_name),
+            'y_push_file': data_dir + '/%s.DIO/%s.dio_yPush.dat' % ( trodes_name, trodes_name),
+            'y_pull_file': data_dir + '/%s.DIO/%s.dio_yPull.dat' % (trodes_name, trodes_name),
+            'z_push_file': data_dir + '/%s.DIO/%s.dio_zPush.dat' % (trodes_name, trodes_name),
+            'z_pull_file': data_dir + '/%s.DIO/%s.dio_zPull.dat' % ( trodes_name, trodes_name),
+            'moving_file': data_dir + '/%s.DIO/%s.dio_moving.dat' % (trodes_name, trodes_name),
+            'triggers_file': data_dir + '/%s.DIO/%s.dio_triggers.dat' % (trodes_name, trodes_name),
+            'IR_beam_file': data_dir + '/%s.DIO/%s.dio_IRbeam.dat' % (trodes_name, trodes_name),
+            'led_file': data_dir + '/%s.DIO/%s.dio_led.dat' % (trodes_name, trodes_name),
+            'left_cam_file': data_dir + '/%s.DIO/%s.dio_leftCam.dat' % (trodes_name, trodes_name),
+            'right_cam_file': data_dir + '/%s.DIO/%s.dio_rightCam.dat' % (trodes_name, trodes_name),
+            'top_cam_file': data_dir + '/%s.DIO/%s.dio_topCam.dat' % (trodes_name, trodes_name),
+            'lights_file': data_dir + '/%s.DIO/%s.dio_lights.dat' % (trodes_name, trodes_name),
+            'solenoid_file': data_dir + '/%s.DIO/%s.dio_solenoid.dat' % (trodes_name, trodes_name),
+            'x_pot_file': data_dir + '/%s.analog/%s.analog_potX.dat' % (trodes_name, trodes_name),
+            'y_pot_file': data_dir + '/%s.analog/%s.analog_potY.dat' % (trodes_name, trodes_name),
+            'z_pot_file': data_dir + '/%s.analog/%s.analog_potZ.dat' % (trodes_name, trodes_name)
         }
     return trodes_files
 
 
-def read_data(trodes_files, sampling_rate=3000):
+def read_data(trodes_files, sampling_rate=1): 
     """Read all the trodes file data using the SpikeGadgets
     `readTrodesExtractedDataFile` script.
 
@@ -226,7 +225,7 @@ def create_DIO_mask(time_data, trodes_data):
 
 def obtain_times(experiment_data, time_length):
     """
-
+    function to obtain trodes data times
     Parameters
     ----------
     experiment_data : dict
@@ -250,7 +249,7 @@ def obtain_times(experiment_data, time_length):
 
 def get_exposure_times(exposures):
     """
-
+    code below finds mean value between the high and low exposures to appropriately time-stamp camera data
     Parameters
     ----------
     exposures : array
@@ -259,11 +258,20 @@ def get_exposure_times(exposures):
     Returns
     -------
     real_exposures : array
-        estimated true exposure events
+        estimated true exposure events (mean of exposure)
 
     """
-    exposures_high = exposures[1::2]
-    real_exposures = exposures_high
+    exposures_high = exposures[1::2]  # HIGH EXPOSURE IS FIRST IN TIME SERIES
+    exposures_low = exposures[0::2]   # LOW FOLLOWS HIGH
+    # add error checking for exposures
+# 
+    if len(exposures_high) != len(exposures_low):
+        if len(exposures_high) < len(exposures_low):
+            real_exposures = (exposures_high + exposures_low[1:]) / 2
+        else:
+            real_exposures = (exposures_high[1:] + exposures_low) / 2
+    else:
+            real_exposures = (exposures_high+ exposures_low) / 2
     return real_exposures
 
 
@@ -283,8 +291,8 @@ def get_exposure_masks(exposures, time):
         array containing exposure masks (1 indicates exposure process starting)
 
     """
-    exposures_low = exposures[1::2]
-    exposures_high = exposures[2::2]
+
+    exposures_high = (exposures[2::2] + exposures[1::2] / 2)
     mask_array = np.zeros(len(time))
     high_index = np.searchsorted(time, exposures_high)
     for y in high_index:
@@ -292,9 +300,9 @@ def get_exposure_masks(exposures, time):
     return mask_array
 
 
-def import_trodes_data(trodes_path, trodes_name, win_dir=False):
+def import_trodes_data(trodes_path, trodes_name, win_dir=False, sampling_rate = 150):
     """
-
+    function to import in trodes data from a single experimental session
     Parameters
     ----------
     trodes_path : str
@@ -313,7 +321,7 @@ def import_trodes_data(trodes_path, trodes_name, win_dir=False):
         experiment_files = get_trodes_files(trodes_path, trodes_name, win_dir=True)
     else:
         experiment_files = get_trodes_files(trodes_path, trodes_name)
-    experiment_data = read_data(experiment_files)
-    experiment_data = to_numpy(experiment_data)
-    experiment_data = to_seconds(experiment_data)
+    experiment_data_dicts = read_data(experiment_files,sampling_rate=sampling_rate)
+    experiment_data_np = to_numpy(experiment_data_dicts)
+    experiment_data = to_seconds(experiment_data_np)
     return experiment_data
