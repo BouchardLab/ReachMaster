@@ -1230,6 +1230,7 @@ def load_hdf(file_name, key):
         key (str): group identifier to access data in file
 
     Returns: data in file.
+
     """
     read_file = h5py.File(file_name, 'r')
     rv = read_file[key][:]
@@ -1309,6 +1310,7 @@ def import_experiment_features_to_df(exp_features):
     Notes:
         Each row is a trial. 
         unused columns 4,5,6.
+
     """
     exp_features = exp_features.tolist()
     exp_names = ['Robot Velocity X', 'Robot Velocity Y',
@@ -1339,7 +1341,6 @@ def split_kin_trial_to_df(trials_list, num_trials, xzy_or_prob):
             # gets probability data
         
     """
-    # define column names
     Trials = np.arange(num_trials)
     pos_names = ['Handle', 'Back Handle', 'Nose',
                  'Left Shoulder', 'Left Forearm', 'Left Wrist', 'Left Palm', 'Left Index Base', 'Left Index Tip',
