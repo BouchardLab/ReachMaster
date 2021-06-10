@@ -101,6 +101,7 @@ class Preprocessor:
 
         # ML dfs
         self.formatted_kin_block = None  # kinematic feature df
+        self.formatted_exp_block = None  # robot feature df
 
     def set_kin_data(self, data):
         self.kin_data = data
@@ -116,6 +117,9 @@ class Preprocessor:
 
     def set_exp_block(self, data):
         self.exp_block = data
+
+    def set_formatted_exp_block(self, data):
+        self.formatted_exp_block = data
 
     def set_label(self, data):
         self.label = data
@@ -259,6 +263,7 @@ class Preprocessor:
                     For trial splitting, set to 10. 50 is too long. (default 10)
 
         Returns: None
+
         """
         assert(self.window_length > self.pre), "invalid slice!"
         starting_frames = self.exp_block['r_start'].values[0]
@@ -274,33 +279,55 @@ class Preprocessor:
         # update attribute
         self.set_formatted_kin_block(trials)
 
-    def match_to_label(self):
+    def trialize_kin_blocks(self):
         """
         Sets formatted_kin_block to (list of one row dfs)
+        Args:
+            formatted_kin_block: (list of dfs) split trial data
+
+        Returns: None
+
+        """
+        # iterate over trials
+        ftrials = []
+        for trial in self.formatted_kin_block:
+            # match bodypart names
+            trial_size = len(trial.index)
+            trial.index = np.arange(trial_size)
+            # reshape df into one row for one trial
+            formatted_trial = Preprocessor.stack(Preprocessor.stack(trial))
+            ftrials.append(formatted_trial)
+        # update attribute
+        self.set_formatted_kin_block(ftrials)
+
+    def match_to_label(self):
+        """
+        Sets formatted_kin_block to (list of one row dfs) matched to labels
         Args:
             formatted_kin_block: (list of dfs) trialized data
             label: (list of lists) vectorized labels
 
         Returns: None
 
+        Note:
+            If a trial is not labeled, the trial is dropped and unused.
+            Trial numbers are zero-indexed.
+
         """
+        assert(len(self.label) <= len(self.formatted_kin_block)),\
+            f"More labels {len(self.label)} than trials {len(self.formatted_kin_block)}!"
         # iterate over labels and trials
-        ftrials = []
+        labeled_trials = []
         for i, label in enumerate(self.label):
-            trial = self.formatted_kin_block[i]
             label_trial_num = int(label[0])
-            # match bodypart names
-            trial_size = len(trial.index)
-            trial.index = np.arange(trial_size)
-            # reshape df into one row for one trial
-            formatted_trial = Preprocessor.stack(Preprocessor.stack(trial))
+            trialized_df = self.formatted_kin_block[label_trial_num]  # trial nums are 0-indexed
             # rename column of block df to trial num
-            formatted_trial.columns = [label_trial_num]
+            trialized_df.columns = [label_trial_num]
             # transpose so each row represents a trial
-            formatted_trial = formatted_trial.T
-            ftrials.append(formatted_trial)
+            trialized_df = trialized_df.T
+            labeled_trials.append(trialized_df)
         # update attribute
-        self.set_formatted_kin_block(ftrials)
+        self.set_formatted_kin_block(labeled_trials)
 
     def create_kin_feat_df(self):
         """
@@ -325,9 +352,31 @@ class Preprocessor:
         """
         self.format_kin_block()
         self.split_trial()
+        self.trialize_kin_blocks()
         self.match_to_label()
         self.create_kin_feat_df()
         return self.formatted_kin_block
+
+    def make_exp_feat_df(self):
+        """
+        Given a robot block df, returns a ML ready feature df
+        Returns: (df)  where row represents trial num and columns are features.
+
+        """
+        # create exp features
+        start_frames = self.exp_block['r_start'].values[0]
+        exp_features = CU.import_experiment_features(self.exp_block, start_frames, self.window_length, self.pre)
+        hot_vector = CU.onehot(self.exp_block)
+        exp_feat_df = CU.import_experiment_features_to_df(exp_features)
+
+        # match to labels
+        labeled_trial_nums = []
+        for i, label in enumerate(self.label):
+            labeled_trial_nums.append(int(label[0]))
+        masked_exp_feat_df = exp_feat_df.iloc[labeled_trial_nums]
+        self.set_formatted_exp_block(masked_exp_feat_df)
+        return self.formatted_exp_block
+
 
     def make_ml_feat_labels(self, kin_block, exp_block, label,
                               et, el, window_length=250, pre=10, wv=5):
@@ -368,14 +417,11 @@ class Preprocessor:
         kin_feat_df = self.make_kin_feat_df()
 
         # create exp features
-        start_frames = self.exp_block['r_start'].values[0]
-        exp_features = CU.import_experiment_features(self.exp_block, start_frames, window_length, pre)
-        hot_vector = CU.onehot(self.exp_block)
-        exp_feat_df = CU.import_experiment_features_to_df(exp_features)
+        exp_feat_df = self.make_exp_feat_df()
 
         # concat results
         assert(kin_feat_df.shape[0] == exp_feat_df.shape[0]), f'{kin_feat_df.shape} {exp_feat_df.shape} rows must match!'
-        return np.concatenate([kin_feat_df, exp_feat_df], axis=0)
+        return np.concatenate([kin_feat_df, exp_feat_df], axis=1)
 
 
 

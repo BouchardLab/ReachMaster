@@ -69,12 +69,21 @@ class TestPreprocessing(TestCase):
         date = '0190918'
         session = 'S1'
         filename = f'{TC.folder_name}/kin_{rat}{date}{session}.pkl'
-        df = self.preprocessor.get_single_block(self.preprocessor.kin_data, '0190920', 'S4', '09202019', format='kin')
-        self.preprocessor.get_single_block(self.kin_data, date, session, rat, format='kin', save_as=filename)
+        df = self.preprocessor.get_single_block(self.kin_data, date, session, rat, format='kin', save_as=filename)
+        matching_index = df[rat][session][date][0]
+        self.assertTrue(len(df.index) != 0)
 
         # test save kin block
         final_directory = os.path.join(current_directory, filename)
         self.assertTrue(os.path.exists(final_directory))
+
+    def test_get_kin_block2(self):
+        date = '0190920'
+        session = 'S4'
+        rat = '09202019'
+        df = self.preprocessor.get_single_block(self.preprocessor.kin_data, date, session, rat, format='kin')
+        matching_index = df[rat][session][date][0]
+        self.assertTrue(len(df.index) != 0)
 
     def test_get_assertion(self):
         # tests assertion is raised with invalid block
@@ -140,9 +149,6 @@ class TestPreprocessingBlock(TestCase):
     def test_trialize_1(self):
         self.preprocessor.make_ml_feat_labels(self.kin_block, self.exp_block, self.label,
                                               self.et, self.el, self.window_length, self.pre, self.wv)
-
-
-        # self.assertEqual(len(self.exp_block['r_start'].values[0]), len(self.label))  # TODO vec or get bug?
 
 
 
