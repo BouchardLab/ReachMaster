@@ -93,6 +93,8 @@ class TestPreprocessing(TestCase):
             print('pass: get_data assertion')
             pass
 
+
+
     def test_pkl_to_df_NumRows(self):
         """
         Tests:
@@ -139,7 +141,6 @@ class TestPreprocessingBlock(TestCase):
         self.kin_block = self.preprocessor.load_data(self.kin_filename, file_type='pkl')
         self.exp_block = self.preprocessor.load_data(self.exp_filename, file_type='pkl')
 
-
     def test_median_filter(self):
         # test filtered_df is same size as original
         filtered_df = self.preprocessor.apply_median_filter(self.kin_block, wv=self.wv)
@@ -147,21 +148,14 @@ class TestPreprocessingBlock(TestCase):
         self.assertEqual(self.kin_block.size, filtered_df.size)
 
     def test_trialize_1(self):
-        self.preprocessor.make_ml_feat_labels(self.kin_block, self.exp_block, self.label,
-                                              self.et, self.el, self.window_length, self.pre, self.wv)
-
-
-
-
-
-
-
-
-
-
-
-
-
+        feat_df = self.preprocessor.make_ml_feat_labels(self.kin_block, self.exp_block, self.label,
+                                                        self.et, self.el, self.window_length, self.pre, self.wv)
+        model = TC.IsReachClassifier()
+        label_df = CU.make_vectorized_labels_to_df(self.preprocessor.label)
+        X = feat_df[feat_df.columns[1:4]]
+        y = label_df['Num Reaches'].to_frame()
+        model.fit(X, y)
+        self.assertTrue(len(model.predict(X)) != 0)   #TODO won't work if label has all of the same class and need to fix exp data!
 
 class TestClassificationWorkflow(TestCase):
     def __init__(self, *args, **kwargs):

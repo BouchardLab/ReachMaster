@@ -111,6 +111,7 @@ class Preprocessor:
 
     def set_kin_block(self, data):
         self.kin_block = data
+        self.format_kin_block()
 
     def set_formatted_kin_block(self, data):
         self.formatted_kin_block = data
@@ -250,10 +251,11 @@ class Preprocessor:
         # update attribute
         self.set_formatted_kin_block(filtered_df)
 
-    def split_trial(self):
+    @staticmethod
+    def split_trial(formatted_kin_block, exp_block, window_length, pre):
         """
         Partitions kinematic data into trials.
-        Sets formatted_kin_block to (list of dfs) of length number of trials with index trial number
+
         Args:
             formatted_kin_block: (df) formatted kin block
             exp_block: (df)
@@ -262,87 +264,87 @@ class Preprocessor:
             pre: int, pre cut off before a trial starts, the number of frames to load data from before start time
                     For trial splitting, set to 10. 50 is too long. (default 10)
 
-        Returns: None
+        Returns: trials: (list of dfs) of length number of trials with index trial number
 
         """
-        assert(self.window_length > self.pre), "invalid slice!"
-        starting_frames = self.exp_block['r_start'].values[0]
+        assert(window_length > pre), "invalid slice!"
+        starting_frames = exp_block['r_start'].values[0]
         trials = []
         # iterate over starting frames
         for frame_num in starting_frames:
-            start = frame_num - self.pre
+            start = frame_num - pre
             # negative indices case
-            if (frame_num-self.pre) <= 0:
+            if (frame_num-pre) <= 0:
                 start = 0
             # slice trials
-            trials.append(self.formatted_kin_block.loc[start:frame_num + self.window_length])
-        # update attribute
-        self.set_formatted_kin_block(trials)
+            trials.append(formatted_kin_block.loc[start:frame_num + window_length])
+        return trials
 
-    def trialize_kin_blocks(self):
+    @staticmethod
+    def trialize_kin_blocks(formatted_kin_block):
         """
-        Sets formatted_kin_block to (list of one row dfs)
+        Returns a list of one row dfs, each representing a trial
         Args:
             formatted_kin_block: (list of dfs) split trial data
 
-        Returns: None
+        Returns: ftrials: (list of one row dfs)
 
         """
         # iterate over trials
         ftrials = []
-        for trial in self.formatted_kin_block:
+        for trial in formatted_kin_block:
             # match bodypart names
             trial_size = len(trial.index)
             trial.index = np.arange(trial_size)
             # reshape df into one row for one trial
             formatted_trial = Preprocessor.stack(Preprocessor.stack(trial))
             ftrials.append(formatted_trial)
-        # update attribute
-        self.set_formatted_kin_block(ftrials)
+        return ftrials
 
-    def match_to_label(self):
+    @staticmethod
+    def match_kin_to_label(formatted_kin_block, label):
         """
-        Sets formatted_kin_block to (list of one row dfs) matched to labels
+        Selects labeled trials and matches them to their labels.
         Args:
             formatted_kin_block: (list of dfs) trialized data
             label: (list of lists) vectorized labels
 
-        Returns: None
+        Returns: labeled_trials: (list of one row dfs) matched to labels
 
         Note:
             If a trial is not labeled, the trial is dropped and unused.
             Trial numbers are zero-indexed.
 
         """
-        assert(len(self.label) <= len(self.formatted_kin_block)),\
-            f"More labels {len(self.label)} than trials {len(self.formatted_kin_block)}!"
+        assert(len(label) <= len(formatted_kin_block)),\
+            f"More labels {len(label)} than trials {len(formatted_kin_block)}!"
         # iterate over labels and trials
         labeled_trials = []
-        for i, label in enumerate(self.label):
+        for i, label in enumerate(label):
             label_trial_num = int(label[0])
-            trialized_df = self.formatted_kin_block[label_trial_num]  # trial nums are 0-indexed
+            trialized_df = formatted_kin_block[label_trial_num]  # trial nums are 0-indexed
             # rename column of block df to trial num
             trialized_df.columns = [label_trial_num]
             # transpose so each row represents a trial
             trialized_df = trialized_df.T
             labeled_trials.append(trialized_df)
-        # update attribute
-        self.set_formatted_kin_block(labeled_trials)
+        return labeled_trials
 
-    def create_kin_feat_df(self):
+    @staticmethod
+    def create_kin_feat_df(formatted_kin_block):
         """
         Appends all formatted trials into a single DataFrame.
-        Sets formatted_kin_block to (df) where row represents trial num and columns are features.
+
         Args:
             formatted_kin_block: list of formatted dfs
 
-        Returns: None
+        Returns: df: (df) where row represents trial num and columns are features.
 
         """
-        df = self.formatted_kin_block[0]
-        for trial in self.formatted_kin_block[1:]:
+        df = formatted_kin_block[0]
+        for trial in formatted_kin_block[1:]:
             df = df.append(trial, ignore_index=True)
-        self.set_formatted_kin_block(df)
+        return df
 
     def make_kin_feat_df(self):
         """
@@ -350,12 +352,37 @@ class Preprocessor:
         Returns: (df)  where row represents trial num and columns are features.
 
         """
-        self.format_kin_block()
-        self.split_trial()
-        self.trialize_kin_blocks()
-        self.match_to_label()
-        self.create_kin_feat_df()
-        return self.formatted_kin_block
+        trials = Preprocessor.split_trial(self.kin_block, self.exp_block, self.window_length, self.pre)
+        ftrials = Preprocessor.trialize_kin_blocks(trials)
+        labeled_trials = Preprocessor.match_kin_to_label(ftrials, self.label)
+        df = Preprocessor.create_kin_feat_df(labeled_trials)
+        self.set_formatted_kin_block(df)
+        return df
+
+    @staticmethod
+    def match_exp_to_label(exp_feat_df, label):
+        """
+        Selects labeled trials and matches them to their labels.
+        Args:
+            exp_feat_df: (df) exp df
+            label: (list of lists) vectorized labels
+
+        Returns: masked_exp_feat_df: (df) exp feature df matched with labels
+
+        Note:
+            If a trial is not labeled, the trial is dropped and unused.
+            Trial numbers are zero-indexed.
+
+        """
+        assert(len(label) <= len(exp_feat_df)),\
+            f"More labels {len(label)} than trials {len(exp_feat_df)}!"
+        # match to labels
+        labeled_trial_nums = []
+        for i, label in enumerate(label):
+            labeled_trial_nums.append(int(label[0]))
+        # apply mask
+        masked_exp_feat_df = exp_feat_df.iloc[labeled_trial_nums]
+        return masked_exp_feat_df
 
     def make_exp_feat_df(self):
         """
@@ -366,17 +393,14 @@ class Preprocessor:
         # create exp features
         start_frames = self.exp_block['r_start'].values[0]
         exp_features = CU.import_experiment_features(self.exp_block, start_frames, self.window_length, self.pre)
-        hot_vector = CU.onehot(self.exp_block)
+        hot_vector = CU.onehot(self.exp_block)  # unused
         exp_feat_df = CU.import_experiment_features_to_df(exp_features)
 
-        # match to labels
-        labeled_trial_nums = []
-        for i, label in enumerate(self.label):
-            labeled_trial_nums.append(int(label[0]))
-        masked_exp_feat_df = exp_feat_df.iloc[labeled_trial_nums]
+        masked_exp_feat_df = Preprocessor.match_exp_to_label(exp_feat_df, self.label)
+
+        # update attribute
         self.set_formatted_exp_block(masked_exp_feat_df)
         return self.formatted_exp_block
-
 
     def make_ml_feat_labels(self, kin_block, exp_block, label,
                               et, el, window_length=250, pre=10, wv=5):
@@ -403,11 +427,12 @@ class Preprocessor:
             exp_features: (list) experimental features with shape (Num trials X Features X pre+window_length)
         """
         # init instance attributes
-        self.set_kin_block(kin_block)
+
         self.set_exp_block(exp_block)
-        self.set_wv(wv)
+        self.set_wv(wv)  # must be set first
         self.set_window_length(window_length)
         self.set_pre(pre)
+        self.set_kin_block(kin_block)
 
         # vectorize label
         vectorized_label, _ = CU.make_vectorized_labels(label)
@@ -421,9 +446,8 @@ class Preprocessor:
 
         # concat results
         assert(kin_feat_df.shape[0] == exp_feat_df.shape[0]), f'{kin_feat_df.shape} {exp_feat_df.shape} rows must match!'
-        return np.concatenate([kin_feat_df, exp_feat_df], axis=1)
-
-
+        features = pd.concat([kin_feat_df, exp_feat_df], axis=1)
+        return features
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
