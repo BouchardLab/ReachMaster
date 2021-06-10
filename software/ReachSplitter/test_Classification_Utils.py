@@ -99,8 +99,8 @@ class TestPreprocessing(TestCase):
             returned df is indexed by rat,date,session,dim
         """
         # indexed by rat,date,session,dim
-        #expected_df_index = ['rat', 'date', 'session', 'dim']
-        #self.assertEqual(expected_df_index, self.kin_data.index.names)
+        # expected_df_index = ['rat', 'date', 'session', 'dim']
+        # self.assertEqual(expected_df_index, self.kin_data.index.names)
         pass
 
 
@@ -124,17 +124,12 @@ class TestPreprocessingBlock(TestCase):
         # load data and update preprocessor object
         self.kin_filename = f'{TC.folder_name}/kin_091820190190918S1.pkl'
         self.exp_filename = f'{TC.folder_name}/exp_RM160190918S1.pkl'
+        self.label = CU.rm16_9_18_s1_label
+
         self.preprocessor = TC.Preprocessor()
-
         self.kin_block = self.preprocessor.load_data(self.kin_filename, file_type='pkl')
-        self.preprocessor.set_kin_block(self.kin_block)
-
         self.exp_block = self.preprocessor.load_data(self.exp_filename, file_type='pkl')
-        self.preprocessor.set_exp_block(self.exp_block)
 
-        #self.label = CU.make_vectorized_labels(CU.rm16_9_17_s1_label)
-        self.label, _ = CU.make_vectorized_labels(CU.rm16_9_18_s1_label)
-        self.preprocessor.set_label(self.label)
 
     def test_median_filter(self):
         # test filtered_df is same size as original
@@ -142,13 +137,23 @@ class TestPreprocessingBlock(TestCase):
         self.assertEqual(self.kin_block.shape, filtered_df.shape)
         self.assertEqual(self.kin_block.size, filtered_df.size)
 
-
     def test_trialize_1(self):
-        final_ML_feature_array, final_labels_array, feat_names = \
-            self.preprocessor.make_ml_feat_labels(self.preprocessor.formatted_kin_block, self.exp_block, self.label, \
-                                                  self.et, self.el, self.wv, self.window_length, self.pre)
-        #print(len(self.label))
-        #self.assertEqual(len(self.exp_block['r_start'].values[0]), len(self.label))
+        self.preprocessor.make_ml_feat_labels(self.kin_block, self.exp_block, self.label,
+                                              self.et, self.el, self.window_length, self.pre, self.wv)
+
+
+        # self.assertEqual(len(self.exp_block['r_start'].values[0]), len(self.label))  # TODO vec or get bug?
+
+
+
+
+
+
+
+
+
+
+
 
 
 
