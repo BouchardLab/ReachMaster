@@ -1,14 +1,11 @@
 """Script to import trodes, micro-controller, and config data
 
 """
-from multiprocessing import Pool
-from multiprocessing.pool import ThreadPool
+
 import glob
 import pickle
 import os
 from collections import defaultdict
-import pdb
-from time import sleep
 import numpy as np
 import pandas as pd
 from tqdm import tqdm
@@ -138,7 +135,6 @@ def host_off(cns,save_path = False):
     Parameters
     ----------
     save_path : path to save experimental dataframe
-    dlt_path : path of DLT co-effecients file for reconstructing 3-D co-effecients. This is found using EASYWAND.
     cns : path to cns
 
     Returns
@@ -265,15 +261,6 @@ def to_df(file_name, config_data, true_time,successful_trials, trial_masks, rat,
     rat : rat name eg RM16
     session : experimental session eg S1
     lick_data : array of lick start and stop times
-    r_x : position of robot x direction
-    r_y : position of robot y direction
-    r_z : position of robot z direction
-    t_x : times of robot x direction movement
-    d_x : distances of robot x direction
-    t_y : times of robot y direction movement
-    d_y : distances of robot y direction
-    t_z : times of robot z direction movement
-    d_z : distances of robot z direction
     controller_data : list containing controller data
     reach_indices : list of 'start' and 'stop' indices for reaching trials
     save_as_dict : boolean, saves the results as a dict (depreciated)
@@ -289,7 +276,7 @@ def to_df(file_name, config_data, true_time,successful_trials, trial_masks, rat,
     r_w = controller_data['in_Reward_Win']
     exp_response = controller_data['exp_response']
     successful_trials = np.asarray(successful_trials)  
-    dict = pd.DataFrame(
+    block_dict = pd.DataFrame(
             {'rat': rat, 'S': session, 'Date': date, 'dim': dim, 'time': [np.asarray(true_time).tolist()],
              'SF': [successful_trials], 't_m': [trial_masks],'m_start':[mstart],'m_stop':[mstop],
              'lick': [np.asarray(lick_data).tolist()], 
@@ -298,7 +285,7 @@ def to_df(file_name, config_data, true_time,successful_trials, trial_masks, rat,
              'moving': [np.asarray(moving, dtype=int)], 'RW': [r_w], 'r_start': [reach_indices['start']],
              'r_stop': [reach_indices['stop']], 'r':[r],'t2': [t2], 't1':[t1],
              'exp_response' : [exp_response], 'x_pot':[x_pot],'y_pot':[y_pot],'z_pot':[z_pot]})
-    return dict
+    return block_dict
 
 
 def make_dict():
