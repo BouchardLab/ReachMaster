@@ -9,17 +9,11 @@ format of Neurodata Without Borders (NWB). For more documentation on NWB, please
 
 .. automodule:: ReachingWithoutBorders.RWB
 
-
 .. automodule:: RWB
 
-
-Initiate Manager
-^^^^^^^^^^^^^^^^^^^^
 .. automodule:: ReachingWithoutBorders.RWB.__init__
     :members:
 
-Run Function
-^^^^^^^^^^^^^^^
 .. automodule:: ReachingWithoutBorders.RWB.fetch_rwb
     :members:
 

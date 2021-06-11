@@ -11,36 +11,31 @@ These 3-D predictions and their associated confidence intervals are then saved i
 
 More information about the ReachPredict3D pipeline can be found on our tutorial!
 
-Find Cam Files
+Prediction
 ^^^^^^^^^^^^^^^^^^
 .. automodule:: predictions.find_cam_files
     :members:
 
-Analyze Experimental Videos
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
 .. automodule:: predictions.run_analysis_videos
     :members:
 
-Main function
-^^^^^^^^^^^^^^^^^
+
 .. automodule:: predictions.run_main
     :members:
 
 
 .. automodule:: reconstruct_predictions
 
-Main Session 3D loader
-^^^^^^^^^^^^^^^^^^^^^^^^
+
 .. automodule:: reconstruct_predictions.return_block_kinematic_df
     :members:
 
-Function to save list of dataframes as big DF
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
 .. automodule:: reconstruct_predictions.save_kinematics
     :members:
 
-Main Class
-^^^^^^^^^^^^^^^^^^^^^
+
 .. automodule:: reconstruct_predictions.Reconstruct3D
     :members:
 

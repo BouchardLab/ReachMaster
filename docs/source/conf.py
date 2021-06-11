@@ -13,11 +13,11 @@ import sys
 # -- Path setup --------------------------------------------------------------
 
 # Set the software project root dirs
-reach_master_root = os.path.join(os.path.dirname(os.path.dirname(os.getcwd())),"software/reach_master")
+reach_master_root = os.path.join(os.path.dirname(os.path.dirname(os.getcwd())), "software/reach_master")
 preprocessing_root = os.path.join(os.path.dirname(os.path.dirname(os.getcwd())), "software/preprocessing")
 software_root = os.path.join(os.path.dirname(os.path.dirname(os.getcwd())), "software")
 RPredict3D = os.path.join(os.path.dirname(os.path.dirname(os.getcwd())), "software/ReachPredict3D")
-RSplitter = os.path.join(os.path.dirname(os.path.dirname(os.getcwd())), "software/ReachSplitter")
+ReachSplitter_root = os.path.join(os.path.dirname(os.path.dirname(os.getcwd())), "software/ReachSplitter")
 RWB = os.path.join(os.path.dirname(os.path.dirname(os.getcwd())), "software/ReachingWithoutBorders")
 # Insert the project root dir as the first element in the PYTHONPATH.
 # This lets us ensure that the source package is imported, and that its
@@ -25,9 +25,15 @@ RWB = os.path.join(os.path.dirname(os.path.dirname(os.getcwd())), "software/Reac
 sys.path.append(reach_master_root)
 sys.path.append(preprocessing_root)
 sys.path.append(software_root)
-sys.path.append(RSplitter)
+sys.path.append(ReachSplitter_root)
 sys.path.append(RPredict3D)
 sys.path.append(RWB)
+
+### Function to append system path with all info necessary to populate docstrings
+
+for x in os.walk('software'):
+    sys.path.insert(0, x[0])
+
 # -- Project information -----------------------------------------------------
 project = 'ReachMaster'
 copyright = 'The Regents of the University of California, through Lawrence Berkeley National Laboratory'
@@ -43,11 +49,11 @@ release = 'alpha'
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 extensions = [
-	'sphinx.ext.autodoc',
-	'sphinx.ext.napoleon',
-	'sphinx_rtd_theme',
-	'sphinx.ext.todo',
-	'sphinx.ext.viewcode',
+    'sphinx.ext.autodoc',
+    'sphinx.ext.napoleon',
+    'sphinx_rtd_theme',
+    'sphinx.ext.todo',
+    'sphinx.ext.viewcode',
     'sphinx.ext.doctest',
     'sphinx.ext.intersphinx',
     'sphinx.ext.coverage',
@@ -59,14 +65,14 @@ extensions = [
 
 ]
 
-#Options for Napolean extension
+# Options for Napolean extension
 napoleon_google_docstring = False
 napoleon_numpy_docstring = True
 
-#Options for todo extension
+# Options for todo extension
 todo_include_todos = True
 
-#tell autodoc which imports to mock
+# tell autodoc which imports to mock
 autodoc_mock_imports = [
     'serial',
     'ximea',
@@ -104,7 +110,6 @@ exclude_patterns = []
 # The name of the Pygments (syntax highlighting) style to use.
 pygments_style = None
 
-
 # -- Options for HTML output -------------------------------------------------
 
 # The theme to use for HTML and HTML Help pages.  See the documentation for
@@ -119,4 +124,3 @@ html_theme_options = {'logo_only': False}
 # so a file named "default.css" will overwrite the builtin "default.css".
 # html_static_path = ['_static']
 html_static_path = []
-
