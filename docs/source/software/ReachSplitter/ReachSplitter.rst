@@ -52,4 +52,13 @@ ReachSplitter is designed to work within Bouchard Lab's data interface system.
 
 
 
+Main Extraction Function
+^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. automodule:: Classification_Utils.is_tug_no_tug
+    :members:
+
+
+
+
+
 

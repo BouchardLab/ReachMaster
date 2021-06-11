@@ -26,10 +26,8 @@ Main function
 .. automodule:: predictions.run_main
     :members:
 
-3-D Reach Reconstruction Main Functions
--------------------------------------------
-Our main functions to import, export, and load the various utilities necessary for 3-D reconstruction of our
-inferred points. More detail is paid to individual utility functions in the preprocessing software documentation.
+
+.. automodule:: reconstruct_predictions
 
 Main Session 3D loader
 ^^^^^^^^^^^^^^^^^^^^^^^^
@@ -45,3 +43,9 @@ Main Class
 ^^^^^^^^^^^^^^^^^^^^^
 .. automodule:: reconstruct_predictions.Reconstruct3D
     :members:
+
+3-D Reach Reconstruction Main Functions
+-------------------------------------------
+Above are main functions to import, export, and load the various utilities necessary for 3-D reconstruction of our
+inferred points. More detail is paid to individual utility functions in the preprocessing software documentation.
+

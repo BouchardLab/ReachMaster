@@ -10,7 +10,7 @@ experimenters flexibility in designing experiments with controlled feedback base
 continuous, naturalistic reaching behavior.
 
 The Problem
-^^^^^^^^^^^
+^^^^^^^^^^^^^
 After an experiment is initiated, a rat is free to interact with the water-delivering handle. However, we allow the rat
 to also behave freely in our arena.  This means a rat may interact with the handle quite frequently (defined as a bout
 of reaching behavior, 5+ reaches over a minute) or rarely. As the rat advances in training, interactions become more
@@ -25,7 +25,7 @@ trial data into discrete time-series representations of single reaches with appr
 mainly to avoid analyzing our neural data out of context.
 
 Our Solution
-^^^^^^^^^^^^
+^^^^^^^^^^^^^^
 Our lab previously has shown that we can extract 3-D coordinates with highly accurate spatial and temporal resolution
 across both arms during reaching behaviors. Briefly, continuous video from 3 cameras inside our arena is tracked using
 DeepLabCut. The stored predictions are then translated from 2-D image space to a shared 3-D space. Time-series of various

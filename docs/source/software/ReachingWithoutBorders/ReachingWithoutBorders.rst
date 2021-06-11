@@ -4,10 +4,14 @@ In this part of our API's documentation, we outline functions and methods to tra
 our reaching and electrophysiological data from individualized files into the compact, transparent
 format of Neurodata Without Borders (NWB). For more documentation on NWB, please visit https://www.nwb.org.
 
-RWB class manager
--------------------
-Loading our data into RWB utilizes a class manager to handle data instances across sessions.
+
+
+
 .. automodule:: ReachingWithoutBorders.RWB
+
+
+.. automodule:: RWB
+
 
 Initiate Manager
 ^^^^^^^^^^^^^^^^^^^^
