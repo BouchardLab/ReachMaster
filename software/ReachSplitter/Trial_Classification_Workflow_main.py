@@ -452,9 +452,6 @@ def main_4_classify(final_ML_feature_array, final_labels_array, feat_names, load
     X_train_hand, y_train_hand = CU.remove_trials(X_train_reaches, y_train_reaches, predictions_hand, toRemove)
     print(X_train_hand.shape, y_train_hand.shape)
 
-    #clf = joblib.load('which_hand_classifier.joblib')
-    #print(clf)
-
     print(score_null, score_hand, score_reaches)
     print("Finished classification.")
 

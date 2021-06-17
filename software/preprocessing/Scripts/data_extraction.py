@@ -1,14 +1,11 @@
 """Script to import trodes, micro-controller, and config data
 
 """
-from multiprocessing import Pool
-from multiprocessing.pool import ThreadPool
+
 import glob
 import pickle
 import os
 from collections import defaultdict
-import pdb
-from time import sleep
 import numpy as np
 import pandas as pd
 from tqdm import tqdm
@@ -138,7 +135,6 @@ def host_off(cns,save_path = False):
     Parameters
     ----------
     save_path : path to save experimental dataframe
-    dlt_path : path of DLT co-effecients file for reconstructing 3-D co-effecients. This is found using EASYWAND.
     cns : path to cns
 
     Returns
@@ -164,40 +160,6 @@ def host_off(cns,save_path = False):
     return save_df
 
 
-
-def parse_videos(save_path,save=False):
-    list_of_block_video_filenames=[]
-    return list_of_block_video_filenames
-
-
-def save_kinematics(unpickled_list):
-    encountered_df = False
-    for i in range(len(unpickled_list)):
-            rat_df1 = unpickled_list[i]
-            if ((rat_df1 is not 0) and (type(rat_df1) is not list)):          
-                if (not encountered_df):
-                    encountered_df = True
-                # create a new dataframe (copy of original), then removes levels corresponding to (rat, date, session, dim)
-                df1 = rat_df1.droplevel([0, 1, 2, 3], axis=1)
-
-                # inserts columns and data for (rat, date, session, dim)
-                pos_arr = [0, 1, 1, 3] # order to insert columns (rat, date, session, dim)
-                for i in range(4):
-                    col_name = rat_df1.columns.names[i]
-                    val = rat_df1.columns.levels[i][0]
-                    df1.insert(pos_arr[i], col_name, val)              
-                else:    
-                    df2 = rat_df1.droplevel([0,1,2,3], axis = 1)             
-                    pos_arr = [0, 1, 1, 3] # order to insert columns (rat, date, session, dim)
-                    for i in range(4):
-                        col_name = rat_df1.columns.names[i]
-                        val = rat_df1.columns.levels[i][0]
-                        df2.insert(pos_arr[i], col_name, val)
-                    df1 = pd.concat([df1, df2], axis=0, sort=False) # concat new df to existing df
-    df1 = df1.set_index(['rat', 'date', 'session', 'dim'])
-    return df1
-
-
 def return_block_kinematic_df(f):
     file_=f[0]
     dlt_path=f[1]
@@ -208,7 +170,22 @@ def return_block_kinematic_df(f):
     return m
 
 
-def get_kinematics(cns, dlt_path, rat_name, pik=True, save_path = 'tkd_filt.pkl'):
+def get_kinematics(cns, dlt_path, rat_name, pik=True, save_path='tkd_filt.pkl'):
+    """Function to iterate over a data directory and extract 3-D positional data from CatScan or other data directory.
+
+    Parameters
+    -----------
+    cns : str, path to cns directory
+    dlt_path : str, path to DLT string
+    rat_name : str, name of rat ex: 'RM16', 'RM9', 'RF1'
+    pik : bool, flag to save resulting dataframe as a pickle file
+    save_path : str, path to save our list of dataframes
+
+    Returns
+    ---------
+    df_list : list, contains dataframe(s) of 3-D positions over an entire experimental block session
+
+    """
     cns_path=cns + rat_name
     cns_pattern = cns_path+ '/**/*.rec'
     d = []
@@ -265,15 +242,6 @@ def to_df(file_name, config_data, true_time,successful_trials, trial_masks, rat,
     rat : rat name eg RM16
     session : experimental session eg S1
     lick_data : array of lick start and stop times
-    r_x : position of robot x direction
-    r_y : position of robot y direction
-    r_z : position of robot z direction
-    t_x : times of robot x direction movement
-    d_x : distances of robot x direction
-    t_y : times of robot y direction movement
-    d_y : distances of robot y direction
-    t_z : times of robot z direction movement
-    d_z : distances of robot z direction
     controller_data : list containing controller data
     reach_indices : list of 'start' and 'stop' indices for reaching trials
     save_as_dict : boolean, saves the results as a dict (depreciated)
@@ -289,7 +257,7 @@ def to_df(file_name, config_data, true_time,successful_trials, trial_masks, rat,
     r_w = controller_data['in_Reward_Win']
     exp_response = controller_data['exp_response']
     successful_trials = np.asarray(successful_trials)  
-    dict = pd.DataFrame(
+    block_dict = pd.DataFrame(
             {'rat': rat, 'S': session, 'Date': date, 'dim': dim, 'time': [np.asarray(true_time).tolist()],
              'SF': [successful_trials], 't_m': [trial_masks],'m_start':[mstart],'m_stop':[mstop],
              'lick': [np.asarray(lick_data).tolist()], 
@@ -298,7 +266,7 @@ def to_df(file_name, config_data, true_time,successful_trials, trial_masks, rat,
              'moving': [np.asarray(moving, dtype=int)], 'RW': [r_w], 'r_start': [reach_indices['start']],
              'r_stop': [reach_indices['stop']], 'r':[r],'t2': [t2], 't1':[t1],
              'exp_response' : [exp_response], 'x_pot':[x_pot],'y_pot':[y_pot],'z_pot':[z_pot]})
-    return dict
+    return block_dict
 
 
 def make_dict():
@@ -306,7 +274,7 @@ def make_dict():
 
 
 def get_name(file_name,Trodes=False):
-    """
+    """Function to fetch name data from string of names
 
     Parameters
     ----------
@@ -330,7 +298,7 @@ def get_name(file_name,Trodes=False):
 
 
 def trial_mask(matched_times, r_i_start, r_i_stop, s_t):
-    """
+    """Function to
 
     Parameters
     ----------
