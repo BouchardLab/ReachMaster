@@ -267,14 +267,14 @@ class Preprocessor:
         Returns: trials: (list of dfs) of length number of trials with index trial number
 
         """
-        assert(window_length > pre), "invalid slice!"
+        assert (window_length > pre), "invalid slice!"
         starting_frames = exp_block['r_start'].values[0]
         trials = []
         # iterate over starting frames
         for frame_num in starting_frames:
             start = frame_num - pre
             # negative indices case
-            if (frame_num-pre) <= 0:
+            if (frame_num - pre) <= 0:
                 start = 0
             # slice trials
             trials.append(formatted_kin_block.loc[start:frame_num + window_length])
@@ -283,11 +283,11 @@ class Preprocessor:
     @staticmethod
     def trialize_kin_blocks(formatted_kin_block):
         """
-        Returns a list of one row dfs, each representing a trial
+        Returns a list of one column dfs, each representing a trial
         Args:
             formatted_kin_block: (list of dfs) split trial data
 
-        Returns: ftrials: (list of one row dfs)
+        Returns: ftrials: (list of one column dfs)
 
         """
         # iterate over trials
@@ -296,7 +296,7 @@ class Preprocessor:
             # match bodypart names
             trial_size = len(trial.index)
             trial.index = np.arange(trial_size)
-            # reshape df into one row for one trial
+            # reshape df into one column for one trial
             formatted_trial = Preprocessor.stack(Preprocessor.stack(trial))
             ftrials.append(formatted_trial)
         return ftrials
@@ -306,7 +306,7 @@ class Preprocessor:
         """
         Selects labeled trials and matches them to their labels.
         Args:
-            formatted_kin_block: (list of dfs) trialized data
+            formatted_kin_block: (list of one column dfs) trialized data
             label: (list of lists) vectorized labels
 
         Returns: labeled_trials: (list of one row dfs) matched to labels
@@ -316,7 +316,7 @@ class Preprocessor:
             Trial numbers are zero-indexed.
 
         """
-        assert(len(label) <= len(formatted_kin_block)),\
+        assert (len(label) <= len(formatted_kin_block)), \
             f"More labels {len(label)} than trials {len(formatted_kin_block)}!"
         # iterate over labels and trials
         labeled_trials = []
@@ -374,7 +374,7 @@ class Preprocessor:
             Trial numbers are zero-indexed.
 
         """
-        assert(len(label) <= len(exp_feat_df)),\
+        assert (len(label) <= len(exp_feat_df)), \
             f"More labels {len(label)} than trials {len(exp_feat_df)}!"
         # match to labels
         labeled_trial_nums = []
@@ -396,6 +396,7 @@ class Preprocessor:
         hot_vector = CU.onehot(self.exp_block)  # unused
         exp_feat_df = CU.import_experiment_features_to_df(exp_features)
 
+        # match and expand
         masked_exp_feat_df = Preprocessor.match_exp_to_label(exp_feat_df, self.label)
 
         # update attribute
@@ -403,7 +404,7 @@ class Preprocessor:
         return self.formatted_exp_block
 
     def make_ml_feat_labels(self, kin_block, exp_block, label,
-                              et, el, window_length=250, pre=10, wv=5):
+                            et, el, window_length=250, pre=10, wv=5):
         """
         Returns ml feature and label arrays.
         Args:
@@ -429,7 +430,7 @@ class Preprocessor:
         # init instance attributes
 
         self.set_exp_block(exp_block)
-        self.set_wv(wv)  # must be set first
+        self.set_wv(wv)  # must be set before kin block
         self.set_window_length(window_length)
         self.set_pre(pre)
         self.set_kin_block(kin_block)
@@ -445,9 +446,11 @@ class Preprocessor:
         exp_feat_df = self.make_exp_feat_df()
 
         # concat results
-        assert(kin_feat_df.shape[0] == exp_feat_df.shape[0]), f'{kin_feat_df.shape} {exp_feat_df.shape} rows must match!'
-        features = pd.concat([kin_feat_df, exp_feat_df], axis=1)
+        assert (kin_feat_df.shape[0] == exp_feat_df.shape[
+            0]), f'{kin_feat_df.shape} {exp_feat_df.shape} rows must match!'
+        features = pd.concat([kin_feat_df, exp_feat_df], axis=1)  # concat column-wise
         return features
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
