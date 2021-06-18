@@ -113,12 +113,9 @@ class TestPreprocessing(TestCase):
             pass
 
     def test_save_all_labeled_blocks(self):
-        tkdf_14 = self.preprocessor.load_data('3D_positions_RM14_f.pkl')
-        tkdf_15 = self.preprocessor.load_data('tkdf16_f.pkl')
-
         # choose which rats to save
         save_16 = True
-        save_15 = True
+        save_15 = True  # todo errors
         save_14 = True
 
         if save_16:
@@ -152,6 +149,7 @@ class TestPreprocessing(TestCase):
                                                save_as=f'{TC.folder_name}/kin_rm16_9_19_s3.pkl')
 
         if save_15:
+            tkdf_15 = self.preprocessor.load_data('tkdf15_f.pkl')
             # RM15, 25, S3
             self.preprocessor.get_single_block(self.exp_data, '0190925', 'S3', 'RM15', format='exp',
                                                save_as=f'{TC.folder_name}/exp_rm15_9_25_s3.pkl')
@@ -164,6 +162,7 @@ class TestPreprocessing(TestCase):
             self.preprocessor.get_single_block(tkdf_15, '0190917', 'S4', '09172019', format='kin',
                                                save_as=f'{TC.folder_name}/kin_rm15_9_17_s4.pkl')
         if save_14:
+            tkdf_14 = self.preprocessor.load_data('3D_positions_RM14_f.pkl')
             # 2019-09-20-S1-RM14_cam2
             self.preprocessor.get_single_block(self.exp_data, '0190920', 'S1', 'RM14', format='exp',
                                                save_as=f'{TC.folder_name}/exp_rm14_9_20_s1.pkl')
@@ -196,9 +195,9 @@ class TestPreprocessingBlock(TestCase):
         """ Initialize instance attributes for testing 
         """
         # load data and update preprocessor object
-        self.kin_filename = f'{TC.folder_name}/kin_rm15_9_17_s4.pkl'
-        self.exp_filename = f'{TC.folder_name}/exp_rm15_9_17_s4.pkl'
-        self.label = CU.rm15_9_17_s4_label
+        self.kin_filename = f'{TC.folder_name}/kin_rm16_9_17_s2.pkl'
+        self.exp_filename = f'{TC.folder_name}/exp_rm16_9_17_s2.pkl'
+        self.label = CU.rm16_9_17_s2_label
         self.vec_label, _ = CU.make_vectorized_labels(self.label)
 
         self.preprocessor = TC.Preprocessor()
@@ -291,28 +290,24 @@ class TestClassificationWorkflow(TestCase):
         super().__init__(*args, **kwargs)
         """ Initialize unchanged class attributes for testing 
         """
-        # load data and update preprocessor object
-        self.kin_filename = f'{TC.folder_name}/kin_rm15_9_17_s4.pkl'
-        self.exp_filename = f'{TC.folder_name}/exp_rm15_9_17_s4.pkl'
-        self.label = CU.rm15_9_17_s4_label
-        self.vec_label, _ = CU.make_vectorized_labels(self.label)
-
+        # load data
         self.preprocessor = TC.Preprocessor()
-        self.kin_block = TC.Preprocessor.load_data(self.kin_filename, file_type='pkl')
-        self.exp_block = TC.Preprocessor.load_data(self.exp_filename, file_type='pkl')
+        all_kin_features = self.preprocessor.load_data(f'{TC.folder_name}/kin_feat.pkl')  # generate via TC.main
+        all_exp_features = self.preprocessor.load_data(f'{TC.folder_name}/exp_feat.pkl')
+        all_exp_features = all_exp_features.applymap(np.mean)  # todo replicate.
+        all_label_dfs = self.preprocessor.load_data(f'{TC.folder_name}/label_dfs.pkl')
+        #self.X = all_kin_features[all_kin_features.columns[1:10]]
+        self.X = all_exp_features[all_exp_features.columns[0:4]]
+        #self.y = all_label_dfs['Num Reaches'].values
+        self.y = all_label_dfs['Which Hand'].values
+        self.assertEqual(len(self.X), len(self.y))
 
-        # make feat dfs
-        self.label_df = CU.make_vectorized_labels_to_df(self.vec_label)
-        self.kin_feat_df, self.exp_feat_df = self.preprocessor.make_ml_feat_labels(self.kin_block, self.exp_block,
-                                                                                   self.label, self.et, self.el,
-                                                                                   self.window_length, self.pre,
-                                                                                   self.wv)
-        self.X = self.kin_feat_df[self.kin_feat_df.columns[1:4]]
-        self.y = self.label_df['Num Reaches'].to_frame()
+        #
+        self.model = None
 
     def test_basic_make_preds(self):
         # test default model
-        model = TC.ReachClassifier(model=RandomForestClassifier())
+        model = TC.ReachClassifier(model=LogisticRegression())
         model.fit(self.X, self.y)
         self.assertTrue(len(model.predict(self.X)) != 0)  # TODO won't work if label has all of the same class
         # todo and need to fix exp data?
@@ -325,19 +320,24 @@ class TestClassificationWorkflow(TestCase):
                                 ('classifier', RandomForestClassifier())])
 
         # Create param grid.
+        # todo expand
         param_grid = [
             {'classifier': [LogisticRegression()],
              'classifier__penalty': ['l1', 'l2'],
              'classifier__C': np.logspace(-4, 4, 20),
              'classifier__solver': ['liblinear']},
             {'classifier': [RandomForestClassifier()],
-             'classifier__n_estimators': list(range(10, 101, 10)),
-             'classifier__max_features': list(range(6, 32, 5))},
+             'classifier__bootstrap': [True, False],
+             'classifier__max_depth': [10, 20, 30, 40, 50, 60, 70, 80, 90, 100, None],
+             'classifier__max_features': ['auto', 'sqrt'],
+             'classifier__min_samples_leaf': [1, 2, 4],
+             'classifier__min_samples_split': [2, 5, 10],
+             'classifier__n_estimators': [200, 400, 600, 800, 1000, 1200, 1400, 1600, 1800, 2000]},
             {'classifier': [sklearn.svm.SVC()],
              'classifier__C': list(range(1, 10, 1))}
         ]
 
-        classifier.hyperparameter_tuning(model, param_grid, self.X, self.y, fullGridSearch=False)
-
+        best_model, _, _ = classifier.hyperparameter_tuning(model, param_grid, self.X, self.y, fullGridSearch=False)
+        self.model = best_model
 
 
