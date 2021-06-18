@@ -94,27 +94,6 @@ class TestPreprocessing(TestCase):
             pass
 
 
-
-    def test_pkl_to_df_NumRows(self):
-        """
-        Tests:
-            each element in 'unpickled_list' corresponds to one row in 'kinematic_df',
-        """
-        # number of rows in 'kinematic_df' should be same as number of dataframes in 'pickled_list'
-        # self.assertEqual(len(self.unpickled_list), len(self.kinematic_df))
-        pass
-
-    def test_pkl_to_df_Index(self):
-        """
-        Tests:
-            returned df is indexed by rat,date,session,dim
-        """
-        # indexed by rat,date,session,dim
-        # expected_df_index = ['rat', 'date', 'session', 'dim']
-        # self.assertEqual(expected_df_index, self.kin_data.index.names)
-        pass
-
-
 class TestPreprocessingBlock(TestCase):
     """ Test Overview
         - kin_block median filter
@@ -125,8 +104,8 @@ class TestPreprocessingBlock(TestCase):
     et = 0
     el = 0
     wv = 5
-    window_length = 4  # TODO made small,run final on default = 250
-    pre = 2  # TODO  made small,run final on default = 10
+    window_length = 4  # TODO made small, run final on default = 250
+    pre = 2  # TODO  made small, run final on default = 10
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -136,10 +115,21 @@ class TestPreprocessingBlock(TestCase):
         self.kin_filename = f'{TC.folder_name}/kin_091820190190918S1.pkl'
         self.exp_filename = f'{TC.folder_name}/exp_RM160190918S1.pkl'
         self.label = CU.rm16_9_18_s1_label
+        self.vec_label, _ = CU.make_vectorized_labels(self.label)
 
         self.preprocessor = TC.Preprocessor()
-        self.kin_block = self.preprocessor.load_data(self.kin_filename, file_type='pkl')
-        self.exp_block = self.preprocessor.load_data(self.exp_filename, file_type='pkl')
+        self.kin_block = TC.Preprocessor.load_data(self.kin_filename, file_type='pkl')
+        self.exp_block = TC.Preprocessor.load_data(self.exp_filename, file_type='pkl')
+
+        # setup preprocessor object
+        self.preprocessor.set_exp_block(self.exp_block)
+        self.preprocessor.set_wv(self.wv)  # must be set before kin block
+        self.preprocessor.set_window_length(self.window_length)
+        self.preprocessor.set_pre(self.pre)
+        self.preprocessor.set_kin_block(self.kin_block)
+
+        # other
+        self.start_frames = self.exp_block['r_start'].values[0]
 
     def test_median_filter(self):
         # test filtered_df is same size as original
@@ -147,7 +137,61 @@ class TestPreprocessingBlock(TestCase):
         self.assertEqual(self.kin_block.shape, filtered_df.shape)
         self.assertEqual(self.kin_block.size, filtered_df.size)
 
-    def test_trialize_1(self):
+    def test_split_kin_trial_0(self):
+        # test trial splitting
+        trials = TC.Preprocessor.split_trial(self.kin_block, self.exp_block, self.window_length, self.pre)
+        trial_0 = trials[0]
+        self.assertEqual(len(self.start_frames), len(trials)), "Unequal number of trials!"
+        self.assertTrue(trial_0.shape[0] != 0), "Empty trial!"
+        self.assertTrue(isinstance(trial_0, pd.DataFrame)), "Not a DF!"
+
+    def test_trialize_kin_blocks_1(self):
+        # test reshaping of trials
+        trials = TC.Preprocessor.split_trial(self.kin_block, self.exp_block, self.window_length, self.pre)
+
+        ftrials = TC.Preprocessor.trialize_kin_blocks(trials)
+        trial_0 = ftrials[0]
+        self.assertEqual(len(self.start_frames), len(ftrials)), "Unequal number of trials!"
+        self.assertTrue(isinstance(trial_0, pd.DataFrame)), "Not a DF!"
+        self.assertTrue(trial_0.shape[0] != 0), "Empty trial!"
+        [self.assertTrue(trial.shape[1] == 1) for trial in ftrials]  # check is a one-col df for each trial
+        [self.assertFalse(trial.isnull().values.any()) for trial in ftrials]  # check no null values in dfs
+
+    def test_match_kin_2(self):
+        # test matching to labels
+        trials = TC.Preprocessor.split_trial(self.kin_block, self.exp_block, self.window_length, self.pre)
+        ftrials = TC.Preprocessor.trialize_kin_blocks(trials)
+
+        labeled_trials = TC.Preprocessor.match_kin_to_label(ftrials, self.vec_label)
+        trial_0 = labeled_trials[0]
+        self.assertEqual(len(self.vec_label), len(labeled_trials)), "Not Matching Labels!"
+        self.assertTrue(isinstance(trial_0, pd.DataFrame)), "Not a DF!"
+        self.assertTrue(trial_0.shape[0] != 0), "Empty trial!"
+        [self.assertTrue(trial.shape[0] == 1) for trial in labeled_trials]  # check is a one-row df for each trial
+        [self.assertFalse(trial.isnull().values.any()) for trial in ftrials]  # check no null values in dfs
+
+    def test_make_exp(self):
+        # tests making exp feat df
+        # todo expand
+        exp_features = CU.import_experiment_features(self.exp_block, self.start_frames, self.window_length, self.pre)
+        exp_df = CU.import_experiment_features_to_df(exp_features)
+        exp_feat_df = TC.Preprocessor.match_exp_to_label(exp_df, self.vec_label)
+
+        self.assertTrue(isinstance(exp_feat_df, pd.DataFrame)), "Not a DF!"
+        self.assertEqual(len(self.vec_label), len(exp_feat_df)), "Not Matching Labels!"
+
+    def test_create_kin_feat_df_3(self):
+        trials = TC.Preprocessor.split_trial(self.kin_block, self.exp_block, self.window_length, self.pre)
+        ftrials = TC.Preprocessor.trialize_kin_blocks(trials)
+        labeled_trials = TC.Preprocessor.match_kin_to_label(ftrials, self.vec_label)
+
+        df = TC.Preprocessor.create_kin_feat_df(labeled_trials)
+        self.assertEqual(len(self.vec_label), len(df)), "Unequal number of trials!"
+        self.assertTrue(isinstance(df, pd.DataFrame)), "Not a DF!"
+        self.assertTrue(df.shape[0] != 0), "Empty trial!"
+
+    def test_basic_make_preds(self):
+        # test make basic preds
         feat_df = self.preprocessor.make_ml_feat_labels(self.kin_block, self.exp_block, self.label,
                                                         self.et, self.el, self.window_length, self.pre, self.wv)
         model = TC.IsReachClassifier()
