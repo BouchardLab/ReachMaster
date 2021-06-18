@@ -45,6 +45,7 @@ class ReachClassifier:
     np.random.seed(246810)
 
     def __init__(self, model=None):
+        self.model = None
         self.set_model(model)
         self.X = None
         self.y = None
@@ -72,6 +73,10 @@ class ReachClassifier:
     def predict(self, X):
         return self.model.predict(X)
 
+    def partition(self, X, y):
+        # partition into validation set
+        X_train, X_val, y_train, y_val = train_test_split(train_features, train_labels, test_size=0.2)
+
     @staticmethod
     def evaluate(model, X, y):
         print("Cross validation:")
@@ -85,6 +90,12 @@ class ReachClassifier:
         print('averaged validation accuracy:', avg_test_accuracy)
 
         return avg_train_accuracy, avg_test_accuracy
+
+    def adjust_class_imbalance(self):  # todo
+        # adjust for class imbalance
+        #   oversamples the minority class by synthetically generating additional samples
+        sm = SMOTE(random_state=42)
+        X_train_res, y_train_res = sm.fit_resample(X_train_paritioned, y_train_paritioned)
 
     def hyperparameter_tuning(self, model, param_grid, train_features, train_labels,
                               fullGridSearch=False):
@@ -104,14 +115,14 @@ class ReachClassifier:
 
         Reference: https://towardsdatascience.com/hyperparameter-tuning-the-random-forest-in-python-using-scikit-learn-28d2aa77dd74
         """
-        # partition into validation set
-        X_train, X_val, y_train, y_val = train_test_split(train_features, train_labels, test_size=0.2)
+
 
         # Use the random grid to search for best hyperparameters
         if fullGridSearch:
             # Instantiate the grid search model
             grid_search = GridSearchCV(estimator=model, param_grid=param_grid,
                                        cv=3, n_jobs=-1, verbose=2)
+
         else:
             # Random search of parameters, using 3 fold cross validation,
             # search across 100 different combinations, and use all available cores
@@ -125,52 +136,16 @@ class ReachClassifier:
         base_model.fit(X_train, y_train)
         base_train_accuracy, base_test_accuracy = ReachClassifier.evaluate(base_model, X_val, y_val)
 
-        best_grid = grid_search.best_estimator_
-        best_train_accuracy, best_test_accuracy = ReachClassifier.evaluate(best_grid, X_val, y_val)
+        best_grid = grid_search
+        best_model = grid_search.best_estimator_
+        best_train_accuracy, best_test_accuracy = ReachClassifier.evaluate(best_model, X_val, y_val)
 
         print('Improvement % of', (100 * (best_test_accuracy - base_test_accuracy) / base_test_accuracy))
 
         # update object
-        # todo
-        print(best_grid, grid_search.best_params_, best_test_accuracy)
+        self.set_model(best_model)
 
-        return best_grid, grid_search.best_params_, best_test_accuracy
-
-    @staticmethod
-    def train_and_save_model(model, param_grid, X_train, y_train, feat_names, num_frames, file_name, save=False):
-        """
-        Args:
-            X_train:
-            y_train:
-            feat_names:
-            num_frames:
-
-        Returns:
-
-        Reference: https://towardsdatascience.com/logistic-regression-model-tuning-with-scikit-learn-part-1-425142e01af5
-        """
-
-        # partition into validation set
-        X_train, X_val, y_train, y_val = train_test_split(X_train, y_train, test_size=0.2)
-
-        # adjust for class imbalance
-        #   oversamples the minority class by synthetically generating additional samples
-        sm = SMOTE(random_state=42)
-        X_train_res, y_train_res = sm.fit_resample(X_train, y_train)
-
-        # 1b. hyperparameter tuning
-        best_grid, best_params_, tuned_accuracy = \
-            ReachClassifier.hyperparameter_tuning(model, param_grid, X_train_res, y_train_res, X_val, y_val,
-                                                  fullGridSearch=False)
-
-        if save:
-            joblib.dump(best_grid, file_name + '.joblib')
-
-            # classify all training data
-        classifier_pipeline_null, predictions_null, cv_score_null = ReachClassifier.classify(model, X_train, y_train,
-                                                                                             k=3)
-
-        return classifier_pipeline_null, predictions_null, cv_score_null
+        return best_model, best_grid.best_params_, best_test_accuracy
 
 
 class ClassificationHierarchy:
@@ -594,9 +569,104 @@ class Preprocessor:
         # create exp features
         exp_feat_df = self.make_exp_feat_df()
 
-        # todo concat results
-
         return kin_feat_df, exp_feat_df
+
+
+def main_run_all():
+    # LOAD DATA
+    preprocessor = Preprocessor()
+    exp_data = preprocessor.load_data('experimental_data.pickle')
+    tkdf_16 = preprocessor.load_data('tkdf16_f.pkl')
+    #tkdf_15 = preprocessor.load_data('tkdf15_f.pkl')  # todo excludes rm15 due to loading
+    tkdf_14 = preprocessor.load_data('3D_positions_RM14_f.pkl')
+
+    # GET and SAVE BLOCKS
+    exp_lst = [
+        preprocessor.get_single_block(exp_data, '0190917', 'S1', 'RM16', format='exp',
+                                      save_as=f'{folder_name}/exp_rm16_9_17_s1.pkl'),
+        preprocessor.get_single_block(exp_data, '0190918', 'S1', 'RM16', format='exp',
+                                      save_as=f'{folder_name}/exp_rm16_9_18_s1.pkl'),
+        preprocessor.get_single_block(exp_data, '0190917', 'S2', 'RM16', format='exp',
+                                      save_as=f'{folder_name}/exp_rm16_9_17_s2.pkl'),
+        preprocessor.get_single_block(exp_data, '0190920', 'S3', 'RM16', format='exp',
+                                      save_as=f'{folder_name}/exp_rm16_9_20_s3.pkl'),
+        preprocessor.get_single_block(exp_data, '0190919', 'S3', 'RM16', format='exp',
+                                      save_as=f'{folder_name}/exp_rm16_9_19_s3.pkl'),
+       # preprocessor.get_single_block(exp_data, '0190925', 'S3', 'RM15', format='exp',
+       #                              save_as=f'{folder_name}/exp_rm15_9_25_s3.pkl'),
+        #preprocessor.get_single_block(exp_data, '0190917', 'S4', 'RM15', format='exp',
+        #                              save_as=f'{folder_name}/exp_rm15_9_17_s4.pkl'),
+        preprocessor.get_single_block(exp_data, '0190920', 'S1', 'RM14', format='exp',
+                                      save_as=f'{folder_name}/exp_rm14_9_20_s1.pkl'),
+        preprocessor.get_single_block(exp_data, '0190918', 'S2', 'RM14', format='exp',
+                                      save_as=f'{folder_name}/exp_rm14_9_18_s2.pkl')
+    ]
+
+    kin_lst = [
+        preprocessor.get_single_block(tkdf_16, '0190917', 'S1', '09172019', format='kin',
+                                      save_as=f'{folder_name}/kin_rm16_9_17_s1.pkl'),
+        preprocessor.get_single_block(tkdf_16, '0190918', 'S1', '09182019', format='kin',
+                                      save_as=f'{folder_name}/kin_rm16_9_18_s1.pkl'),
+        preprocessor.get_single_block(tkdf_16, '0190917', 'S2', '09172019', format='kin',
+                                      save_as=f'{folder_name}/kin_rm16_9_17_s2.pkl'),
+        preprocessor.get_single_block(tkdf_16, '0190920', 'S3', '09202019', format='kin',
+                                      save_as=f'{folder_name}/kin_rm16_9_20_s3.pkl'),
+        preprocessor.get_single_block(tkdf_16, '0190919', 'S3', '09192019', format='kin',
+                                      save_as=f'{folder_name}/kin_rm16_9_19_s3.pkl'),
+        #preprocessor.get_single_block(tkdf_15, '0190925', 'S3', '09252019', format='kin',
+        #                              save_as=f'{folder_name}/kin_rm15_9_25_s3.pkl'),
+        #preprocessor.get_single_block(tkdf_15, '0190917', 'S4', '09172019', format='kin',
+        #                              save_as=f'{folder_name}/kin_rm15_9_17_s4.pkl'),
+        preprocessor.get_single_block(tkdf_14, '0190920', 'S1', '09202019', format='kin',
+                                      save_as=f'{folder_name}/kin_rm14_9_20_s1.pkl'),
+        preprocessor.get_single_block(tkdf_14, '0190918', 'S2', '09182019', format='kin',
+                                      save_as=f'{folder_name}/kin_rm14_9_18_s2.pkl')
+    ]
+
+    # CREATE FEAT and LABEL DFS
+    kin_dfs = []
+    exp_dfs = []
+    label_dfs = []
+    for i in range(len(kin_lst)):
+        kin_block = kin_lst[i]
+        exp_block = exp_lst[i]
+        label = labels[i]
+        kin_feat_df, exp_feat_df = preprocessor.make_ml_feat_labels(kin_block, exp_block,
+                                                                    label, et, el,
+                                                                    window_length, pre,
+                                                                    wv)
+        # append
+        label_df = CU.make_vectorized_labels_to_df(CU.make_vectorized_labels_to_df(label))
+        label_dfs.append(label_df)
+        kin_dfs.append(kin_feat_df)
+        exp_dfs.append(exp_feat_df)
+
+    # concat
+    all_kin_features = Preprocessor.concat(kin_dfs[:(len(kin_dfs) - 2)],
+                                           row=True)  # todo exclude rm14 due to shape mismatch
+    all_exp_features = Preprocessor.concat(exp_dfs[:(len(kin_dfs) - 2)],
+                                           row=True)  # todo exclude rm14 due to shape mismatch
+    all_label_dfs = Preprocessor.concat(label_dfs[:(len(kin_dfs) - 2)],
+                                        row=True)  # todo exclude rm14 due to shape mismatch
+
+    # save ML dfs
+    Preprocessor.save_data(all_kin_features, f'{folder_name}/kin_feat.pkl', file_type='pkl')
+    Preprocessor.save_data(all_exp_features, f'{folder_name}/exp_feat.pkl', file_type='pkl')
+    Preprocessor.save_data(all_label_dfs, f'{folder_name}/label_dfs.pkl', file_type='pkl')
+
+def main_run_ML():
+    # LOAD DATA
+    preprocessor = Preprocessor()
+    all_kin_features = preprocessor.load_data(f'{folder_name}/kin_feat.pkl')
+    all_exp_features = preprocessor.load_data(f'{folder_name}/exp_feat.pkl')
+    all_label_dfs = preprocessor.load_data(f'{folder_name}/label_dfs.pkl')
+
+    X = all_kin_features[all_kin_features.columns[1:4]].values
+    y = all_label_dfs['Num Reaches'].values
+    model = ReachClassifier(model=RandomForestClassifier(max_features=0.25))  # prevents feat error
+    model.fit(X, y)
+    assert (len(model.predict(X)) != 0)
+    print("DONE temp")
 
 
 if __name__ == "__main__":
@@ -612,195 +682,29 @@ if __name__ == "__main__":
     pre = 2  # TODO change to preferences, default = 10
 
     # labels
-    labels = [CU.rm16_9_20_s3_label,
-              CU.rm16_9_19_s3_label,
-              CU.rm16_9_17_s2_label,
-              CU.rm16_9_17_s1_label,
+    # RM16_9_17_s1
+    # RM16, 9-18, S1
+    # RM16, 9-17, S2
+    # RM16, DATE 9-20, S3
+    # RM16, 09-19-2019, S3
+        # RM15, 25, S3
+        # RM15, 17, S4
+    # 2019-09-20-S1-RM14_cam2
+    # 2019-09-18-S2-RM14-cam2
+    labels = [CU.rm16_9_17_s1_label,
               CU.rm16_9_18_s1_label,
+              CU.rm16_9_17_s2_label,
+              CU.rm16_9_20_s3_label,
+              CU.rm16_9_19_s3_label,
 
-              CU.rm15_9_25_s3_label,
-              CU.rm15_9_17_s4_label,
+             # CU.rm15_9_25_s3_label,
+             # CU.rm15_9_17_s4_label,
 
               CU.rm14_9_20_s1_label,
               CU.rm14_9_18_s2_label
               ]
-    label_key_names = ['rm16_9_20_s3_label',
-                       'rm16_9_19_s3_label',
-                       'rm16_9_17_s2_label',
-                       'rm16_9_17_s1_label',
-                       'rm16_9_18_s1_label',
-
-                       'rm14_9_20_s1_label',
-                       'rm14_9_18_s2_label'
-                       ]
-    # blocks
-    kin_data_path = ['tkd16.pkl', 'tkd14.pkl']
-    exp_data_path = 'experimental_data.pickle'
-
-    block_names = [
-        [['RM16', '0190920', '0190920', 'S3'],
-         ['RM16', '0190919', '0190919', 'S3'],
-         ['RM16', '0190917', '0190917', 'S2'],
-         ['RM16', '0190917', '0190917', 'S1'],
-         ['RM16', '0190918', '0190918', 'S1']],
-
-        [['RM14', '0190920', '0190920', 'S1'],
-         ['RM14', '0190918', '0190918', 'S2']]
-    ]
-
-    kin_file_names = ['kin_block_RM160190920S3',
-                      'kin_block_RM160190919S3',
-                      'kin_block_RM160190917S2',
-                      'kin_block_RM160190917S1',
-                      'kin_block_RM160190918S1',
-
-                      'kin_block_RM140190920S1',
-                      'kin_block_RM140190918S2']
-
-    exp_file_names = ['exp_block_RM160190920S3',
-                      'exp_block_RM160190919S3',
-                      'exp_block_RM160190917S2',
-                      'exp_block_RM160190917S1',
-                      'exp_block_RM160190918S1',
-
-                      'exp_block_RM140190920S1',
-                      'exp_block_RM140190918S2']
-
-
-    def main_2_kin_exp_blocks(kin_data, exp_data, all_block_names, save=False):
-        """ Gets blocks from kinematic and experimental data.
-        Args:
-            kin_data (list of str): path to kinematic data files
-            exp_data (str): path to kinematic data file
-            block_names (list of lists of str): for each rat, block keys corresponding to those in data
-                shape num kin data files by num blocks to take from that data file by
-            save (bool): True to save, False (default) otherwise
-
-        Returns:
-            kin_blocks (list of df)
-            exp_blocks (list of df)
-            kin_file_names (list of str)
-            exp_file_names (list of str)
-        """
-        all_kin_blocks = []
-        all_exp_blocks = []
-        all_kin_file_names = []
-        all_exp_file_names = []
-
-        # for each rat
-        for i in np.arange(len(kin_data)):
-            # load kinematic and experimental data
-            kin_df, exp_df = CU.load_kin_exp_data(kin_data[i], exp_data)
-            block_names = all_block_names[i]
-
-            # get blocks
-            #   rat (str): rat ID
-            #   date (str): block date in robot_df_
-            #   kdate (str): block date in kin_df_
-            #   session (str): block session
-            kin_blocks = []
-            exp_blocks = []
-            for i in np.arange(len(block_names)):
-                # get blocks
-                rat, kdate, date, session = block_names[i]
-                kin_block_df = CU.get_kinematic_block(kin_df, rat, kdate, session)
-                exp_block_df = get_single_trial(exp_df, date, session, rat)
-
-                # append blocks
-                kin_blocks.append(kin_block_df)
-                exp_blocks.append(exp_block_df)
-
-            # save kinematic and experimental blocks
-            kin_file_names = []
-            exp_file_names = []
-            for i in np.arange(len(block_names)):
-                rat, kdate, date, session = block_names[i]
-                kin_key = rat + kdate + session
-                exp_key = rat + date + session
-                kin_block_name = 'kin_block' + "_" + kin_key
-                exp_block_name = 'exp_block' + "_" + exp_key
-                kin_file_names.append(kin_block_name)
-                exp_file_names.append(exp_block_name)
-                if save:
-                    kin_blocks[i].to_pickle(kin_block_name)
-                    exp_blocks[i].to_pickle(exp_block_name)
-
-            # append results
-            all_kin_blocks = all_kin_blocks + kin_blocks
-            all_exp_blocks = all_exp_blocks + exp_blocks
-            all_kin_file_names = all_kin_file_names + kin_file_names
-            all_exp_file_names = all_exp_file_names + exp_file_names
-
-        if save:
-            print("Saved kin & exp blocks.")
-        print("Finished creating kin & exp blocks.")
-        return all_kin_blocks, all_exp_blocks, all_kin_file_names, all_exp_file_names
-
 
     if args.function == 1:
-        # LOAD DATA
-        preprocessor = Preprocessor()
-        exp_data = preprocessor.load_data('experimental_data.pickle')
-        tkdf_16 = preprocessor.load_data('tkdf16_f.pkl')
-        tkdf_15 = preprocessor.load_data('tkdf16_f.pkl')
-        tkdf_14 = preprocessor.load_data('3D_positions_RM14_f.pkl')
-
-        # GET and SAVE BLOCKS
-        # RM16_9_17_s1
-        # RM16, 9-18, S1
-        # RM16, 9-17, S2
-        # RM16, DATE 9-20, S3
-        # RM16, 09-19-2019, S3
-        # RM15, 25, S3
-        # RM15, 17, S4
-        # 2019-09-20-S1-RM14_cam2
-        # 2019-09-18-S2-RM14-cam2
-
-        exp_lst = [
-        preprocessor.get_single_block(exp_data, '0190917', 'S1', 'RM16', format='exp',
-                                      save_as=f'{folder_name}/exp_rm16_9_17_s1.pkl'),
-        preprocessor.get_single_block(exp_data, '0190918', 'S1', 'RM16', format='exp',
-                                      save_as=f'{folder_name}/exp_rm16_9_18_s1.pkl'),
-        preprocessor.get_single_block(exp_data, '0190917', 'S2', 'RM16', format='exp',
-                                      save_as=f'{folder_name}/exp_rm16_9_17_s2.pkl'),
-        preprocessor.get_single_block(exp_data, '0190920', 'S3', 'RM16', format='exp',
-                                      save_as=f'{folder_name}/exp_rm16_9_20_s3.pkl'),
-        preprocessor.get_single_block(exp_data, '0190919', 'S3', 'RM16', format='exp',
-                                      save_as=f'{folder_name}/exp_rm16_9_19_s3.pkl'),
-        preprocessor.get_single_block(exp_data, '0190925', 'S3', 'RM15', format='exp',
-                                      save_as=f'{folder_name}/exp_rm15_9_25_s3.pkl'),
-        preprocessor.get_single_block(exp_data, '0190917', 'S4', 'RM15', format='exp',
-                                      save_as=f'{folder_name}/exp_rm15_9_17_s4.pkl'),
-        preprocessor.get_single_block(exp_data, '0190920', 'S1', 'RM14', format='exp',
-                                      save_as=f'{folder_name}/exp_rm14_9_20_s1.pkl')
-        preprocessor.get_single_block(exp_data, '0190918', 'S2', 'RM14', format='exp',
-                                      save_as=f'{folder_name}/exp_rm14_9_18_s2.pkl')
-        ]
-
-        kin_lst = [
-        preprocessor.get_single_block(tkdf_16, '0190917', 'S1', '09172019', format='kin',
-                                      save_as=f'{folder_name}/kin_rm16_9_17_s1.pkl'),
-        preprocessor.get_single_block(tkdf_16, '0190918', 'S1', '09182019', format='kin',
-                                      save_as=f'{folder_name}/kin_rm16_9_18_s1.pkl'),
-        preprocessor.get_single_block(tkdf_16, '0190917', 'S2', '09172019', format='kin',
-                                      save_as=f'{folder_name}/kin_rm16_9_17_s2.pkl'),
-        preprocessor.get_single_block(tkdf_16, '0190920', 'S3', '09202019', format='kin',
-                                      save_as=f'{folder_name}/kin_rm16_9_20_s3.pkl'),
-        preprocessor.get_single_block(tkdf_16, '0190919', 'S3', '09192019', format='kin',
-                                      save_as=f'{folder_name}/kin_rm16_9_19_s3.pkl'),
-        preprocessor.get_single_block(tkdf_15, '0190925', 'S3', '09252019', format='kin',
-                                      save_as=f'{folder_name}/kin_rm15_9_25_s3.pkl'),
-        preprocessor.get_single_block(tkdf_15, '0190917', 'S4', '09172019', format='kin',
-                                      save_as=f'{folder_name}/kin_rm15_9_17_s4.pkl'),
-        preprocessor.get_single_block(tkdf_14, '0190920', 'S1', '09202019', format='kin',
-                                      save_as=f'{folder_name}/kin_rm14_9_20_s1.pkl'),
-        preprocessor.get_single_block(tkdf_14, '0190918', 'S2', '09182019', format='kin',
-                                      save_as=f'{folder_name}/kin_rm14_9_18_s2.pkl')
-        ]
-
-        # CREATE FEAT DFS
-        for
-            kin_feat_df, exp_feat_df = preprocessor.make_ml_feat_labels(kin_block, exp_block,
-                                                                                       label, et, el,
-                                                                                       window_length, pre,
-                                                                                       wv)
+        main_run_all()
+    elif args.function == 2:
+        main_run_ML()
