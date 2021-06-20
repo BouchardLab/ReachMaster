@@ -255,7 +255,6 @@ class TestPreprocessingBlock(TestCase):
 
     def test_make_exp(self):
         # tests making exp feat df
-        # todo expand?
         exp_features = CU.import_experiment_features(self.exp_block, self.start_frames, self.window_length, self.pre)
         exp_df = CU.import_experiment_features_to_df(exp_features)
         exp_feat_df = TC.Preprocessor.match_exp_to_label(exp_df, self.vec_label)
@@ -294,11 +293,9 @@ class TestClassificationWorkflow(TestCase):
         self.preprocessor = TC.Preprocessor()
         all_kin_features = self.preprocessor.load_data(f'{TC.folder_name}/kin_feat.pkl')  # generate via TC.main
         all_exp_features = self.preprocessor.load_data(f'{TC.folder_name}/exp_feat.pkl')
-        all_exp_features = all_exp_features.applymap(np.mean)  # todo replicate.
+        all_exp_features = TC.ReachClassifier().mean_df(all_exp_features)
         all_label_dfs = self.preprocessor.load_data(f'{TC.folder_name}/label_dfs.pkl')
-        #self.X = all_kin_features[all_kin_features.columns[1:10]]
         self.X = all_exp_features[all_exp_features.columns[0:4]]
-        #self.y = all_label_dfs['Num Reaches'].values
         self.y = all_label_dfs['Which Hand'].values
         self.assertEqual(len(self.X), len(self.y))
 
@@ -337,7 +334,25 @@ class TestClassificationWorkflow(TestCase):
              'classifier__C': list(range(1, 10, 1))}
         ]
 
-        best_model, _, _ = classifier.hyperparameter_tuning(model, param_grid, self.X, self.y, fullGridSearch=False)
+        classifier.partition(self.X, self.y)
+        best_model, _, _ = classifier.hyperparameter_tuning(model, param_grid, fullGridSearch=False)
         self.model = best_model
+        self.model.fit(classifier.X_train, classifier.y_train)
+        _, test_score = classifier.evaluate(self.model, classifier.X_val, classifier.y_val)
+        preds = self.model.predict(classifier.X)
 
+        self.assertEqual(len(self.X), len(preds)), "Incorrect Num Predictions!"
+        self.assertTrue(test_score > 0.5, f"Score is less than chance: {test_score}")
 
+    def test_smote(self):
+        # test default model
+        classifier = TC.ReachClassifier(model=LogisticRegression())
+        self.model = classifier.model
+        classifier.partition(self.X, self.y)
+        self.model.fit(classifier.X, classifier.y)
+        _, base_test_score = classifier.evaluate(self.model, classifier.X_val, classifier.y_val)
+        classifier.adjust_class_imbalance()
+        self.model.fit(classifier.X_train, classifier.y_train)
+        _, post_test_score = classifier.evaluate(self.model, classifier.X_val, classifier.y_val)
+
+        self.assertTrue(post_test_score > 0.5, f"Score is less than chance: {post_test_score}")

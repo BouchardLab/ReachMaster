@@ -49,8 +49,10 @@ class ReachClassifier:
         self.set_model(model)
         self.X = None
         self.y = None
-        self.X_test = None
-        self.y_test = None
+        self.X_train = None
+        self.y_train = None
+        self.X_val = None
+        self.y_val = None
 
     def set_model(self, data):
         self.model = make_pipeline(preprocessing.StandardScaler(), data)
@@ -61,26 +63,80 @@ class ReachClassifier:
     def set_y(self, data):
         self.y = data
 
-    def set_X_test(self, data):
-        self.X_test = data
+    def set_X_train(self, data):
+        self.X_train = data
 
-    def set_y_test(self, data):
-        self.y_test = data
+    def set_y_train(self, data):
+        self.y_train = data
+
+    def set_X_val(self, data):
+        self.X_val = data
+
+    def set_y_val(self, data):
+        self.y_val = data
 
     def fit(self, X, y):
+        """
+        Fits model to data.
+        Args:
+            X: features
+            y: labels
+
+        Returns: None
+
+        """
         self.model.fit(X, y)
 
     def predict(self, X):
+        """
+        Returns trained model predictions.
+        Args:
+            X: features
+            y: labels
+
+        Returns: preds
+
+        """
         return self.model.predict(X)
 
-    def partition(self, X, y):
+    def partition(self, X, y, update=True):
+        """
+        Partitions data.
+        Args:
+            X: features
+            y: labels
+            update (bool): True to updated obj attributes
+
+        Returns: X_train, X_val, y_train, y_val
+
+        """
         # partition into validation set
-        X_train, X_val, y_train, y_val = train_test_split(train_features, train_labels, test_size=0.2)
+        X_train, X_val, y_train, y_val = train_test_split(X, y, test_size=0.2)
+        # update obj
+        if update:
+            self.set_X(X)
+            self.set_y(y)
+            self.set_X_train(X_train)
+            self.set_X_val(X_val)
+            self.set_y_train(y_train)
+            self.set_y_val(y_val)
+        return X_train, X_val, y_train, y_val
+
 
     @staticmethod
     def evaluate(model, X, y):
+        """
+        Performs 5-fold cross-validation and returns accuracy.
+        Args:
+            model: sklearn model
+            X: features
+            y: labels
+
+        Returns: avg_train_accuracy, avg_test_accuracy
+
+        """
         print("Cross validation:")
-        cv_results = cross_validate(model, X, y, cv=5, return_train_score=True)  # todo make cv=5
+        cv_results = cross_validate(model, X, y, cv=5, return_train_score=True)
         train_results = cv_results['train_score']
         test_results = cv_results['test_score']
         avg_train_accuracy = sum(train_results) / len(train_results)
@@ -91,21 +147,25 @@ class ReachClassifier:
 
         return avg_train_accuracy, avg_test_accuracy
 
-    def adjust_class_imbalance(self):  # todo
-        # adjust for class imbalance
-        #   oversamples the minority class by synthetically generating additional samples
-        sm = SMOTE(random_state=42)
-        X_train_res, y_train_res = sm.fit_resample(X_train_paritioned, y_train_paritioned)
+    def adjust_class_imbalance(self):
+        """
+        Adjusts for class imbalance
+            oversamples the minority class by synthetically generating additional samples
+        Returns: None
 
-    def hyperparameter_tuning(self, model, param_grid, train_features, train_labels,
-                              fullGridSearch=False):
+        """
+        oversampler = SMOTE(random_state=42, k_neighbors=2)
+        X_train_res, y_train_res = oversampler.fit_resample(self.X_train, self.y_train)
+        # update obj
+        self.set_X_train(X_train_res)
+        self.set_y_train(y_train_res)
+
+    def hyperparameter_tuning(self, model, param_grid, fullGridSearch=False):
         """
         Performs hyperparameter tuning and returns best trained model.
         Args:
-            model:
-            param_grid:
-            train_features:
-            train_labels:
+            model: sklearn
+            param_grid: grid of models and hyperparameters
             fullGridSearch: True to run exhaustive param search, False runs RandomizedSearchCV
 
         Returns:
@@ -115,7 +175,10 @@ class ReachClassifier:
 
         Reference: https://towardsdatascience.com/hyperparameter-tuning-the-random-forest-in-python-using-scikit-learn-28d2aa77dd74
         """
-
+        assert(self.X_train is not None), "Must set data!"
+        assert(self.y_train is not None), "Must set data!"
+        assert(self.X_val is not None), "Must set data!"
+        assert(self.y_val is not None), "Must set data!"
 
         # Use the random grid to search for best hyperparameters
         if fullGridSearch:
@@ -130,15 +193,15 @@ class ReachClassifier:
                                              random_state=42, verbose=2, n_jobs=-1)
 
         # Fit the random search model
-        grid_search.fit(X_train, y_train)
+        grid_search.fit(self.X_train, self.y_train)
 
         base_model = RandomForestClassifier()
-        base_model.fit(X_train, y_train)
-        base_train_accuracy, base_test_accuracy = ReachClassifier.evaluate(base_model, X_val, y_val)
+        base_model.fit(self.X_train, self.y_train)
+        base_train_accuracy, base_test_accuracy = ReachClassifier.evaluate(base_model, self.X_val, self.y_val)
 
         best_grid = grid_search
         best_model = grid_search.best_estimator_
-        best_train_accuracy, best_test_accuracy = ReachClassifier.evaluate(best_model, X_val, y_val)
+        best_train_accuracy, best_test_accuracy = ReachClassifier.evaluate(best_model, self.X_val, self.y_val)
 
         print('Improvement % of', (100 * (best_test_accuracy - base_test_accuracy) / base_test_accuracy))
 
@@ -147,6 +210,18 @@ class ReachClassifier:
 
         return best_model, best_grid.best_params_, best_test_accuracy
 
+    @staticmethod
+    def mean_df(df):
+        """
+        Maps np.mean to all cells in df. For generating features.
+        Args:
+            df: (df)
+
+        Returns: df with mean of each cell as its values
+
+        """
+        mean_df = df.applymap(np.mean)
+        return mean_df
 
 class ClassificationHierarchy:
     random.seed(246810)
