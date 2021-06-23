@@ -26,6 +26,8 @@ from sklearn.model_selection import cross_val_score, RandomizedSearchCV, train_t
 from sklearn.pipeline import make_pipeline, Pipeline
 from sklearn import preprocessing
 from sklearn.metrics import accuracy_score
+from sklearn.feature_selection import SelectKBest  # feature selection
+from sklearn.feature_selection import f_classif
 
 # set global random seed for reproducibility #
 random.seed(246810)
@@ -53,6 +55,7 @@ class ReachClassifier:
         self.y_train = None
         self.X_val = None
         self.y_val = None
+        self.fs = None
 
     def set_model(self, data):
         self.model = make_pipeline(preprocessing.StandardScaler(), data)
@@ -74,6 +77,9 @@ class ReachClassifier:
 
     def set_y_val(self, data):
         self.y_val = data
+
+    def set_fs(self, data):
+        self.fs = data
 
     def fit(self, X, y):
         """
@@ -122,7 +128,6 @@ class ReachClassifier:
             self.set_y_val(y_val)
         return X_train, X_val, y_train, y_val
 
-
     @staticmethod
     def evaluate(model, X, y):
         """
@@ -154,6 +159,8 @@ class ReachClassifier:
         Returns: None
 
         """
+        assert (self.X_train is not None), "Must set data!"
+        assert (self.y_train is not None), "Must set data!"
         oversampler = SMOTE(random_state=42, k_neighbors=2)
         X_train_res, y_train_res = oversampler.fit_resample(self.X_train, self.y_train)
         # update obj
@@ -175,10 +182,10 @@ class ReachClassifier:
 
         Reference: https://towardsdatascience.com/hyperparameter-tuning-the-random-forest-in-python-using-scikit-learn-28d2aa77dd74
         """
-        assert(self.X_train is not None), "Must set data!"
-        assert(self.y_train is not None), "Must set data!"
-        assert(self.X_val is not None), "Must set data!"
-        assert(self.y_val is not None), "Must set data!"
+        assert (self.X_train is not None), "Must set data!"
+        assert (self.y_train is not None), "Must set data!"
+        assert (self.X_val is not None), "Must set data!"
+        assert (self.y_val is not None), "Must set data!"
 
         # Use the random grid to search for best hyperparameters
         if fullGridSearch:
@@ -222,6 +229,40 @@ class ReachClassifier:
         """
         mean_df = df.applymap(np.mean)
         return mean_df
+
+    def do_feature_selection(self, k=5):
+        """
+        Defines the feature selection and applies the feature selection procedure to the dataset.
+        Fit to data, then transform it.
+        Args:
+            k: top number of features to select
+
+        Returns: (array shape trials x k features) subset of the selected input features and feature estimator
+
+        references: https://machinelearningmastery.com/feature-selection-with-numerical-input-data/
+
+        """
+        assert (k >= 2, "Number of features must be >= 2!")
+        assert (self.X_train is not None), "Must set data!"
+        assert (self.y_train is not None), "Must set data!"
+        assert (self.X_val is not None), "Must set data!"
+
+        # configure to select a subset of features
+        fs = SelectKBest(score_func=f_classif, k=k)
+        # learn relationship from training data
+        fs.fit(self.X_train, self.y_train)
+        # transform train input data
+        X_train_fs = fs.transform(self.X_train)
+        # transform test input data
+        X_val_fs = fs.transform(self.X_val)
+
+        # update obj
+        self.set_X_train(X_train_fs)
+        self.set_X_val(X_val_fs)
+        self.set_fs(fs)
+        return X_train_fs, X_val_fs, fs
+
+
 
 class ClassificationHierarchy:
     random.seed(246810)
@@ -652,7 +693,7 @@ def main_run_all():
     preprocessor = Preprocessor()
     exp_data = preprocessor.load_data('experimental_data.pickle')
     tkdf_16 = preprocessor.load_data('tkdf16_f.pkl')
-    #tkdf_15 = preprocessor.load_data('tkdf15_f.pkl')  # todo excludes rm15 due to loading
+    # tkdf_15 = preprocessor.load_data('tkdf15_f.pkl')  # todo excludes rm15 due to loading
     tkdf_14 = preprocessor.load_data('3D_positions_RM14_f.pkl')
 
     # GET and SAVE BLOCKS
@@ -667,9 +708,9 @@ def main_run_all():
                                       save_as=f'{folder_name}/exp_rm16_9_20_s3.pkl'),
         preprocessor.get_single_block(exp_data, '0190919', 'S3', 'RM16', format='exp',
                                       save_as=f'{folder_name}/exp_rm16_9_19_s3.pkl'),
-       # preprocessor.get_single_block(exp_data, '0190925', 'S3', 'RM15', format='exp',
-       #                              save_as=f'{folder_name}/exp_rm15_9_25_s3.pkl'),
-        #preprocessor.get_single_block(exp_data, '0190917', 'S4', 'RM15', format='exp',
+        # preprocessor.get_single_block(exp_data, '0190925', 'S3', 'RM15', format='exp',
+        #                              save_as=f'{folder_name}/exp_rm15_9_25_s3.pkl'),
+        # preprocessor.get_single_block(exp_data, '0190917', 'S4', 'RM15', format='exp',
         #                              save_as=f'{folder_name}/exp_rm15_9_17_s4.pkl'),
         preprocessor.get_single_block(exp_data, '0190920', 'S1', 'RM14', format='exp',
                                       save_as=f'{folder_name}/exp_rm14_9_20_s1.pkl'),
@@ -688,9 +729,9 @@ def main_run_all():
                                       save_as=f'{folder_name}/kin_rm16_9_20_s3.pkl'),
         preprocessor.get_single_block(tkdf_16, '0190919', 'S3', '09192019', format='kin',
                                       save_as=f'{folder_name}/kin_rm16_9_19_s3.pkl'),
-        #preprocessor.get_single_block(tkdf_15, '0190925', 'S3', '09252019', format='kin',
+        # preprocessor.get_single_block(tkdf_15, '0190925', 'S3', '09252019', format='kin',
         #                              save_as=f'{folder_name}/kin_rm15_9_25_s3.pkl'),
-        #preprocessor.get_single_block(tkdf_15, '0190917', 'S4', '09172019', format='kin',
+        # preprocessor.get_single_block(tkdf_15, '0190917', 'S4', '09172019', format='kin',
         #                              save_as=f'{folder_name}/kin_rm15_9_17_s4.pkl'),
         preprocessor.get_single_block(tkdf_14, '0190920', 'S1', '09202019', format='kin',
                                       save_as=f'{folder_name}/kin_rm14_9_20_s1.pkl'),
@@ -729,6 +770,7 @@ def main_run_all():
     Preprocessor.save_data(all_exp_features, f'{folder_name}/exp_feat.pkl', file_type='pkl')
     Preprocessor.save_data(all_label_dfs, f'{folder_name}/label_dfs.pkl', file_type='pkl')
 
+
 def main_run_ML():
     # LOAD DATA
     preprocessor = Preprocessor()
@@ -762,8 +804,8 @@ if __name__ == "__main__":
     # RM16, 9-17, S2
     # RM16, DATE 9-20, S3
     # RM16, 09-19-2019, S3
-        # RM15, 25, S3
-        # RM15, 17, S4
+    # RM15, 25, S3
+    # RM15, 17, S4
     # 2019-09-20-S1-RM14_cam2
     # 2019-09-18-S2-RM14-cam2
     labels = [CU.rm16_9_17_s1_label,
@@ -772,8 +814,8 @@ if __name__ == "__main__":
               CU.rm16_9_20_s3_label,
               CU.rm16_9_19_s3_label,
 
-             # CU.rm15_9_25_s3_label,
-             # CU.rm15_9_17_s4_label,
+              # CU.rm15_9_25_s3_label,
+              # CU.rm15_9_17_s4_label,
 
               CU.rm14_9_20_s1_label,
               CU.rm14_9_18_s2_label

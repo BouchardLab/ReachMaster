@@ -114,9 +114,9 @@ class TestPreprocessing(TestCase):
 
     def test_save_all_labeled_blocks(self):
         # choose which rats to save
-        save_16 = True
+        save_16 = False
         save_15 = True  # todo errors
-        save_14 = True
+        save_14 = False
 
         if save_16:
             # RM16_9_17_s1
@@ -356,3 +356,15 @@ class TestClassificationWorkflow(TestCase):
         _, post_test_score = classifier.evaluate(self.model, classifier.X_val, classifier.y_val)
 
         self.assertTrue(post_test_score > 0.5, f"Score is less than chance: {post_test_score}")
+
+    def test_feature_selection(self):
+        # test default model
+        classifier = TC.ReachClassifier(model=LogisticRegression())
+        X_train, X_val, y_train, y_val = classifier.partition(self.X, self.y)
+        k = 3
+        X_selected, X_val_selected, fs = classifier.do_feature_selection(k=k)
+
+        self.assertTrue(X_selected.shape[1] == k, "Incorrect number of features!")
+        self.assertTrue(X_train.shape[0] == y_train.shape[0], "Incorrect Number of Trials!")
+
+
