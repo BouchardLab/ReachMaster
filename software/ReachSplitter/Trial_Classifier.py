@@ -11,6 +11,8 @@
 """
 import argparse
 import os
+import matplotlib.pyplot as plt
+import seaborn as sns
 import sklearn
 from scipy import ndimage
 import Classification_Utils as CU
@@ -20,6 +22,7 @@ import h5py
 import random
 import joblib  # for saving sklearn models
 from imblearn.over_sampling import SMOTE  # for adjusting class imbalances
+from imblearn.over_sampling import RandomOverSampler
 # classification
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import cross_val_score, RandomizedSearchCV, train_test_split, GridSearchCV, cross_validate
@@ -28,6 +31,7 @@ from sklearn import preprocessing
 from sklearn.metrics import accuracy_score
 from sklearn.feature_selection import SelectKBest  # feature selection
 from sklearn.feature_selection import f_classif
+from sklearn.preprocessing import StandardScaler
 
 # set global random seed for reproducibility #
 random.seed(246810)
@@ -47,8 +51,7 @@ class ReachClassifier:
     np.random.seed(246810)
 
     def __init__(self, model=None):
-        self.model = None
-        self.set_model(model)
+        self.model = model
         self.X = None
         self.y = None
         self.X_train = None
@@ -58,7 +61,7 @@ class ReachClassifier:
         self.fs = None
 
     def set_model(self, data):
-        self.model = make_pipeline(preprocessing.StandardScaler(), data)
+        self.model = data  #make_pipeline(preprocessing.StandardScaler(), data)
 
     def set_X(self, data):
         self.X = data
@@ -152,20 +155,17 @@ class ReachClassifier:
 
         return avg_train_accuracy, avg_test_accuracy
 
-    def adjust_class_imbalance(self):
+    @staticmethod
+    def adjust_class_imbalance(X, y):
         """
         Adjusts for class imbalance
-            oversamples the minority class by synthetically generating additional samples
-        Returns: None
+            Object to over-sample the minority class(es) by picking samples at random with replacement
+        Returns: new samples
 
         """
-        assert (self.X_train is not None), "Must set data!"
-        assert (self.y_train is not None), "Must set data!"
-        oversampler = SMOTE(random_state=42, k_neighbors=2)
-        X_train_res, y_train_res = oversampler.fit_resample(self.X_train, self.y_train)
-        # update obj
-        self.set_X_train(X_train_res)
-        self.set_y_train(y_train_res)
+        oversampler = RandomOverSampler(random_state=42)
+        X_res, y_res = oversampler.fit_resample(X, y)
+        return X_res, y_res
 
     def hyperparameter_tuning(self, model, param_grid, fullGridSearch=False):
         """
@@ -230,7 +230,8 @@ class ReachClassifier:
         mean_df = df.applymap(np.mean)
         return mean_df
 
-    def do_feature_selection(self, k=5):
+    @staticmethod
+    def do_feature_selection(X, y, k):
         """
         Defines the feature selection and applies the feature selection procedure to the dataset.
         Fit to data, then transform it.
@@ -242,26 +243,69 @@ class ReachClassifier:
         references: https://machinelearningmastery.com/feature-selection-with-numerical-input-data/
 
         """
-        assert (k >= 2, "Number of features must be >= 2!")
-        assert (self.X_train is not None), "Must set data!"
-        assert (self.y_train is not None), "Must set data!"
-        assert (self.X_val is not None), "Must set data!"
-
         # configure to select a subset of features
         fs = SelectKBest(score_func=f_classif, k=k)
         # learn relationship from training data
-        fs.fit(self.X_train, self.y_train)
+        fs.fit(X, y)
         # transform train input data
-        X_train_fs = fs.transform(self.X_train)
-        # transform test input data
-        X_val_fs = fs.transform(self.X_val)
+        X_fs = fs.transform(X)
 
-        # update obj
-        self.set_X_train(X_train_fs)
-        self.set_X_val(X_val_fs)
-        self.set_fs(fs)
-        return X_train_fs, X_val_fs, fs
+        return X_fs, fs
 
+    @staticmethod
+    def plot_features(fs):
+        """
+        Plots and saves feature importances.
+        Returns: None
+
+        """
+        for i in range(len(fs.scores_)):
+            print('Feature %d: %f' % (i, fs.scores_[i]))
+        # plot the scores
+        plt.bar([i for i in range(len(fs.scores_))], fs.scores_)
+        plt.title("Input Features vs. Feature Importance")
+        plt.ylabel("Mutual Information Feature Importance")
+        plt.xlabel("Input Features")
+        plt.savefig(f'{folder_name}/feat_importance.png')
+
+    def train_and_validate(self, X, y, param_grid, k=5):
+        """
+        Trains and Validates.
+        Args:
+            X: features
+            y: labels
+            param_grid: model and hyperparameters to search over
+            k: number of features to select
+
+        Returns: trained model, train model's CV score
+
+        """
+        # adjust class imbalance
+        X_res, y_res = ReachClassifier.adjust_class_imbalance(X, y)
+        # partition
+        X_train, X_val, y_train, y_val = self.partition(X_res, y_res)
+        # feat selection
+        X_train_selected, fs = ReachClassifier.do_feature_selection(X_train, y_train, k)
+        X_val_selected, fs = ReachClassifier.do_feature_selection(X_val, y_val, k)
+        self.set_X_train(X_train_selected)
+        self.set_X_val(X_val_selected)
+        # hyperparameter and model tuning
+        base_model = Pipeline(steps=[('standardscaler', StandardScaler()),
+                                     ('classifier', RandomForestClassifier())])
+        best_model, best_params_, best_test_accuracy = self.hyperparameter_tuning(base_model, param_grid, fullGridSearch=False)
+
+        # validate
+        best_model.fit(X_train_selected, y_train)
+        _, val_score = ReachClassifier.evaluate(best_model, X_val_selected, y_val)
+
+        # fit on all training data
+        X_selected, fs = ReachClassifier.do_feature_selection(X_res, y_res, k)
+        best_model.fit(X_selected, y_res)
+
+        # print("MODEL SCORE", best_model.score(X_val_selected, y_val))
+        print("BEST MODEL", best_model)
+        print("CV SCORE", val_score)
+        return best_model, val_score
 
 
 class ClassificationHierarchy:
@@ -759,7 +803,7 @@ def main_run_all():
 
     # concat
     all_kin_features = Preprocessor.concat(kin_dfs[:(len(kin_dfs) - 2)],
-                                           row=True)  # todo exclude rm14 due to shape mismatch
+                                           row=True)  # todo exclude rm14 due to shape mismatch, or concat col wise
     all_exp_features = Preprocessor.concat(exp_dfs[:(len(kin_dfs) - 2)],
                                            row=True)  # todo exclude rm14 due to shape mismatch
     all_label_dfs = Preprocessor.concat(label_dfs[:(len(kin_dfs) - 2)],
@@ -778,12 +822,9 @@ def main_run_ML():
     all_exp_features = preprocessor.load_data(f'{folder_name}/exp_feat.pkl')
     all_label_dfs = preprocessor.load_data(f'{folder_name}/label_dfs.pkl')
 
-    X = all_kin_features[all_kin_features.columns[1:4]].values
-    y = all_label_dfs['Num Reaches'].values
-    model = ReachClassifier(model=RandomForestClassifier(max_features=0.25))  # prevents feat error
-    model.fit(X, y)
-    assert (len(model.predict(X)) != 0)
-    print("DONE temp")
+    # take mean of exp features
+    all_exp_features = ReachClassifier.mean_df(all_exp_features)
+
 
 
 if __name__ == "__main__":

@@ -9,7 +9,6 @@ Edited 6/4/2021 """
 from unittest import TestCase
 
 import sklearn
-from sklearn.ensemble import RandomForestClassifier
 import Classification_Utils as CU
 import Trial_Classifier as TC
 import pandas as pd
@@ -18,14 +17,14 @@ import os
 import joblib  # for saving sklearn models
 from imblearn.over_sampling import SMOTE  # for adjusting class imbalances
 # classification
-from sklearn.ensemble import RandomForestClassifier
+from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier
 from sklearn.model_selection import cross_val_score, RandomizedSearchCV, train_test_split, GridSearchCV, cross_validate
 from sklearn.pipeline import make_pipeline, Pipeline
 from sklearn import preprocessing
 from sklearn.metrics import accuracy_score
 from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import accuracy_score
-from sklearn.linear_model import LogisticRegression
+from sklearn.linear_model import LogisticRegression, RidgeClassifier
 
 current_directory = os.getcwd()
 
@@ -276,6 +275,9 @@ class TestPreprocessingBlock(TestCase):
 class TestClassificationWorkflow(TestCase):
     """ Test Overview
         - test basic model
+        - test hyperparameter tuning
+        - test smote class imbalance
+        - test feature selection, plot feature selection
     """
 
     # class variables
@@ -295,12 +297,31 @@ class TestClassificationWorkflow(TestCase):
         all_exp_features = self.preprocessor.load_data(f'{TC.folder_name}/exp_feat.pkl')
         all_exp_features = TC.ReachClassifier().mean_df(all_exp_features)
         all_label_dfs = self.preprocessor.load_data(f'{TC.folder_name}/label_dfs.pkl')
-        self.X = all_exp_features[all_exp_features.columns[0:4]]
+        self.X = all_exp_features
         self.y = all_label_dfs['Which Hand'].values
         self.assertEqual(len(self.X), len(self.y))
 
-        #
-        self.model = None
+        # Create param grid.
+        # todo expand
+        self.param_grid = [
+            {'classifier': [LogisticRegression()],
+             'classifier__penalty': ['l2'],
+             'classifier__C': [100, 80, 60, 40, 20, 15, 10, 8, 6, 4, 2, 1.0, 0.5, 0.1, 0.01],
+             'classifier__solver': ['newton-cg', 'lbfgs', 'liblinear']},
+            {'classifier': [RandomForestClassifier()],
+             'classifier__bootstrap': [True, False],
+             'classifier__max_depth': [10, 20, 30, 40, 50, 60, 70, 80, 90, 100, None],
+             'classifier__max_features': ['auto', 'sqrt'],
+             'classifier__min_samples_leaf': [1, 2, 4],
+             'classifier__min_samples_split': [2, 5, 10],
+             'classifier__n_estimators': [200, 400, 600, 800, 1000, 1200, 1400, 1600, 1800, 2000]},
+            {'classifier': [sklearn.svm.SVC()],
+             'classifier__C': [50, 40, 30, 20, 10, 8, 6, 4, 2, 1.0, 0.5, 0.1, 0.01],
+             'classifier__kernel': ['poly', 'rbf', 'sigmoid'],
+             'classifier__gamma': ['scale']},
+            {'classifier': [RidgeClassifier()],
+             'classifier__alpha': [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]}
+        ]
 
     def test_basic_make_preds(self):
         # test default model
@@ -316,26 +337,8 @@ class TestClassificationWorkflow(TestCase):
         model = Pipeline(steps=[('standardscaler', StandardScaler()),
                                 ('classifier', RandomForestClassifier())])
 
-        # Create param grid.
-        # todo expand
-        param_grid = [
-            {'classifier': [LogisticRegression()],
-             'classifier__penalty': ['l1', 'l2'],
-             'classifier__C': np.logspace(-4, 4, 20),
-             'classifier__solver': ['liblinear']},
-            {'classifier': [RandomForestClassifier()],
-             'classifier__bootstrap': [True, False],
-             'classifier__max_depth': [10, 20, 30, 40, 50, 60, 70, 80, 90, 100, None],
-             'classifier__max_features': ['auto', 'sqrt'],
-             'classifier__min_samples_leaf': [1, 2, 4],
-             'classifier__min_samples_split': [2, 5, 10],
-             'classifier__n_estimators': [200, 400, 600, 800, 1000, 1200, 1400, 1600, 1800, 2000]},
-            {'classifier': [sklearn.svm.SVC()],
-             'classifier__C': list(range(1, 10, 1))}
-        ]
-
         classifier.partition(self.X, self.y)
-        best_model, _, _ = classifier.hyperparameter_tuning(model, param_grid, fullGridSearch=False)
+        best_model, _, _ = classifier.hyperparameter_tuning(model, self.param_grid, fullGridSearch=False)
         self.model = best_model
         self.model.fit(classifier.X_train, classifier.y_train)
         _, test_score = classifier.evaluate(self.model, classifier.X_val, classifier.y_val)
@@ -345,26 +348,40 @@ class TestClassificationWorkflow(TestCase):
         self.assertTrue(test_score > 0.5, f"Score is less than chance: {test_score}")
 
     def test_smote(self):
-        # test default model
+        # test class imbalancing
         classifier = TC.ReachClassifier(model=LogisticRegression())
         self.model = classifier.model
-        classifier.partition(self.X, self.y)
-        self.model.fit(classifier.X, classifier.y)
-        _, base_test_score = classifier.evaluate(self.model, classifier.X_val, classifier.y_val)
-        classifier.adjust_class_imbalance()
+        X_res, y_res = classifier.adjust_class_imbalance(self.X, self.y)
+        X_train, X_val, y_train, y_val = classifier.partition(X_res, y_res)
         self.model.fit(classifier.X_train, classifier.y_train)
         _, post_test_score = classifier.evaluate(self.model, classifier.X_val, classifier.y_val)
 
         self.assertTrue(post_test_score > 0.5, f"Score is less than chance: {post_test_score}")
+        self.assertTrue(X_res.shape == classifier.X.shape, "Incorrect shape!")
 
     def test_feature_selection(self):
-        # test default model
         classifier = TC.ReachClassifier(model=LogisticRegression())
         X_train, X_val, y_train, y_val = classifier.partition(self.X, self.y)
         k = 3
-        X_selected, X_val_selected, fs = classifier.do_feature_selection(k=k)
+        X_train_selected, fs = classifier.do_feature_selection(X_train, y_train, k=k)
+        X_val_selected, fs = classifier.do_feature_selection(X_val, y_val, k=k)
+        # classify
+        model = LogisticRegression(solver='liblinear')
+        model.fit(X_train_selected, y_train)
+        # evaluate the model
+        yhat = model.predict(X_val_selected)
+        # evaluate predictions
+        accuracy = accuracy_score(y_val, yhat)
+        # print(accuracy)
 
-        self.assertTrue(X_selected.shape[1] == k, "Incorrect number of features!")
+        # test plotting
+        classifier.plot_features(fs)
+
+        self.assertTrue(X_train_selected.shape[1] == k, "Incorrect number of features!")
         self.assertTrue(X_train.shape[0] == y_train.shape[0], "Incorrect Number of Trials!")
 
-
+    def test_classify(self):
+        # test train and validate
+        classifier = TC.ReachClassifier()
+        best_model, val_score = classifier.train_and_validate(self.X, self.y, self.param_grid, k=5)
+        self.assertTrue(val_score >= 0.60, f"{val_score}")
