@@ -25,9 +25,9 @@ from imblearn.over_sampling import SMOTE  # for adjusting class imbalances
 from imblearn.over_sampling import RandomOverSampler
 # classification
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.model_selection import  RandomizedSearchCV, train_test_split, GridSearchCV, cross_validate
+from sklearn.model_selection import RandomizedSearchCV, train_test_split, GridSearchCV, cross_validate
 from sklearn.pipeline import make_pipeline, Pipeline
-#from imblearn.pipeline import Pipeline as imblearnPipeline
+# from imblearn.pipeline import Pipeline as imblearnPipeline
 from sklearn.feature_selection import SelectKBest  # feature selection
 from sklearn.feature_selection import f_classif
 from sklearn.preprocessing import StandardScaler
@@ -157,9 +157,9 @@ class ReachClassifier:
         References: https://machinelearningmastery.com/smote-oversampling-for-imbalanced-classification/
         """
         oversampler = RandomOverSampler(random_state=42)
-        #under = RandomUnderSampler(random_state=42)
-        #steps = [('o', oversampler), ('u', under)]
-        #pipeline = imblearnPipeline(steps=steps)
+        # under = RandomUnderSampler(random_state=42)
+        # steps = [('o', oversampler), ('u', under)]
+        # pipeline = imblearnPipeline(steps=steps)
         X_res, y_res = oversampler.fit_resample(X, y)
         return X_res, y_res
 
@@ -333,7 +333,7 @@ class ClassificationHierarchy:
         Returns: split X, y data
 
         """
-        row_mask = list(map(bool,  preds))  # True for 1, False otherwise
+        row_mask = list(map(bool, preds))  # True for 1, False otherwise
         negate_row_mask = ~np.array(row_mask)  # True for 0, False otherwise
 
         if onesGoLeft:
@@ -363,8 +363,8 @@ class ClassificationHierarchy:
 
         """
         # load models
-        #model_0, model_1, model_2 = None, None, None
-        #if models:
+        # model_0, model_1, model_2 = None, None, None
+        # if models:
         #    model_0 = joblib.load(models[0])
         #    model_1 = joblib.load(models[1])
         #    model_2 = joblib.load(models[2])
@@ -374,32 +374,32 @@ class ClassificationHierarchy:
         y_0 = y['Trial Type'].values
         y_0 = CU.onehot_nulls(y_0)
         model_0, val_score_0 = self.fit(classifier, X, y_0, param_grid, save_models,
-                                                      f'{folder_name}/TrialTypeModel')
+                                        f'{folder_name}/TrialTypeModel')
 
         # SPLIT
-        #X_null, y_null, X_NotNull, y_NotNull = self.split(preds_0, X, y, onesGoLeft=True)  # 1 if null, 0 if real trial
+        # X_null, y_null, X_NotNull, y_NotNull = self.split(preds_0, X, y, onesGoLeft=True)  # 1 if null, 0 if real trial
 
         # NUM REACHES
         y_1 = y['Num Reaches'].values
         y_1 = CU.onehot_num_reaches(y_1)  # 0 if <1, 1 if > 1 reaches
         classifier = ReachClassifier()
         model_1, val_score_1 = self.fit(classifier, X, y_1, param_grid, save_models,
-                                                      f'{folder_name}/NumReachesModel')
+                                        f'{folder_name}/NumReachesModel')
 
         # SPLIT
-        #X_greater, y_greater, X_less, y_less = self.split(preds_1, X_NotNull, y_NotNull, onesGoLeft=True)  # 0 if <1, 1 if > 1 reaches
+        # X_greater, y_greater, X_less, y_less = self.split(preds_1, X_NotNull, y_NotNull, onesGoLeft=True)  # 0 if <1, 1 if > 1 reaches
 
         # WHICH HAND
         classifier = ReachClassifier()
         y_2 = y['Which Hand'].values
         y_2 = CU.hand_type_onehot(y_2)
         model_2, val_score_2 = self.fit(classifier, X, y_2, param_grid, save_models,
-                                                      f'{folder_name}/WhichHandModel')
+                                        f'{folder_name}/WhichHandModel')
 
         return [val_score_0, val_score_1, val_score_2]
 
         # SPLIT
-        #X_bi, y_bi, X_rl, y_rl = self.split(preds_2, X_less, y_less, onesGoLeft=True)  # classify 0 as r/l, 1 or non r/l
+        # X_bi, y_bi, X_rl, y_rl = self.split(preds_2, X_less, y_less, onesGoLeft=True)  # classify 0 as r/l, 1 or non r/l
 
     def fit(self, classifier, X, y, param_grid, save, filename):
         """
@@ -420,10 +420,10 @@ class ClassificationHierarchy:
         # adjust class imbalance, feature selection
         X_selected, y_res, fs = classifier.pre_classify(X, y)
         # train and validate
-        assert(y is not None)
-        best_model, val_score = classifier.train_and_validate(X_selected, y_res, param_grid, save=save, filename=filename)
+        assert (y is not None)
+        best_model, val_score = classifier.train_and_validate(X_selected, y_res, param_grid, save=save,
+                                                              filename=filename)
         return best_model, val_score
-
 
     def trace_datapoint(self, X, arr=[]):
         """ Q3.2
@@ -831,7 +831,7 @@ def main_run_all():
     exp_data = preprocessor.load_data('experimental_data.pickle')
     tkdf_16 = preprocessor.load_data('tkdf16_f.pkl')
     # tkdf_15 = preprocessor.load_data('tkdf15_f.pkl')  # todo excludes rm15 due to loading
-    #tkdf_14 = preprocessor.load_data('3D_positions_RM14_f.pkl')
+    # tkdf_14 = preprocessor.load_data('3D_positions_RM14_f.pkl')
 
     # GET and SAVE BLOCKS
     exp_lst = [
@@ -849,9 +849,9 @@ def main_run_all():
         #                              save_as=f'{folder_name}/exp_rm15_9_25_s3.pkl'),
         # preprocessor.get_single_block(exp_data, '0190917', 'S4', 'RM15', format='exp',
         #                              save_as=f'{folder_name}/exp_rm15_9_17_s4.pkl'),
-        #preprocessor.get_single_block(exp_data, '0190920', 'S1', 'RM14', format='exp',
+        # preprocessor.get_single_block(exp_data, '0190920', 'S1', 'RM14', format='exp',
         #                              save_as=f'{folder_name}/exp_rm14_9_20_s1.pkl'),
-        #preprocessor.get_single_block(exp_data, '0190918', 'S2', 'RM14', format='exp',
+        # preprocessor.get_single_block(exp_data, '0190918', 'S2', 'RM14', format='exp',
         #                              save_as=f'{folder_name}/exp_rm14_9_18_s2.pkl')
     ]
 
@@ -870,9 +870,9 @@ def main_run_all():
         #                              save_as=f'{folder_name}/kin_rm15_9_25_s3.pkl'),
         # preprocessor.get_single_block(tkdf_15, '0190917', 'S4', '09172019', format='kin',
         #                              save_as=f'{folder_name}/kin_rm15_9_17_s4.pkl'),
-        #preprocessor.get_single_block(tkdf_14, '0190920', 'S1', '09202019', format='kin',
+        # preprocessor.get_single_block(tkdf_14, '0190920', 'S1', '09202019', format='kin',
         #                              save_as=f'{folder_name}/kin_rm14_9_20_s1.pkl'),
-        #preprocessor.get_single_block(tkdf_14, '0190918', 'S2', '09182019', format='kin',
+        # preprocessor.get_single_block(tkdf_14, '0190918', 'S2', '09182019', format='kin',
         #                              save_as=f'{folder_name}/kin_rm14_9_18_s2.pkl')
     ]
 
@@ -903,7 +903,7 @@ def main_run_all():
                                         row=True)  # todo exclude rm14 due to shape mismatch
 
     # save ML dfs
-    Preprocessor.save_data(all_kin_features, f'{folder_name}/kin_feat.csv', file_type='csv')
+    Preprocessor.save_data(all_kin_features, f'{folder_name}/kin_feat.pkl', file_type='pkl')
     Preprocessor.save_data(all_exp_features, f'{folder_name}/exp_feat.pkl', file_type='pkl')
     Preprocessor.save_data(all_label_dfs, f'{folder_name}/label_dfs.pkl', file_type='pkl')
 
@@ -911,7 +911,7 @@ def main_run_all():
 def main_run_ML():
     # LOAD DATA
     preprocessor = Preprocessor()
-    all_kin_features = preprocessor.load_data(f'{folder_name}/kin_feat.csv', file_type='csv')
+    all_kin_features = preprocessor.load_data(f'{folder_name}/kin_feat.pkl', file_type='pkl')
     all_exp_features = preprocessor.load_data(f'{folder_name}/exp_feat.pkl', file_type='pkl')
     y = preprocessor.load_data(f'{folder_name}/label_dfs.pkl', file_type='pkl')
 
@@ -929,6 +929,24 @@ def main_run_ML():
     # TRAIN and SAVE MODELS
     t = ClassificationHierarchy()
     t.run_hierarchy(X, y, param_grid, models=None, save_models=True)
+
+def predict_block(kin_block, exp_block, model):
+    preprocessor = Preprocessor()
+    # kin features
+    #trials = Preprocessor.split_trial(kin_block, exp_block, window_length, pre)
+    #kin_features = Preprocessor.trialize_kin_blocks(trials)
+    #kin_feat_df = Preprocessor.create_kin_feat_df(kin_features)
+
+    # create exp features
+    start_frames = exp_block['r_start'].values[0]
+    exp_features = CU.import_experiment_features(exp_block, start_frames, window_length, pre)
+    exp_feat_df = CU.import_experiment_features_to_df(exp_features)
+
+    # concat
+    #X = Preprocessor.concat([kin_feat_df, exp_feat_df], row=False)
+    X = ReachClassifier.mean_df(exp_feat_df)
+
+    return model.predict(X)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -989,3 +1007,14 @@ if __name__ == "__main__":
         main_run_all()
     elif args.function == 2:
         main_run_ML()
+    elif args.function == 3:
+        # load model
+        model = joblib.load(f'{folder_name}/TrialTypeModel.joblib')
+        # load data
+        preprocessor = Preprocessor()
+        exp_data = preprocessor.load_data('experimental_data.pickle')
+        tkdf_16 = preprocessor.load_data('tkdf16_f.pkl')
+        kin_block = preprocessor.load_data(f'{folder_name}/kin_rm16_9_17_s1.pkl')
+        exp_block = preprocessor.load_data(f'{folder_name}/exp_rm16_9_17_s1.pkl')
+        preds = predict_block(kin_block, exp_block, model)
+        print(preds)
