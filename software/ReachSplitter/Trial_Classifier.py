@@ -12,8 +12,8 @@
 import argparse
 import os
 import matplotlib.pyplot as plt
-import seaborn as sns
 import sklearn
+from imblearn.under_sampling import RandomUnderSampler
 from scipy import ndimage
 import Classification_Utils as CU
 import pandas as pd
@@ -25,13 +25,13 @@ from imblearn.over_sampling import SMOTE  # for adjusting class imbalances
 from imblearn.over_sampling import RandomOverSampler
 # classification
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.model_selection import cross_val_score, RandomizedSearchCV, train_test_split, GridSearchCV, cross_validate
+from sklearn.model_selection import  RandomizedSearchCV, train_test_split, GridSearchCV, cross_validate
 from sklearn.pipeline import make_pipeline, Pipeline
-from sklearn import preprocessing
-from sklearn.metrics import accuracy_score
+#from imblearn.pipeline import Pipeline as imblearnPipeline
 from sklearn.feature_selection import SelectKBest  # feature selection
 from sklearn.feature_selection import f_classif
 from sklearn.preprocessing import StandardScaler
+from sklearn.linear_model import LogisticRegression, RidgeClassifier
 
 # set global random seed for reproducibility #
 random.seed(246810)
@@ -61,7 +61,7 @@ class ReachClassifier:
         self.fs = None
 
     def set_model(self, data):
-        self.model = data  #make_pipeline(preprocessing.StandardScaler(), data)
+        self.model = data
 
     def set_X(self, data):
         self.X = data
@@ -108,27 +108,19 @@ class ReachClassifier:
         """
         return self.model.predict(X)
 
-    def partition(self, X, y, update=True):
+    @staticmethod
+    def partition(X, y):
         """
         Partitions data.
         Args:
             X: features
             y: labels
-            update (bool): True to updated obj attributes
 
         Returns: X_train, X_val, y_train, y_val
 
         """
         # partition into validation set
         X_train, X_val, y_train, y_val = train_test_split(X, y, test_size=0.2)
-        # update obj
-        if update:
-            self.set_X(X)
-            self.set_y(y)
-            self.set_X_train(X_train)
-            self.set_X_val(X_val)
-            self.set_y_train(y_train)
-            self.set_y_val(y_val)
         return X_train, X_val, y_train, y_val
 
     @staticmethod
@@ -158,16 +150,21 @@ class ReachClassifier:
     @staticmethod
     def adjust_class_imbalance(X, y):
         """
-        Adjusts for class imbalance
-            Object to over-sample the minority class(es) by picking samples at random with replacement
+        Adjusts for class imbalance.
+            Object to over-sample the minority class(es) by picking samples at random with replacement.
+            The dataset is transformed, first by oversampling the minority class, then undersampling the majority class.
         Returns: new samples
-
+        References: https://machinelearningmastery.com/smote-oversampling-for-imbalanced-classification/
         """
         oversampler = RandomOverSampler(random_state=42)
+        #under = RandomUnderSampler(random_state=42)
+        #steps = [('o', oversampler), ('u', under)]
+        #pipeline = imblearnPipeline(steps=steps)
         X_res, y_res = oversampler.fit_resample(X, y)
         return X_res, y_res
 
-    def hyperparameter_tuning(self, model, param_grid, fullGridSearch=False):
+    @staticmethod
+    def hyperparameter_tuning(X_train, X_val, y_train, y_val, model, param_grid, fullGridSearch=False):
         """
         Performs hyperparameter tuning and returns best trained model.
         Args:
@@ -182,10 +179,6 @@ class ReachClassifier:
 
         Reference: https://towardsdatascience.com/hyperparameter-tuning-the-random-forest-in-python-using-scikit-learn-28d2aa77dd74
         """
-        assert (self.X_train is not None), "Must set data!"
-        assert (self.y_train is not None), "Must set data!"
-        assert (self.X_val is not None), "Must set data!"
-        assert (self.y_val is not None), "Must set data!"
 
         # Use the random grid to search for best hyperparameters
         if fullGridSearch:
@@ -200,20 +193,17 @@ class ReachClassifier:
                                              random_state=42, verbose=2, n_jobs=-1)
 
         # Fit the random search model
-        grid_search.fit(self.X_train, self.y_train)
+        grid_search.fit(X_train, y_train)
 
         base_model = RandomForestClassifier()
-        base_model.fit(self.X_train, self.y_train)
-        base_train_accuracy, base_test_accuracy = ReachClassifier.evaluate(base_model, self.X_val, self.y_val)
+        base_model.fit(X_train, y_train)
+        base_train_accuracy, base_test_accuracy = ReachClassifier.evaluate(base_model, X_val, y_val)
 
         best_grid = grid_search
         best_model = grid_search.best_estimator_
-        best_train_accuracy, best_test_accuracy = ReachClassifier.evaluate(best_model, self.X_val, self.y_val)
+        best_train_accuracy, best_test_accuracy = ReachClassifier.evaluate(best_model, X_val, y_val)
 
         print('Improvement % of', (100 * (best_test_accuracy - base_test_accuracy) / base_test_accuracy))
-
-        # update object
-        self.set_model(best_model)
 
         return best_model, best_grid.best_params_, best_test_accuracy
 
@@ -248,9 +238,8 @@ class ReachClassifier:
         # learn relationship from training data
         fs.fit(X, y)
         # transform train input data
-        X_fs = fs.transform(X)
-
-        return X_fs, fs
+        X_train_fs = fs.transform(X)
+        return X_train_fs, fs
 
     @staticmethod
     def plot_features(fs):
@@ -268,39 +257,56 @@ class ReachClassifier:
         plt.xlabel("Input Features")
         plt.savefig(f'{folder_name}/feat_importance.png')
 
-    def train_and_validate(self, X, y, param_grid, k=5):
+    @staticmethod
+    def pre_classify(X, y, k=5):
+        """
+        Partitions, adjusts class imbalance, and performs feature selection.
+        Args:
+            X: features
+            y: labels
+            k: (int) number of features to select
+
+        Returns: data ready for ML classification
+
+        """
+        # adjust class imbalance
+        X_res, y_res = ReachClassifier.adjust_class_imbalance(X, y)
+        # feat selection
+        X_selected, fs = ReachClassifier.do_feature_selection(X_res, y_res, k)
+        return X_selected, y_res, fs
+
+    @staticmethod
+    def train_and_validate(X, y, param_grid, save=True, filename=None):
         """
         Trains and Validates.
         Args:
             X: features
             y: labels
             param_grid: model and hyperparameters to search over
-            k: number of features to select
+            save: (bool) True to save model
+            filename: (str) name of model to save as
 
         Returns: trained model, train model's CV score
 
         """
-        # adjust class imbalance
-        X_res, y_res = ReachClassifier.adjust_class_imbalance(X, y)
         # partition
-        X_train, X_val, y_train, y_val = self.partition(X_res, y_res)
-        # feat selection
-        X_train_selected, fs = ReachClassifier.do_feature_selection(X_train, y_train, k)
-        X_val_selected, fs = ReachClassifier.do_feature_selection(X_val, y_val, k)
-        self.set_X_train(X_train_selected)
-        self.set_X_val(X_val_selected)
+        X_train, X_val, y_train, y_val = ReachClassifier.partition(X, y)
         # hyperparameter and model tuning
         base_model = Pipeline(steps=[('standardscaler', StandardScaler()),
                                      ('classifier', RandomForestClassifier())])
-        best_model, best_params_, best_test_accuracy = self.hyperparameter_tuning(base_model, param_grid, fullGridSearch=False)
+        best_model, best_params_, best_test_accuracy = ReachClassifier.hyperparameter_tuning(
+            X_train, X_val, y_train, y_val, base_model, param_grid, fullGridSearch=False)
 
-        # validate
-        best_model.fit(X_train_selected, y_train)
-        _, val_score = ReachClassifier.evaluate(best_model, X_val_selected, y_val)
+        # fit and validate
+        best_model.fit(X_train, y_train)
+        _, val_score = ReachClassifier.evaluate(best_model, X_val, y_val)
 
         # fit on all training data
-        X_selected, fs = ReachClassifier.do_feature_selection(X_res, y_res, k)
-        best_model.fit(X_selected, y_res)
+        best_model.fit(X, y)
+
+        # save model
+        if save:
+            joblib.dump(best_model, f"{filename}.joblib")
 
         # print("MODEL SCORE", best_model.score(X_val_selected, y_val))
         print("BEST MODEL", best_model)
@@ -312,25 +318,112 @@ class ClassificationHierarchy:
     random.seed(246810)
     np.random.seed(246810)
 
-    def __init__(self, models):
-        self.models = models
+    def __init__(self):
+        pass
 
-    def split(self, X, y, model):
-        # sort
-        mask_left, mask_right = self.split_test(X, model)
-        X0, y0, X1, y1 = 0, 0, 0, 0
-        return X0, y0, X1, y1
+    def split(self, preds, X, y, onesGoLeft=True):
+        """
+        Splits X and y based on predictions.
+        Args:
+            preds: (list of ints) predictions of ones and zeros
+            X: features
+            y: labels
+            onesGoLeft: (bool) True for labels with prediction 1 to be on LHS.
 
-    def split_test(self, X, model):
-        # classify
-        preds = model.predict(X)
-        mask_left, mask_right = preds, preds
-        return mask_left, mask_right
+        Returns: split X, y data
 
-    def fit(self, X, y):
-        for model in self.models:
-            # model.fit(X), predict(X, y), split(X, y, model)
-            pass
+        """
+        row_mask = list(map(bool,  preds))  # True for 1, False otherwise
+        negate_row_mask = ~np.array(row_mask)  # True for 0, False otherwise
+
+        if onesGoLeft:
+            X_left = X[row_mask]
+            y_left = y[row_mask]
+            X_right = X[negate_row_mask]
+            y_right = y[negate_row_mask]
+        else:
+            X_right = X[row_mask]
+            y_right = y[row_mask]
+            X_left = X[negate_row_mask]
+            y_left = y[negate_row_mask]
+
+        return X_left, y_left, X_right, y_right
+
+    def run_hierarchy(self, X, y, param_grid, models, save_models):
+        """
+        Makes predictions through the whole classification hierarchy.
+        Args:
+            X: features
+            y: labels (Trial Type	Num Reaches	Which Hand)
+            param_grid: grid
+            models: (list) list of trained models or None
+            save_models: (bool) True to save
+
+        Returns:
+
+        """
+        # load models
+        #model_0, model_1, model_2 = None, None, None
+        #if models:
+        #    model_0 = joblib.load(models[0])
+        #    model_1 = joblib.load(models[1])
+        #    model_2 = joblib.load(models[2])
+
+        # TRIAL TYPE
+        classifier = ReachClassifier()
+        y_0 = y['Trial Type'].values
+        y_0 = CU.onehot_nulls(y_0)
+        model_0, val_score_0 = self.fit(classifier, X, y_0, param_grid, save_models,
+                                                      f'{folder_name}/TrialTypeModel')
+
+        # SPLIT
+        #X_null, y_null, X_NotNull, y_NotNull = self.split(preds_0, X, y, onesGoLeft=True)  # 1 if null, 0 if real trial
+
+        # NUM REACHES
+        y_1 = y['Num Reaches'].values
+        y_1 = CU.onehot_num_reaches(y_1)  # 0 if <1, 1 if > 1 reaches
+        classifier = ReachClassifier()
+        model_1, val_score_1 = self.fit(classifier, X, y_1, param_grid, save_models,
+                                                      f'{folder_name}/NumReachesModel')
+
+        # SPLIT
+        #X_greater, y_greater, X_less, y_less = self.split(preds_1, X_NotNull, y_NotNull, onesGoLeft=True)  # 0 if <1, 1 if > 1 reaches
+
+        # WHICH HAND
+        classifier = ReachClassifier()
+        y_2 = y['Which Hand'].values
+        y_2 = CU.hand_type_onehot(y_2)
+        model_2, val_score_2 = self.fit(classifier, X, y_2, param_grid, save_models,
+                                                      f'{folder_name}/WhichHandModel')
+
+        return [val_score_0, val_score_1, val_score_2]
+
+        # SPLIT
+        #X_bi, y_bi, X_rl, y_rl = self.split(preds_2, X_less, y_less, onesGoLeft=True)  # classify 0 as r/l, 1 or non r/l
+
+    def fit(self, classifier, X, y, param_grid, save, filename):
+        """
+        Trains, validates, and/or makes predictions.
+        Args:
+            classifier: ReachClassifier object
+            X: features
+            y: labels
+            param_grid: grid
+            save: (bool) True to save
+            filename: (str) file name to save model as
+            best_model: model
+            doFit: (bool) True to train
+
+        Returns: model, validation score, predicitons
+
+        """
+        # adjust class imbalance, feature selection
+        X_selected, y_res, fs = classifier.pre_classify(X, y)
+        # train and validate
+        assert(y is not None)
+        best_model, val_score = classifier.train_and_validate(X_selected, y_res, param_grid, save=save, filename=filename)
+        return best_model, val_score
+
 
     def trace_datapoint(self, X, arr=[]):
         """ Q3.2
@@ -738,7 +831,7 @@ def main_run_all():
     exp_data = preprocessor.load_data('experimental_data.pickle')
     tkdf_16 = preprocessor.load_data('tkdf16_f.pkl')
     # tkdf_15 = preprocessor.load_data('tkdf15_f.pkl')  # todo excludes rm15 due to loading
-    tkdf_14 = preprocessor.load_data('3D_positions_RM14_f.pkl')
+    #tkdf_14 = preprocessor.load_data('3D_positions_RM14_f.pkl')
 
     # GET and SAVE BLOCKS
     exp_lst = [
@@ -756,10 +849,10 @@ def main_run_all():
         #                              save_as=f'{folder_name}/exp_rm15_9_25_s3.pkl'),
         # preprocessor.get_single_block(exp_data, '0190917', 'S4', 'RM15', format='exp',
         #                              save_as=f'{folder_name}/exp_rm15_9_17_s4.pkl'),
-        preprocessor.get_single_block(exp_data, '0190920', 'S1', 'RM14', format='exp',
-                                      save_as=f'{folder_name}/exp_rm14_9_20_s1.pkl'),
-        preprocessor.get_single_block(exp_data, '0190918', 'S2', 'RM14', format='exp',
-                                      save_as=f'{folder_name}/exp_rm14_9_18_s2.pkl')
+        #preprocessor.get_single_block(exp_data, '0190920', 'S1', 'RM14', format='exp',
+        #                              save_as=f'{folder_name}/exp_rm14_9_20_s1.pkl'),
+        #preprocessor.get_single_block(exp_data, '0190918', 'S2', 'RM14', format='exp',
+        #                              save_as=f'{folder_name}/exp_rm14_9_18_s2.pkl')
     ]
 
     kin_lst = [
@@ -777,10 +870,10 @@ def main_run_all():
         #                              save_as=f'{folder_name}/kin_rm15_9_25_s3.pkl'),
         # preprocessor.get_single_block(tkdf_15, '0190917', 'S4', '09172019', format='kin',
         #                              save_as=f'{folder_name}/kin_rm15_9_17_s4.pkl'),
-        preprocessor.get_single_block(tkdf_14, '0190920', 'S1', '09202019', format='kin',
-                                      save_as=f'{folder_name}/kin_rm14_9_20_s1.pkl'),
-        preprocessor.get_single_block(tkdf_14, '0190918', 'S2', '09182019', format='kin',
-                                      save_as=f'{folder_name}/kin_rm14_9_18_s2.pkl')
+        #preprocessor.get_single_block(tkdf_14, '0190920', 'S1', '09202019', format='kin',
+        #                              save_as=f'{folder_name}/kin_rm14_9_20_s1.pkl'),
+        #preprocessor.get_single_block(tkdf_14, '0190918', 'S2', '09182019', format='kin',
+        #                              save_as=f'{folder_name}/kin_rm14_9_18_s2.pkl')
     ]
 
     # CREATE FEAT and LABEL DFS
@@ -802,15 +895,15 @@ def main_run_all():
         exp_dfs.append(exp_feat_df)
 
     # concat
-    all_kin_features = Preprocessor.concat(kin_dfs[:(len(kin_dfs) - 2)],
+    all_kin_features = Preprocessor.concat(kin_dfs,
                                            row=True)  # todo exclude rm14 due to shape mismatch, or concat col wise
-    all_exp_features = Preprocessor.concat(exp_dfs[:(len(kin_dfs) - 2)],
+    all_exp_features = Preprocessor.concat(exp_dfs,
                                            row=True)  # todo exclude rm14 due to shape mismatch
-    all_label_dfs = Preprocessor.concat(label_dfs[:(len(kin_dfs) - 2)],
+    all_label_dfs = Preprocessor.concat(label_dfs,
                                         row=True)  # todo exclude rm14 due to shape mismatch
 
     # save ML dfs
-    Preprocessor.save_data(all_kin_features, f'{folder_name}/kin_feat.pkl', file_type='pkl')
+    Preprocessor.save_data(all_kin_features, f'{folder_name}/kin_feat.csv', file_type='csv')
     Preprocessor.save_data(all_exp_features, f'{folder_name}/exp_feat.pkl', file_type='pkl')
     Preprocessor.save_data(all_label_dfs, f'{folder_name}/label_dfs.pkl', file_type='pkl')
 
@@ -818,14 +911,24 @@ def main_run_all():
 def main_run_ML():
     # LOAD DATA
     preprocessor = Preprocessor()
-    all_kin_features = preprocessor.load_data(f'{folder_name}/kin_feat.pkl')
-    all_exp_features = preprocessor.load_data(f'{folder_name}/exp_feat.pkl')
-    all_label_dfs = preprocessor.load_data(f'{folder_name}/label_dfs.pkl')
+    all_kin_features = preprocessor.load_data(f'{folder_name}/kin_feat.csv', file_type='csv')
+    all_exp_features = preprocessor.load_data(f'{folder_name}/exp_feat.pkl', file_type='pkl')
+    y = preprocessor.load_data(f'{folder_name}/label_dfs.pkl', file_type='pkl')
 
     # take mean of exp features
     all_exp_features = ReachClassifier.mean_df(all_exp_features)
 
+    # concat kin and exp features
+    all_kin_features.reset_index(drop=True, inplace=True)
+    all_exp_features.reset_index(drop=True, inplace=True)
+    # drop na
+    all_kin_features.dropna(axis=1, inplace=True)
+    all_exp_features.dropna(axis=1, inplace=True)
+    X = Preprocessor.concat([all_kin_features, all_exp_features], row=False)
 
+    # TRAIN and SAVE MODELS
+    t = ClassificationHierarchy()
+    t.run_hierarchy(X, y, param_grid, models=None, save_models=True)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -861,6 +964,26 @@ if __name__ == "__main__":
               CU.rm14_9_20_s1_label,
               CU.rm14_9_18_s2_label
               ]
+
+    param_grid = [
+        {'classifier': [LogisticRegression()],
+         'classifier__penalty': ['l2'],
+         'classifier__C': [100, 80, 60, 40, 20, 15, 10, 8, 6, 4, 2, 1.0, 0.5, 0.1, 0.01],
+         'classifier__solver': ['newton-cg', 'lbfgs', 'liblinear']},
+        {'classifier': [RandomForestClassifier()],
+         'classifier__bootstrap': [True, False],
+         'classifier__max_depth': [10, 20, 30, 40, 50, 60, 70, 80, 90, 100, None],
+         'classifier__max_features': ['auto', 'sqrt'],
+         'classifier__min_samples_leaf': [1, 2, 4],
+         'classifier__min_samples_split': [2, 5, 10],
+         'classifier__n_estimators': [200, 400, 600, 800, 1000, 1200, 1400, 1600, 1800, 2000]},
+        {'classifier': [sklearn.svm.SVC()],
+         'classifier__C': [50, 40, 30, 20, 10, 8, 6, 4, 2, 1.0, 0.5, 0.1, 0.01],
+         'classifier__kernel': ['poly', 'rbf', 'sigmoid'],
+         'classifier__gamma': ['scale']},
+        {'classifier': [RidgeClassifier()],
+         'classifier__alpha': [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]}
+    ]
 
     if args.function == 1:
         main_run_all()
