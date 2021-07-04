@@ -830,8 +830,8 @@ def main_run_all():
     preprocessor = Preprocessor()
     exp_data = preprocessor.load_data('experimental_data.pickle')
     tkdf_16 = preprocessor.load_data('tkdf16_f.pkl')
-    # tkdf_15 = preprocessor.load_data('tkdf15_f.pkl')  # todo excludes rm15 due to loading
-    # tkdf_14 = preprocessor.load_data('3D_positions_RM14_f.pkl')
+    tkdf_15 = preprocessor.load_data('3D_positions_RM15_f.pkl')
+    tkdf_14 = preprocessor.load_data('3D_positions_RM14_f.pkl')
 
     # GET and SAVE BLOCKS
     exp_lst = [
@@ -845,14 +845,14 @@ def main_run_all():
                                       save_as=f'{folder_name}/exp_rm16_9_20_s3.pkl'),
         preprocessor.get_single_block(exp_data, '0190919', 'S3', 'RM16', format='exp',
                                       save_as=f'{folder_name}/exp_rm16_9_19_s3.pkl'),
-        # preprocessor.get_single_block(exp_data, '0190925', 'S3', 'RM15', format='exp',
-        #                              save_as=f'{folder_name}/exp_rm15_9_25_s3.pkl'),
-        # preprocessor.get_single_block(exp_data, '0190917', 'S4', 'RM15', format='exp',
-        #                              save_as=f'{folder_name}/exp_rm15_9_17_s4.pkl'),
-        # preprocessor.get_single_block(exp_data, '0190920', 'S1', 'RM14', format='exp',
-        #                              save_as=f'{folder_name}/exp_rm14_9_20_s1.pkl'),
-        # preprocessor.get_single_block(exp_data, '0190918', 'S2', 'RM14', format='exp',
-        #                              save_as=f'{folder_name}/exp_rm14_9_18_s2.pkl')
+        preprocessor.get_single_block(exp_data, '0190925', 'S3', 'RM15', format='exp',
+                                      save_as=f'{folder_name}/exp_rm15_9_25_s3.pkl'),
+        preprocessor.get_single_block(exp_data, '0190917', 'S4', 'RM15', format='exp',
+                                      save_as=f'{folder_name}/exp_rm15_9_17_s4.pkl'),
+        preprocessor.get_single_block(exp_data, '0190920', 'S1', 'RM14', format='exp',
+                                      save_as=f'{folder_name}/exp_rm14_9_20_s1.pkl'),
+        preprocessor.get_single_block(exp_data, '0190918', 'S2', 'RM14', format='exp',
+                                      save_as=f'{folder_name}/exp_rm14_9_18_s2.pkl')
     ]
 
     kin_lst = [
@@ -866,14 +866,14 @@ def main_run_all():
                                       save_as=f'{folder_name}/kin_rm16_9_20_s3.pkl'),
         preprocessor.get_single_block(tkdf_16, '0190919', 'S3', '09192019', format='kin',
                                       save_as=f'{folder_name}/kin_rm16_9_19_s3.pkl'),
-        # preprocessor.get_single_block(tkdf_15, '0190925', 'S3', '09252019', format='kin',
-        #                              save_as=f'{folder_name}/kin_rm15_9_25_s3.pkl'),
-        # preprocessor.get_single_block(tkdf_15, '0190917', 'S4', '09172019', format='kin',
-        #                              save_as=f'{folder_name}/kin_rm15_9_17_s4.pkl'),
-        # preprocessor.get_single_block(tkdf_14, '0190920', 'S1', '09202019', format='kin',
-        #                              save_as=f'{folder_name}/kin_rm14_9_20_s1.pkl'),
-        # preprocessor.get_single_block(tkdf_14, '0190918', 'S2', '09182019', format='kin',
-        #                              save_as=f'{folder_name}/kin_rm14_9_18_s2.pkl')
+        preprocessor.get_single_block(tkdf_15, '0190925', 'S3', '09252019', format='kin',
+                                      save_as=f'{folder_name}/kin_rm15_9_25_s3.pkl'),
+        preprocessor.get_single_block(tkdf_15, '0190917', 'S4', '09172019', format='kin',
+                                      save_as=f'{folder_name}/kin_rm15_9_17_s4.pkl'),
+        preprocessor.get_single_block(tkdf_14, '0190920', 'S1', '09202019', format='kin',
+                                      save_as=f'{folder_name}/kin_rm14_9_20_s1.pkl'),
+        preprocessor.get_single_block(tkdf_14, '0190918', 'S2', '09182019', format='kin',
+                                      save_as=f'{folder_name}/kin_rm14_9_18_s2.pkl')
     ]
 
     # CREATE FEAT and LABEL DFS
@@ -888,6 +888,23 @@ def main_run_all():
                                                                     label, et, el,
                                                                     window_length, pre,
                                                                     wv)
+        # Check for NaNs and replace with zeros
+        if kin_feat_df.isnull().values.any():
+            print(f"{i}th Kin Block contains Nan!")
+            for column in kin_feat_df:
+                if kin_feat_df[column].isnull().values.any():
+                    print(f"Kin '{kin_feat_df[column]}' contains NaN and replaced with 0!")
+            kin_feat_df.fillna(0)
+
+        if exp_feat_df.isnull().values.any():
+            print(f"{i}th Exp Block contains Nan!")
+            for column in kin_feat_df:
+                if exp_feat_df[column].isnull().values.any():
+
+                    print(f" Exp '{exp_feat_df[column]}' contains NaN and replaced with 0!")
+            exp_feat_df.fillna(0)
+
+
         # append
         label_df = CU.make_vectorized_labels_to_df(CU.make_vectorized_labels_to_df(label))
         label_dfs.append(label_df)
@@ -895,12 +912,9 @@ def main_run_all():
         exp_dfs.append(exp_feat_df)
 
     # concat
-    all_kin_features = Preprocessor.concat(kin_dfs,
-                                           row=True)  # todo exclude rm14 due to shape mismatch, or concat col wise
-    all_exp_features = Preprocessor.concat(exp_dfs,
-                                           row=True)  # todo exclude rm14 due to shape mismatch
-    all_label_dfs = Preprocessor.concat(label_dfs,
-                                        row=True)  # todo exclude rm14 due to shape mismatch
+    all_kin_features = Preprocessor.concat(kin_dfs, row=True)  # todo exclude rm14 due to shape mismatch, or concat col wise
+    all_exp_features = Preprocessor.concat(exp_dfs, row=True)
+    all_label_dfs = Preprocessor.concat(label_dfs, row=True)
 
     # save ML dfs
     Preprocessor.save_data(all_kin_features, f'{folder_name}/kin_feat.pkl', file_type='pkl')
@@ -921,9 +935,6 @@ def main_run_ML():
     # concat kin and exp features
     all_kin_features.reset_index(drop=True, inplace=True)
     all_exp_features.reset_index(drop=True, inplace=True)
-    # drop na
-    all_kin_features.dropna(axis=1, inplace=True)
-    all_exp_features.dropna(axis=1, inplace=True)
     X = Preprocessor.concat([all_kin_features, all_exp_features], row=False)
 
     # TRAIN and SAVE MODELS
