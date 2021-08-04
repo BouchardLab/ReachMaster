@@ -13,7 +13,7 @@ import argparse
 import os
 import matplotlib.pyplot as plt
 import sklearn
-from imblearn.under_sampling import RandomUnderSampler
+
 from scipy import ndimage
 import Classification_Utils as CU
 import pandas as pd
@@ -22,7 +22,10 @@ import h5py
 import random
 import joblib  # for saving sklearn models
 from imblearn.over_sampling import SMOTE  # for adjusting class imbalances
+from imblearn.under_sampling import RandomUnderSampler
 from imblearn.over_sampling import RandomOverSampler
+from imblearn.pipeline import Pipeline as imblearn_Pipeline
+from collections import Counter
 # classification
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import RandomizedSearchCV, train_test_split, GridSearchCV, cross_validate
@@ -156,11 +159,11 @@ class ReachClassifier:
         Returns: new samples
         References: https://machinelearningmastery.com/smote-oversampling-for-imbalanced-classification/
         """
-        oversampler = RandomOverSampler(random_state=42)
-        # under = RandomUnderSampler(random_state=42)
-        # steps = [('o', oversampler), ('u', under)]
-        # pipeline = imblearnPipeline(steps=steps)
-        X_res, y_res = oversampler.fit_resample(X, y)
+        oversampler = SMOTE(random_state=42)
+        #undersampler = RandomUnderSampler(random_state=42)
+        steps = [('o', oversampler)]#, ('u', undersampler)]
+        pipeline = imblearn_Pipeline(steps=steps)
+        X_res, y_res = pipeline.fit_resample(X, y)
         return X_res, y_res
 
     @staticmethod
@@ -242,7 +245,7 @@ class ReachClassifier:
         return X_train_fs, fs
 
     @staticmethod
-    def plot_features(fs):
+    def plot_features(fs, X):
         """
         Plots and saves feature importances.
         Returns: None
@@ -251,14 +254,19 @@ class ReachClassifier:
         for i in range(len(fs.scores_)):
             print('Feature %d: %f' % (i, fs.scores_[i]))
         # plot the scores
-        plt.bar([i for i in range(len(fs.scores_))], fs.scores_)
+        #x = [i for i in range(len(fs.scores_))]
+        x = X.columns
+        plt.bar(x, fs.scores_)
+        # rotate x axis to avoid overlap
+        plt.xticks(rotation=45)
+        plt.yticks(rotation=90)
         plt.title("Input Features vs. Feature Importance")
         plt.ylabel("Mutual Information Feature Importance")
         plt.xlabel("Input Features")
         plt.savefig(f'{folder_name}/feat_importance.png')
 
     @staticmethod
-    def pre_classify(X, y, k=5):
+    def pre_classify(X, y, k=10):
         """
         Partitions, adjusts class imbalance, and performs feature selection.
         Args:
@@ -371,7 +379,7 @@ class ClassificationHierarchy:
 
         # TRIAL TYPE
         classifier = ReachClassifier()
-        y_0 = y['Trial Type'].values
+        y_0 = y['Trial Type'].values  # 0 for not null
         y_0 = CU.onehot_nulls(y_0)
         model_0, val_score_0 = self.fit(classifier, X, y_0, param_grid, save_models,
                                         f'{folder_name}/TrialTypeModel')
@@ -391,15 +399,14 @@ class ClassificationHierarchy:
 
         # WHICH HAND
         classifier = ReachClassifier()
-        y_2 = y['Which Hand'].values
+        y_2 = y['Which Hand'].values  # # classify 0 as r/l
         y_2 = CU.hand_type_onehot(y_2)
         model_2, val_score_2 = self.fit(classifier, X, y_2, param_grid, save_models,
                                         f'{folder_name}/WhichHandModel')
 
-        return [val_score_0, val_score_1, val_score_2]
-
-        # SPLIT
         # X_bi, y_bi, X_rl, y_rl = self.split(preds_2, X_less, y_less, onesGoLeft=True)  # classify 0 as r/l, 1 or non r/l
+
+        return [val_score_0, val_score_1, val_score_2]
 
     def fit(self, classifier, X, y, param_grid, save, filename):
         """
@@ -425,6 +432,58 @@ class ClassificationHierarchy:
                                                               filename=filename)
         return best_model, val_score
 
+    def run_hierarchy_pretrained(self, X, y, models):
+        """
+        Makes predictions through the whole classification hierarchy.
+        Args:
+            X: features
+            y: labels (Trial Type	Num Reaches	Which Hand)
+            models: (list of str) list of trained models
+        Returns: list of validation accuracies
+
+        """
+        # load models
+        model_0 = joblib.load(models[0])
+        model_1 = joblib.load(models[1])
+        model_2 = joblib.load(models[2])
+
+        # TRIAL TYPE
+        classifier = ReachClassifier()
+        y_0 = y['Trial Type'].values  # 0 for not null
+        y_0 = CU.onehot_nulls(y_0)
+        val_score_0 = self.predict(X, y_0, model_0)
+
+        # SPLIT
+        # X_null, y_null, X_NotNull, y_NotNull = self.split(preds_0, X, y, onesGoLeft=True)  # 1 if null, 0 if real trial
+
+        # NUM REACHES
+        y_1 = y['Num Reaches'].values
+        y_1 = CU.onehot_num_reaches(y_1)  # 0 if <1, 1 if > 1 reaches
+        classifier = ReachClassifier()
+        val_score_1 = self.predict(X, y_1, model_1)
+
+        # SPLIT
+        # X_greater, y_greater, X_less, y_less = self.split(preds_1, X_NotNull, y_NotNull, onesGoLeft=True)  # 0 if <1, 1 if > 1 reaches
+
+        # WHICH HAND
+        classifier = ReachClassifier()
+        y_2 = y['Which Hand'].values  # # classify 0 as r/l
+        y_2 = CU.hand_type_onehot(y_2)
+        val_score_2 = self.predict(X, y_2, model_2)
+
+        # X_bi, y_bi, X_rl, y_rl = self.split(preds_2, X_less, y_less, onesGoLeft=True)  # classify 0 as r/l, 1 or non r/l
+
+        return [val_score_0, val_score_1, val_score_2]
+
+    def predict(self, X, y, model):
+        # let
+        k = 5
+        X_selected, fs = ReachClassifier.do_feature_selection(X, y, k)
+        _, val_score = ReachClassifier.evaluate(model, X_selected, y)
+        return val_score
+
+
+
     def trace_datapoint(self, X, arr=[]):
         """ Q3.2
         for a data point from the spam dataset, prints splits and thresholds
@@ -432,6 +491,151 @@ class ClassificationHierarchy:
         """
         pass
 
+
+class MakeFeatures:
+    # Operates on a single trial.
+
+    pos_names = ['Handle', 'Back Handle', 'Nose',
+                 'Left Shoulder', 'Left Forearm', 'Left Wrist', 'Left Palm', 'Left Index Base', 'Left Index Tip',
+                 'Left Middle Base', 'Left Middle Tip', 'Left Third Base',
+                 'Left Third Tip', 'Left Fourth Finger Base', 'Left Fourth Finger Tip',
+                 'Right Shoulder', 'Right Forearm', 'Right Wrist', 'Right Palm', 'Right Index Base',
+                 'Right Index Tip', 'Right Middle Base', 'Right Middle Tip', 'Right Third Base',
+                 'Right Third Tip', 'Right Fourth Finger Base', 'Right Fourth Finger Tip']
+
+    def __init__(self, trial_arr):
+        # partition coords and probabilities
+        self.num_bodyparts = 27
+        self.num_coords = 3
+        self.split_index = self.num_bodyparts * self.num_coords  # 27 bodyparts * 3 XYZ coordinates for each = 81
+        self.coords = trial_arr[:self.split_index]  # all XYZ coords of all bodyparts (81 rows of first half of array)
+        self.prob = trial_arr[self.split_index:]  # all probability columns (81 rows of second half of array)
+
+        # display(coords, prob)
+
+    def calc_position(self):
+        # calculate position of each bodypart (x+y+z/3)
+        positions = []  # 2D array with rows are bodyparts, cols are frame nums
+        for i in np.arange(0, len(self.coords), self.num_coords):  # for every bodypart
+            X = self.coords[i]
+            Y = self.coords[i + 1]
+            Z = self.coords[i + 2]
+            pos = (X + Y + Z) / self.num_coords  # 1D array
+            positions.append(pos)
+
+        assert (len(positions) == self.num_bodyparts)
+        return positions
+
+    def calc_velocity_speed(self, time):
+        """
+        Time is sliced from exp block 'time' column
+        """
+        # calculate velocity for each XYZ bodypart (x1-x0/t0-t1)
+        velocities = []  # 2D array with rows are XYZ bodyparts, cols are frame nums
+        for i in np.arange(0, self.split_index, self.num_coords):  # for every bodypart
+            X = self.coords[i]
+            Y = self.coords[i + 1]
+            Z = self.coords[i + 2]
+
+            for arr in [X, Y, Z]:
+                vel = []
+                for j in np.arange(len(arr) - 1):
+                    x_0 = arr[j]
+                    x_1 = arr[j + 1]
+                    t_0 = time[j]
+                    t_1 = time[j + 1]
+                    vel.append(x_1 - x_0 / t_1 - t_0)
+                velocities.append(vel)
+
+        assert (len(velocities) == self.split_index)
+
+        # calculate speed of each bodypart (vel_x+vel_y+vel_z/3)
+        speeds = []  # 1D array with rows are bodyparts, cols are frame nums
+        for i in np.arange(0, self.split_index, self.num_coords):
+            x_vel = velocities[i]
+            y_vel = velocities[i + 1]
+            z_vel = velocities[i + 2]
+
+            x_squared = np.dot(x_vel, x_vel)
+            y_squared = np.dot(y_vel, y_vel)
+            z_squared = np.dot(z_vel, z_vel)
+
+            speed = (x_squared + y_squared + z_squared) / 3  # int
+            speeds.append(speed)
+
+        assert (len(speeds) == self.num_bodyparts)
+        return velocities, speeds
+
+    @staticmethod
+    def calc_all(trial_arr, time):
+        # Calculate
+        f = MakeFeatures(trial_arr)
+        positions = f.calc_position()
+        velocities, speeds = f.calc_velocity_speed(time)
+
+        # take mean & median of each bodypart for 2D arrays
+        mean_vel = np.mean(velocities, axis=1)  # len = 81
+        median_vel = np.median(velocities, axis=1)
+
+        mean_pos = np.mean(positions, axis=1)  # len = 27
+        median_pos = np.median(positions, axis=1)
+
+        # Create df
+        # concat all arrays
+        speeds.extend(mean_pos)
+        speeds.extend(median_pos)
+        speeds.extend(mean_vel)
+        speeds.extend(median_vel)
+        # create col names
+        col_names = [bodypart + ' speed' for bodypart in f.pos_names]
+        col_names.extend([bodypart + ' mean pos' for bodypart in f.pos_names])
+        col_names.extend([bodypart + ' median pos' for bodypart in f.pos_names])
+        xzy_pos_names = [bodypart + ' X' for bodypart in f.pos_names] + [bodypart + ' Y' for bodypart in
+                                                                         f.pos_names] + [bodypart + ' Z' for bodypart in
+                                                                                         f.pos_names]
+        col_names.extend([bodypart + ' mean vel' for bodypart in xzy_pos_names])
+        col_names.extend([bodypart + ' median vel' for bodypart in xzy_pos_names])
+        # create df
+        df = pd.DataFrame([speeds], columns=col_names)
+        return df
+
+    @staticmethod
+    def make_block_features(trials, times):
+        df = pd.DataFrame()
+        for i in range(len(trials)):
+            # take trial
+            trial = trials[i]
+            time = times[i]
+
+            trial_arr = trial.values  # convert df to array where rows are frame numbers, cols are bodyparts
+            trial_arr = trial_arr.T  # array with rows are XYZ bodyparts, cols are frame nums
+
+            df = pd.concat([df, MakeFeatures.calc_all(trial_arr, time)])
+        df.reset_index(drop=True, inplace=True)
+
+        # rows are trials, cols are features
+        return df
+
+    @staticmethod
+    def match_labels(df, vec_label):
+        # create mask of labeled trials
+        labeled_trials_mask = []
+        for i, label in enumerate(vec_label):
+            label_trial_num = int(label[0])
+            labeled_trials_mask.append(label_trial_num)
+
+        return df.T[labeled_trials_mask].T
+
+    @staticmethod
+    def sel_feat_by_keyword(df):
+        """
+        reference: https://towardsdatascience.com/interesting-ways-to-select-pandas-dataframe-columns-b29b82bbfb33
+        """
+        return df.loc[:,[('Palm' in i) or ('Wrist' in i) for i in df.columns]]
+
+    @staticmethod
+    def randomize_feat(df):
+        return df.sample(n=len(df), replace=False, axis=0, random_state=42)  # shuffles rows w.o repl
 
 class Preprocessor:
     def __init__(self):
@@ -521,11 +725,13 @@ class Preprocessor:
         Returns: None
 
         """
-        assert file_type == 'csv' or file_type == 'pkl', f'{file_type} not a valid file type'
+        assert file_type == 'csv' or file_type == 'pkl' or file_type == 'h5', f'{file_type} not a valid file type'
         if file_type == 'csv':
             df.to_csv(filename)
         if file_type == 'pkl':
             df.to_pickle(filename)
+        if file_type == 'h5':
+            df.to_hdf(filename, key='df')
 
     @staticmethod
     def get_single_block(df, date, session, rat, save_as=None, format='exp'):
@@ -623,6 +829,7 @@ class Preprocessor:
         assert (window_length > pre), "invalid slice!"
         starting_frames = exp_block['r_start'].values[0]
         trials = []
+        times = []
         # iterate over starting frames
         for frame_num in starting_frames:
             start = frame_num - pre
@@ -631,17 +838,18 @@ class Preprocessor:
                 start = 0
             # slice trials
             trials.append(formatted_kin_block.loc[start:frame_num + window_length])
-        return trials
+            times.append(exp_block['time'][0][start:frame_num + window_length+1])  # plus 1 to adjust size diff with trial size
+        return trials, times
 
     @staticmethod
-    def trialize_kin_blocks(formatted_kin_block):
+    def trialize_kin_blocks(formatted_kin_block, times):
         """
         Returns a list of one column dfs, each representing a trial
         Args:
             formatted_kin_block: (list of dfs) split trial data
+            times: (list of arrays of ints) sliced time from exp block
 
         Returns: ftrials: (list of one column dfs)
-
         """
         # iterate over trials
         ftrials = []
@@ -705,12 +913,27 @@ class Preprocessor:
         Returns: (df)  where row represents trial num and columns are features.
 
         """
-        trials = Preprocessor.split_trial(self.kin_block, self.exp_block, self.window_length, self.pre)
+        trials, times = Preprocessor.split_trial(self.kin_block, self.exp_block, self.window_length, self.pre)
         ftrials = Preprocessor.trialize_kin_blocks(trials)
         labeled_trials = Preprocessor.match_kin_to_label(ftrials, self.label)
         df = Preprocessor.create_kin_feat_df(labeled_trials)
         self.set_formatted_kin_block(df)
         return df
+
+    def make_kin_psv_feat_df(self, randomize=False):
+        """
+
+        Returns: feature df of position, speed, and velocity
+
+        """
+        trials, times = Preprocessor.split_trial(self.kin_block, self.exp_block, self.window_length, self.pre)
+        df = MakeFeatures.make_block_features(trials, times)
+        df = MakeFeatures.match_labels(df, self.label)
+        ret_df = MakeFeatures.sel_feat_by_keyword(df)  # select just wrist and palms
+        if randomize:
+            return MakeFeatures.randomize_feat(ret_df)
+        return ret_df
+
 
     @staticmethod
     def match_exp_to_label(exp_feat_df, label):
@@ -817,7 +1040,8 @@ class Preprocessor:
         self.set_label(vectorized_label)
 
         # create kin features
-        kin_feat_df = self.make_kin_feat_df()
+        #kin_feat_df = self.make_kin_feat_df()
+        kin_feat_df = self.make_kin_psv_feat_df()  # todo randomize=True to change features
 
         # create exp features
         exp_feat_df = self.make_exp_feat_df()
@@ -904,15 +1128,15 @@ def main_run_all():
                     print(f" Exp '{exp_feat_df[column]}' contains NaN and replaced with 0!")
             exp_feat_df.fillna(0)
 
-
         # append
-        label_df = CU.make_vectorized_labels_to_df(CU.make_vectorized_labels_to_df(label))
+        vec_labels, _ = CU.make_vectorized_labels(label)
+        label_df = CU.make_vectorized_labels_to_df(vec_labels)
         label_dfs.append(label_df)
         kin_dfs.append(kin_feat_df)
         exp_dfs.append(exp_feat_df)
 
     # concat
-    all_kin_features = Preprocessor.concat(kin_dfs, row=True)  # todo exclude rm14 due to shape mismatch, or concat col wise
+    all_kin_features = Preprocessor.concat(kin_dfs, row=True)
     all_exp_features = Preprocessor.concat(exp_dfs, row=True)
     all_label_dfs = Preprocessor.concat(label_dfs, row=True)
 
@@ -923,6 +1147,11 @@ def main_run_all():
 
 
 def main_run_ML():
+    """
+    Train models on sythetic data.
+    Returns:
+
+    """
     # LOAD DATA
     preprocessor = Preprocessor()
     all_kin_features = preprocessor.load_data(f'{folder_name}/kin_feat.pkl', file_type='pkl')
@@ -931,33 +1160,46 @@ def main_run_ML():
 
     # take mean of exp features
     all_exp_features = ReachClassifier.mean_df(all_exp_features)
+    # remove unused features
+    all_exp_features = all_exp_features.drop(columns=['unused idx 4', 'unused idx 5', 'unused idx 6'])
 
     # concat kin and exp features
     all_kin_features.reset_index(drop=True, inplace=True)
     all_exp_features.reset_index(drop=True, inplace=True)
     X = Preprocessor.concat([all_kin_features, all_exp_features], row=False)
+    # todo save x
 
     # TRAIN and SAVE MODELS
     t = ClassificationHierarchy()
     t.run_hierarchy(X, y, param_grid, models=None, save_models=True)
 
-def predict_block(kin_block, exp_block, model):
+def predict_blocks():
+    # LOAD DATA
     preprocessor = Preprocessor()
-    # kin features
-    #trials = Preprocessor.split_trial(kin_block, exp_block, window_length, pre)
-    #kin_features = Preprocessor.trialize_kin_blocks(trials)
-    #kin_feat_df = Preprocessor.create_kin_feat_df(kin_features)
+    all_kin_features = preprocessor.load_data(f'{folder_name}/kin_feat.pkl', file_type='pkl')
+    all_exp_features = preprocessor.load_data(f'{folder_name}/exp_feat.pkl', file_type='pkl')
+    y = preprocessor.load_data(f'{folder_name}/label_dfs.pkl', file_type='pkl')
 
-    # create exp features
-    start_frames = exp_block['r_start'].values[0]
-    exp_features = CU.import_experiment_features(exp_block, start_frames, window_length, pre)
-    exp_feat_df = CU.import_experiment_features_to_df(exp_features)
+    # take mean of exp features
+    all_exp_features = ReachClassifier.mean_df(all_exp_features)
+    # remove unused features
+    all_exp_features = all_exp_features.drop(columns=['unused idx 4', 'unused idx 5', 'unused idx 6'])
 
-    # concat
-    #X = Preprocessor.concat([kin_feat_df, exp_feat_df], row=False)
-    X = ReachClassifier.mean_df(exp_feat_df)
+    # concat kin and exp features
+    all_kin_features.reset_index(drop=True, inplace=True)
+    all_exp_features.reset_index(drop=True, inplace=True)
+    X = Preprocessor.concat([all_kin_features, all_exp_features], row=False)
+    # todo load x
 
-    return model.predict(X)
+    # load models
+    models = [f'{folder_name}/TrialTypeModel.joblib', f'{folder_name}/NumReachesModel.joblib',
+              f'{folder_name}/WhichHandModel.joblib']
+
+    vals = ClassificationHierarchy().run_hierarchy_pretrained(X, y, models)
+    print(vals)
+
+
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -987,8 +1229,8 @@ if __name__ == "__main__":
               CU.rm16_9_20_s3_label,
               CU.rm16_9_19_s3_label,
 
-              # CU.rm15_9_25_s3_label,
-              # CU.rm15_9_17_s4_label,
+              CU.rm15_9_25_s3_label,
+              CU.rm15_9_17_s4_label,
 
               CU.rm14_9_20_s1_label,
               CU.rm14_9_18_s2_label
@@ -996,22 +1238,22 @@ if __name__ == "__main__":
 
     param_grid = [
         {'classifier': [LogisticRegression()],
-         'classifier__penalty': ['l2'],
+         'classifier__penalty': ['l1'],
          'classifier__C': [100, 80, 60, 40, 20, 15, 10, 8, 6, 4, 2, 1.0, 0.5, 0.1, 0.01],
-         'classifier__solver': ['newton-cg', 'lbfgs', 'liblinear']},
-        {'classifier': [RandomForestClassifier()],
-         'classifier__bootstrap': [True, False],
-         'classifier__max_depth': [10, 20, 30, 40, 50, 60, 70, 80, 90, 100, None],
-         'classifier__max_features': ['auto', 'sqrt'],
-         'classifier__min_samples_leaf': [1, 2, 4],
-         'classifier__min_samples_split': [2, 5, 10],
-         'classifier__n_estimators': [200, 400, 600, 800, 1000, 1200, 1400, 1600, 1800, 2000]},
-        {'classifier': [sklearn.svm.SVC()],
-         'classifier__C': [50, 40, 30, 20, 10, 8, 6, 4, 2, 1.0, 0.5, 0.1, 0.01],
-         'classifier__kernel': ['poly', 'rbf', 'sigmoid'],
-         'classifier__gamma': ['scale']},
-        {'classifier': [RidgeClassifier()],
-         'classifier__alpha': [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]}
+         'classifier__solver': ['newton-cg', 'liblinear']}
+        #{'classifier': [RandomForestClassifier()],
+        # 'classifier__bootstrap': [True, False],
+        # 'classifier__max_depth': [10, 20, 30, 40, 50, 60, 70, 80, 90, 100, None],
+        # 'classifier__max_features': ['auto', 'sqrt'],
+        # 'classifier__min_samples_leaf': [1, 2, 4],
+         #'classifier__min_samples_split': [2, 5, 10],
+         #'classifier__n_estimators': [200, 400, 600, 800, 1000, 1200, 1400, 1600, 1800, 2000]},
+        #{'classifier': [sklearn.svm.SVC()],
+        # 'classifier__C': [50, 40, 30, 20, 10, 8, 6, 4, 2, 1.0, 0.5, 0.1, 0.01],
+        # 'classifier__kernel': ['poly', 'rbf', 'sigmoid'],
+        # 'classifier__gamma': ['scale']},
+        #{'classifier': [RidgeClassifier()],
+        # 'classifier__alpha': [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]}
     ]
 
     if args.function == 1:
@@ -1019,13 +1261,36 @@ if __name__ == "__main__":
     elif args.function == 2:
         main_run_ML()
     elif args.function == 3:
-        # load model
-        model = joblib.load(f'{folder_name}/TrialTypeModel.joblib')
-        # load data
+        predict_blocks()
+    elif args.function == 4:
+        # vis class imbalance (simple scatter)
+        # load
         preprocessor = Preprocessor()
-        exp_data = preprocessor.load_data('experimental_data.pickle')
-        tkdf_16 = preprocessor.load_data('tkdf16_f.pkl')
-        kin_block = preprocessor.load_data(f'{folder_name}/kin_rm16_9_17_s1.pkl')
-        exp_block = preprocessor.load_data(f'{folder_name}/exp_rm16_9_17_s1.pkl')
-        preds = predict_block(kin_block, exp_block, model)
-        print(preds)
+        all_kin_features = preprocessor.load_data(f'{folder_name}/kin_feat.pkl', file_type='pkl')  # generate via TC.main
+        all_exp_features = preprocessor.load_data(f'{folder_name}/exp_feat.pkl')
+        all_label_dfs = preprocessor.load_data(f'{folder_name}/label_dfs.pkl')
+
+        # todo change accordingly
+        X = all_kin_features
+        y = all_label_dfs['Which Hand'].values
+        y = CU.hand_type_onehot(y)
+
+        # Calc bias
+        #X, y = ReachClassifier.adjust_class_imbalance(X, y)
+
+        # Plot and summarize class distribution
+        # Trial Type not null is 0.0, num reaches 0 if <1, which hand 0 as r/l
+        counter = Counter(y)
+        print(counter)
+        X = X.values
+        # scatter plot of examples by class label
+        for label, _ in counter.items():
+            row_ix = np.where(y == label)[0]
+            legend = f'r/l:{counter[0.0]}' if label == 0.0 else f'rla/lra/bi:{counter[1.0]}'
+            plt.scatter(X[row_ix, 0], X[row_ix, 1], label=legend)  # uses first two features
+        plt.legend()
+        plt.title("Class Distribution: Hand Type")
+        plt.savefig(f'{folder_name}/ClassBias_whichhand.png')
+
+    elif args.function == 5:
+        pass
