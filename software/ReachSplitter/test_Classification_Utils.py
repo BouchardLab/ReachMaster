@@ -8,8 +8,8 @@ Edited 6/4/2021 """
 
 from unittest import TestCase
 
+import random
 import sklearn
-from sklearn.ensemble import RandomForestClassifier
 import Classification_Utils as CU
 import Trial_Classifier as TC
 import pandas as pd
@@ -18,14 +18,16 @@ import os
 import joblib  # for saving sklearn models
 from imblearn.over_sampling import SMOTE  # for adjusting class imbalances
 # classification
-from sklearn.ensemble import RandomForestClassifier
+from collections import Counter
+from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier
 from sklearn.model_selection import cross_val_score, RandomizedSearchCV, train_test_split, GridSearchCV, cross_validate
 from sklearn.pipeline import make_pipeline, Pipeline
+from matplotlib import pyplot
 from sklearn import preprocessing
 from sklearn.metrics import accuracy_score
 from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import accuracy_score
-from sklearn.linear_model import LogisticRegression
+from sklearn.linear_model import LogisticRegression, RidgeClassifier
 
 current_directory = os.getcwd()
 
@@ -115,7 +117,7 @@ class TestPreprocessing(TestCase):
     def test_save_all_labeled_blocks(self):
         # choose which rats to save
         save_16 = True
-        save_15 = True  # todo errors
+        save_15 = True
         save_14 = True
 
         if save_16:
@@ -149,7 +151,7 @@ class TestPreprocessing(TestCase):
                                                save_as=f'{TC.folder_name}/kin_rm16_9_19_s3.pkl')
 
         if save_15:
-            tkdf_15 = self.preprocessor.load_data('tkdf15_f.pkl')
+            tkdf_15 = self.preprocessor.load_data('3D_positions_RM15_f.pkl')
             # RM15, 25, S3
             self.preprocessor.get_single_block(self.exp_data, '0190925', 'S3', 'RM15', format='exp',
                                                save_as=f'{TC.folder_name}/exp_rm15_9_25_s3.pkl')
@@ -222,7 +224,7 @@ class TestPreprocessingBlock(TestCase):
 
     def test_split_kin_trial_0(self):
         # test trial splitting
-        trials = TC.Preprocessor.split_trial(self.kin_block, self.exp_block, self.window_length, self.pre)
+        trials, times = TC.Preprocessor.split_trial(self.kin_block, self.exp_block, self.window_length, self.pre)
         trial_0 = trials[0]
         self.assertEqual(len(self.start_frames), len(trials)), "Unequal number of trials!"
         self.assertTrue(trial_0.shape[0] != 0), "Empty trial!"
@@ -230,7 +232,7 @@ class TestPreprocessingBlock(TestCase):
 
     def test_trialize_kin_blocks_1(self):
         # test reshaping of trials
-        trials = TC.Preprocessor.split_trial(self.kin_block, self.exp_block, self.window_length, self.pre)
+        trials, times = TC.Preprocessor.split_trial(self.kin_block, self.exp_block, self.window_length, self.pre)
 
         ftrials = TC.Preprocessor.trialize_kin_blocks(trials)
         trial_0 = ftrials[0]
@@ -242,7 +244,7 @@ class TestPreprocessingBlock(TestCase):
 
     def test_match_kin_2(self):
         # test matching to labels
-        trials = TC.Preprocessor.split_trial(self.kin_block, self.exp_block, self.window_length, self.pre)
+        trials,times = TC.Preprocessor.split_trial(self.kin_block, self.exp_block, self.window_length, self.pre)
         ftrials = TC.Preprocessor.trialize_kin_blocks(trials)
 
         labeled_trials = TC.Preprocessor.match_kin_to_label(ftrials, self.vec_label)
@@ -255,7 +257,6 @@ class TestPreprocessingBlock(TestCase):
 
     def test_make_exp(self):
         # tests making exp feat df
-        # todo expand?
         exp_features = CU.import_experiment_features(self.exp_block, self.start_frames, self.window_length, self.pre)
         exp_df = CU.import_experiment_features_to_df(exp_features)
         exp_feat_df = TC.Preprocessor.match_exp_to_label(exp_df, self.vec_label)
@@ -264,7 +265,7 @@ class TestPreprocessingBlock(TestCase):
         self.assertEqual(len(self.vec_label), len(exp_feat_df)), "Not Matching Labels!"
 
     def test_create_kin_feat_df_3(self):
-        trials = TC.Preprocessor.split_trial(self.kin_block, self.exp_block, self.window_length, self.pre)
+        trials,times = TC.Preprocessor.split_trial(self.kin_block, self.exp_block, self.window_length, self.pre)
         ftrials = TC.Preprocessor.trialize_kin_blocks(trials)
         labeled_trials = TC.Preprocessor.match_kin_to_label(ftrials, self.vec_label)
 
@@ -273,10 +274,18 @@ class TestPreprocessingBlock(TestCase):
         self.assertTrue(isinstance(df, pd.DataFrame)), "Not a DF!"
         self.assertTrue(df.shape[0] != 0), "Empty trial!"
 
+    def test_preprocess_blocks(self):
+        pass
+
 
 class TestClassificationWorkflow(TestCase):
     """ Test Overview
         - test basic model
+        - test hyperparameter tuning
+        - test class imbalance
+        - test feature selection, plot feature selection
+        - test train and validate
+        - test make single split predictions
     """
 
     # class variables
@@ -292,40 +301,22 @@ class TestClassificationWorkflow(TestCase):
         """
         # load data
         self.preprocessor = TC.Preprocessor()
-        all_kin_features = self.preprocessor.load_data(f'{TC.folder_name}/kin_feat.pkl')  # generate via TC.main
+        all_kin_features = self.preprocessor.load_data(f'{TC.folder_name}/kin_feat.pkl', file_type='pkl')  # generate via TC.main
         all_exp_features = self.preprocessor.load_data(f'{TC.folder_name}/exp_feat.pkl')
-        all_exp_features = all_exp_features.applymap(np.mean)  # todo replicate.
+        all_exp_features = TC.ReachClassifier().mean_df(all_exp_features)
+        all_exp_features.dropna(axis=1, inplace=True)
         all_label_dfs = self.preprocessor.load_data(f'{TC.folder_name}/label_dfs.pkl')
-        #self.X = all_kin_features[all_kin_features.columns[1:10]]
-        self.X = all_exp_features[all_exp_features.columns[0:4]]
-        #self.y = all_label_dfs['Num Reaches'].values
+        self.X = all_exp_features
         self.y = all_label_dfs['Which Hand'].values
+        self.all_y = all_label_dfs
         self.assertEqual(len(self.X), len(self.y))
 
-        #
-        self.model = None
-
-    def test_basic_make_preds(self):
-        # test default model
-        model = TC.ReachClassifier(model=LogisticRegression())
-        model.fit(self.X, self.y)
-        self.assertTrue(len(model.predict(self.X)) != 0)  # TODO won't work if label has all of the same class
-        # todo and need to fix exp data?
-
-    def test_hyperparam_tuning(self):
-        classifier = TC.ReachClassifier()
-
-        # Create first pipeline for base without reducing features.
-        model = Pipeline(steps=[('standardscaler', StandardScaler()),
-                                ('classifier', RandomForestClassifier())])
-
         # Create param grid.
-        # todo expand
-        param_grid = [
+        self.param_grid = [
             {'classifier': [LogisticRegression()],
-             'classifier__penalty': ['l1', 'l2'],
-             'classifier__C': np.logspace(-4, 4, 20),
-             'classifier__solver': ['liblinear']},
+             'classifier__penalty': ['l2'],
+             'classifier__C': [100, 80, 60, 40, 20, 15, 10, 8, 6, 4, 2, 1.0, 0.5, 0.1, 0.01],
+             'classifier__solver': ['newton-cg', 'lbfgs', 'liblinear']},
             {'classifier': [RandomForestClassifier()],
              'classifier__bootstrap': [True, False],
              'classifier__max_depth': [10, 20, 30, 40, 50, 60, 70, 80, 90, 100, None],
@@ -334,10 +325,146 @@ class TestClassificationWorkflow(TestCase):
              'classifier__min_samples_split': [2, 5, 10],
              'classifier__n_estimators': [200, 400, 600, 800, 1000, 1200, 1400, 1600, 1800, 2000]},
             {'classifier': [sklearn.svm.SVC()],
-             'classifier__C': list(range(1, 10, 1))}
+             'classifier__C': [50, 40, 30, 20, 10, 8, 6, 4, 2, 1.0, 0.5, 0.1, 0.01],
+             'classifier__kernel': ['poly', 'rbf', 'sigmoid'],
+             'classifier__gamma': ['scale']},
+            {'classifier': [RidgeClassifier()],
+             'classifier__alpha': [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]}
         ]
 
-        best_model, _, _ = classifier.hyperparameter_tuning(model, param_grid, self.X, self.y, fullGridSearch=False)
+    def test_basic_make_preds(self):
+        # test default model
+        model = TC.ReachClassifier(model=LogisticRegression())
+        model.fit(self.X, self.y)
+        self.assertTrue(len(model.predict(self.X)) != 0)
+
+    def test_hyperparam_tuning(self):
+        classifier = TC.ReachClassifier()
+
+        # Create first pipeline for base without reducing features.
+        model = Pipeline(steps=[('standardscaler', StandardScaler()),
+                                ('classifier', RandomForestClassifier())])
+
+        X_train, X_val, y_train, y_val = classifier.partition(self.X, self.y)
+        best_model, _, _ = classifier.hyperparameter_tuning(
+            X_train, X_val, y_train, y_val, model, self.param_grid, fullGridSearch=False)
         self.model = best_model
+        self.model.fit(X_train, y_train)
+        _, test_score = classifier.evaluate(self.model, X_val, y_val)
+        preds = self.model.predict(self.X)
 
+        self.assertEqual(len(self.X), len(preds)), "Incorrect Num Predictions!"
+        self.assertTrue(test_score > 0.5, f"Score is less than chance: {test_score}")
 
+    def test_smote(self):
+        # test class imbalancing
+        classifier = TC.ReachClassifier(model=LogisticRegression())
+        self.model = classifier.model
+        X_res, y_res = classifier.adjust_class_imbalance(self.X, self.y)
+        X_train, X_val, y_train, y_val = classifier.partition(X_res, y_res)
+        self.model.fit(X_train, y_train)
+        _, post_test_score = classifier.evaluate(self.model, X_val, y_val)
+
+        #self.assertTrue(post_test_score > 0.5, f"Score is less than chance: {post_test_score}")
+        self.assertTrue(X_res.shape[1] == self.X.shape[1], "Incorrect shape!")
+
+    def test_feature_selection(self):
+        classifier = TC.ReachClassifier(model=LogisticRegression())
+        k = 3
+        X_selected, fs = classifier.do_feature_selection(self.X, self.y, k=k)
+        X_train, X_val, y_train, y_val = classifier.partition(X_selected, self.y)
+        #classify
+        model = LogisticRegression(solver='liblinear')
+        model.fit(X_train, y_train)
+        # evaluate the model
+        yhat = model.predict(X_val)
+        # evaluate predictions
+        accuracy = accuracy_score(y_val, yhat)
+        # print(accuracy)
+
+        # test plotting
+        classifier.plot_features(fs, self.X)
+
+        self.assertTrue(X_train.shape[1] == k, f"Incorrect number of features! {X_train.shape[1]}")
+        self.assertTrue(X_train.shape[0] == y_train.shape[0], "Incorrect Number of Trials!")
+
+    def test_classify(self):
+        # test train, validate, predict
+        classifier = TC.ReachClassifier()
+        # adjust class imbalance, partition, feature selection
+        X_selected, y_res, fs = classifier.pre_classify(self.X, self.y)
+        # train and validate X_train_selected, y_train,
+        best_model, val_score = classifier.train_and_validate(X_selected, y_res, self.param_grid)
+        # predict on all X
+        preds = best_model.predict(X_selected)
+
+        self.assertTrue(len(preds) == len(y_res))
+        self.assertTrue(val_score >= 0.60, f"{val_score}")
+
+class TestClassificationHierarchy(TestCase):
+    """ Test Overview
+        - test making predictions in hierarhcy
+        - test saving trained models in hierarchy
+        - test loading trained models in hierarchy
+
+    """
+    # Create param grid.
+    param_grid = [
+        {'classifier': [LogisticRegression()],
+         'classifier__penalty': ['l2'],
+         'classifier__C': [100, 80, 60, 40, 20, 15, 10, 8, 6, 4, 2, 1.0, 0.5, 0.1, 0.01],
+         'classifier__solver': ['newton-cg', 'lbfgs', 'liblinear']},
+        {'classifier': [RandomForestClassifier()],
+         'classifier__bootstrap': [True, False],
+         'classifier__max_depth': [10, 20, 30, 40, 50, 60, 70, 80, 90, 100, None],
+         'classifier__max_features': ['auto', 'sqrt'],
+         'classifier__min_samples_leaf': [1, 2, 4],
+         'classifier__min_samples_split': [2, 5, 10],
+         'classifier__n_estimators': [200, 400, 600, 800, 1000, 1200, 1400, 1600, 1800, 2000]},
+        {'classifier': [sklearn.svm.SVC()],
+         'classifier__C': [50, 40, 30, 20, 10, 8, 6, 4, 2, 1.0, 0.5, 0.1, 0.01],
+         'classifier__kernel': ['poly', 'rbf', 'sigmoid'],
+         'classifier__gamma': ['scale']},
+        {'classifier': [RidgeClassifier()],
+         'classifier__alpha': [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]}
+    ]
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # LOAD DATA
+        preprocessor = TC.Preprocessor()
+        all_kin_features = preprocessor.load_data(f'{TC.folder_name}/kin_feat.pkl')
+        all_exp_features = preprocessor.load_data(f'{TC.folder_name}/exp_feat.pkl')
+        all_exp_features.dropna(axis=1, inplace=True)
+        all_label_dfs = preprocessor.load_data(f'{TC.folder_name}/label_dfs.pkl')
+
+        self.X = TC.ReachClassifier.mean_df(all_exp_features)
+        self.y = all_label_dfs
+
+    def test_hierarchy_train(self):
+        # test training and saving models
+        t = TC.ClassificationHierarchy()
+        t.run_hierarchy(self.X, self.y, self.param_grid, models=None, save_models=True)
+
+        # test loading and training
+        #t = TC.ClassificationHierarchy()
+        #models = [f'{TC.folder_name}/TrialTypeModel.joblib', f'{TC.folder_name}/NumReachesModel.joblib',
+        #          f'{TC.folder_name}/WhichHandModel.joblib']
+        #t.run_hierarchy(self.X, self.y, self.param_grid, models, save_models=False)
+
+    def test_split(self):
+        """
+        # test classify and split
+        classifier = TC.ReachClassifier()
+        t = TC.ClassificationHierarchy()
+        y_0 = [random.randint(0, 1) for _ in np.arange(len(self.y))]  # 1 if null, 0 if real trial
+        model_0, val_score_0, preds_0 = t.classify(classifier, self.X, y_0, self.param_grid, False,
+                                                      f'{TC.folder_name}/TrialTypeModel', None, True)
+
+        # test split
+        X_left, y_left, X_right, y_right = t.split(preds_0, self.X, self.y)
+
+        self.assertEqual(len(X_left), len(y_left))
+        self.assertEqual(len(X_right), len(y_right))
+        self.assertEqual(len(X_left)+len(X_right), len(self.X))"""
+        pass
