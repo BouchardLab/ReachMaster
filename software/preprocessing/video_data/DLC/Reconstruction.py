@@ -62,10 +62,13 @@ def dlt_reconstruct(c, camPts, weights=None):
                     m2[z, 0] = c[7, temp2 - 1] - camPts[i - 1, (temp2 * 2) - 1]
                     temp2 = temp2 + 1
             # get the least squares solution to the reconstruction
-            if weights.any():
-                w = np.sqrt(np.diag(weights[i - 1, :]))
-                m1 = np.matmul(w, m1)
-                m2 = np.matmul(w, m2)
+            try:
+                if weights.any():
+                    w = np.sqrt(np.diag(weights[i - 1, :]))
+                    m1 = np.matmul(w, m1)
+                    m2 = np.matmul(w, m2)
+            except:
+                continue
             Q, R = np.linalg.qr(m1)  # QR decomposition with qr function
             y = np.dot(Q.T, m2)  # Let y=Q'.B using matrix multiplication
             x = np.linalg.solve(R, y)  # Solve Rx=y

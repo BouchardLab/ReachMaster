@@ -8,6 +8,7 @@
 """
 import numpy as np
 import pandas as pd
+import DataStream_Vis_Utils as utils
 from networkx.drawing.tests.test_pylab import plt
 from sklearn.model_selection import train_test_split, KFold, cross_val_score
 from sklearn import decomposition
@@ -16,12 +17,237 @@ from sklearn.pipeline import make_pipeline
 # from yellowbrick.model_selection import CVScores
 # from Classification_Visualization import visualize_model, print_preds
 from scipy import ndimage
-import h5py
+import pickle
 
+
+def norm_coordinates(kin_three_vector, transform=True, filtering=False):
+    xkin_three_vector = np.zeros(kin_three_vector.shape)
+    if transform:
+        xkin_three_vector[:, 0] = kin_three_vector[:, 0] * -2.5 + .25  # flip x-axis
+        xkin_three_vector[:, 1] = kin_three_vector[:, 1] * -0.2 + .25  # flip y-axis
+        xkin_three_vector[:, 2] = kin_three_vector[:, 2] * 1.5 + .5
+    if filtering:
+        xkin_three_vector[:, 0] = ndimage.median_filter(np.copy(xkin_three_vector[:, 0]), size=1)  # flip x-axis
+        xkin_three_vector[:, 1] = ndimage.median_filter(np.copy(xkin_three_vector[:, 1]), size=1)  # flip y-axis
+        xkin_three_vector[:, 2] = ndimage.median_filter(np.copy(xkin_three_vector[:, 2]), size=1)
+    return np.copy(xkin_three_vector)
+
+
+class ReachUtils:
+    def __init__(self, rat, date, session, sensor_data_path, kinematic_data_path):
+        self.nose = []
+        self.handle = []
+        self.left_shoulder = []
+        self.right_shoulder = []
+        self.left_forearm = []
+        self.right_forearm = []
+        self.left_wrist = []
+        self.right_wrist = []
+        self.left_palm = []
+        self.right_palm = []
+        self.left_digits = []
+        self.right_digits = []
+        self.prob_left_arm = []
+        self.prob_right_arm = []
+        self.prob_nose = []
+        self.right_shoulder = []
+        self.prob_left_shoulder = []
+        self.central_body_mass = []
+        self.body_prob = []
+        self.prob_right_shoulder = []
+        self.left_palm_velocity = []
+        self.right_palm_velocity = []
+        self.handle_velocity = []
+        self.robot_handle_speed = []
+        self.block_exp_df = []
+        self.time_vector = []
+        self.x_robot = []
+        self.y_robot = []
+        self.z_robot = []
+        self.rdata_path = sensor_data_path
+        self.prob_left_index = 0
+        self.total_lowp_vector = []
+        self.kinematic_data_path = kinematic_data_path
+        self.right_prob_index = []
+        self.sensors = []
+        self.kinematic_block = []
+        self.h_moving_sensor = []
+        self.d = []
+        self.session = session
+        self.date = date
+        self.rat = rat
+        self.lick = []
+        self.reward_zone_sensor = []
+        self.exp_response_sensor = []
+        self.left_prob_index = []
+        self.trial_start_vectors = []
+        self.trial_stop_vectors = []
+        self.load_data()
+        self.get_block_data()
+        self.get_start_stop()
+        self.sensor_array = []
+        self.position_features = []
+        self.velocity_features = []
+        return
+
+    def load_data(self):
+        df = self.import_robot_data()
+        self.sensors = df.reset_index(drop=True)
+        with (open(self.kinematic_data_path, "rb")) as openfile:
+            self.d = pickle.load(openfile)
+        return
+
+    def import_robot_data(self):
+        df = pd.read_pickle(self.rdata_path)
+        df = preprocessing(df)
+        return df
+
+    def get_start_stop(self):
+        self.trial_start_vectors = self.block_exp_df['r_start'].values[0]
+        self.trial_stop_vectors = self.block_exp_df['r_stop'].values[0]
+        return
+
+    def get_block_data(self):
+        for kin_items in self.d:
+            sess = kin_items.columns.levels[1]
+            date = kin_items.columns.levels[2]
+            if sess[0] in self.session:
+                if date[0][-2:] in self.date:
+                    print('Hooked block positions for date  ' + date[0] + '     and session  ' + sess[0])
+                    self.kinematic_block = kin_items
+        self.block_exp_df = self.sensors.loc[self.sensors['Date'] == self.date].loc[self.sensors['S'] == self.session]
+        return
+
+    def extract_sensor_data_for_reaching_predictions(self, idxstrt, idxstp):
+        self.h_moving_sensor = np.copy(self.block_exp_df['moving'].values[0][idxstrt:idxstp])
+        self.lick = np.copy(self.block_exp_df['lick'].values[0])  # Lick DIO sensor
+        self.reward_zone_sensor = np.copy(self.block_exp_df['RW'].values[0][idxstrt:idxstp])
+        self.time_vector = self.block_exp_df['time'].values[0][
+                           idxstrt:idxstp]  # extract trial timestamps from SpikeGadgets
+        self.exp_response_sensor = self.block_exp_df['exp_response'].values[0][idxstrt:idxstp]
+        r, theta, phi, self.x_robot, self.y_robot, self.z_robot = utils.forward_xform_coords(
+            self.block_exp_df['x_pot'].values[0][idxstrt:idxstp],
+            self.block_exp_df['y_pot'].values[0][idxstrt:idxstp],
+            self.block_exp_df['z_pot'].values[0][idxstrt:idxstp])
+        self.sensor_array = np.vstack((self.h_moving_sensor, self.lick, self.reward_zone_sensor, self.time_vector,
+                                      self.exp_response_sensor, self.x_robot, self.y_robot, self.z_robot))
+        return
+
+    def segment_kinematic_block_by_features(self, cl1, cl2):
+        self.nose = norm_coordinates(self.kinematic_block[self.kinematic_block.columns[6:9]].values[cl1:cl2, :])
+        self.handle = np.mean(
+            [norm_coordinates(self.kinematic_block[self.kinematic_block.columns[0:3]].values[cl1:cl2, :]),
+             norm_coordinates(self.kinematic_block[self.kinematic_block.columns[3:6]].values[cl1:cl2, :])], axis=0)
+        self.left_shoulder = norm_coordinates(
+            self.kinematic_block[self.kinematic_block.columns[9:12]].values[cl1:cl2, :])  # 21 end
+        self.right_shoulder = norm_coordinates(
+            self.kinematic_block[self.kinematic_block.columns[45:48]].values[cl1:cl2, :])  # 57 end
+        self.left_forearm = norm_coordinates(
+            self.kinematic_block[self.kinematic_block.columns[12:15]].values[cl1:cl2, :])  # 21 end
+        self.right_forearm = norm_coordinates(
+            self.kinematic_block[self.kinematic_block.columns[48:51]].values[cl1:cl2, :])  # 57 end
+        self.left_wrist = norm_coordinates(
+            self.kinematic_block[self.kinematic_block.columns[12:15]].values[cl1:cl2, :])  # 21 end
+        self.right_wrist = norm_coordinates(
+            self.kinematic_block[self.kinematic_block.columns[51:54]].values[cl1:cl2, :])  # 57 end
+        self.left_palm = norm_coordinates(self.kinematic_block[self.kinematic_block.columns[15:18]].values[cl1:cl2, :])
+        self.right_palm = norm_coordinates(self.kinematic_block[self.kinematic_block.columns[54:57]].values[cl1:cl2, :])
+        self.left_digits = norm_coordinates(
+            self.kinematic_block[self.kinematic_block.columns[18:45]].values[cl1:cl2, :])
+        self.right_digits = norm_coordinates(
+            self.kinematic_block[self.kinematic_block.columns[57:81]].values[cl1:cl2, :])
+        self.prob_right_arm = self.kinematic_block[self.kinematic_block.columns[54 + 81:57 + 81]].values[cl1:cl2,
+                              :]
+        self.prob_left_arm = self.kinematic_block[self.kinematic_block.columns[18 + 81:21 + 81]].values[cl1:cl2, :]
+        self.prob_nose = self.kinematic_block[self.kinematic_block.columns[6 + 81:9 + 81]].values[cl1:cl2, :]
+        self.prob_right_shoulder = self.kinematic_block[self.kinematic_block.columns[45 + 81:48 + 81]].values[cl1:cl2,
+                                   :]
+        self.prob_left_shoulder = self.kinematic_block[self.kinematic_block.columns[9 + 81:12 + 81]].values[cl1:cl2, :]
+        self.central_body_mass = np.mean((self.left_shoulder, self.right_shoulder), axis=0)
+        self.body_prob = np.mean((np.mean(self.prob_right_shoulder, axis=1),
+                                  np.mean(self.prob_left_shoulder, axis=1)), axis=0)
+        self.position_features = np.vstack((self.nose,self.handle, self.right_shoulder, self.left_shoulder, self.right_forearm,
+                                            self.left_forearm, self.right_wrist, self.left_wrist, self.right_palm, self.left_palm,
+                                            self.central_body_mass, self.prob_right_arm, self.prob_left_arm, self.prob_nose, self.body_prob))
+        return
+
+    def filter_data_with_probabilities(self, gen_p_thresh=0.2):
+        prob_nose = np.squeeze(
+            np.mean(self.kinematic_block[self.kinematic_block.columns[6 + 81:9 + 81]].values, axis=1))
+        prob_right_arm = np.squeeze(
+            np.mean(self.kinematic_block[self.kinematic_block.columns[45 + 81:48 + 81]].values, axis=1))
+        prob_left_arm = np.squeeze(
+            np.mean(self.kinematic_block[self.kinematic_block.columns[9 + 81:12 + 81]].values, axis=1))
+        bad_nose = np.where(prob_nose < gen_p_thresh)
+        bad_right_arm = np.where(prob_right_arm < gen_p_thresh)
+        bad_left_arm = np.where(prob_left_arm < gen_p_thresh)
+        self.total_lowp_vector = [np.intersect1d(bad_left_arm, bad_right_arm, bad_nose)]
+        self.kinematic_block.values[self.total_lowp_vector] = 0
+        self.x_robot[self.total_lowp_vector] = 0
+        self.y_robot[self.total_lowp_vector] = 0
+        self.z_robot[self.total_lowp_vector] = 0
+        self.reward_zone_sensor[self.total_lowp_vector] = 0
+        self.lick [self.total_lowp_vector] = 0
+        self.h_moving_sensor[self.total_lowp_vector] = 0
+        self.exp_response_sensor[self.total_lowp_vector] = 0
+        return
+
+    def compute_palm_velocities_from_positions(self):
+        self.left_palm_velocity = np.zeros(self.left_palm.shape)
+        self.right_palm_velocity = np.zeros(self.right_palm.shape)
+        self.handle_velocity = np.zeros(self.handle.shape)
+        self.robot_handle_speed = np.zeros(self.handle.shape)
+        for ddx in range(0, self.right_palm_velocity.shape[0]):
+            self.robot_handle_speed[ddx, :] = (np.copy(self.x_robot[ddx] - self.x_robot[ddx - 1]) / (self.time_vector[ddx] - self.time_vector[ddx - 1]) +
+                                               np.copy((self.y_robot[ddx] - self.y_robot[ddx - 1]) / (
+                                                self.time_vector[ddx] - self.time_vector[ddx - 1]) +
+                                                np.copy((self.z_robot[ddx] - self.z_robot[ddx - 1]) / (
+                                                    self.time_vector[ddx] - self.time_vector[ddx - 1]) / 3)))
+            self.handle_velocity[ddx, :] = np.copy(
+                (self.handle[ddx, :] - self.handle[ddx - 1, :]) / (self.time_vector[ddx] - self.time_vector[ddx - 1]))
+            self.left_palm_velocity[ddx, :] = np.copy((self.left_palm[ddx, :] - self.left_palm[ddx - 1, :]) / (
+                    self.time_vector[ddx] - self.time_vector[ddx - 1]))
+            self.right_palm_velocity[ddx, :] = np.copy((self.right_palm[ddx, :] - self.right_palm[ddx - 1, :]) / (
+                    self.time_vector[ddx] - self.time_vector[ddx - 1]))
+        for rx in range(self.left_palm_velocity.shape[0]):
+            if self.left_prob_index[rx] == 0:
+                self.left_palm_velocity[rx, :] = 0
+            if self.right_prob_index[rx] == 0:
+                self.right_palm_velocity[rx, :] = 0
+        np.nan_to_num(self.handle_velocity, 0)
+        np.nan_to_num(self.right_palm_velocity, 0)
+        np.nan_to_num(self.left_palm_velocity, 0)
+        self.velocity_features = np.vstack((self.handle_velocity, self.robot_handle_speed, self.right_palm_velocity, self.left_palm_velocity))
+        return
+
+    def create_and_save_classification_features(self):
+        feature_names = ['time', 'moving', 'lick', 'rz', 'exp_response', 'xbot', 'ybot', 'zbot',
+                         'nose', 'handle',  'right_s', 'left_s', 'right_f', 'left_f', 'right_w', 'left_w',
+                         'right_p', 'left_p', 'body_m', 'right_p_prob', 'left_p_prob', 'nose_prob', 'body_prob'
+                         'handle','robot_handle_speed', 'right_p_vel', 'left_p_vel']
+        feature_multiindex = pd.MultiIndex.from_product(['trials', 'features'], [np.linspace(0, len(self.trial_start_vectors), 1), feature_names])
+        save_df = pd.DataFrame(feature_multiindex)
+        for sd, isx in enumerate(self.trial_start_vectors): #enumerate over all trial vectors
+            stops = self.trial_stop_vectors[sd]
+            self.extract_sensor_data_for_reaching_predictions(isx, stops)
+            self.filter_data_with_probabilities(gen_p_thresh=0.4)
+            self.segment_kinematic_block_by_features(isx, stops)
+            self.compute_palm_velocities_from_positions()
+            save_vectors = np.vstack((self.sensor_array, self.position_features, self.velocity_features))
+            place_df = pd.DataFrame(save_vectors, feature_multiindex)
+            save_df.append(place_df) # might be able to use append kwarg..
+        save_df.to_csv('Features'+str(self.rat) + str(self.date) + str(self.session)+'.csv', index=False, header=False)
+        return
+
+
+# To run ReachUtils
+# R=ReachUtils(rat,date,session,kpath,exp_path,save_path) # init
+# R.create_and_save_classification_features
 
 ####################################
 # 1. Load data into pandas DataFrames
 ####################################
+
 
 def unpack_pkl_df(rat_df1):
     """Formats a pandas DataFrame.
@@ -89,7 +315,6 @@ def pkl_to_df(pickle_file):
                 df_to_return = pd.concat([df_to_return, df_to_append], axis=0, sort=False)
         except:
             print("do nothing, not a valid df")
-    # sets index of new df
     df_to_return = df_to_return.set_index(['rat', 'date', 'session', 'dim'])
     return df_to_return
 
@@ -120,8 +345,6 @@ def make_vectorized_labels(blist):
     new_list = np.empty((ll, 9))
     ind_total = []
     for ix, l in enumerate(blist):
-        # transform non-numerics into numeric template
-        # arm type: 'lr': 2 , 'l' : 1, 'bi' : 3 , 'lbi' : 4, 'r': 0, 'tug': 1
         if 'l' in str(l[5]):
             if 'lr' in str(l[5]):
                 blist[ix][5] = 2
@@ -143,7 +366,6 @@ def make_vectorized_labels(blist):
                 blist[ix][6] = 1
         except:
             continue
-        # code to split off any trial indices
         try:
             if len(l) > 9:  # are there indices?
                 ind_total.append([l[9], l[10]])
@@ -193,223 +415,6 @@ def onehot(r_df):
     return np.asarray(hot_vec)
 
 
-def forward_xform_coords(x, y, z):
-    """Calculates x,y,z pot arrays to help with convertings units in meters to seconds.
-    
-    Attributes
-    --------------
-        x: array, split x pot array in block from (starting frame*sample_rate to stop frame * sampple_rate)
-        y: array, split y pot array in block
-        z: array, split z pot array in block
-    
-    Returns
-    ---------------
-    r: array
-    theta: array
-    phi: array
-    x: array
-    y: array
-    z: array
-    
-    Notes: 
-        calculate_robot_features helper. 
-    
-    """
-    Axx = 168
-    Ly = 64
-    Ayy = 100
-    Lz = 47
-    Azz = 117
-    X0 = 1024
-    Y0 = 608
-    Z0 = 531
-    Ax_est = (x - X0) / (1024 * 50) + Axx
-    Ay_est = (y - Y0) / (1024 * 50) + Ayy
-    Az_est = (z - Z0) / (1024 * 50) + Azz
-    c1 = np.asarray((0, 0, 0))
-    c2 = np.asarray((Ly, Ayy, 0))
-    c3 = np.asarray((Lz, 0, Azz))
-    u = np.asarray((Ly, Ayy, 0)) / np.sqrt(Ly ** 2 + Ayy ** 2)
-    v = c3 - np.dot(c3, u) * u
-    v = v / np.sqrt(np.dot(v, v))
-    w = np.cross(u, v)
-    y1 = np.asarray((0, 1, 0))
-    z1 = np.asarray((0, 0, 1))
-    U2 = np.sqrt(np.sum((c2 - c1) ** 2))
-    U3 = np.dot(c3, u)
-    V3 = np.dot(c3, v)
-    sd = np.dot(c3, c3)
-    r3 = np.sqrt(
-        Az_est ** 2 + (Ly - Lz) ** 2 - (2 * Az_est * (Ly - Lz) * np.cos(np.pi - np.arccos((Az_est ** 2 + Lz ** 2 - sd)
-                                                                                          / (2 * Az_est * Lz)))))
-    Pu = (Ly ** 2 - Ay_est ** 2 + U2 ** 2) / (2 * U2)
-    Pv = (U3 ** 2 + V3 ** 2 - 2 * U3 * Pu + Ly ** 2 - r3 ** 2) / (2 * V3)
-    Pw = np.sqrt(-Pu ** 2 - Pv ** 2 + Ly ** 2)
-    Py = Pu * np.dot(u, y1) + Pv * np.dot(v, y1) + Pw * np.dot(w, y1)
-    Pz = Pu * np.dot(u, z1) + Pv * np.dot(v, z1) + Pw * np.dot(w, z1)
-    gammay_est = np.arcsin(Py / (Ly * np.cos(np.arcsin(Pz / Ly))))
-    gammaz_est = np.arcsin(Pz / Ly)
-    r = np.sqrt(Axx ** 2 + Ax_est ** 2 - (2 * Axx * Ax_est * np.cos(gammay_est) * np.cos(gammaz_est)))
-    dz = np.sin(-gammaz_est)
-    dy = np.sin(-gammay_est)
-    theta = np.arcsin(dz * Ax_est / r)
-    phi = np.arcsin(Ax_est * dy * np.cos(-gammaz_est) / r / np.cos(theta))
-    x = r * np.cos(theta) * np.cos(phi)
-    y = r * np.sin(theta) * np.cos(phi)
-    z = r * np.sin(phi)
-    return r, theta, phi, x, y, z
-
-
-def calculate_robot_features(xpot, ypot, zpot, mstart_, mstop_, etimes, wle, pre_):
-    """Calculates robot features.
-
-    Attributes
-    ---------------
-    xpot: x pot array in robot block
-    ypot: y pot array in robot block
-    zpot: z pot array in robot block
-    mstart_: r_start array in robot block
-    mstop_: r_stop array in robot block
-    etimes: experimental times
-
-    Returns
-    ----------
-    vx: units of seconds
-    vy: units of seconds
-    vz: units of seconds
-    x1: units of meters
-    y1:  units of meters
-    z1: units of meters
-
-    Notes:
-        import_experiment_features helper.
-        making 'sample_rate' too big can cause index out of bounds and empty array errors.
-        'sampe_rate': the adc rate is to take the analog trodes time (x.xxx seconds) and
-            transform it into the digital bit time (frames at some exposure).
-    """
-    etimes = etimes[mstart_ - pre_: mstart_ + wle]
-    sample_rate = 3000  # sample rate per second
-    try:
-        start__ = int(etimes[0] * sample_rate)
-        stop__ = int(etimes[-1] * sample_rate)
-    except:
-        print('bad sampling conversion')
-    try:
-        xp = xpot[start__:stop__]
-        yp = ypot[start__:stop__]
-        zp = zpot[start__:stop__]
-    except:
-        print('bad pot data')
-    try:
-        r1, theta1, phi1, x1, y1, z1 = forward_xform_coords(xp, yp, zp)  # units of meters
-    except:
-        print('bad xform')
-    try:
-        vx = np.diff(x1) / sample_rate  # units of seconds
-        vy = np.diff(y1) / sample_rate  # units of seconds
-        vz = np.diff(z1) / sample_rate  # units of seconds
-    except:
-        print('bad potentiometer derivatives')
-    return vx, vy, vz, x1, y1, z1
-
-
-def import_experiment_features(exp_array, starts, window_length, pre):
-    """Extracts features from experiment array.
-        Features to extract are pot_x, pot_y, pot_z, lick_array, rew_zone robot features.
-
-    Attributes
-    -----------
-    exp_array: single block from robot DataFrame
-    starts: list of ints corresponding to video frame numbers for each trial
-    window_length: trial splitting window length, the number of frames to load data from
-    pre: pre cut off before a trial starts, the number of frames to load data from before start time
-            For trial splitting
-
-    Returns
-    ----------
-    exp_feat_array: dimensions Num trials X num robot Features X wlength
-
-    Notes:
-        make_s_f_trial_arrays_from_block helper
-        making 'window_length' or 'pre' too big can cause index out of bounds errors
-        
-    """
-    wlength = (starts[0] + window_length) - (
-            starts[0] - pre)  # get length of exposures we are using for trial classification
-    exp_feat_array = np.empty((len(starts), 12, wlength))
-    for ixs, vals in enumerate(starts):
-        try:
-            time_ = exp_array['time'].to_numpy()[0]
-            moving = exp_array['moving'].to_numpy()[0]
-            rz = exp_array['RW'].to_numpy()[0]
-        except:
-            print('f1')
-
-        rz = rz[vals - pre:vals + window_length]
-        lick = exp_array['lick'].to_numpy()[0]
-        exp_time = np.asarray(time_, dtype=float) - time_[0]
-        exp_save_time = exp_time[vals - pre:vals + window_length]
-        lmi = np.searchsorted(exp_time, lick)
-        lick_mask_array = np.zeros(exp_time.shape[0] + 1, dtype=int)
-        lick_mask_array[lmi] = 1
-        np.delete(lick_mask_array, [-1])
-        lick_mask_array = lick_mask_array[vals - pre:vals + window_length]
-        moving = is_reach_rewarded(lick_mask_array)  ### is int 0
-        try:
-            vcx, vcy, vcz, xp1, yp1, zp1 = calculate_robot_features(exp_array['x_pot'].to_numpy()[0],
-                                                                    exp_array['y_pot'].to_numpy()[0],
-                                                                    exp_array['z_pot'].to_numpy()[0],
-                                                                    exp_array['r_start'].to_numpy()[0][ixs],
-                                                                    exp_array['r_stop'].to_numpy()[0][ixs],
-                                                                    exp_array['time'].to_numpy()[0],
-                                                                    window_length, pre
-                                                                    )
-        except:
-            print("bad pot data, r/m_start and stop column name error")
-        try:
-            ds_rate = int(xp1.shape[0] / (window_length + pre))  # n frames of analog / n frames of digital
-            exp_feat_array[ixs, 0, :] = exp_save_time
-            exp_feat_array[ixs, 6, :] = rz
-            try:
-                exp_feat_array[ixs, 7, :] = xp1[::ds_rate][0:window_length + pre]
-                exp_feat_array[ixs, 8, :] = yp1[::ds_rate][0:window_length + pre]
-                exp_feat_array[ixs, 9, :] = zp1[::ds_rate][0:window_length + pre]
-            except:
-                exp_feat_array[ixs, 7, :] = xp1[::ds_rate - 1]
-                exp_feat_array[ixs, 8, :] = yp1[::ds_rate - 1]
-                exp_feat_array[ixs, 9, :] = zp1[::ds_rate - 1]
-            exp_feat_array[ixs, 10, :] = lick_mask_array
-            exp_feat_array[ixs, 11, :] = moving
-        except:
-            print('bad robot data fit')
-    return exp_feat_array
-
-
-def get_kinematic_block(kin_df_, rat, kdate, session):
-    """Retrieves a single block (row) in a kinematic dataframe for given rat,date,session
-        
-    Attributes
-    ------------
-    kin_df_: dataframe, kinematic dataframe indexed by 'rat','date','session',dim
-    rat: str, rat ID
-    kdate: str, block date in 'kin_df_'
-    session: str, block session
-        
-    Returns
-    --------
-    kin_block_df: dataframe, desired block row in 'kin_df_' indexed by rat,date,session,dim
-    
-    Raises
-    --------
-        LookupError: If desired block does not exist
-    """
-    try:
-        kin_block_df = kin_df_[kin_df_.index.get_level_values('rat') == rat]
-        kin_block_df = kin_block_df[kin_block_df.index.get_level_values('date') == kdate]
-        kin_block_df = kin_block_df[kin_block_df.index.get_level_values('session') == session]
-        return kin_block_df
-    except:
-        raise LookupError('Not in kinematic dataframe : Trial ' + rat + " " + kdate + " " + session) from None
 
 
 ###########################
@@ -462,101 +467,6 @@ def is_reach_rewarded(lick_data_):
         except:
             rew_lick_ = 0
     return rew_lick_
-
-
-#####
-# Functions below generate some features with the positional data
-#####
-
-
-def right_arm_vector_from_kinematics(tka):
-    """Function to extract positions from the right arm of a rat.
-
-    Attributes
-    ------------
-    tka: full positional array
-
-    Returns
-    -----------
-    tz: array containing positions from right arm
-
-    """
-    tz = tka[:, :, 15:27, :]
-    return tz
-
-
-def left_arm_vector_from_kinematics(tka):
-    """Function to extract positions of the left arm from a rat's experimental block
-    Attributes
-    -------------
-    tka: array, complete positional data
-
-    Returns
-    ---------
-    tz: array, positional data from left arm
-
-    """
-    tz = tka[:, :, 3:15, :]
-    return tz
-
-
-def left_int_position(left_arm):
-    left_int_pos = np.mean(left_arm[:, :, :, :], axis=2)  # shape Trials x dimensions x frames
-    return left_int_pos
-
-
-def left_int_velocity(left_int_pos, time_vector=False):
-    int_vel = np.diff(left_int_pos, axis=2)
-    if time_vector:
-        int_vel = int_vel / np.diff(time_vector)  # dx /dt
-    return int_vel
-
-
-def left_hand(tka):
-    lh = tka[:, :, 6:15, :]
-    return lh
-
-
-def left_skeleton(tka):
-    left_skeleton = tka[:, :, 3:6, :]
-    return left_skeleton
-
-
-def right_skeleton(tka):
-    right_skeleton = tka[:, :, 15:18, :]
-    return right_skeleton
-
-
-def right_skeleton_velocity(right_skeleton_):
-    right_skeleton_velocity = np.diff(right_skeleton_, axis=2)
-    return right_skeleton_velocity
-
-
-def create_arm_feature_arrays_trial(a, e_d, p_d, ii, left=False, hand=False):
-    """Function to create arm and hand objects from DLC-generated positional data on a per-trial basis.
-
-    Attributes
-    -----------
-    a: Array size [Trials, Dims, BParts, WLen + Pre)
-    e_d: (Trials, 12,  WLen+Pre)
-    p_d: (Trials, Dims, BParts, WLen+Pre)
-
-    Returns
-    ---------
-    a_: unique type of feature vector (Trials, Dims, features, WLen+Pre)
-
-    """
-    if left:
-        if hand:
-            a_ = a[ii, :, 7:15, :]
-        else:
-            a_ = a[ii, :, 4:7, :]  # sum over shoulder, forearm, palm, wrist
-    else:
-        if hand:
-            a_ = a[ii, :, 19:27, :]
-        else:
-            a_ = a[ii, :, 16:19, :]  # sum over shoulder, forearm, palm, wrist
-    return a_
 
 
 #########################
@@ -1014,6 +924,7 @@ def is_tug_no_tug():
     # ask if there is robot velocity after a trial ends (for around a second)
     tug_preds = []
     return tug_preds
+
 
 ###############################
 # DLC Video Labels
