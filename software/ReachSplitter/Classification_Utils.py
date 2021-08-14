@@ -34,7 +34,7 @@ def norm_coordinates(kin_three_vector, transform=True, filtering=False):
 
 
 class ReachUtils:
-    def __init__(self, rat, date, session, sensor_data_path, kinematic_data_path):
+    def __init__(self, rat, date, session, sensor_data_path, kinematic_data_path, save_path):
         self.nose = []
         self.handle = []
         self.left_shoulder = []
@@ -77,6 +77,7 @@ class ReachUtils:
         self.date = date
         self.rat = rat
         self.lick = []
+        self.lick_vector = []
         self.reward_zone_sensor = []
         self.exp_response_sensor = []
         self.left_prob_index = []
@@ -85,14 +86,15 @@ class ReachUtils:
         self.load_data()
         self.get_block_data()
         self.get_start_stop()
+        self.save_list = []
         self.sensor_array = []
         self.position_features = []
         self.velocity_features = []
+        self.prob_features = []
         return
 
     def load_data(self):
-        df = self.import_robot_data()
-        self.sensors = df.reset_index(drop=True)
+        self.sensors = self.import_robot_data().reset_index(drop=True)
         with (open(self.kinematic_data_path, "rb")) as openfile:
             self.d = pickle.load(openfile)
         return
@@ -124,13 +126,34 @@ class ReachUtils:
         self.reward_zone_sensor = np.copy(self.block_exp_df['RW'].values[0][idxstrt:idxstp])
         self.time_vector = self.block_exp_df['time'].values[0][
                            idxstrt:idxstp]  # extract trial timestamps from SpikeGadgets
+        self.time_vector = list(np.around(np.array(self.time_vector), 2))  # round time's to ms
         self.exp_response_sensor = self.block_exp_df['exp_response'].values[0][idxstrt:idxstp]
+        self.check_licktime()
         r, theta, phi, self.x_robot, self.y_robot, self.z_robot = utils.forward_xform_coords(
             self.block_exp_df['x_pot'].values[0][idxstrt:idxstp],
             self.block_exp_df['y_pot'].values[0][idxstrt:idxstp],
             self.block_exp_df['z_pot'].values[0][idxstrt:idxstp])
-        self.sensor_array = np.vstack((self.h_moving_sensor, self.lick, self.reward_zone_sensor, self.time_vector,
-                                      self.exp_response_sensor, self.x_robot, self.y_robot, self.z_robot))
+        try:
+            self.sensor_array = np.vstack(
+                (self.h_moving_sensor, self.lick_vector, self.reward_zone_sensor, self.time_vector,
+                 self.exp_response_sensor, self.x_robot, self.y_robot, self.z_robot))
+        except:
+            pdb.set_trace()
+        return
+
+    def check_licktime(self):
+        self.lick_vector = np.zeros((len(self.time_vector)))
+        self.lick = list(np.around(np.array(self.lick), 2))
+        for l in self.lick:
+            if l >= self.time_vector[0]:
+                for trisx, t in enumerate(self.time_vector):
+                    if t in self.lick:
+                        self.lick_vector[trisx] = 1
+                if l <= self.time_vector[25]:  # is there a rapid reward? Bout-like interactions...
+                    self.bout_flag = True
+                if l <= self.time_vector[-1]:
+                    self.trial_rewarded = True
+                    break
         return
 
     def segment_kinematic_block_by_features(self, cl1, cl2):
@@ -156,40 +179,47 @@ class ReachUtils:
             self.kinematic_block[self.kinematic_block.columns[18:45]].values[cl1:cl2, :])
         self.right_digits = norm_coordinates(
             self.kinematic_block[self.kinematic_block.columns[57:81]].values[cl1:cl2, :])
-        self.prob_right_arm = self.kinematic_block[self.kinematic_block.columns[54 + 81:57 + 81]].values[cl1:cl2,
-                              :]
-        self.prob_left_arm = self.kinematic_block[self.kinematic_block.columns[18 + 81:21 + 81]].values[cl1:cl2, :]
-        self.prob_nose = self.kinematic_block[self.kinematic_block.columns[6 + 81:9 + 81]].values[cl1:cl2, :]
+        self.prob_right_arm = np.mean(
+            self.kinematic_block[self.kinematic_block.columns[54 + 81:57 + 81]].values[cl1:cl2, :], axis=1)
+        self.prob_left_arm = np.mean(
+            self.kinematic_block[self.kinematic_block.columns[18 + 81:21 + 81]].values[cl1:cl2, :], axis=1)
+        self.prob_nose = np.mean(self.kinematic_block[self.kinematic_block.columns[6 + 81:9 + 81]].values[cl1:cl2, :],
+                                 axis=1)
         self.prob_right_shoulder = self.kinematic_block[self.kinematic_block.columns[45 + 81:48 + 81]].values[cl1:cl2,
                                    :]
         self.prob_left_shoulder = self.kinematic_block[self.kinematic_block.columns[9 + 81:12 + 81]].values[cl1:cl2, :]
         self.central_body_mass = np.mean((self.left_shoulder, self.right_shoulder), axis=0)
         self.body_prob = np.mean((np.mean(self.prob_right_shoulder, axis=1),
                                   np.mean(self.prob_left_shoulder, axis=1)), axis=0)
-        self.position_features = np.vstack((self.nose,self.handle, self.right_shoulder, self.left_shoulder, self.right_forearm,
-                                            self.left_forearm, self.right_wrist, self.left_wrist, self.right_palm, self.left_palm,
-                                            self.central_body_mass, self.prob_right_arm, self.prob_left_arm, self.prob_nose, self.body_prob))
+        self.position_features = np.hstack(
+            (self.nose, self.handle, self.right_shoulder, self.left_shoulder, self.right_forearm,
+             self.left_forearm, self.right_wrist, self.left_wrist, self.right_palm, self.left_palm,
+             self.central_body_mass))
+        self.prob_features = np.vstack((self.prob_right_arm, self.prob_left_arm, self.prob_nose, self.body_prob))
         return
 
-    def filter_data_with_probabilities(self, gen_p_thresh=0.2):
-        prob_nose = np.squeeze(
-            np.mean(self.kinematic_block[self.kinematic_block.columns[6 + 81:9 + 81]].values, axis=1))
-        prob_right_arm = np.squeeze(
-            np.mean(self.kinematic_block[self.kinematic_block.columns[45 + 81:48 + 81]].values, axis=1))
-        prob_left_arm = np.squeeze(
-            np.mean(self.kinematic_block[self.kinematic_block.columns[9 + 81:12 + 81]].values, axis=1))
-        bad_nose = np.where(prob_nose < gen_p_thresh)
-        bad_right_arm = np.where(prob_right_arm < gen_p_thresh)
-        bad_left_arm = np.where(prob_left_arm < gen_p_thresh)
-        self.total_lowp_vector = [np.intersect1d(bad_left_arm, bad_right_arm, bad_nose)]
+    def filter_all_kin_data_with_probabilities(self, gen_p_thresh=0.2):
+        prob_nose_total = np.mean(self.kinematic_block[self.kinematic_block.columns[6 + 81:9 + 81]].values, axis=1)
+        prob_right_arm_total = np.mean(self.kinematic_block[self.kinematic_block.columns[54 + 81:57 + 81]].values,
+                                       axis=1)
+        prob_left_arm_total = np.mean(self.kinematic_block[self.kinematic_block.columns[18 + 81:21 + 81]].values,
+                                      axis=1)
+        bad_nose = np.array(prob_nose_total) < gen_p_thresh
+        bad_right_arm = np.array(prob_right_arm_total) < gen_p_thresh
+        bad_left_arm = np.array(prob_left_arm_total) < gen_p_thresh
+        self.total_lowp_vector = np.logical_and(bad_nose, bad_right_arm, bad_left_arm)
         self.kinematic_block.values[self.total_lowp_vector] = 0
-        self.x_robot[self.total_lowp_vector] = 0
-        self.y_robot[self.total_lowp_vector] = 0
-        self.z_robot[self.total_lowp_vector] = 0
-        self.reward_zone_sensor[self.total_lowp_vector] = 0
-        self.lick [self.total_lowp_vector] = 0
-        self.h_moving_sensor[self.total_lowp_vector] = 0
-        self.exp_response_sensor[self.total_lowp_vector] = 0
+        return
+
+    def filter_trial_data_with_probabilities(self, c1, c2, gen_p_thresh=0.2):
+        lowp_vector = self.total_lowp_vector[c1:c2]
+        self.x_robot[lowp_vector] = 0
+        self.y_robot[lowp_vector] = 0
+        self.z_robot[lowp_vector] = 0
+        self.reward_zone_sensor[lowp_vector] = 0
+        self.lick_vector[lowp_vector] = 0
+        self.h_moving_sensor[lowp_vector] = 0
+        self.exp_response_sensor[lowp_vector] = 0
         return
 
     def compute_palm_velocities_from_positions(self):
@@ -198,47 +228,54 @@ class ReachUtils:
         self.handle_velocity = np.zeros(self.handle.shape)
         self.robot_handle_speed = np.zeros(self.handle.shape)
         for ddx in range(0, self.right_palm_velocity.shape[0]):
-            self.robot_handle_speed[ddx, :] = (np.copy(self.x_robot[ddx] - self.x_robot[ddx - 1]) / (self.time_vector[ddx] - self.time_vector[ddx - 1]) +
+            self.robot_handle_speed[ddx, :] = (np.copy(self.x_robot[ddx] - self.x_robot[ddx - 1]) / (
+                        self.time_vector[ddx] - self.time_vector[ddx - 1]) +
                                                np.copy((self.y_robot[ddx] - self.y_robot[ddx - 1]) / (
-                                                self.time_vector[ddx] - self.time_vector[ddx - 1]) +
-                                                np.copy((self.z_robot[ddx] - self.z_robot[ddx - 1]) / (
-                                                    self.time_vector[ddx] - self.time_vector[ddx - 1]) / 3)))
+                                                       self.time_vector[ddx] - self.time_vector[ddx - 1]) +
+                                                       np.copy((self.z_robot[ddx] - self.z_robot[ddx - 1]) / (
+                                                               self.time_vector[ddx] - self.time_vector[ddx - 1]) / 3)))
             self.handle_velocity[ddx, :] = np.copy(
                 (self.handle[ddx, :] - self.handle[ddx - 1, :]) / (self.time_vector[ddx] - self.time_vector[ddx - 1]))
             self.left_palm_velocity[ddx, :] = np.copy((self.left_palm[ddx, :] - self.left_palm[ddx - 1, :]) / (
                     self.time_vector[ddx] - self.time_vector[ddx - 1]))
             self.right_palm_velocity[ddx, :] = np.copy((self.right_palm[ddx, :] - self.right_palm[ddx - 1, :]) / (
                     self.time_vector[ddx] - self.time_vector[ddx - 1]))
-        for rx in range(self.left_palm_velocity.shape[0]):
-            if self.left_prob_index[rx] == 0:
-                self.left_palm_velocity[rx, :] = 0
-            if self.right_prob_index[rx] == 0:
-                self.right_palm_velocity[rx, :] = 0
         np.nan_to_num(self.handle_velocity, 0)
         np.nan_to_num(self.right_palm_velocity, 0)
         np.nan_to_num(self.left_palm_velocity, 0)
-        self.velocity_features = np.vstack((self.handle_velocity, self.robot_handle_speed, self.right_palm_velocity, self.left_palm_velocity))
+        self.velocity_features = np.hstack(
+            (self.handle_velocity, self.robot_handle_speed, self.right_palm_velocity, self.left_palm_velocity))
         return
 
     def create_and_save_classification_features(self):
         feature_names = ['time', 'moving', 'lick', 'rz', 'exp_response', 'xbot', 'ybot', 'zbot',
-                         'nose', 'handle',  'right_s', 'left_s', 'right_f', 'left_f', 'right_w', 'left_w',
+                         'nosex', 'nosey', 'nosez', 'handlex', 'handley', 'handlez', 'right_s', 'left_s', 'right_f',
+                         'left_f', 'right_w', 'left_w',
                          'right_p', 'left_p', 'body_m', 'right_p_prob', 'left_p_prob', 'nose_prob', 'body_prob'
-                         'handle','robot_handle_speed', 'right_p_vel', 'left_p_vel']
-        feature_multiindex = pd.MultiIndex.from_product(['trials', 'features'], [np.linspace(0, len(self.trial_start_vectors), 1), feature_names])
-        save_df = pd.DataFrame(feature_multiindex)
-        for sd, isx in enumerate(self.trial_start_vectors): #enumerate over all trial vectors
+                                                                                                    'handle',
+                         'robot_handle_speed', 'right_p_vel', 'left_p_vel']
+        trial_numbers = np.linspace(0, len(self.trial_start_vectors), 1)
+        self.filter_all_kin_data_with_probabilities(gen_p_thresh=0.4)
+        for sd, isx in enumerate(self.trial_start_vectors):  # enumerate over all trial vectors
             stops = self.trial_stop_vectors[sd]
             self.extract_sensor_data_for_reaching_predictions(isx, stops)
-            self.filter_data_with_probabilities(gen_p_thresh=0.4)
             self.segment_kinematic_block_by_features(isx, stops)
+            self.filter_trial_data_with_probabilities(isx, stops, gen_p_thresh=0.4)
             self.compute_palm_velocities_from_positions()
-            save_vectors = np.vstack((self.sensor_array, self.position_features, self.velocity_features))
-            place_df = pd.DataFrame(save_vectors, feature_multiindex)
-            save_df.append(place_df) # might be able to use append kwarg..
-        save_df.to_csv('Features'+str(self.rat) + str(self.date) + str(self.session)+'.csv', index=False, header=False)
-        return
-
+            try:
+                save_vectors = np.vstack((self.sensor_array,
+                                          self.position_features.reshape(self.position_features.shape[1],
+                                                                         self.position_features.shape[0]),
+                                          self.prob_features,
+                                          self.velocity_features.reshape(self.velocity_features.shape[1],
+                                                                         self.velocity_features.shape[0])))
+            except:
+                pdb.set_trace()
+            self.save_list.append(save_vectors)  # might be able to use append kwarg..
+        save_df = pd.DataFrame(self.save_list)
+        save_df.to_csv('Features' + str(self.rat) + str(self.date) + str(self.session) + '.csv', index=False,
+                       header=False)
+        return self.save_list
 
 # To run ReachUtils
 # R=ReachUtils(rat,date,session,kpath,exp_path,save_path) # init
