@@ -1051,31 +1051,35 @@ class Preprocessor:
 def main_run_all():
     # LOAD DATA
     preprocessor = Preprocessor()
-    exp_data = preprocessor.load_data('experimental_data.pickle')
-    tkdf_16 = preprocessor.load_data('tkdf16_f.pkl')
-    tkdf_15 = preprocessor.load_data('3D_positions_RM15_f.pkl')
-    tkdf_14 = preprocessor.load_data('3D_positions_RM14_f.pkl')
+    #exp_data = preprocessor.load_data('experimental_data.pickle')
+    # Define data paths
+    tkdf_16 = preprocessor.load_data('DataFrames/tkdf16_f.pkl')
+    tkdf_15 = preprocessor.load_data('DataFrames/3D_positions_RM15_f.pkl')
+    tkdf_14 = preprocessor.load_data('DataFrames/3D_positions_RM14_f.pkl')
+    RM16_expdf = preprocessor.load_data('DataFrames/RM16_expdf.pickle')
+    RM15_expdf = preprocessor.load_data('DataFrames/RM15_expdf.pickle')
+    RM14_expdf = preprocessor.load_data('DataFrames/RM14_expdf.pickle')
 
     # GET and SAVE BLOCKS
     # (df, date, session, rat, save_as=None, format='exp')
     exp_lst = [
-        preprocessor.get_single_block(exp_data, '0190917', 'S1', 'RM16', format='exp',
+        preprocessor.get_single_block(RM16_expdf, '0190917', 'S1', '09172019', format='exp',
                                       save_as=f'{folder_name}/exp_rm16_9_17_s1.pkl'),
-        preprocessor.get_single_block(exp_data, '0190918', 'S1', 'RM16', format='exp',
+        preprocessor.get_single_block(RM16_expdf, '0190918', 'S1', '09182019', format='exp',
                                       save_as=f'{folder_name}/exp_rm16_9_18_s1.pkl'),
-        preprocessor.get_single_block(exp_data, '0190917', 'S2', 'RM16', format='exp',
+        preprocessor.get_single_block(RM16_expdf, '0190917', 'S2',  '09172019', format='exp',
                                       save_as=f'{folder_name}/exp_rm16_9_17_s2.pkl'),
-        preprocessor.get_single_block(exp_data, '0190920', 'S3', 'RM16', format='exp',
+        preprocessor.get_single_block(RM16_expdf, '0190920', 'S3', '09202019', format='exp',
                                       save_as=f'{folder_name}/exp_rm16_9_20_s3.pkl'),
-        preprocessor.get_single_block(exp_data, '0190919', 'S3', 'RM16', format='exp',
+        preprocessor.get_single_block(RM16_expdf, '0190919', 'S3', '09192019', format='exp',
                                       save_as=f'{folder_name}/exp_rm16_9_19_s3.pkl'),
-        preprocessor.get_single_block(exp_data, '0190925', 'S3', 'RM15', format='exp',
+        preprocessor.get_single_block(RM15_expdf, '0190925', 'S3', '09252019', format='exp',
                                       save_as=f'{folder_name}/exp_rm15_9_25_s3.pkl'),
-        preprocessor.get_single_block(exp_data, '0190917', 'S4', 'RM15', format='exp',
+        preprocessor.get_single_block(RM15_expdf, '0190917', 'S4', '09172019', format='exp',
                                       save_as=f'{folder_name}/exp_rm15_9_17_s4.pkl'),
-        preprocessor.get_single_block(exp_data, '0190920', 'S1', 'RM14', format='exp',
+        preprocessor.get_single_block(RM14_expdf, '0190920', 'S1', '09202019', format='exp',
                                       save_as=f'{folder_name}/exp_rm14_9_20_s1.pkl'),
-        preprocessor.get_single_block(exp_data, '0190918', 'S2', 'RM14', format='exp',
+        preprocessor.get_single_block(RM14_expdf, '0190918', 'S2', '09182019', format='exp',
                                       save_as=f'{folder_name}/exp_rm14_9_18_s2.pkl')
     ]
 
@@ -1200,7 +1204,7 @@ def create_features():
                  ['18', 'S2', 'RM14']]
 
     # Append paths
-    kin_paths = [tkdf_16, tkdf_15, tkdf_14]
+    #kin_paths = [tkdf_16, tkdf_15, tkdf_14]
     exp_paths = [RM16_expdf, RM15_expdf, RM14_expdf]
     block_paths = [blocks_16, blocks_15, blocks_14]
 
@@ -1231,7 +1235,7 @@ def create_features():
     # CREATE FEAT and LABEL DFS
     feat_dfs = []
     label_dfs = []
-    for i in range(len(kin_paths)):  # for each rat
+    for i in range(len(block_paths)):  # for each rat
         for j in range(len(block_paths[i])):
             kin_data = Preprocessor.load_data(kin_lst[i][j])
             exp_data = Preprocessor.load_data(exp_lst[i][j])
