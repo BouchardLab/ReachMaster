@@ -34,7 +34,7 @@ def norm_coordinates(kin_three_vector, transform=True, filtering=False):
 
 
 class ReachUtils:
-    def __init__(self, rat, date, session, sensor_data_path, kinematic_data_path, save_path):
+    def __init__(self, rat, date, session, exp_data, kin_data, save_path):
         self.nose = []
         self.handle = []
         self.left_shoulder = []
@@ -59,18 +59,18 @@ class ReachUtils:
         self.right_palm_velocity = []
         self.handle_velocity = []
         self.robot_handle_speed = []
-        self.block_exp_df = []
+        self.block_exp_df = exp_data
         self.time_vector = []
         self.x_robot = []
         self.y_robot = []
         self.z_robot = []
-        self.rdata_path = sensor_data_path
+        #self.rdata_path = sensor_data_path
         self.prob_left_index = 0
         self.total_lowp_vector = []
-        self.kinematic_data_path = kinematic_data_path
+        #self.kinematic_data_path = kinematic_data_path
         self.right_prob_index = []
         self.sensors = []
-        self.kinematic_block = []
+        self.kinematic_block = kin_data
         self.h_moving_sensor = []
         self.d = []
         self.session = session
@@ -83,7 +83,7 @@ class ReachUtils:
         self.left_prob_index = []
         self.trial_start_vectors = []
         self.trial_stop_vectors = []
-        self.load_data()
+        #self.load_data()
         self.get_block_data()
         self.get_start_stop()
         self.save_list = []
@@ -94,15 +94,15 @@ class ReachUtils:
         return
 
     def load_data(self):
-        self.sensors = self.import_robot_data().reset_index(drop=True)
-        with (open(self.kinematic_data_path, "rb")) as openfile:
-            self.d = pickle.load(openfile)
+        #self.sensors = self.import_robot_data().reset_index(drop=True)
+        #with (open(self.kinematic_data_path, "rb")) as openfile:
+        #    self.d = pickle.load(openfile)
         return
 
     def import_robot_data(self):
-        df = pd.read_pickle(self.rdata_path)
-        df = preprocessing(df)
-        return df
+        #df = pd.read_pickle(self.rdata_path)
+        #df = preprocessing(df)
+        return #df
 
     def get_start_stop(self):
         self.trial_start_vectors = self.block_exp_df['r_start'].values[0]
@@ -110,22 +110,27 @@ class ReachUtils:
         return
 
     def get_block_data(self):
-        for kin_items in self.d:
-            sess = kin_items.columns.levels[1]
-            date = kin_items.columns.levels[2]
-            if sess[0] in self.session:
-                if date[0][-2:] in self.date:
-                    print('Hooked block positions for date  ' + date[0] + '     and session  ' + sess[0])
-                    self.kinematic_block = kin_items
-        self.block_exp_df = self.sensors.loc[self.sensors['Date'] == self.date].loc[self.sensors['S'] == self.session]
+        #for kin_items in self.d:
+        #    sess = kin_items.columns.levels[1]
+        #    date = kin_items.columns.levels[2]
+        #    if sess[0] in self.session:
+         #       if date[0][-2:] in self.date:
+         #           print('Hooked block positions for date  ' + date[0] + '     and session  ' + sess[0])
+         #           self.kinematic_block = kin_items
+        #self.block_exp_df = self.sensors.loc[self.sensors['Date'] == self.date].loc[self.sensors['S'] == self.session]
+        #assert len(self.block_exp_df) != 0, "Block not found"
         return
 
     def extract_sensor_data_for_reaching_predictions(self, idxstrt, idxstp):
+        if idxstrt > idxstp:  # handles case where start>stop
+            temp = idxstp
+            idxstp = idxstrt
+            idxstrt = temp
         self.h_moving_sensor = np.copy(self.block_exp_df['moving'].values[0][idxstrt:idxstp])
         self.lick = np.copy(self.block_exp_df['lick'].values[0])  # Lick DIO sensor
         self.reward_zone_sensor = np.copy(self.block_exp_df['RW'].values[0][idxstrt:idxstp])
-        self.time_vector = self.block_exp_df['time'].values[0][
-                           idxstrt:idxstp]  # extract trial timestamps from SpikeGadgets
+        self.time_vector = self.block_exp_df['time'].values[0][idxstrt:idxstp]  # extract trial timestamps from SpikeGadgets
+        assert len(self.time_vector) != 0, "time_vector is empty!"
         self.time_vector = list(np.around(np.array(self.time_vector), 2))  # round time's to ms
         self.exp_response_sensor = self.block_exp_df['exp_response'].values[0][idxstrt:idxstp]
         self.check_licktime()
@@ -138,7 +143,8 @@ class ReachUtils:
                 (self.h_moving_sensor, self.lick_vector, self.reward_zone_sensor, self.time_vector,
                  self.exp_response_sensor, self.x_robot, self.y_robot, self.z_robot))
         except:
-            pdb.set_trace()
+            print("issue 1 ")
+            exit(-1)
         return
 
     def check_licktime(self):
@@ -228,18 +234,21 @@ class ReachUtils:
         self.handle_velocity = np.zeros(self.handle.shape)
         self.robot_handle_speed = np.zeros(self.handle.shape)
         for ddx in range(0, self.right_palm_velocity.shape[0]):
+            delta_time = self.time_vector[ddx] - self.time_vector[ddx - 1]
+            if delta_time == 0:  # handles div by 0 case
+                delta_time = 0.001
             self.robot_handle_speed[ddx, :] = (np.copy(self.x_robot[ddx] - self.x_robot[ddx - 1]) / (
-                        self.time_vector[ddx] - self.time_vector[ddx - 1]) +
+                        delta_time) +
                                                np.copy((self.y_robot[ddx] - self.y_robot[ddx - 1]) / (
-                                                       self.time_vector[ddx] - self.time_vector[ddx - 1]) +
+                                                       delta_time) +
                                                        np.copy((self.z_robot[ddx] - self.z_robot[ddx - 1]) / (
-                                                               self.time_vector[ddx] - self.time_vector[ddx - 1]) / 3)))
+                                                               delta_time) / 3)))
             self.handle_velocity[ddx, :] = np.copy(
-                (self.handle[ddx, :] - self.handle[ddx - 1, :]) / (self.time_vector[ddx] - self.time_vector[ddx - 1]))
+                (self.handle[ddx, :] - self.handle[ddx - 1, :]) / (delta_time))
             self.left_palm_velocity[ddx, :] = np.copy((self.left_palm[ddx, :] - self.left_palm[ddx - 1, :]) / (
-                    self.time_vector[ddx] - self.time_vector[ddx - 1]))
+                    delta_time))
             self.right_palm_velocity[ddx, :] = np.copy((self.right_palm[ddx, :] - self.right_palm[ddx - 1, :]) / (
-                    self.time_vector[ddx] - self.time_vector[ddx - 1]))
+                    delta_time))
         np.nan_to_num(self.handle_velocity, 0)
         np.nan_to_num(self.right_palm_velocity, 0)
         np.nan_to_num(self.left_palm_velocity, 0)
@@ -270,10 +279,11 @@ class ReachUtils:
                                           self.velocity_features.reshape(self.velocity_features.shape[1],
                                                                          self.velocity_features.shape[0])))
             except:
-                pdb.set_trace()
+                print("issue 2")
+                exit(-1)
             self.save_list.append(save_vectors)  # might be able to use append kwarg..
         save_df = pd.DataFrame(self.save_list)
-        save_df.to_csv('Features' + str(self.rat) + str(self.date) + str(self.session) + '.csv', index=False,
+        save_df.to_csv('ClassifyTrials/Features' + str(self.rat) + str(self.date) + str(self.session) + '.csv', index=False,
                        header=False)
         return self.save_list
 

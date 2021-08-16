@@ -160,8 +160,8 @@ class ReachClassifier:
         References: https://machinelearningmastery.com/smote-oversampling-for-imbalanced-classification/
         """
         oversampler = SMOTE(random_state=42)
-        #undersampler = RandomUnderSampler(random_state=42)
-        steps = [('o', oversampler)]#, ('u', undersampler)]
+        # undersampler = RandomUnderSampler(random_state=42)
+        steps = [('o', oversampler)]  # , ('u', undersampler)]
         pipeline = imblearn_Pipeline(steps=steps)
         X_res, y_res = pipeline.fit_resample(X, y)
         return X_res, y_res
@@ -254,7 +254,7 @@ class ReachClassifier:
         for i in range(len(fs.scores_)):
             print('Feature %d: %f' % (i, fs.scores_[i]))
         # plot the scores
-        #x = [i for i in range(len(fs.scores_))]
+        # x = [i for i in range(len(fs.scores_))]
         x = X.columns
         plt.bar(x, fs.scores_)
         # rotate x axis to avoid overlap
@@ -482,8 +482,6 @@ class ClassificationHierarchy:
         _, val_score = ReachClassifier.evaluate(model, X_selected, y)
         return val_score
 
-
-
     def trace_datapoint(self, X, arr=[]):
         """ Q3.2
         for a data point from the spam dataset, prints splits and thresholds
@@ -631,11 +629,12 @@ class MakeFeatures:
         """
         reference: https://towardsdatascience.com/interesting-ways-to-select-pandas-dataframe-columns-b29b82bbfb33
         """
-        return df.loc[:,[('Palm' in i) or ('Wrist' in i) for i in df.columns]]
+        return df.loc[:, [('Palm' in i) or ('Wrist' in i) for i in df.columns]]
 
     @staticmethod
     def randomize_feat(df):
         return df.sample(n=len(df), replace=False, axis=0, random_state=42)  # shuffles rows w.o repl
+
 
 class Preprocessor:
     def __init__(self):
@@ -838,7 +837,8 @@ class Preprocessor:
                 start = 0
             # slice trials
             trials.append(formatted_kin_block.loc[start:frame_num + window_length])
-            times.append(exp_block['time'][0][start:frame_num + window_length+1])  # plus 1 to adjust size diff with trial size
+            times.append(
+                exp_block['time'][0][start:frame_num + window_length + 1])  # plus 1 to adjust size diff with trial size
         return trials, times
 
     @staticmethod
@@ -933,7 +933,6 @@ class Preprocessor:
         if randomize:
             return MakeFeatures.randomize_feat(ret_df)
         return ret_df
-
 
     @staticmethod
     def match_exp_to_label(exp_feat_df, label):
@@ -1040,7 +1039,7 @@ class Preprocessor:
         self.set_label(vectorized_label)
 
         # create kin features
-        #kin_feat_df = self.make_kin_feat_df()
+        # kin_feat_df = self.make_kin_feat_df()
         kin_feat_df = self.make_kin_psv_feat_df()  # todo randomize=True to change features
 
         # create exp features
@@ -1058,6 +1057,7 @@ def main_run_all():
     tkdf_14 = preprocessor.load_data('3D_positions_RM14_f.pkl')
 
     # GET and SAVE BLOCKS
+    # (df, date, session, rat, save_as=None, format='exp')
     exp_lst = [
         preprocessor.get_single_block(exp_data, '0190917', 'S1', 'RM16', format='exp',
                                       save_as=f'{folder_name}/exp_rm16_9_17_s1.pkl'),
@@ -1100,7 +1100,7 @@ def main_run_all():
                                       save_as=f'{folder_name}/kin_rm14_9_18_s2.pkl')
     ]
 
-    # CREATE FEAT and LABEL DFS
+    """# CREATE FEAT and LABEL DFS
     kin_dfs = []
     exp_dfs = []
     label_dfs = []
@@ -1108,6 +1108,7 @@ def main_run_all():
         kin_block = kin_lst[i]
         exp_block = exp_lst[i]
         label = labels[i]
+
         kin_feat_df, exp_feat_df = preprocessor.make_ml_feat_labels(kin_block, exp_block,
                                                                     label, et, el,
                                                                     window_length, pre,
@@ -1124,7 +1125,6 @@ def main_run_all():
             print(f"{i}th Exp Block contains Nan!")
             for column in kin_feat_df:
                 if exp_feat_df[column].isnull().values.any():
-
                     print(f" Exp '{exp_feat_df[column]}' contains NaN and replaced with 0!")
             exp_feat_df.fillna(0)
 
@@ -1144,6 +1144,118 @@ def main_run_all():
     Preprocessor.save_data(all_kin_features, f'{folder_name}/kin_feat.pkl', file_type='pkl')
     Preprocessor.save_data(all_exp_features, f'{folder_name}/exp_feat.pkl', file_type='pkl')
     Preprocessor.save_data(all_label_dfs, f'{folder_name}/label_dfs.pkl', file_type='pkl')
+    """
+
+def create_features():
+    # GET SAVED BLOCKS
+    # (df, date, session, rat, save_as=None, format='exp')
+    exp_lst = [
+        [f'{folder_name}/exp_rm16_9_17_s1.pkl',
+         f'{folder_name}/exp_rm16_9_18_s1.pkl',
+         f'{folder_name}/exp_rm16_9_17_s2.pkl',
+         f'{folder_name}/exp_rm16_9_20_s3.pkl',
+         f'{folder_name}/exp_rm16_9_19_s3.pkl'],
+
+        [f'{folder_name}/exp_rm15_9_25_s3.pkl',
+         f'{folder_name}/exp_rm15_9_17_s4.pkl'],
+
+        [f'{folder_name}/exp_rm14_9_20_s1.pkl',
+         f'{folder_name}/exp_rm14_9_18_s2.pkl']
+    ]
+
+    kin_lst = [
+        [f'{folder_name}/kin_rm16_9_17_s1.pkl',
+         f'{folder_name}/kin_rm16_9_18_s1.pkl',
+         f'{folder_name}/kin_rm16_9_17_s2.pkl',
+         f'{folder_name}/kin_rm16_9_20_s3.pkl',
+         f'{folder_name}/kin_rm16_9_19_s3.pkl'],
+
+        [f'{folder_name}/kin_rm15_9_25_s3.pkl',
+         f'{folder_name}/kin_rm15_9_17_s4.pkl'],
+
+        [f'{folder_name}/kin_rm14_9_20_s1.pkl',
+         f'{folder_name}/kin_rm14_9_18_s2.pkl']
+    ]
+
+    # Define data paths
+    tkdf_16 = 'DataFrames/tkdf16_f.pkl'
+    tkdf_15 = 'DataFrames/3D_positions_RM15_f.pkl'
+    tkdf_14 = 'DataFrames/3D_positions_RM14_f.pkl'
+    RM16_expdf = 'DataFrames/RM16_expdf.pickle'
+    RM15_expdf = 'DataFrames/RM15_expdf.pickle'
+    RM14_expdf = 'DataFrames/RM14_expdf.pickle'
+
+    # RM16 Blocks
+    blocks_16 = [['17', 'S1', 'RM16'],  # issue
+                 ['18', 'S1', 'RM16'],
+                 ['17', 'S2', 'RM16'],
+                 ['20', 'S3', 'RM16'],
+                 ['19', 'S3', 'RM16']]
+    # RM15 Blocks
+    blocks_15 = [['25', 'S3', 'RM15'],
+                 ['17', 'S4', 'RM15']] # issue
+
+    # RM14 Blocks
+    blocks_14 = [['20', 'S1', 'RM14'],
+                 ['18', 'S2', 'RM14']]
+
+    # Append paths
+    kin_paths = [tkdf_16, tkdf_15, tkdf_14]
+    exp_paths = [RM16_expdf, RM15_expdf, RM14_expdf]
+    block_paths = [blocks_16, blocks_15, blocks_14]
+
+    # Get labels
+    # labels
+    # RM16_9_17_s1
+    # RM16, 9-18, S1
+    # RM16, 9-17, S2
+    # RM16, DATE 9-20, S3
+    # RM16, 09-19-2019, S3
+    # RM15, 25, S3
+    # RM15, 17, S4
+    # 2019-09-20-S1-RM14_cam2
+    # 2019-09-18-S2-RM14-cam2
+    labels = [[CU.rm16_9_17_s1_label,
+               CU.rm16_9_18_s1_label,
+               CU.rm16_9_17_s2_label,
+               CU.rm16_9_20_s3_label,
+               CU.rm16_9_19_s3_label],
+
+              [CU.rm15_9_25_s3_label,
+               CU.rm15_9_17_s4_label],
+
+              [CU.rm14_9_20_s1_label,
+               CU.rm14_9_18_s2_label]
+              ]
+
+    # CREATE FEAT and LABEL DFS
+    feat_dfs = []
+    label_dfs = []
+    for i in range(len(kin_paths)):  # for each rat
+        for j in range(len(block_paths[i])):
+            kin_data = Preprocessor.load_data(kin_lst[i][j])
+            exp_data = Preprocessor.load_data(exp_lst[i][j])
+            date, session, rat = block_paths[i][j]
+            label = labels[i][j]
+
+            # Run ReachUtils
+            R = CU.ReachUtils(rat, date, session, exp_data, kin_data, 's')  # init
+            data = R.create_and_save_classification_features()
+            print("SAVED block")
+
+            # append
+            vec_labels, _ = CU.make_vectorized_labels(label)
+            label_df = CU.make_vectorized_labels_to_df(vec_labels)
+            label_dfs.append(label_df)
+            feat_dfs.append(data)
+
+    # concat
+    # all_feat_dfs = Preprocessor.concat(feat_dfs, row=True)
+    all_label_dfs = Preprocessor.concat(label_dfs, row=True)
+
+    # save ML dfs
+    # Preprocessor.save_data(all_feat_dfs, f'{folder_name}/feat_dfs.pkl', file_type='h5')
+    Preprocessor.save_data(all_label_dfs, f'{folder_name}/label_dfs.pkl', file_type='h5')
 
 
 def main_run_ML():
@@ -1173,6 +1285,7 @@ def main_run_ML():
     t = ClassificationHierarchy()
     t.run_hierarchy(X, y, param_grid, models=None, save_models=True)
 
+
 def predict_blocks():
     # LOAD DATA
     preprocessor = Preprocessor()
@@ -1197,8 +1310,6 @@ def predict_blocks():
 
     vals = ClassificationHierarchy().run_hierarchy_pretrained(X, y, models)
     print(vals)
-
-
 
 
 if __name__ == "__main__":
@@ -1241,18 +1352,18 @@ if __name__ == "__main__":
          'classifier__penalty': ['l1'],
          'classifier__C': [100, 80, 60, 40, 20, 15, 10, 8, 6, 4, 2, 1.0, 0.5, 0.1, 0.01],
          'classifier__solver': ['newton-cg', 'liblinear']}
-        #{'classifier': [RandomForestClassifier()],
+        # {'classifier': [RandomForestClassifier()],
         # 'classifier__bootstrap': [True, False],
         # 'classifier__max_depth': [10, 20, 30, 40, 50, 60, 70, 80, 90, 100, None],
         # 'classifier__max_features': ['auto', 'sqrt'],
         # 'classifier__min_samples_leaf': [1, 2, 4],
-         #'classifier__min_samples_split': [2, 5, 10],
-         #'classifier__n_estimators': [200, 400, 600, 800, 1000, 1200, 1400, 1600, 1800, 2000]},
-        #{'classifier': [sklearn.svm.SVC()],
+        # 'classifier__min_samples_split': [2, 5, 10],
+        # 'classifier__n_estimators': [200, 400, 600, 800, 1000, 1200, 1400, 1600, 1800, 2000]},
+        # {'classifier': [sklearn.svm.SVC()],
         # 'classifier__C': [50, 40, 30, 20, 10, 8, 6, 4, 2, 1.0, 0.5, 0.1, 0.01],
         # 'classifier__kernel': ['poly', 'rbf', 'sigmoid'],
         # 'classifier__gamma': ['scale']},
-        #{'classifier': [RidgeClassifier()],
+        # {'classifier': [RidgeClassifier()],
         # 'classifier__alpha': [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]}
     ]
 
@@ -1266,7 +1377,8 @@ if __name__ == "__main__":
         # vis class imbalance (simple scatter)
         # load
         preprocessor = Preprocessor()
-        all_kin_features = preprocessor.load_data(f'{folder_name}/kin_feat.pkl', file_type='pkl')  # generate via TC.main
+        all_kin_features = preprocessor.load_data(f'{folder_name}/kin_feat.pkl',
+                                                  file_type='pkl')  # generate via TC.main
         all_exp_features = preprocessor.load_data(f'{folder_name}/exp_feat.pkl')
         all_label_dfs = preprocessor.load_data(f'{folder_name}/label_dfs.pkl')
 
@@ -1276,7 +1388,7 @@ if __name__ == "__main__":
         y = CU.hand_type_onehot(y)
 
         # Calc bias
-        #X, y = ReachClassifier.adjust_class_imbalance(X, y)
+        # X, y = ReachClassifier.adjust_class_imbalance(X, y)
 
         # Plot and summarize class distribution
         # Trial Type not null is 0.0, num reaches 0 if <1, which hand 0 as r/l
@@ -1293,4 +1405,4 @@ if __name__ == "__main__":
         plt.savefig(f'{folder_name}/ClassBias_whichhand.png')
 
     elif args.function == 5:
-        pass
+        create_features()
