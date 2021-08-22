@@ -5,11 +5,12 @@ from software.preprocessing.video_data.DLC.Reconstruction import dlt_reconstruct
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 from sklearn.metrics import mean_squared_error
 from scipy import signal
+from scipy.ndimage import gaussian_filter
 import shutil, os
 from PIL import Image
 from errno import EEXIST, ENOENT
 
-def process_csv(prediction_csvs, label_csvs, windowlength=9, thres = 0.05):
+def process_csv(prediction_csvs, label_csvs, windowlength=9, thres = 0.05, interp_missing=True):
     data_dict = {}
     cam1_csv = np.loadtxt(label_csvs[0], dtype=str, delimiter=",")
     names = cam1_csv[1,1::2].copy()
@@ -54,12 +55,22 @@ def process_csv(prediction_csvs, label_csvs, windowlength=9, thres = 0.05):
             print("Not enough entries for {}, discarding".format(names[i]))
             discarded.add(names[i])
             continue
-        cam1_labelled_x[mask] = np.interp(np.flatnonzero(mask), np.flatnonzero(~mask), cam1_labelled_x[~mask])
-        cam1_labelled_y[mask] = np.interp(np.flatnonzero(mask), np.flatnonzero(~mask), cam1_labelled_y[~mask])
-        cam2_labelled_x[mask] = np.interp(np.flatnonzero(mask), np.flatnonzero(~mask), cam2_labelled_x[~mask])
-        cam2_labelled_y[mask] = np.interp(np.flatnonzero(mask), np.flatnonzero(~mask), cam2_labelled_y[~mask])
-        cam3_labelled_x[mask] = np.interp(np.flatnonzero(mask), np.flatnonzero(~mask), cam3_labelled_x[~mask])
-        cam3_labelled_y[mask] = np.interp(np.flatnonzero(mask), np.flatnonzero(~mask), cam3_labelled_y[~mask])
+        
+        if interp_missing:
+            cam1_labelled_x[mask] = np.interp(np.flatnonzero(mask), np.flatnonzero(~mask), cam1_labelled_x[~mask])
+            cam1_labelled_y[mask] = np.interp(np.flatnonzero(mask), np.flatnonzero(~mask), cam1_labelled_y[~mask])
+            cam2_labelled_x[mask] = np.interp(np.flatnonzero(mask), np.flatnonzero(~mask), cam2_labelled_x[~mask])
+            cam2_labelled_y[mask] = np.interp(np.flatnonzero(mask), np.flatnonzero(~mask), cam2_labelled_y[~mask])
+            cam3_labelled_x[mask] = np.interp(np.flatnonzero(mask), np.flatnonzero(~mask), cam3_labelled_x[~mask])
+            cam3_labelled_y[mask] = np.interp(np.flatnonzero(mask), np.flatnonzero(~mask), cam3_labelled_y[~mask])
+        else:
+            cam1_predicted_x[mask] = np.nan
+            cam1_predicted_y[mask] = np.nan
+            cam2_predicted_x[mask] = np.nan
+            cam2_predicted_y[mask] = np.nan
+            cam3_predicted_x[mask] = np.nan
+            cam3_predicted_y[mask] = np.nan
+
         
         entry_dict["Camera 1"] = {}
         entry_dict["Camera 1"]["labelled_x"] = cam1_labelled_x
@@ -109,13 +120,12 @@ def process_csv(prediction_csvs, label_csvs, windowlength=9, thres = 0.05):
             data_dict[name][cam]["interp_predicted_y"][mask] = np.interp(np.flatnonzero(mask), np.flatnonzero(~mask), data_dict[name][cam]["predicted_y"][~mask])
 
             # Smoothing
-            win = np.hamming(windowlength)
-            data_dict[name][cam]["filtered_predicted_prob"] = np.convolve(win/win.sum(), data_dict[name][cam]["interp_predicted_prob"], mode='same')
-            data_dict[name][cam]["filtered_predicted_x"] = np.convolve(win/win.sum(), data_dict[name][cam]["interp_predicted_x"], mode='same')
-            data_dict[name][cam]["filtered_predicted_y"] = np.convolve(win/win.sum(), data_dict[name][cam]["interp_predicted_y"], mode='same')
+            data_dict[name][cam]["filtered_predicted_prob"] = gaussian_filter(data_dict[name][cam]["interp_predicted_prob"], sigma=windowlength)
+            data_dict[name][cam]["filtered_predicted_x"] = gaussian_filter(data_dict[name][cam]["interp_predicted_x"], sigma=windowlength)
+            data_dict[name][cam]["filtered_predicted_y"] = gaussian_filter(data_dict[name][cam]["interp_predicted_y"], sigma=windowlength)
 
-            data_dict[name][cam]["filtered_labelled_x"] = np.convolve(win/win.sum(), data_dict[name][cam]["labelled_x"], mode='same')
-            data_dict[name][cam]["filtered_labelled_y"] = np.convolve(win/win.sum(), data_dict[name][cam]["labelled_y"], mode='same')
+            data_dict[name][cam]["filtered_labelled_x"] = gaussian_filter(data_dict[name][cam]["labelled_x"], sigma=windowlength)
+            data_dict[name][cam]["filtered_labelled_y"] = gaussian_filter(data_dict[name][cam]["labelled_y"], sigma=windowlength)
     return data_dict
 
 def get_reconstructions(data_dict, dlt_coefs_file):
@@ -205,9 +215,9 @@ def get_reconstructions(data_dict, dlt_coefs_file):
         reconstructions[name]["xyz_interp_predicted_unweighted"] = xyz_interp_predicted_unweighted
         reconstructions[name]["xyz_filtered_predicted_weighted"] = xyz_filtered_predicted_weighted
         reconstructions[name]["xyz_filtered_predicted_unweighted"] = xyz_filtered_predicted_unweighted
-        reconstructions[name]["xyz_predicted_prob"] = np.mean(np.array([data_dict[name]["Camera 1"]["predicted_prob"], data_dict[name]["Camera 2"]["predicted_prob"], data_dict[name]["Camera 3"]["predicted_prob"]]), axis=0)
-        reconstructions[name]["xyz_interp_predicted_prob"] = np.mean(np.array([data_dict[name]["Camera 1"]["interp_predicted_prob"], data_dict[name]["Camera 2"]["interp_predicted_prob"], data_dict[name]["Camera 3"]["interp_predicted_prob"]]), axis=0)
-        reconstructions[name]["xyz_filtered_predicted_prob"] = np.mean(np.array([data_dict[name]["Camera 1"]["filtered_predicted_prob"], data_dict[name]["Camera 2"]["filtered_predicted_prob"], data_dict[name]["Camera 3"]["filtered_predicted_prob"]]), axis=0)
+        reconstructions[name]["xyz_predicted_prob"] = np.nanmean(np.array([data_dict[name]["Camera 1"]["predicted_prob"], data_dict[name]["Camera 2"]["predicted_prob"], data_dict[name]["Camera 3"]["predicted_prob"]]), axis=0)
+        reconstructions[name]["xyz_interp_predicted_prob"] = np.nanmean(np.array([data_dict[name]["Camera 1"]["interp_predicted_prob"], data_dict[name]["Camera 2"]["interp_predicted_prob"], data_dict[name]["Camera 3"]["interp_predicted_prob"]]), axis=0)
+        reconstructions[name]["xyz_filtered_predicted_prob"] = np.nanmean(np.array([data_dict[name]["Camera 1"]["filtered_predicted_prob"], data_dict[name]["Camera 2"]["filtered_predicted_prob"], data_dict[name]["Camera 3"]["filtered_predicted_prob"]]), axis=0)
     return reconstructions
 
 def mkdir_p(mypath):
