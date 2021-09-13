@@ -64,10 +64,10 @@ class ReachUtils:
         self.x_robot = []
         self.y_robot = []
         self.z_robot = []
-        #self.rdata_path = sensor_data_path
+        # self.rdata_path = sensor_data_path
         self.prob_left_index = 0
         self.total_lowp_vector = []
-        #self.kinematic_data_path = kinematic_data_path
+        # self.kinematic_data_path = kinematic_data_path
         self.right_prob_index = []
         self.sensors = []
         self.kinematic_block = kin_data
@@ -83,7 +83,7 @@ class ReachUtils:
         self.left_prob_index = []
         self.trial_start_vectors = []
         self.trial_stop_vectors = []
-        #self.load_data()
+        # self.load_data()
         self.get_block_data()
         self.get_start_stop()
         self.save_list = []
@@ -94,15 +94,15 @@ class ReachUtils:
         return
 
     def load_data(self):
-        #self.sensors = self.import_robot_data().reset_index(drop=True)
-        #with (open(self.kinematic_data_path, "rb")) as openfile:
+        # self.sensors = self.import_robot_data().reset_index(drop=True)
+        # with (open(self.kinematic_data_path, "rb")) as openfile:
         #    self.d = pickle.load(openfile)
         return
 
     def import_robot_data(self):
-        #df = pd.read_pickle(self.rdata_path)
-        #df = preprocessing(df)
-        return #df
+        # df = pd.read_pickle(self.rdata_path)
+        # df = preprocessing(df)
+        return  # df
 
     def get_start_stop(self):
         self.trial_start_vectors = self.block_exp_df['r_start'].values[0]
@@ -110,15 +110,15 @@ class ReachUtils:
         return
 
     def get_block_data(self):
-        #for kin_items in self.d:
+        # for kin_items in self.d:
         #    sess = kin_items.columns.levels[1]
         #    date = kin_items.columns.levels[2]
         #    if sess[0] in self.session:
-         #       if date[0][-2:] in self.date:
-         #           print('Hooked block positions for date  ' + date[0] + '     and session  ' + sess[0])
-         #           self.kinematic_block = kin_items
-        #self.block_exp_df = self.sensors.loc[self.sensors['Date'] == self.date].loc[self.sensors['S'] == self.session]
-        #assert len(self.block_exp_df) != 0, "Block not found"
+        #       if date[0][-2:] in self.date:
+        #           print('Hooked block positions for date  ' + date[0] + '     and session  ' + sess[0])
+        #           self.kinematic_block = kin_items
+        # self.block_exp_df = self.sensors.loc[self.sensors['Date'] == self.date].loc[self.sensors['S'] == self.session]
+        # assert len(self.block_exp_df) != 0, "Block not found"
         return
 
     def extract_sensor_data_for_reaching_predictions(self, idxstrt, idxstp):
@@ -129,7 +129,8 @@ class ReachUtils:
         self.h_moving_sensor = np.copy(self.block_exp_df['moving'].values[0][idxstrt:idxstp])
         self.lick = np.copy(self.block_exp_df['lick'].values[0])  # Lick DIO sensor
         self.reward_zone_sensor = np.copy(self.block_exp_df['RW'].values[0][idxstrt:idxstp])
-        self.time_vector = self.block_exp_df['time'].values[0][idxstrt:idxstp]  # extract trial timestamps from SpikeGadgets
+        self.time_vector = self.block_exp_df['time'].values[0][
+                           idxstrt:idxstp]  # extract trial timestamps from SpikeGadgets
         assert len(self.time_vector) != 0, "time_vector is empty!"
         self.time_vector = list(np.around(np.array(self.time_vector), 2))  # round time's to ms
         self.exp_response_sensor = self.block_exp_df['exp_response'].values[0][idxstrt:idxstp]
@@ -238,17 +239,17 @@ class ReachUtils:
             if delta_time == 0:  # handles div by 0 case
                 delta_time = 0.001
             self.robot_handle_speed[ddx, :] = (np.copy(self.x_robot[ddx] - self.x_robot[ddx - 1]) / (
-                        delta_time) +
+                delta_time) +
                                                np.copy((self.y_robot[ddx] - self.y_robot[ddx - 1]) / (
-                                                       delta_time) +
+                                                   delta_time) +
                                                        np.copy((self.z_robot[ddx] - self.z_robot[ddx - 1]) / (
-                                                               delta_time) / 3)))
+                                                           delta_time) / 3)))
             self.handle_velocity[ddx, :] = np.copy(
                 (self.handle[ddx, :] - self.handle[ddx - 1, :]) / (delta_time))
             self.left_palm_velocity[ddx, :] = np.copy((self.left_palm[ddx, :] - self.left_palm[ddx - 1, :]) / (
-                    delta_time))
+                delta_time))
             self.right_palm_velocity[ddx, :] = np.copy((self.right_palm[ddx, :] - self.right_palm[ddx - 1, :]) / (
-                    delta_time))
+                delta_time))
         np.nan_to_num(self.handle_velocity, 0)
         np.nan_to_num(self.right_palm_velocity, 0)
         np.nan_to_num(self.left_palm_velocity, 0)
@@ -283,9 +284,11 @@ class ReachUtils:
                 exit(-1)
             self.save_list.append(save_vectors)  # might be able to use append kwarg..
         save_df = pd.DataFrame(self.save_list)
-        save_df.to_csv('ClassifyTrials/Features' + str(self.rat) + str(self.date) + str(self.session) + '.csv', index=False,
+        save_df.to_csv('ClassifyTrials/Features' + str(self.rat) + str(self.date) + str(self.session) + '.csv',
+                       index=False,
                        header=False)
         return self.save_list
+
 
 # To run ReachUtils
 # R=ReachUtils(rat,date,session,kpath,exp_path,save_path) # init
@@ -460,8 +463,6 @@ def onehot(r_df):
     hot_vec = np.zeros(m, dtype=int)
     hot_vec[sf] = 1
     return np.asarray(hot_vec)
-
-
 
 
 ###########################
@@ -1313,3 +1314,176 @@ rm14_9_18_s2_label = [
     [37, 89877, 90689, 3, 3, 'l', 'no_tug', 1, 0],  # success
     [38, 91302, 91901, 3, 1, 'r', 'no_tug', 1, 0],  # success, interrupted
     [39, 96013, 96611, 1, 4, 'r', 'no_tug', 1, 0]]  # failed, reach 2 l , 2 r
+
+# Guang's labels
+# 2019-09-20-S3-RM13-cam2
+# TODO  cant assing to literal error and weird extra bracket needed?
+"""rm13_9_20_s3_label = [
+                      [0, 0, 0, 0, 0, 0, 'no_tug', 0, 0, 0], # null
+                      [1, 0, 0, 1, 2, 'l', 'no_tug', 0, 0, 1], #failed
+                      [2, 0, 0, 3, 1, 'r', 'no_tug', 0, 0, 0], #success
+                      [3, 0, 0, 0, 0, 0, 'no_tug', 0, 0, 0], #null
+                      [4, 0, 0, 3, 1, 'l', 'no_tug', 0, 0, 0], #success
+                      [5, 0, 0, 3, 1, 'r', 'no_tug', 0, 0, 0], #success
+                      [6, 0, 0, 3, 1, 'r', 'no_tug', 0, 0, 0], #success
+                      [7, 0, 0, 1, 4, 'l', 'no_tug', 0, 0, 0], #failed
+                      [8, 0, 0, 3, 1, 'r', 'no_tug', 0, 0, 0], #success
+                      [9, 0, 0, 3, 2, 'r', 'no_tug', 0, 0, 0], #success
+                      [10, 0, 0, 1, 2, 'l', 'no_tug', 0, 0, 1], #failed
+                      [11, 0, 0, 3, 1, 'r', 'no_tug', 0, 0, 0], #success
+                      [12, 0, 0, 3, 1, 'r', 'no_tug', 0, 0, 0], #success
+                      [13, 0, 0, 0, 0, 0, 'no_tug', 0, 0, 0], # null
+                      [14, 0, 0, 3, 1, 'r', 'no_tug', 0, 0, 0], #success
+                      [15, 0, 0, 3, 1, 'r', 'no_tug', 0, 0, 0], #success
+                      [16, 0, 0, 3, 1, 'l', 'no_tug', 0, 0, 0], #success
+                      [17, 0, 0, 3, 1, 'l', 'no_tug', 0, 0, 1], #success #starts mid reach
+                      [18, 0, 0, 3, 6, 'r', 'no_tug', 1, 0, 0], #success #bi
+                      [19, 0, 0, 1, 13, 'bi', 'no_tug', 1, 0, 0], #failed #bi #lots of reaches
+                      [20, 0, 0, 1, 5, 'l', 'no_tug', 0, 0, 0], #failed
+                      [21, 0, 0, 1, 3, 'l', 'no_tug', 0, 0, 0], #failed
+                      [22, 0, 0, 0, 0, 0, 'no_tug', 0, 0, 0], # null
+                      [23, 0, 0, 1, 2, 'r', 'no_tug', 0, 0, 0], #failed
+                      [24, 0, 0, 3, 2, 'r', 'no_tug', 0, 0, 1, #success #starts mid reach
+                      [25, 0, 0, 0, 0, 0, 'no_tug', 0, 0, 0], # null
+                      [26, 0, 0, 3, 1, 'r', 'no_tug', 0, 0, 0], #success
+                      [27, 0, 0, 0, 0, 0, 'no_tug', 0, 0, 0], # null
+                      [28, 0, 0, 3, 2, 'r', 'no_tug', 0, 0, 1], #success #starts mid reach
+                      [29, 0, 0, 1, 2, 'l', 'no_tug', 0, 0, 0], #failed
+                      [30, 0, 0, 3, 2, 'bi', 'no_tug', 1, 0, 0], #success #bi
+                      [31, 0, 0, 3, 6, 'r', 'no_tug', 1, 0, 0], #success #bi
+                      [32, 0, 0, 1, 4, 'l', 'no_tug', 0, 0, 0], #failed
+                      [33, 0 ,0, 3, 2, 'r', 'no_tug', 0, 0, 1], #success #starts mid reach
+                      [34, 0, 0, 3, 1, 'r', 'no_tug', 0, 0, 0], #success
+                      [35, 0, 0, 3, 1, 'r', 'no_tug', 0, 0, 1], #success #starts mid reach
+                      [36, 0, 0, 3, 1, 'r', 'no_tug', 0, 0, 0], #success
+                      [37, 0, 0, 3, 5, 'r', 'no_tug', 0, 0, 1], #success #starts mid reach
+                      [38, 0, 0, 0, 0, 0, 'no_tug', 0, 0, 0], # null
+                      [39, 0, 0, 1, 4, 'r', 'no_tug', 0, 0, 0], #failed
+                      [40, 0, 0, 3, 1, 'r', 'no_tug', 0, 0, 0], #success
+                      [41, 0, 0, 1, 3, 'l', 'no_tug', 0, 0, 0], #failed
+                      [42, 0, 0, 0, 0, 0, 0, 'no_tug', 0, 0, 0], # null
+                      [43, 0, 0, 3, 1, 'r', 'no_tug', 0, 0, 0], #success
+                      [44, 0, 0, 3, 2, 'r', 'no_tug', 0, 0, 0], #success
+                      [45, 0, 0, 1, 6, 'r', 'no_tug', 1, 0, 0], #failed #hand-swith at the last reach
+                      [46, 0, 0, 3, 10, 'bi', 'no_tug', 1, 0, 1], #success #starts mid reach #bi #lots of reaches
+                      [47, 0, 0, 3, 1, 'r', 'no_tug', 0, 0, 0], #success
+                      [48, 0, 0, 3, 1, 'r', 'no_tug', 0, 0, 0], #success
+                      [49, 0, 0, 1, 7, 'l', 'no_tug', 0, 0, 1], #failed with lots of reaches
+                      [50, 0, 0, 3, 6, 'r', 'no_tug', 0, 0, 0], #success
+                      [51, 0, 0, 3, 1, 'r', 'no_tug', 0, 0, 0], #success
+                      [52, 0, 0, 3, 2, 'r', 'no_tug', 0, 0, 0], #success
+                      [53, 0, 0, 3, 1, 'r', 'no_tug', 0, 0, 1], #success #starts mid reach
+                      [54, 0, 0, 0, 0, 0, 0, 'no_tug', 0, 0, 0], # null
+                      [55, 0, 0, 0, 0, 0, 0, 'no_tug', 0, 0, 0], # null
+                      [56, 0, 0, 3, 3, 'r', 'no_tug', 0, 0, 0], #success
+                      ]"""
+
+
+# 2019-09-18-S4-RM11-cam2
+rm11_9_18_s4_label = [
+    [0, 0, 0, 3, 1, 0, 'no_tug', 0, 0, 0],  # success #mouth reach without hand
+    [1, 0, 0, 3, 1, 0, 'no_tug', 0, 0, 0],  # success #mouth reach without hand
+    [2, 0, 0, 3, 1, 0, 'no_tug', 0, 0, 0],  # success #mouth reach without hand
+    [3, 0, 0, 0, 0, 0, 'no_tug', 0, 0, 0],  # null
+    [4, 0, 0, 3, 1, 0, 'no_tug', 0, 0, 0],  # success #mouth reach without hand
+    [5, 0, 0, 3, 1, 'r', 'no_tug', 0, 0, 0],  # success
+    [6, 0, 0, 3, 1, 0, 'no_tug', 0, 0, 0],  # success #mouth reach without hand
+    [7, 0, 0, 3, 1, 0, 'no_tug', 0, 0, 0],  # success #mouth reach without hand
+    [8, 0, 0, 3, 1, 0, 'no_tug', 0, 0, 0],  # success #mouth reach without hand
+    [9, 0, 0, 3, 1, 0, 'no_tug', 0, 0, 0],  # success #mouth reach without hand
+    [10, 0, 0, 3, 1, 'r', 'no_tug', 0, 0, 0],  # success
+    [11, 0, 0, 3, 1, 0, 'no_tug', 0, 0, 0],  # success #mouth reach without hand
+    [12, 0, 0, 3, 1, 'r', 'no_tug', 0, 0, 0],  # success
+    [13, 0, 0, 3, 1, 0, 'no_tug', 0, 0, 0],  # success #mouth reach without hand
+    [14, 0, 0, 3, 1, 0, 'no_tug', 0, 0, 0],  # success #mouth reach without hand
+    [15, 0, 0, 3, 1, 0, 'no_tug', 0, 0, 0],  # success #mouth reach without hand
+    [16, 0, 0, 3, 1, 'r', 'no_tug', 0, 0, 0],  # success
+    [17, 0, 0, 3, 1, 'r', 'no_tug', 0, 0, 0],  # success #mouth reach #hand reach failed
+    [18, 0, 0, 3, 1, 'r', 'no_tug', 0, 0, 0],  # success #mouth reach #hand reach failed
+    [19, 0, 0, 3, 1, 0, 'no_tug', 0, 0, 1],  # success #mouth reach #starts mid reach
+    [20, 0, 0, 0, 0, 0, 'no_tug', 0, 0, 0],  # null
+    [21, 0, 0, 3, 1, 'r', 'no_tug', 0, 0, 0],  # success
+    [22, 0, 0, 3, 1, 0, 'no_tug', 0, 0, 0],  # success #mouth reach without hand
+    [23, 0, 0, 3, 1, 0, 'no_tug', 0, 0, 1],  # success #mouth reach #starts mid reach
+    [24, 0, 0, 3, 1, 0, 'no_tug', 0, 0, 0],  # success #mouth reach without hand
+    [25, 0, 0, 3, 1, 0, 'no_tug', 0, 0, 0],  # success #mouth reach without hand
+    [26, 0, 0, 3, 2, 'r', 'no_tug', 0, 0, 0],  # success
+    [27, 0, 0, 0, 0, 0, 'no_tug', 0, 0, 0],  # null
+    [28, 0, 0, 0, 0, 0, 'no_tug', 0, 0, 0]  # null
+]
+
+# 2019-09-19-S3-RM9-cam2
+rm9_9_19_s3_label = [
+    [0, 0, 0, 3, 1, 'l', 'no_tug', 0, 0, 0],  # success
+    [1, 0, 0, 0, 0, 0, 'no_tug', 0, 0, 0],  # null
+    [2, 0, 0, 0, 0, 0, 'no_tug', 0, 0, 0],  # null
+    [3, 0, 0, 0, 0, 0, 'no_tug', 0, 0, 0],  # null
+    [4, 0, 0, 3, 1, 'l', 'no_tug', 0, 0, 1],  # success #starts mid reach
+    [5, 0, 0, 3, 2, 'l', 'no_tug', 0, 0, 0],  # success
+    [6, 0, 0, 1, 1, 'l', 'no_tug', 0, 0, 0],  # failed
+    [7, 0, 0, 3, 1, 'l', 'no_tug', 0, 0, 1],  # success #starts mid reach
+    [8, 0, 0, 3, 1, 'l', 'no_tug', 0, 0, 0],  # success
+    [9, 0, 0, 0, 0, 0, 'no_tug', 0, 0, 0],  # null
+    [10, 0, 0, 3, 2, 'l', 'no_tug', 0, 0, 0],  # success
+    [11, 0, 0, 0, 0, 0, 'no_tug', 0, 0, 0],  # null
+    [12, 0, 0, 3, 1, 'l', 'no_tug', 0, 0, 0],  # success
+    [13, 0, 0, 3, 1, 'l', 'no_tug', 0, 0, 0],  # success
+    [14, 0, 0, 3, 2, 'bi', 'no_tug', 1, 0, 0],  # success #bi
+    [15, 0, 0, 0, 0, 0, 'no_tug', 0, 0, 0],  # null
+    [16, 0, 0, 3, 1, 'l', 'no_tug', 0, 0, 0],  # success
+    [17, 0, 0, 3, 1, 'l', 'no_tug', 0, 0, 0],  # success
+    [18, 0, 0, 0, 0, 0, 'no_tug', 0, 0, 0],  # null
+    [19, 0, 0, 3, 1, 'l', 'no_tug', 0, 0, 0],  # success
+    [20, 0, 0, 3, 1, 'bi', 'no_tug', 0, 0, 1],  # success #bi #starts mid reach
+    [21, 0, 0, 3, 2, 'bi', 'no_tug', 1, 0, 0],  # success #bi
+    [22, 0, 0, 3, 1, 'l', 'no_tug', 0, 0, 0],  # success
+    [23, 0, 0, 0, 0, 0, 'no_tug', 0, 0, 0],  # null
+    [24, 0, 0, 3, 1, 'l', 'no_tug', 0, 0, 0],  # success
+    [25, 0, 0, 0, 0, 0, 'no_tug', 0, 0, 0],  # null
+    [26, 0, 0, 0, 0, 0, 'no_tug', 0, 0, 0],  # null
+    [27, 0, 0, 3, 1, 'l', 'no_tug', 0, 0, 0],  # success
+    [28, 0, 0, 3, 1, 'r', 'no_tug', 0, 0, 0],  # success
+    [29, 0, 0, 0, 0, 0, 'no_tug', 0, 0, 0],  # null
+    [30, 0, 0, 0, 0, 0, 'no_tug', 0, 0, 0],  # null
+    [31, 0, 0, 0, 0, 0, 'no_tug', 0, 0, 0],  # null
+    [32, 0, 0, 0, 0, 0, 'no_tug', 0, 0, 0],  # null
+    [33, 0, 0, 3, 1, 'l', 'no_tug', 0, 0, 0],  # success
+    [34, 0, 0, 0, 0, 0, 'no_tug', 0, 0, 0],  # null
+    [35, 0, 0, 3, 1, 'l', 'no_tug', 0, 0, 0],  # success
+    [36, 0, 0, 0, 0, 0, 'no_tug', 0, 0, 0],  # null
+    [37, 0, 0, 0, 0, 0, 'no_tug', 0, 0, 0],  # null
+    [38, 0, 0, 3, 1, 'l', 'no_tug', 0, 0, 0],  # success
+    [39, 0, 0, 0, 0, 0, 'no_tug', 0, 0, 0],  # null
+    [40, 0, 0, 0, 0, 0, 'no_tug', 0, 0, 0],  # null
+    [41, 0, 0, 0, 0, 0, 'no_tug', 0, 0, 0],  # null
+    [42, 0, 0, 3, 2, 'l', 'no_tug', 0, 0, 0],  # success
+    [43, 0, 0, 3, 1, 'l', 'no_tug', 0, 0, 0],  # success
+    [44, 0, 0, 0, 0, 0, 'no_tug', 0, 0, 0],  # null
+    [45, 0, 0, 3, 2, 'l', 'no_tug', 0, 0, 1],  # success #starts mid reach
+    [46, 0, 0, 0, 0, 0, 'no_tug', 0, 0, 0],  # null
+    [47, 0, 0, 0, 0, 0, 'no_tug', 0, 0, 0],  # null
+    [48, 0, 0, 3, 1, 'l', 'no_tug', 0, 0, 0],  # success
+    [49, 0, 0, 0, 0, 0, 'no_tug', 0, 0, 0],  # null
+    [50, 0, 0, 0, 0, 0, 'no_tug', 0, 0, 0],  # null
+]
+
+# 2019-09-17-S2-RM10-cam2
+rm10_9_17_s2_label = [
+    # [0, 0, 0, ] # can't open the file
+    [1, 0, 0, 3, 1, 'l', 'no_tug', 0, 0, 0],  # success
+    [2, 0, 0, 3, 1, 'l', 'no_tug', 0, 0, 0],  # success # starts mid reach
+    [3, 0, 0, 3, 1, 'l', 'no_tug', 0, 0, 0],  # success # starts mid reach
+    [4, 0, 0, 3, 1, 'l', 'no_tug', 0, 0, 0],  # success # starts mid reach
+    [5, 0, 0, 3, 1, 'l', 'no_tug', 0, 0, 0],  # success # starts mid reach
+    [6, 0, 0, 3, 1, 'l', 'no_tug', 0, 0, 0],  # success #
+    [7, 0, 0, 3, 1, 'l', 'no_tug', 0, 0, 0],  # success # starts mid reach
+]
+
+# 2019-09-19-S1-RM9-cam2
+rm12_9_19_s1_label = [
+    [0, 0, 0, 0, 0, 0, 'no_tug', 0, 0, 0],  # null
+    [1, 0, 0, 0, 0, 0, 'no_tug', 0, 0, 0],  # null
+    [2, 0, 0, 0, 0, 0, 'no_tug', 0, 0, 0],  # null
+    [3, 0, 0, 0, 0, 0, 'no_tug', 0, 0, 0],  # null
+    [4, 0, 0, 0, 0, 0, 'no_tug', 0, 0, 0],  # null
+]
