@@ -1317,8 +1317,7 @@ rm14_9_18_s2_label = [
 
 # Guang's labels
 # 2019-09-20-S3-RM13-cam2
-# TODO  cant assing to literal error and weird extra bracket needed?
-"""rm13_9_20_s3_label = [
+rm13_9_20_s3_label = [
                       [0, 0, 0, 0, 0, 0, 'no_tug', 0, 0, 0], # null
                       [1, 0, 0, 1, 2, 'l', 'no_tug', 0, 0, 1], #failed
                       [2, 0, 0, 3, 1, 'r', 'no_tug', 0, 0, 0], #success
@@ -1343,7 +1342,7 @@ rm14_9_18_s2_label = [
                       [21, 0, 0, 1, 3, 'l', 'no_tug', 0, 0, 0], #failed
                       [22, 0, 0, 0, 0, 0, 'no_tug', 0, 0, 0], # null
                       [23, 0, 0, 1, 2, 'r', 'no_tug', 0, 0, 0], #failed
-                      [24, 0, 0, 3, 2, 'r', 'no_tug', 0, 0, 1, #success #starts mid reach
+                      [24, 0, 0, 3, 2, 'r', 'no_tug', 0, 0, 1], #success #starts mid reach
                       [25, 0, 0, 0, 0, 0, 'no_tug', 0, 0, 0], # null
                       [26, 0, 0, 3, 1, 'r', 'no_tug', 0, 0, 0], #success
                       [27, 0, 0, 0, 0, 0, 'no_tug', 0, 0, 0], # null
@@ -1376,8 +1375,7 @@ rm14_9_18_s2_label = [
                       [54, 0, 0, 0, 0, 0, 0, 'no_tug', 0, 0, 0], # null
                       [55, 0, 0, 0, 0, 0, 0, 'no_tug', 0, 0, 0], # null
                       [56, 0, 0, 3, 3, 'r', 'no_tug', 0, 0, 0], #success
-                      ]"""
-
+                      ]
 
 # 2019-09-18-S4-RM11-cam2
 rm11_9_18_s4_label = [
@@ -1479,7 +1477,7 @@ rm10_9_17_s2_label = [
     [7, 0, 0, 3, 1, 'l', 'no_tug', 0, 0, 0],  # success # starts mid reach
 ]
 
-# 2019-09-19-S1-RM9-cam2
+# 2019-09-19-S1-RM12-cam2
 rm12_9_19_s1_label = [
     [0, 0, 0, 0, 0, 0, 'no_tug', 0, 0, 0],  # null
     [1, 0, 0, 0, 0, 0, 'no_tug', 0, 0, 0],  # null
