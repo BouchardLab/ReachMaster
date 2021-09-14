@@ -7,7 +7,9 @@
     Functions are designed to work with a classifier of your choice.
     Operates on a single block.
 
-    Edited: 6/4/2021
+    Edited: 9/14/2021
+
+    Required Folder 'DataFrames" with all kin and exp datafiles
 """
 import argparse
 import os
@@ -28,13 +30,14 @@ from imblearn.pipeline import Pipeline as imblearn_Pipeline
 from collections import Counter
 # classification
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.model_selection import RandomizedSearchCV, train_test_split, GridSearchCV, cross_validate
+from sklearn.model_selection import RandomizedSearchCV, train_test_split, GridSearchCV, cross_validate, cross_val_score
 from sklearn.pipeline import make_pipeline, Pipeline
 # from imblearn.pipeline import Pipeline as imblearnPipeline
 from sklearn.feature_selection import SelectKBest  # feature selection
 from sklearn.feature_selection import f_classif
 from sklearn.preprocessing import StandardScaler
 from sklearn.linear_model import LogisticRegression, RidgeClassifier
+from sklearn.neural_network import MLPClassifier
 
 # set global random seed for reproducibility #
 random.seed(246810)
@@ -746,16 +749,17 @@ class Preprocessor:
         Returns: new_df: (df) with specified rat, date, session
 
         """
+        new_df = pd.DataFrame()
         if format == 'exp':
             rr = df.loc[df['Date'] == date]
             rr = rr.loc[rr['S'] == session]
             new_df = rr.loc[rr['rat'] == rat]
-        else:  # kin case
-            new_df = pd.DataFrame()
+        elif format == 'kin':  # kin case
             for block in df:
-                index = block.columns[0]
-                if rat == index[0] and session == index[1] and date == index[2]:
-                    new_df = pd.DataFrame(block)
+                if isinstance(block, pd.DataFrame):  # handles missing blocks in df
+                    index = block.columns[0]
+                    if rat == index[0] and session == index[1] and date == index[2]:
+                        new_df = pd.DataFrame(block)
         assert (len(new_df.index) != 0), "block does not exist in data!"
         if save_as:
             Preprocessor.save_data(new_df, save_as, file_type='pkl')
@@ -1051,39 +1055,66 @@ class Preprocessor:
 def main_run_all():
     # LOAD DATA
     preprocessor = Preprocessor()
-    #exp_data = preprocessor.load_data('experimental_data.pickle')
     # Define data paths
     tkdf_16 = preprocessor.load_data('DataFrames/tkdf16_f.pkl')
     tkdf_15 = preprocessor.load_data('DataFrames/3D_positions_RM15_f.pkl')
     tkdf_14 = preprocessor.load_data('DataFrames/3D_positions_RM14_f.pkl')
+    tkdf_13 = preprocessor.load_data('DataFrames/3D_positions_RM13.pkl')  # not _f version
+    tkdf_12 = preprocessor.load_data('DataFrames/3D_positions_RM12.pkl')
+    tkdf_11 = preprocessor.load_data('DataFrames/3D_positions_RM11.pkl')
+    tkdf_10 = preprocessor.load_data('DataFrames/3D_positions_RM10.pkl')
+    tkdf_9 = preprocessor.load_data('DataFrames/3D_positions_RM9.pkl')
+
     RM16_expdf = preprocessor.load_data('DataFrames/RM16_expdf.pickle')
     RM15_expdf = preprocessor.load_data('DataFrames/RM15_expdf.pickle')
     RM14_expdf = preprocessor.load_data('DataFrames/RM14_expdf.pickle')
+    RM13_expdf = preprocessor.load_data('DataFrames/RM13_expdf.pickle')
+    RM12_expdf = preprocessor.load_data('DataFrames/RM12_expdf.pickle')
+    RM11_expdf = preprocessor.load_data('DataFrames/RM11_expdf.pickle')
+    RM10_expdf = preprocessor.load_data('DataFrames/RM10_expdf.pickle')
+    RM9_expdf = preprocessor.load_data('DataFrames/RM9_expdf.pickle')
 
     # GET and SAVE BLOCKS
     # (df, date, session, rat, save_as=None, format='exp')
     exp_lst = [
+
         preprocessor.get_single_block(RM16_expdf, '0190917', 'S1', '09172019', format='exp',
                                       save_as=f'{folder_name}/exp_rm16_9_17_s1.pkl'),
         preprocessor.get_single_block(RM16_expdf, '0190918', 'S1', '09182019', format='exp',
                                       save_as=f'{folder_name}/exp_rm16_9_18_s1.pkl'),
-        preprocessor.get_single_block(RM16_expdf, '0190917', 'S2',  '09172019', format='exp',
+        preprocessor.get_single_block(RM16_expdf, '0190917', 'S2', '09172019', format='exp',
                                       save_as=f'{folder_name}/exp_rm16_9_17_s2.pkl'),
         preprocessor.get_single_block(RM16_expdf, '0190920', 'S3', '09202019', format='exp',
                                       save_as=f'{folder_name}/exp_rm16_9_20_s3.pkl'),
         preprocessor.get_single_block(RM16_expdf, '0190919', 'S3', '09192019', format='exp',
                                       save_as=f'{folder_name}/exp_rm16_9_19_s3.pkl'),
-        preprocessor.get_single_block(RM15_expdf, '0190925', 'S3', '09252019', format='exp',
+
+        preprocessor.get_single_block(RM15_expdf, '0190925', 'S3', '09252019', format='exp',  # date sess rat
                                       save_as=f'{folder_name}/exp_rm15_9_25_s3.pkl'),
         preprocessor.get_single_block(RM15_expdf, '0190917', 'S4', '09172019', format='exp',
                                       save_as=f'{folder_name}/exp_rm15_9_17_s4.pkl'),
+
         preprocessor.get_single_block(RM14_expdf, '0190920', 'S1', '09202019', format='exp',
                                       save_as=f'{folder_name}/exp_rm14_9_20_s1.pkl'),
         preprocessor.get_single_block(RM14_expdf, '0190918', 'S2', '09182019', format='exp',
-                                      save_as=f'{folder_name}/exp_rm14_9_18_s2.pkl')
+                                      save_as=f'{folder_name}/exp_rm14_9_18_s2.pkl'),
+
+        preprocessor.get_single_block(RM13_expdf, '190920_', 'S3', '09202019', format='exp',
+                                      save_as=f'{folder_name}/exp_rm13_9_20_s3.pkl'),  # adjusted date
+        preprocessor.get_single_block(RM12_expdf, '0190919', 'S1', '09192019', format='exp',
+                                      save_as=f'{folder_name}/exp_rm12_9_19_s1.pkl'),
+        preprocessor.get_single_block(RM11_expdf, '0190918', 'S4', '09182019', format='exp',
+                                      save_as=f'{folder_name}/exp_rm11_9_18_s1.pkl'),
+        preprocessor.get_single_block(RM10_expdf, '0190917', 'S2', '09172019', format='exp',
+                                      save_as=f'{folder_name}/exp_rm10_9_17_s2.pkl'),
+        preprocessor.get_single_block(RM9_expdf, '190919_', 'S3', '09192019', format='exp',  # adjusted date
+                                      save_as=f'{folder_name}/exp_rm9_9_19_s3.pkl')
+
+
     ]
 
     kin_lst = [
+
         preprocessor.get_single_block(tkdf_16, '0190917', 'S1', '09172019', format='kin',
                                       save_as=f'{folder_name}/kin_rm16_9_17_s1.pkl'),
         preprocessor.get_single_block(tkdf_16, '0190918', 'S1', '09182019', format='kin',
@@ -1094,14 +1125,29 @@ def main_run_all():
                                       save_as=f'{folder_name}/kin_rm16_9_20_s3.pkl'),
         preprocessor.get_single_block(tkdf_16, '0190919', 'S3', '09192019', format='kin',
                                       save_as=f'{folder_name}/kin_rm16_9_19_s3.pkl'),
+
         preprocessor.get_single_block(tkdf_15, '0190925', 'S3', '09252019', format='kin',
                                       save_as=f'{folder_name}/kin_rm15_9_25_s3.pkl'),
         preprocessor.get_single_block(tkdf_15, '0190917', 'S4', '09172019', format='kin',
                                       save_as=f'{folder_name}/kin_rm15_9_17_s4.pkl'),
+
         preprocessor.get_single_block(tkdf_14, '0190920', 'S1', '09202019', format='kin',
                                       save_as=f'{folder_name}/kin_rm14_9_20_s1.pkl'),
         preprocessor.get_single_block(tkdf_14, '0190918', 'S2', '09182019', format='kin',
-                                      save_as=f'{folder_name}/kin_rm14_9_18_s2.pkl')
+                                      save_as=f'{folder_name}/kin_rm14_9_18_s2.pkl'),
+
+        preprocessor.get_single_block(tkdf_13, '190920_', 'S3', '09202019', format='kin',  # adjusted date
+                                      save_as=f'{folder_name}/kin_rm13_9_20_s3.pkl'),
+        preprocessor.get_single_block(tkdf_12, '0190919', 'S1', '09192019', format='kin',
+                                      save_as=f'{folder_name}/kin_rm12_9_19_s1.pkl'),
+        preprocessor.get_single_block(tkdf_11, '0190918', 'S4', '09182019', format='kin',
+                                      save_as=f'{folder_name}/kin_rm11_9_18_s1.pkl'),
+        preprocessor.get_single_block(tkdf_10, '0190917', 'S2', '09172019', format='kin',
+                                      save_as=f'{folder_name}/kin_rm10_9_17_s2.pkl'),
+        preprocessor.get_single_block(tkdf_9, '190919_', 'S3', '09192019', format='kin',  # adjusted date
+                                      save_as=f'{folder_name}/kin_rm9_9_19_s3.pkl')
+
+
     ]
 
     """# CREATE FEAT and LABEL DFS
@@ -1150,7 +1196,9 @@ def main_run_all():
     Preprocessor.save_data(all_label_dfs, f'{folder_name}/label_dfs.pkl', file_type='pkl')
     """
 
+
 def create_features():
+    # NEWEST
     # GET SAVED BLOCKS
     # (df, date, session, rat, save_as=None, format='exp')
     exp_lst = [
@@ -1164,7 +1212,13 @@ def create_features():
          f'{folder_name}/exp_rm15_9_17_s4.pkl'],
 
         [f'{folder_name}/exp_rm14_9_20_s1.pkl',
-         f'{folder_name}/exp_rm14_9_18_s2.pkl']
+         f'{folder_name}/exp_rm14_9_18_s2.pkl'],
+
+        [f'{folder_name}/exp_rm13_9_20_s3.pkl'],
+        [f'{folder_name}/exp_rm12_9_19_s1.pkl'],
+        [f'{folder_name}/exp_rm11_9_18_s4.pkl'],
+        [f'{folder_name}/exp_rm10_9_17_s2.pkl'],
+        [f'{folder_name}/exp_rm9_9_19_s3.pkl']
     ]
 
     kin_lst = [
@@ -1178,65 +1232,43 @@ def create_features():
          f'{folder_name}/kin_rm15_9_17_s4.pkl'],
 
         [f'{folder_name}/kin_rm14_9_20_s1.pkl',
-         f'{folder_name}/kin_rm14_9_18_s2.pkl']
+         f'{folder_name}/kin_rm14_9_18_s2.pkl'],
+
+        [f'{folder_name}/kin_rm13_9_20_s3.pkl'],
+        [f'{folder_name}/kin_rm12_9_19_s1.pkl'],
+        [f'{folder_name}/kin_rm11_9_18_s4.pkl'],
+        [f'{folder_name}/kin_rm10_9_17_s2.pkl'],
+        [f'{folder_name}/kin_rm9_9_19_s3.pkl']
+
     ]
 
-    # Define data paths
-    tkdf_16 = 'DataFrames/tkdf16_f.pkl'
-    tkdf_15 = 'DataFrames/3D_positions_RM15_f.pkl'
-    tkdf_14 = 'DataFrames/3D_positions_RM14_f.pkl'
-    RM16_expdf = 'DataFrames/RM16_expdf.pickle'
-    RM15_expdf = 'DataFrames/RM15_expdf.pickle'
-    RM14_expdf = 'DataFrames/RM14_expdf.pickle'
-
-    # RM16 Blocks
-    blocks_16 = [['17', 'S1', 'RM16'],  # issue
-                 ['18', 'S1', 'RM16'],
-                 ['17', 'S2', 'RM16'],
-                 ['20', 'S3', 'RM16'],
-                 ['19', 'S3', 'RM16']]
-    # RM15 Blocks
-    blocks_15 = [['25', 'S3', 'RM15'],
-                 ['17', 'S4', 'RM15']] # issue
-
-    # RM14 Blocks
-    blocks_14 = [['20', 'S1', 'RM14'],
-                 ['18', 'S2', 'RM14']]
-
     # Append paths
-    #kin_paths = [tkdf_16, tkdf_15, tkdf_14]
-    exp_paths = [RM16_expdf, RM15_expdf, RM14_expdf]
-    block_paths = [blocks_16, blocks_15, blocks_14]
+    block_paths = [
+        [['17', 'S1', 'RM16'],
+         ['18', 'S1', 'RM16'],
+         ['17', 'S2', 'RM16'],
+         ['20', 'S3', 'RM16'],
+         ['19', 'S3', 'RM16']],
 
-    # Get labels
-    # labels
-    # RM16_9_17_s1
-    # RM16, 9-18, S1
-    # RM16, 9-17, S2
-    # RM16, DATE 9-20, S3
-    # RM16, 09-19-2019, S3
-    # RM15, 25, S3
-    # RM15, 17, S4
-    # 2019-09-20-S1-RM14_cam2
-    # 2019-09-18-S2-RM14-cam2
-    labels = [[CU.rm16_9_17_s1_label,
-               CU.rm16_9_18_s1_label,
-               CU.rm16_9_17_s2_label,
-               CU.rm16_9_20_s3_label,
-               CU.rm16_9_19_s3_label],
+        [['25', 'S3', 'RM15'],
+         ['17', 'S4', 'RM15']],
 
-              [CU.rm15_9_25_s3_label,
-               CU.rm15_9_17_s4_label],
+        [['20', 'S1', 'RM14'],
+         ['18', 'S2', 'RM14']],
 
-              [CU.rm14_9_20_s1_label,
-               CU.rm14_9_18_s2_label]
-              ]
+        [['20', 'S3', 'RM13']],
+        [['19', 'S1', 'RM12']],
+        [['18', 'S4', 'RM11']],
+        [['17', 'S2', 'RM10']],
+        [['19', 'S3', 'RM9']],
+    ]
 
     # CREATE FEAT and LABEL DFS
+    med_feat_dfs = []
     feat_dfs = []
     label_dfs = []
     for i in range(len(block_paths)):  # for each rat
-        for j in range(len(block_paths[i])):
+        for j in range(len(block_paths[i])):  # for each trial
             kin_data = Preprocessor.load_data(kin_lst[i][j])
             exp_data = Preprocessor.load_data(exp_lst[i][j])
             date, session, rat = block_paths[i][j]
@@ -1244,6 +1276,7 @@ def create_features():
 
             # Run ReachUtils
             R = CU.ReachUtils(rat, date, session, exp_data, kin_data, 's')  # init
+            print("saving")
             data = R.create_and_save_classification_features()
             print("SAVED block")
 
@@ -1258,8 +1291,8 @@ def create_features():
     all_label_dfs = Preprocessor.concat(label_dfs, row=True)
 
     # save ML dfs
-    # Preprocessor.save_data(all_feat_dfs, f'{folder_name}/feat_dfs.pkl', file_type='h5')
-    Preprocessor.save_data(all_label_dfs, f'{folder_name}/label_dfs.pkl', file_type='h5')
+    Preprocessor.save_data(pd.DataFrame(feat_dfs), f'{folder_name}/feat_dfs.pkl', file_type='pkl')
+    Preprocessor.save_data(all_label_dfs, f'{folder_name}/label_dfs.pkl', file_type='pkl')
 
 
 def main_run_ML():
@@ -1288,6 +1321,10 @@ def main_run_ML():
     # TRAIN and SAVE MODELS
     t = ClassificationHierarchy()
     t.run_hierarchy(X, y, param_grid, models=None, save_models=True)
+
+
+def main_run_ML2():
+    pass
 
 
 def predict_blocks():
@@ -1325,8 +1362,8 @@ if __name__ == "__main__":
     et = 0
     el = 0
     wv = 5
-    window_length = 4  # TODO change to preferences, default = 250
-    pre = 2  # TODO change to preferences, default = 10
+    window_length = 250  # TODO change to preferences, default = 250
+    pre = 10  # TODO change to preferences, default = 10
 
     # labels
     # RM16_9_17_s1
@@ -1338,17 +1375,30 @@ if __name__ == "__main__":
     # RM15, 17, S4
     # 2019-09-20-S1-RM14_cam2
     # 2019-09-18-S2-RM14-cam2
-    labels = [CU.rm16_9_17_s1_label,
-              CU.rm16_9_18_s1_label,
-              CU.rm16_9_17_s2_label,
-              CU.rm16_9_20_s3_label,
-              CU.rm16_9_19_s3_label,
+    # 2019-09-20-S3-RM13-cam2
+    # 2019-09-19-S1-RM12-cam2
+    # 2019-09-18-S4-RM11-cam2
+    # 2019-09-17-S2-RM10-cam2
+    # 2019-09-19-S3-RM9-cam2
 
-              CU.rm15_9_25_s3_label,
-              CU.rm15_9_17_s4_label,
 
-              CU.rm14_9_20_s1_label,
-              CU.rm14_9_18_s2_label
+    labels = [[CU.rm16_9_17_s1_label,
+               CU.rm16_9_18_s1_label,
+               CU.rm16_9_17_s2_label,
+               CU.rm16_9_20_s3_label,
+               CU.rm16_9_19_s3_label],
+
+              [CU.rm15_9_25_s3_label,
+               CU.rm15_9_17_s4_label],
+
+              [CU.rm14_9_20_s1_label,
+               CU.rm14_9_18_s2_label],
+
+              [CU.rm13_9_20_s3_label],
+              [CU.rm12_9_19_s1_label],
+              [CU.rm11_9_18_s4_label],
+              [CU.rm10_9_17_s2_label],
+              [CU.rm9_9_19_s3_label]
               ]
 
     param_grid = [
@@ -1409,4 +1459,7 @@ if __name__ == "__main__":
         plt.savefig(f'{folder_name}/ClassBias_whichhand.png')
 
     elif args.function == 5:
-        create_features()
+        create_features() # in use with 1
+
+    elif args.function == 6:
+        pass
