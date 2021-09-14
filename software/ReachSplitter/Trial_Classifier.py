@@ -1294,6 +1294,94 @@ def create_features():
     Preprocessor.save_data(pd.DataFrame(feat_dfs), f'{folder_name}/feat_dfs.pkl', file_type='pkl')
     Preprocessor.save_data(all_label_dfs, f'{folder_name}/label_dfs.pkl', file_type='pkl')
 
+def create_labels():
+    # NEWEST
+    # GET SAVED BLOCKS
+    # (df, date, session, rat, save_as=None, format='exp')
+    exp_lst = [
+        [f'{folder_name}/exp_rm16_9_17_s1.pkl',
+         f'{folder_name}/exp_rm16_9_18_s1.pkl',
+         f'{folder_name}/exp_rm16_9_17_s2.pkl',
+         f'{folder_name}/exp_rm16_9_20_s3.pkl',
+         f'{folder_name}/exp_rm16_9_19_s3.pkl'],
+
+        [f'{folder_name}/exp_rm15_9_25_s3.pkl',
+         f'{folder_name}/exp_rm15_9_17_s4.pkl'],
+
+        [f'{folder_name}/exp_rm14_9_20_s1.pkl',
+         f'{folder_name}/exp_rm14_9_18_s2.pkl'],
+
+        [f'{folder_name}/exp_rm13_9_20_s3.pkl'],
+        [f'{folder_name}/exp_rm12_9_19_s1.pkl'],
+        [f'{folder_name}/exp_rm11_9_18_s4.pkl'],
+        [f'{folder_name}/exp_rm10_9_17_s2.pkl'],
+        [f'{folder_name}/exp_rm9_9_19_s3.pkl']
+    ]
+
+    kin_lst = [
+        [f'{folder_name}/kin_rm16_9_17_s1.pkl',
+         f'{folder_name}/kin_rm16_9_18_s1.pkl',
+         f'{folder_name}/kin_rm16_9_17_s2.pkl',
+         f'{folder_name}/kin_rm16_9_20_s3.pkl',
+         f'{folder_name}/kin_rm16_9_19_s3.pkl'],
+
+        [f'{folder_name}/kin_rm15_9_25_s3.pkl',
+         f'{folder_name}/kin_rm15_9_17_s4.pkl'],
+
+        [f'{folder_name}/kin_rm14_9_20_s1.pkl',
+         f'{folder_name}/kin_rm14_9_18_s2.pkl'],
+
+        [f'{folder_name}/kin_rm13_9_20_s3.pkl'],
+        [f'{folder_name}/kin_rm12_9_19_s1.pkl'],
+        [f'{folder_name}/kin_rm11_9_18_s4.pkl'],
+        [f'{folder_name}/kin_rm10_9_17_s2.pkl'],
+        [f'{folder_name}/kin_rm9_9_19_s3.pkl']
+
+    ]
+
+    # Append paths
+    block_paths = [
+        [['17', 'S1', 'RM16'],
+         ['18', 'S1', 'RM16'],
+         ['17', 'S2', 'RM16'],
+         ['20', 'S3', 'RM16'],
+         ['19', 'S3', 'RM16']],
+
+        [['25', 'S3', 'RM15'],
+         ['17', 'S4', 'RM15']],
+
+        [['20', 'S1', 'RM14'],
+         ['18', 'S2', 'RM14']],
+
+        [['20', 'S3', 'RM13']],
+        [['19', 'S1', 'RM12']],
+        [['18', 'S4', 'RM11']],
+        [['17', 'S2', 'RM10']],
+        [['19', 'S3', 'RM9']],
+    ]
+
+    # CREATE FEAT and LABEL DFS
+
+    label_dfs = []
+    for i in range(len(block_paths)):  # for each rat
+        for j in range(len(block_paths[i])):  # for each trial
+
+            label = labels[i][j]
+
+
+
+            # append
+            vec_labels, _ = CU.make_vectorized_labels(label)
+            label_df = CU.make_vectorized_labels_to_df(vec_labels)
+            label_dfs.append(label_df)
+
+
+    # concat
+
+    #all_label_dfs = Preprocessor.concat(label_dfs, row=True)
+
+    # save ML dfs
+    Preprocessor.save_data(all_label_dfs, f'{folder_name}/label_dfs.pkl', file_type='pkl')
 
 def main_run_ML():
     """
@@ -1462,4 +1550,4 @@ if __name__ == "__main__":
         create_features() # in use with 1
 
     elif args.function == 6:
-        pass
+        create_labels() # in use with 1
