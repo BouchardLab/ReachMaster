@@ -1264,15 +1264,12 @@ def create_features():
     ]
 
     # CREATE FEAT and LABEL DFS
-    med_feat_dfs = []
     feat_dfs = []
-    label_dfs = []
     for i in range(len(block_paths)):  # for each rat
         for j in range(len(block_paths[i])):  # for each trial
             kin_data = Preprocessor.load_data(kin_lst[i][j])
             exp_data = Preprocessor.load_data(exp_lst[i][j])
             date, session, rat = block_paths[i][j]
-            label = labels[i][j]
 
             # Run ReachUtils
             R = CU.ReachUtils(rat, date, session, exp_data, kin_data, 's')  # init
@@ -1281,18 +1278,10 @@ def create_features():
             print("SAVED block")
 
             # append
-            vec_labels, _ = CU.make_vectorized_labels(label)
-            label_df = CU.make_vectorized_labels_to_df(vec_labels)
-            label_dfs.append(label_df)
             feat_dfs.append(data)
-
-    # concat
-    # all_feat_dfs = Preprocessor.concat(feat_dfs, row=True)
-    all_label_dfs = Preprocessor.concat(label_dfs, row=True)
 
     # save ML dfs
     Preprocessor.save_data(pd.DataFrame(feat_dfs), f'{folder_name}/feat_dfs.pkl', file_type='pkl')
-    Preprocessor.save_data(all_label_dfs, f'{folder_name}/label_dfs.pkl', file_type='pkl')
 
 def create_labels():
     # NEWEST
@@ -1325,7 +1314,6 @@ def create_labels():
     label_dfs = []
     for i in range(len(block_paths)):  # for each rat
         for j in range(len(block_paths[i])):  # for each trial
-
             label = labels[i][j]
 
             # append
@@ -1334,7 +1322,7 @@ def create_labels():
             label_dfs.append(label_df)
 
     # save ML dfs
-    Preprocessor.save_data(all_label_dfs, f'{folder_name}/label_dfs.pkl', file_type='pkl')
+    Preprocessor.save_data(label_dfs, f'{folder_name}/label_dfs.pkl', file_type='pkl')
 
 def main_run_ML():
     """
