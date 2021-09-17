@@ -1202,64 +1202,64 @@ def create_features():
     # GET SAVED BLOCKS
     # (df, date, session, rat, save_as=None, format='exp')
     exp_lst = [
-        # [f'{folder_name}/exp_rm16_9_17_s1.pkl',
-        #f'{folder_name}/exp_rm16_9_18_s1.pkl',
-         #f'{folder_name}/exp_rm16_9_17_s2.pkl',
-         #f'{folder_name}/exp_rm16_9_20_s3.pkl',
-         #f'{folder_name}/exp_rm16_9_19_s3.pkl'],
+         [f'{folder_name}/exp_rm16_9_17_s1.pkl',
+        f'{folder_name}/exp_rm16_9_18_s1.pkl',
+         f'{folder_name}/exp_rm16_9_17_s2.pkl',
+         f'{folder_name}/exp_rm16_9_20_s3.pkl',
+         f'{folder_name}/exp_rm16_9_19_s3.pkl'],
 
-        #[f'{folder_name}/exp_rm15_9_25_s3.pkl',
-        # f'{folder_name}/exp_rm15_9_17_s4.pkl'],
+        [f'{folder_name}/exp_rm15_9_25_s3.pkl',
+         f'{folder_name}/exp_rm15_9_17_s4.pkl'],
 
-        #[f'{folder_name}/exp_rm14_9_20_s1.pkl',
-        # f'{folder_name}/exp_rm14_9_18_s2.pkl'],
+        [f'{folder_name}/exp_rm14_9_20_s1.pkl',
+         f'{folder_name}/exp_rm14_9_18_s2.pkl'],
 
-        #[f'{folder_name}/exp_rm13_9_20_s3.pkl'],
-        #[f'{folder_name}/exp_rm12_9_19_s1.pkl'],
-        #[f'{folder_name}/exp_rm11_9_18_s4.pkl'],
-        #[f'{folder_name}/exp_rm10_9_17_s2.pkl'],
+        [f'{folder_name}/exp_rm13_9_20_s3.pkl'],
+        [f'{folder_name}/exp_rm12_9_19_s1.pkl'],
+        [f'{folder_name}/exp_rm11_9_18_s4.pkl'],
+        [f'{folder_name}/exp_rm10_9_17_s2.pkl'],
         [f'{folder_name}/exp_rm9_9_19_s3.pkl']
     ]
 
     kin_lst = [
-        #[f'{folder_name}/kin_rm16_9_17_s1.pkl',
-        # f'{folder_name}/kin_rm16_9_18_s1.pkl',
-         #f'{folder_name}/kin_rm16_9_17_s2.pkl',
-         #f'{folder_name}/kin_rm16_9_20_s3.pkl',
-         #f'{folder_name}/kin_rm16_9_19_s3.pkl'],
+        [f'{folder_name}/kin_rm16_9_17_s1.pkl',
+         f'{folder_name}/kin_rm16_9_18_s1.pkl',
+         f'{folder_name}/kin_rm16_9_17_s2.pkl',
+         f'{folder_name}/kin_rm16_9_20_s3.pkl',
+         f'{folder_name}/kin_rm16_9_19_s3.pkl'],
 
-        #[f'{folder_name}/kin_rm15_9_25_s3.pkl',
-         #f'{folder_name}/kin_rm15_9_17_s4.pkl'],
+        [f'{folder_name}/kin_rm15_9_25_s3.pkl',
+         f'{folder_name}/kin_rm15_9_17_s4.pkl'],
 
-        #[f'{folder_name}/kin_rm14_9_20_s1.pkl',
-         #f'{folder_name}/kin_rm14_9_18_s2.pkl'],
+        [f'{folder_name}/kin_rm14_9_20_s1.pkl',
+         f'{folder_name}/kin_rm14_9_18_s2.pkl'],
 
-        #[f'{folder_name}/kin_rm13_9_20_s3.pkl'],
-        #[f'{folder_name}/kin_rm12_9_19_s1.pkl'],
-        #[f'{folder_name}/kin_rm11_9_18_s4.pkl'],
-        #[f'{folder_name}/kin_rm10_9_17_s2.pkl'],
+        [f'{folder_name}/kin_rm13_9_20_s3.pkl'],
+        [f'{folder_name}/kin_rm12_9_19_s1.pkl'],
+        [f'{folder_name}/kin_rm11_9_18_s4.pkl'],
+        [f'{folder_name}/kin_rm10_9_17_s2.pkl'],
         [f'{folder_name}/kin_rm9_9_19_s3.pkl']
 
     ]
 
-    # Append paths
+     #Append paths
     block_paths = [
-        #[['17', 'S1', 'RM16'],
-         #['18', 'S1', 'RM16'],
-         #['17', 'S2', 'RM16'],
-         #['20', 'S3', 'RM16'],
-         #['19', 'S3', 'RM16']],
+        [['17', 'S1', 'RM16'],
+         ['18', 'S1', 'RM16'],
+         ['17', 'S2', 'RM16'],
+         ['20', 'S3', 'RM16'],
+         ['19', 'S3', 'RM16']],
 
-        #[['25', 'S3', 'RM15'],
-        # ['17', 'S4', 'RM15']],
+        [['25', 'S3', 'RM15'],
+         ['17', 'S4', 'RM15']],
 
-        #[['20', 'S1', 'RM14'],
-        # ['18', 'S2', 'RM14']],
+        [['20', 'S1', 'RM14'],
+         ['18', 'S2', 'RM14']],
 
-        #[['20', 'S3', 'RM13']],
-        #[['19', 'S1', 'RM12']],
-        #[['18', 'S4', 'RM11']],
-        #[['17', 'S2', 'RM10']],
+        [['20', 'S3', 'RM13']],
+        [['19', 'S1', 'RM12']],
+        [['18', 'S4', 'RM11']],
+        [['17', 'S2', 'RM10']],
         [['19', 'S3', 'RM9']],
     ]
 

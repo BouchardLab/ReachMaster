@@ -263,7 +263,8 @@ class ReachUtils:
         trial_numbers = np.linspace(0, len(self.trial_start_vectors), 1)
         self.filter_all_kin_data_with_probabilities(gen_p_thresh=0.4)
         for sd, isx in enumerate(self.trial_start_vectors):  # enumerate over all trial vectors
-            print("here: ", self.trial_stop_vectors, len(self.trial_stop_vectors), sd)
+            if sd >= len(self.trial_stop_vectors):  # handles case when sd index is out of range (rm19 19 s3 only)
+                sd = len(self.trial_stop_vectors)-1
             stops = self.trial_stop_vectors[sd]
             if isx > stops:  # handles case where start>stop entry is skipped
                 stops = isx + 300
