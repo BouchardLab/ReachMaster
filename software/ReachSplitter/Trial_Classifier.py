@@ -1104,7 +1104,7 @@ def main_run_all():
         preprocessor.get_single_block(RM12_expdf, '0190919', 'S1', '09192019', format='exp',
                                       save_as=f'{folder_name}/exp_rm12_9_19_s1.pkl'),
         preprocessor.get_single_block(RM11_expdf, '0190918', 'S4', '09182019', format='exp',
-                                      save_as=f'{folder_name}/exp_rm11_9_18_s1.pkl'),
+                                      save_as=f'{folder_name}/exp_rm11_9_18_s4.pkl'),
         preprocessor.get_single_block(RM10_expdf, '0190917', 'S2', '09172019', format='exp',
                                       save_as=f'{folder_name}/exp_rm10_9_17_s2.pkl'),
         preprocessor.get_single_block(RM9_expdf, '190919_', 'S3', '09192019', format='exp',  # adjusted date
@@ -1141,7 +1141,7 @@ def main_run_all():
         preprocessor.get_single_block(tkdf_12, '0190919', 'S1', '09192019', format='kin',
                                       save_as=f'{folder_name}/kin_rm12_9_19_s1.pkl'),
         preprocessor.get_single_block(tkdf_11, '0190918', 'S4', '09182019', format='kin',
-                                      save_as=f'{folder_name}/kin_rm11_9_18_s1.pkl'),
+                                      save_as=f'{folder_name}/kin_rm11_9_18_s4.pkl'),
         preprocessor.get_single_block(tkdf_10, '0190917', 'S2', '09172019', format='kin',
                                       save_as=f'{folder_name}/kin_rm10_9_17_s2.pkl'),
         preprocessor.get_single_block(tkdf_9, '190919_', 'S3', '09192019', format='kin',  # adjusted date
@@ -1202,64 +1202,64 @@ def create_features():
     # GET SAVED BLOCKS
     # (df, date, session, rat, save_as=None, format='exp')
     exp_lst = [
-        [f'{folder_name}/exp_rm16_9_17_s1.pkl',
-         f'{folder_name}/exp_rm16_9_18_s1.pkl',
-         f'{folder_name}/exp_rm16_9_17_s2.pkl',
-         f'{folder_name}/exp_rm16_9_20_s3.pkl',
-         f'{folder_name}/exp_rm16_9_19_s3.pkl'],
+        # [f'{folder_name}/exp_rm16_9_17_s1.pkl',
+        #f'{folder_name}/exp_rm16_9_18_s1.pkl',
+         #f'{folder_name}/exp_rm16_9_17_s2.pkl',
+         #f'{folder_name}/exp_rm16_9_20_s3.pkl',
+         #f'{folder_name}/exp_rm16_9_19_s3.pkl'],
 
-        [f'{folder_name}/exp_rm15_9_25_s3.pkl',
-         f'{folder_name}/exp_rm15_9_17_s4.pkl'],
+        #[f'{folder_name}/exp_rm15_9_25_s3.pkl',
+        # f'{folder_name}/exp_rm15_9_17_s4.pkl'],
 
-        [f'{folder_name}/exp_rm14_9_20_s1.pkl',
-         f'{folder_name}/exp_rm14_9_18_s2.pkl'],
+        #[f'{folder_name}/exp_rm14_9_20_s1.pkl',
+        # f'{folder_name}/exp_rm14_9_18_s2.pkl'],
 
-        [f'{folder_name}/exp_rm13_9_20_s3.pkl'],
-        [f'{folder_name}/exp_rm12_9_19_s1.pkl'],
-        [f'{folder_name}/exp_rm11_9_18_s4.pkl'],
-        [f'{folder_name}/exp_rm10_9_17_s2.pkl'],
+        #[f'{folder_name}/exp_rm13_9_20_s3.pkl'],
+        #[f'{folder_name}/exp_rm12_9_19_s1.pkl'],
+        #[f'{folder_name}/exp_rm11_9_18_s4.pkl'],
+        #[f'{folder_name}/exp_rm10_9_17_s2.pkl'],
         [f'{folder_name}/exp_rm9_9_19_s3.pkl']
     ]
 
     kin_lst = [
-        [f'{folder_name}/kin_rm16_9_17_s1.pkl',
-         f'{folder_name}/kin_rm16_9_18_s1.pkl',
-         f'{folder_name}/kin_rm16_9_17_s2.pkl',
-         f'{folder_name}/kin_rm16_9_20_s3.pkl',
-         f'{folder_name}/kin_rm16_9_19_s3.pkl'],
+        #[f'{folder_name}/kin_rm16_9_17_s1.pkl',
+        # f'{folder_name}/kin_rm16_9_18_s1.pkl',
+         #f'{folder_name}/kin_rm16_9_17_s2.pkl',
+         #f'{folder_name}/kin_rm16_9_20_s3.pkl',
+         #f'{folder_name}/kin_rm16_9_19_s3.pkl'],
 
-        [f'{folder_name}/kin_rm15_9_25_s3.pkl',
-         f'{folder_name}/kin_rm15_9_17_s4.pkl'],
+        #[f'{folder_name}/kin_rm15_9_25_s3.pkl',
+         #f'{folder_name}/kin_rm15_9_17_s4.pkl'],
 
-        [f'{folder_name}/kin_rm14_9_20_s1.pkl',
-         f'{folder_name}/kin_rm14_9_18_s2.pkl'],
+        #[f'{folder_name}/kin_rm14_9_20_s1.pkl',
+         #f'{folder_name}/kin_rm14_9_18_s2.pkl'],
 
-        [f'{folder_name}/kin_rm13_9_20_s3.pkl'],
-        [f'{folder_name}/kin_rm12_9_19_s1.pkl'],
-        [f'{folder_name}/kin_rm11_9_18_s4.pkl'],
-        [f'{folder_name}/kin_rm10_9_17_s2.pkl'],
+        #[f'{folder_name}/kin_rm13_9_20_s3.pkl'],
+        #[f'{folder_name}/kin_rm12_9_19_s1.pkl'],
+        #[f'{folder_name}/kin_rm11_9_18_s4.pkl'],
+        #[f'{folder_name}/kin_rm10_9_17_s2.pkl'],
         [f'{folder_name}/kin_rm9_9_19_s3.pkl']
 
     ]
 
     # Append paths
     block_paths = [
-        [['17', 'S1', 'RM16'],
-         ['18', 'S1', 'RM16'],
-         ['17', 'S2', 'RM16'],
-         ['20', 'S3', 'RM16'],
-         ['19', 'S3', 'RM16']],
+        #[['17', 'S1', 'RM16'],
+         #['18', 'S1', 'RM16'],
+         #['17', 'S2', 'RM16'],
+         #['20', 'S3', 'RM16'],
+         #['19', 'S3', 'RM16']],
 
-        [['25', 'S3', 'RM15'],
-         ['17', 'S4', 'RM15']],
+        #[['25', 'S3', 'RM15'],
+        # ['17', 'S4', 'RM15']],
 
-        [['20', 'S1', 'RM14'],
-         ['18', 'S2', 'RM14']],
+        #[['20', 'S1', 'RM14'],
+        # ['18', 'S2', 'RM14']],
 
-        [['20', 'S3', 'RM13']],
-        [['19', 'S1', 'RM12']],
-        [['18', 'S4', 'RM11']],
-        [['17', 'S2', 'RM10']],
+        #[['20', 'S3', 'RM13']],
+        #[['19', 'S1', 'RM12']],
+        #[['18', 'S4', 'RM11']],
+        #[['17', 'S2', 'RM10']],
         [['19', 'S3', 'RM9']],
     ]
 
@@ -1270,6 +1270,7 @@ def create_features():
             kin_data = Preprocessor.load_data(kin_lst[i][j])
             exp_data = Preprocessor.load_data(exp_lst[i][j])
             date, session, rat = block_paths[i][j]
+
 
             # Run ReachUtils
             R = CU.ReachUtils(rat, date, session, exp_data, kin_data, 's')  # init
@@ -1317,12 +1318,13 @@ def create_labels():
             label = labels[i][j]
 
             # append
+            print(block_paths[i][j])
             vec_labels, _ = CU.make_vectorized_labels(label)
             label_df = CU.make_vectorized_labels_to_df(vec_labels)
             label_dfs.append(label_df)
 
     # save ML dfs
-    Preprocessor.save_data(label_dfs, f'{folder_name}/label_dfs.pkl', file_type='pkl')
+    Preprocessor.save_data(pd.DataFrame(label_dfs), f'{folder_name}/label_dfs.pkl', file_type='pkl')
 
 def main_run_ML():
     """
@@ -1488,7 +1490,7 @@ if __name__ == "__main__":
         plt.savefig(f'{folder_name}/ClassBias_whichhand.png')
 
     elif args.function == 5:
-        create_features() # in use with 1
+        create_features()  # in use with 1
 
     elif args.function == 6:
-        create_labels() # in use with 1
+        create_labels()  # in use with 1

@@ -263,6 +263,7 @@ class ReachUtils:
         trial_numbers = np.linspace(0, len(self.trial_start_vectors), 1)
         self.filter_all_kin_data_with_probabilities(gen_p_thresh=0.4)
         for sd, isx in enumerate(self.trial_start_vectors):  # enumerate over all trial vectors
+            print("here: ", self.trial_stop_vectors, len(self.trial_stop_vectors), sd)
             stops = self.trial_stop_vectors[sd]
             if isx > stops:  # handles case where start>stop entry is skipped
                 stops = isx + 300
@@ -1319,170 +1320,170 @@ rm14_9_18_s2_label = [
 # Guang's labels
 # 2019-09-20-S3-RM13-cam2
 rm13_9_20_s3_label = [
-                      [0, 0, 0, 0, 0, 0, 'no_tug', 0, 0, 0], # null
-                      [1, 0, 0, 1, 2, 'l', 'no_tug', 0, 0, 1], #failed
-                      [2, 0, 0, 3, 1, 'r', 'no_tug', 0, 0, 0], #success
-                      [3, 0, 0, 0, 0, 0, 'no_tug', 0, 0, 0], #null
-                      [4, 0, 0, 3, 1, 'l', 'no_tug', 0, 0, 0], #success
-                      [5, 0, 0, 3, 1, 'r', 'no_tug', 0, 0, 0], #success
-                      [6, 0, 0, 3, 1, 'r', 'no_tug', 0, 0, 0], #success
-                      [7, 0, 0, 1, 4, 'l', 'no_tug', 0, 0, 0], #failed
-                      [8, 0, 0, 3, 1, 'r', 'no_tug', 0, 0, 0], #success
-                      [9, 0, 0, 3, 2, 'r', 'no_tug', 0, 0, 0], #success
-                      [10, 0, 0, 1, 2, 'l', 'no_tug', 0, 0, 1], #failed
-                      [11, 0, 0, 3, 1, 'r', 'no_tug', 0, 0, 0], #success
-                      [12, 0, 0, 3, 1, 'r', 'no_tug', 0, 0, 0], #success
-                      [13, 0, 0, 0, 0, 0, 'no_tug', 0, 0, 0], # null
-                      [14, 0, 0, 3, 1, 'r', 'no_tug', 0, 0, 0], #success
-                      [15, 0, 0, 3, 1, 'r', 'no_tug', 0, 0, 0], #success
-                      [16, 0, 0, 3, 1, 'l', 'no_tug', 0, 0, 0], #success
-                      [17, 0, 0, 3, 1, 'l', 'no_tug', 0, 0, 1], #success #starts mid reach
-                      [18, 0, 0, 3, 6, 'r', 'no_tug', 1, 0, 0], #success #bi
-                      [19, 0, 0, 1, 13, 'bi', 'no_tug', 1, 0, 0], #failed #bi #lots of reaches
-                      [20, 0, 0, 1, 5, 'l', 'no_tug', 0, 0, 0], #failed
-                      [21, 0, 0, 1, 3, 'l', 'no_tug', 0, 0, 0], #failed
-                      [22, 0, 0, 0, 0, 0, 'no_tug', 0, 0, 0], # null
-                      [23, 0, 0, 1, 2, 'r', 'no_tug', 0, 0, 0], #failed
-                      [24, 0, 0, 3, 2, 'r', 'no_tug', 0, 0, 1], #success #starts mid reach
-                      [25, 0, 0, 0, 0, 0, 'no_tug', 0, 0, 0], # null
-                      [26, 0, 0, 3, 1, 'r', 'no_tug', 0, 0, 0], #success
-                      [27, 0, 0, 0, 0, 0, 'no_tug', 0, 0, 0], # null
-                      [28, 0, 0, 3, 2, 'r', 'no_tug', 0, 0, 1], #success #starts mid reach
-                      [29, 0, 0, 1, 2, 'l', 'no_tug', 0, 0, 0], #failed
-                      [30, 0, 0, 3, 2, 'bi', 'no_tug', 1, 0, 0], #success #bi
-                      [31, 0, 0, 3, 6, 'r', 'no_tug', 1, 0, 0], #success #bi
-                      [32, 0, 0, 1, 4, 'l', 'no_tug', 0, 0, 0], #failed
-                      [33, 0 ,0, 3, 2, 'r', 'no_tug', 0, 0, 1], #success #starts mid reach
-                      [34, 0, 0, 3, 1, 'r', 'no_tug', 0, 0, 0], #success
-                      [35, 0, 0, 3, 1, 'r', 'no_tug', 0, 0, 1], #success #starts mid reach
-                      [36, 0, 0, 3, 1, 'r', 'no_tug', 0, 0, 0], #success
-                      [37, 0, 0, 3, 5, 'r', 'no_tug', 0, 0, 1], #success #starts mid reach
-                      [38, 0, 0, 0, 0, 0, 'no_tug', 0, 0, 0], # null
-                      [39, 0, 0, 1, 4, 'r', 'no_tug', 0, 0, 0], #failed
-                      [40, 0, 0, 3, 1, 'r', 'no_tug', 0, 0, 0], #success
-                      [41, 0, 0, 1, 3, 'l', 'no_tug', 0, 0, 0], #failed
-                      [42, 0, 0, 0, 0, 0, 0, 'no_tug', 0, 0, 0], # null
-                      [43, 0, 0, 3, 1, 'r', 'no_tug', 0, 0, 0], #success
-                      [44, 0, 0, 3, 2, 'r', 'no_tug', 0, 0, 0], #success
-                      [45, 0, 0, 1, 6, 'r', 'no_tug', 1, 0, 0], #failed #hand-swith at the last reach
-                      [46, 0, 0, 3, 10, 'bi', 'no_tug', 1, 0, 1], #success #starts mid reach #bi #lots of reaches
-                      [47, 0, 0, 3, 1, 'r', 'no_tug', 0, 0, 0], #success
-                      [48, 0, 0, 3, 1, 'r', 'no_tug', 0, 0, 0], #success
-                      [49, 0, 0, 1, 7, 'l', 'no_tug', 0, 0, 1], #failed with lots of reaches
-                      [50, 0, 0, 3, 6, 'r', 'no_tug', 0, 0, 0], #success
-                      [51, 0, 0, 3, 1, 'r', 'no_tug', 0, 0, 0], #success
-                      [52, 0, 0, 3, 2, 'r', 'no_tug', 0, 0, 0], #success
-                      [53, 0, 0, 3, 1, 'r', 'no_tug', 0, 0, 1], #success #starts mid reach
-                      [54, 0, 0, 0, 0, 0, 0, 'no_tug', 0, 0, 0], # null
-                      [55, 0, 0, 0, 0, 0, 0, 'no_tug', 0, 0, 0], # null
-                      [56, 0, 0, 3, 3, 'r', 'no_tug', 0, 0, 0], #success
+                      [0, 0, 0, 0, 0, 0, 0, 0, 0], # null
+                      [1, 0, 0, 1, 2, 'l', 0, 0, 0], #failed
+                      [2, 0, 0, 3, 1, 'r', 0, 0, 0], #success
+                      [3, 0, 0, 0, 0, 0, 0, 0, 0], #null
+                      [4, 0, 0, 3, 1, 'l', 0, 0, 0], #success
+                      [5, 0, 0, 3, 1, 'r', 0, 0, 0], #success
+                      [6, 0, 0, 3, 1, 'r', 0, 0, 0], #success
+                      [7, 0, 0, 1, 4, 'l', 0, 0, 0], #failed
+                      [8, 0, 0, 3, 1, 'r', 0, 0, 0], #success
+                      [9, 0, 0, 3, 2, 'r', 0, 0, 0], #success
+                      [10, 0, 0, 1, 2, 'l', 0, 0, 0], #failed
+                      [11, 0, 0, 3, 1, 'r', 0, 0, 0], #success
+                      [12, 0, 0, 3, 1, 'r', 0, 0, 0], #success
+                      [13, 0, 0, 0, 0, 0, 0, 0, 0], # null
+                      [14, 0, 0, 3, 1, 'r', 0, 0, 0], #success
+                      [15, 0, 0, 3, 1, 'r', 0, 0, 0], #success
+                      [16, 0, 0, 3, 1, 'l', 0, 0, 0], #success
+                      [17, 0, 0, 3, 1, 'l', 0, 0, 0], #success #starts mid reach
+                      [18, 0, 0, 3, 6, 'r', 0, 1, 0], #success #bi
+                      [19, 0, 0, 1, 13, 'bi', 0, 1, 0], #failed #bi #lots of reaches
+                      [20, 0, 0, 1, 5, 'l', 0, 0, 0], #failed
+                      [21, 0, 0, 1, 3, 'l', 0, 0, 0], #failed
+                      [22, 0, 0, 0, 0, 0, 0, 0, 0], # null
+                      [23, 0, 0, 1, 2, 'r', 0, 0, 0], #failed
+                      [24, 0, 0, 3, 2, 'r', 0, 0, 0], #success #starts mid reach
+                      [25, 0, 0, 0, 0, 0, 0, 0, 0], # null
+                      [26, 0, 0, 3, 1, 'r', 0, 0, 0], #success
+                      [27, 0, 0, 0, 0, 0, 0, 0, 0], # null
+                      [28, 0, 0, 3, 2, 'r', 0, 0, 0], #success #starts mid reach
+                      [29, 0, 0, 1, 2, 'l', 0, 0, 0], #failed
+                      [30, 0, 0, 3, 2, 'bi', 0, 1, 0], #success #bi
+                      [31, 0, 0, 3, 6, 'r', 0, 1, 0], #success #bi
+                      [32, 0, 0, 1, 4, 'l', 0, 0, 0], #failed
+                      [33, 0 ,0, 3, 2, 'r', 0, 0, 0], #success #starts mid reach
+                      [34, 0, 0, 3, 1, 'r', 0, 0, 0], #success
+                      [35, 0, 0, 3, 1, 'r', 0, 0, 0], #success #starts mid reach
+                      [36, 0, 0, 3, 1, 'r', 0, 0, 0], #success
+                      [37, 0, 0, 3, 5, 'r', 0, 0, 0], #success #starts mid reach
+                      [38, 0, 0, 0, 0, 0, 0, 0, 0], # null
+                      [39, 0, 0, 1, 4, 'r', 0, 0, 0], #failed
+                      [40, 0, 0, 3, 1, 'r', 0, 0, 0], #success
+                      [41, 0, 0, 1, 3, 'l', 0, 0, 0], #failed
+                      [42, 0, 0, 0, 0, 0, 0, 0, 0], # null
+                      [43, 0, 0, 3, 1, 'r', 0, 0, 0], #success
+                      [44, 0, 0, 3, 2, 'r', 0, 0, 0], #success
+                      [45, 0, 0, 1, 6, 'r', 0, 1, 0], #failed #hand-swith at the last reach
+                      [46, 0, 0, 3, 10, 'bi', 0, 1, 0], #success #starts mid reach #bi #lots of reaches
+                      [47, 0, 0, 3, 1, 'r', 0, 0, 0], #success
+                      [48, 0, 0, 3, 1, 'r', 0, 0, 0], #success
+                      [49, 0, 0, 1, 7, 'l', 0, 0, 0], #failed with lots of reaches
+                      [50, 0, 0, 3, 6, 'r', 0, 0, 0], #success
+                      [51, 0, 0, 3, 1, 'r', 0, 0, 0], #success
+                      [52, 0, 0, 3, 2, 'r', 0, 0, 0], #success
+                      [53, 0, 0, 3, 1, 'r', 0, 0, 0], #success #starts mid reach
+                      [54, 0, 0, 0, 0, 0, 0, 0, 0], # null
+                      [55, 0, 0, 0, 0, 0, 0, 0, 0], # null
+                      [56, 0, 0, 3, 3, 'r', 0, 0, 0], #success
                       ]
 
 # 2019-09-18-S4-RM11-cam2
 rm11_9_18_s4_label = [
-    [0, 0, 0, 3, 1, 0, 'no_tug', 0, 0, 0],  # success #mouth reach without hand
-    [1, 0, 0, 3, 1, 0, 'no_tug', 0, 0, 0],  # success #mouth reach without hand
-    [2, 0, 0, 3, 1, 0, 'no_tug', 0, 0, 0],  # success #mouth reach without hand
-    [3, 0, 0, 0, 0, 0, 'no_tug', 0, 0, 0],  # null
-    [4, 0, 0, 3, 1, 0, 'no_tug', 0, 0, 0],  # success #mouth reach without hand
-    [5, 0, 0, 3, 1, 'r', 'no_tug', 0, 0, 0],  # success
-    [6, 0, 0, 3, 1, 0, 'no_tug', 0, 0, 0],  # success #mouth reach without hand
-    [7, 0, 0, 3, 1, 0, 'no_tug', 0, 0, 0],  # success #mouth reach without hand
-    [8, 0, 0, 3, 1, 0, 'no_tug', 0, 0, 0],  # success #mouth reach without hand
-    [9, 0, 0, 3, 1, 0, 'no_tug', 0, 0, 0],  # success #mouth reach without hand
-    [10, 0, 0, 3, 1, 'r', 'no_tug', 0, 0, 0],  # success
-    [11, 0, 0, 3, 1, 0, 'no_tug', 0, 0, 0],  # success #mouth reach without hand
-    [12, 0, 0, 3, 1, 'r', 'no_tug', 0, 0, 0],  # success
-    [13, 0, 0, 3, 1, 0, 'no_tug', 0, 0, 0],  # success #mouth reach without hand
-    [14, 0, 0, 3, 1, 0, 'no_tug', 0, 0, 0],  # success #mouth reach without hand
-    [15, 0, 0, 3, 1, 0, 'no_tug', 0, 0, 0],  # success #mouth reach without hand
-    [16, 0, 0, 3, 1, 'r', 'no_tug', 0, 0, 0],  # success
-    [17, 0, 0, 3, 1, 'r', 'no_tug', 0, 0, 0],  # success #mouth reach #hand reach failed
-    [18, 0, 0, 3, 1, 'r', 'no_tug', 0, 0, 0],  # success #mouth reach #hand reach failed
-    [19, 0, 0, 3, 1, 0, 'no_tug', 0, 0, 1],  # success #mouth reach #starts mid reach
-    [20, 0, 0, 0, 0, 0, 'no_tug', 0, 0, 0],  # null
-    [21, 0, 0, 3, 1, 'r', 'no_tug', 0, 0, 0],  # success
-    [22, 0, 0, 3, 1, 0, 'no_tug', 0, 0, 0],  # success #mouth reach without hand
-    [23, 0, 0, 3, 1, 0, 'no_tug', 0, 0, 1],  # success #mouth reach #starts mid reach
-    [24, 0, 0, 3, 1, 0, 'no_tug', 0, 0, 0],  # success #mouth reach without hand
-    [25, 0, 0, 3, 1, 0, 'no_tug', 0, 0, 0],  # success #mouth reach without hand
-    [26, 0, 0, 3, 2, 'r', 'no_tug', 0, 0, 0],  # success
-    [27, 0, 0, 0, 0, 0, 'no_tug', 0, 0, 0],  # null
-    [28, 0, 0, 0, 0, 0, 'no_tug', 0, 0, 0]  # null
+    [0, 0, 0, 3, 1, 0, 'no_tug', 0, 0],  # success #mouth reach without hand
+    [1, 0, 0, 3, 1, 0, 'no_tug', 0, 0],  # success #mouth reach without hand
+    [2, 0, 0, 3, 1, 0, 'no_tug', 0, 0],  # success #mouth reach without hand
+    [3, 0, 0, 0, 0, 0, 'no_tug', 0, 0],  # null
+    [4, 0, 0, 3, 1, 0, 'no_tug', 0, 0],  # success #mouth reach without hand
+    [5, 0, 0, 3, 1, 'r', 'no_tug', 0, 0],  # success
+    [6, 0, 0, 3, 1, 0, 'no_tug', 0, 0],  # success #mouth reach without hand
+    [7, 0, 0, 3, 1, 0, 'no_tug', 0, 0],  # success #mouth reach without hand
+    [8, 0, 0, 3, 1, 0, 'no_tug', 0, 0],  # success #mouth reach without hand
+    [9, 0, 0, 3, 1, 0, 'no_tug', 0, 0],  # success #mouth reach without hand
+    [10, 0, 0, 3, 1, 'r', 'no_tug', 0, 0],  # success
+    [11, 0, 0, 3, 1, 0, 'no_tug', 0, 0],  # success #mouth reach without hand
+    [12, 0, 0, 3, 1, 'r', 'no_tug', 0, 0],  # success
+    [13, 0, 0, 3, 1, 0, 'no_tug', 0, 0],  # success #mouth reach without hand
+    [14, 0, 0, 3, 1, 0, 'no_tug', 0, 0],  # success #mouth reach without hand
+    [15, 0, 0, 3, 1, 0, 'no_tug', 0, 0],  # success #mouth reach without hand
+    [16, 0, 0, 3, 1, 'r', 'no_tug', 0, 0],  # success
+    [17, 0, 0, 3, 1, 'r', 'no_tug', 0, 0],  # success #mouth reach #hand reach failed
+    [18, 0, 0, 3, 1, 'r', 'no_tug', 0, 0],  # success #mouth reach #hand reach failed
+    [19, 0, 0, 3, 1, 0, 'no_tug', 0, 0],  # success #mouth reach #starts mid reach
+    [20, 0, 0, 0, 0, 0, 'no_tug', 0, 0],  # null
+    [21, 0, 0, 3, 1, 'r', 'no_tug', 0, 0],  # success
+    [22, 0, 0, 3, 1, 0, 'no_tug', 0, 0],  # success #mouth reach without hand
+    [23, 0, 0, 3, 1, 0, 'no_tug', 0, 0],  # success #mouth reach #starts mid reach
+    [24, 0, 0, 3, 1, 0, 'no_tug', 0, 0],  # success #mouth reach without hand
+    [25, 0, 0, 3, 1, 0, 'no_tug', 0, 0],  # success #mouth reach without hand
+    [26, 0, 0, 3, 2, 'r', 'no_tug', 0, 0],  # success
+    [27, 0, 0, 0, 0, 0, 'no_tug', 0, 0],  # null
+    [28, 0, 0, 0, 0, 0, 'no_tug', 0, 0]  # null
 ]
 
 # 2019-09-19-S3-RM9-cam2
 rm9_9_19_s3_label = [
-    [0, 0, 0, 3, 1, 'l', 'no_tug', 0, 0, 0],  # success
-    [1, 0, 0, 0, 0, 0, 'no_tug', 0, 0, 0],  # null
-    [2, 0, 0, 0, 0, 0, 'no_tug', 0, 0, 0],  # null
-    [3, 0, 0, 0, 0, 0, 'no_tug', 0, 0, 0],  # null
-    [4, 0, 0, 3, 1, 'l', 'no_tug', 0, 0, 1],  # success #starts mid reach
-    [5, 0, 0, 3, 2, 'l', 'no_tug', 0, 0, 0],  # success
-    [6, 0, 0, 1, 1, 'l', 'no_tug', 0, 0, 0],  # failed
-    [7, 0, 0, 3, 1, 'l', 'no_tug', 0, 0, 1],  # success #starts mid reach
-    [8, 0, 0, 3, 1, 'l', 'no_tug', 0, 0, 0],  # success
-    [9, 0, 0, 0, 0, 0, 'no_tug', 0, 0, 0],  # null
-    [10, 0, 0, 3, 2, 'l', 'no_tug', 0, 0, 0],  # success
-    [11, 0, 0, 0, 0, 0, 'no_tug', 0, 0, 0],  # null
-    [12, 0, 0, 3, 1, 'l', 'no_tug', 0, 0, 0],  # success
-    [13, 0, 0, 3, 1, 'l', 'no_tug', 0, 0, 0],  # success
-    [14, 0, 0, 3, 2, 'bi', 'no_tug', 1, 0, 0],  # success #bi
-    [15, 0, 0, 0, 0, 0, 'no_tug', 0, 0, 0],  # null
-    [16, 0, 0, 3, 1, 'l', 'no_tug', 0, 0, 0],  # success
-    [17, 0, 0, 3, 1, 'l', 'no_tug', 0, 0, 0],  # success
-    [18, 0, 0, 0, 0, 0, 'no_tug', 0, 0, 0],  # null
-    [19, 0, 0, 3, 1, 'l', 'no_tug', 0, 0, 0],  # success
-    [20, 0, 0, 3, 1, 'bi', 'no_tug', 0, 0, 1],  # success #bi #starts mid reach
-    [21, 0, 0, 3, 2, 'bi', 'no_tug', 1, 0, 0],  # success #bi
-    [22, 0, 0, 3, 1, 'l', 'no_tug', 0, 0, 0],  # success
-    [23, 0, 0, 0, 0, 0, 'no_tug', 0, 0, 0],  # null
-    [24, 0, 0, 3, 1, 'l', 'no_tug', 0, 0, 0],  # success
-    [25, 0, 0, 0, 0, 0, 'no_tug', 0, 0, 0],  # null
-    [26, 0, 0, 0, 0, 0, 'no_tug', 0, 0, 0],  # null
-    [27, 0, 0, 3, 1, 'l', 'no_tug', 0, 0, 0],  # success
-    [28, 0, 0, 3, 1, 'r', 'no_tug', 0, 0, 0],  # success
-    [29, 0, 0, 0, 0, 0, 'no_tug', 0, 0, 0],  # null
-    [30, 0, 0, 0, 0, 0, 'no_tug', 0, 0, 0],  # null
-    [31, 0, 0, 0, 0, 0, 'no_tug', 0, 0, 0],  # null
-    [32, 0, 0, 0, 0, 0, 'no_tug', 0, 0, 0],  # null
-    [33, 0, 0, 3, 1, 'l', 'no_tug', 0, 0, 0],  # success
-    [34, 0, 0, 0, 0, 0, 'no_tug', 0, 0, 0],  # null
-    [35, 0, 0, 3, 1, 'l', 'no_tug', 0, 0, 0],  # success
-    [36, 0, 0, 0, 0, 0, 'no_tug', 0, 0, 0],  # null
-    [37, 0, 0, 0, 0, 0, 'no_tug', 0, 0, 0],  # null
-    [38, 0, 0, 3, 1, 'l', 'no_tug', 0, 0, 0],  # success
-    [39, 0, 0, 0, 0, 0, 'no_tug', 0, 0, 0],  # null
-    [40, 0, 0, 0, 0, 0, 'no_tug', 0, 0, 0],  # null
-    [41, 0, 0, 0, 0, 0, 'no_tug', 0, 0, 0],  # null
-    [42, 0, 0, 3, 2, 'l', 'no_tug', 0, 0, 0],  # success
-    [43, 0, 0, 3, 1, 'l', 'no_tug', 0, 0, 0],  # success
-    [44, 0, 0, 0, 0, 0, 'no_tug', 0, 0, 0],  # null
-    [45, 0, 0, 3, 2, 'l', 'no_tug', 0, 0, 1],  # success #starts mid reach
-    [46, 0, 0, 0, 0, 0, 'no_tug', 0, 0, 0],  # null
-    [47, 0, 0, 0, 0, 0, 'no_tug', 0, 0, 0],  # null
-    [48, 0, 0, 3, 1, 'l', 'no_tug', 0, 0, 0],  # success
-    [49, 0, 0, 0, 0, 0, 'no_tug', 0, 0, 0],  # null
-    [50, 0, 0, 0, 0, 0, 'no_tug', 0, 0, 0],  # null
+    [0, 0, 0, 3, 1, 'l', 'no_tug', 0, 0],  # success
+    [1, 0, 0, 0, 0, 0, 'no_tug', 0, 0],  # null
+    [2, 0, 0, 0, 0, 0, 'no_tug', 0, 0],  # null
+    [3, 0, 0, 0, 0, 0, 'no_tug', 0, 0],  # null
+    [4, 0, 0, 3, 1, 'l', 'no_tug', 0, 0],  # success #starts mid reach
+    [5, 0, 0, 3, 2, 'l', 'no_tug', 0, 0],  # success
+    [6, 0, 0, 1, 1, 'l', 'no_tug', 0, 0],  # failed
+    [7, 0, 0, 3, 1, 'l', 'no_tug', 0, 0],  # success #starts mid reach
+    [8, 0, 0, 3, 1, 'l', 'no_tug', 0, 0],  # success
+    [9, 0, 0, 0, 0, 0, 'no_tug', 0, 0],  # null
+    [10, 0, 0, 3, 2, 'l', 'no_tug', 0, 0],  # success
+    [11, 0, 0, 0, 0, 0, 'no_tug', 0, 0],  # null
+    [12, 0, 0, 3, 1, 'l', 'no_tug', 0, 0],  # success
+    [13, 0, 0, 3, 1, 'l', 'no_tug', 0, 0],  # success
+    [14, 0, 0, 3, 2, 'bi', 'no_tug', 1, 0],  # success #bi
+    [15, 0, 0, 0, 0, 0, 'no_tug', 0, 0],  # null
+    [16, 0, 0, 3, 1, 'l', 'no_tug', 0, 0],  # success
+    [17, 0, 0, 3, 1, 'l', 'no_tug', 0, 0],  # success
+    [18, 0, 0, 0, 0, 0, 'no_tug', 0, 0],  # null
+    [19, 0, 0, 3, 1, 'l', 'no_tug', 0, 0],  # success
+    [20, 0, 0, 3, 1, 'bi', 'no_tug', 0, 0],  # success #bi #starts mid reach
+    [21, 0, 0, 3, 2, 'bi', 'no_tug', 1, 0],  # success #bi
+    [22, 0, 0, 3, 1, 'l', 'no_tug', 0, 0],  # success
+    [23, 0, 0, 0, 0, 0, 'no_tug', 0, 0],  # null
+    [24, 0, 0, 3, 1, 'l', 'no_tug', 0, 0],  # success
+    [25, 0, 0, 0, 0, 0, 'no_tug', 0, 0],  # null
+    [26, 0, 0, 0, 0, 0, 'no_tug', 0, 0],  # null
+    [27, 0, 0, 3, 1, 'l', 'no_tug', 0, 0],  # success
+    [28, 0, 0, 3, 1, 'r', 'no_tug', 0, 0],  # success
+    [29, 0, 0, 0, 0, 0, 'no_tug', 0, 0],  # null
+    [30, 0, 0, 0, 0, 0, 'no_tug', 0, 0],  # null
+    [31, 0, 0, 0, 0, 0, 'no_tug', 0, 0],  # null
+    [32, 0, 0, 0, 0, 0, 'no_tug', 0, 0],  # null
+    [33, 0, 0, 3, 1, 'l', 'no_tug', 0, 0],  # success
+    [34, 0, 0, 0, 0, 0, 'no_tug', 0, 0],  # null
+    [35, 0, 0, 3, 1, 'l', 'no_tug', 0, 0],  # success
+    [36, 0, 0, 0, 0, 0, 'no_tug', 0, 0],  # null
+    [37, 0, 0, 0, 0, 0, 'no_tug', 0, 0],  # null
+    [38, 0, 0, 3, 1, 'l', 'no_tug', 0, 0],  # success
+    [39, 0, 0, 0, 0, 0, 'no_tug', 0, 0],  # null
+    [40, 0, 0, 0, 0, 0, 'no_tug', 0, 0],  # null
+    [41, 0, 0, 0, 0, 0, 'no_tug', 0, 0],  # null
+    [42, 0, 0, 3, 2, 'l', 'no_tug', 0, 0],  # success
+    [43, 0, 0, 3, 1, 'l', 'no_tug', 0, 0],  # success
+    [44, 0, 0, 0, 0, 0, 'no_tug', 0, 0],  # null
+    [45, 0, 0, 3, 2, 'l', 'no_tug', 0, 0],  # success #starts mid reach
+    [46, 0, 0, 0, 0, 0, 'no_tug', 0, 0],  # null
+    [47, 0, 0, 0, 0, 0, 'no_tug', 0, 0],  # null
+    [48, 0, 0, 3, 1, 'l', 'no_tug', 0, 0],  # success
+    [49, 0, 0, 0, 0, 0, 'no_tug', 0, 0],  # null
+    [50, 0, 0, 0, 0, 0, 'no_tug', 0, 0],  # null
 ]
 
 # 2019-09-17-S2-RM10-cam2
 rm10_9_17_s2_label = [
     # [0, 0, 0, ] # can't open the file
-    [1, 0, 0, 3, 1, 'l', 'no_tug', 0, 0, 0],  # success
-    [2, 0, 0, 3, 1, 'l', 'no_tug', 0, 0, 0],  # success # starts mid reach
-    [3, 0, 0, 3, 1, 'l', 'no_tug', 0, 0, 0],  # success # starts mid reach
-    [4, 0, 0, 3, 1, 'l', 'no_tug', 0, 0, 0],  # success # starts mid reach
-    [5, 0, 0, 3, 1, 'l', 'no_tug', 0, 0, 0],  # success # starts mid reach
-    [6, 0, 0, 3, 1, 'l', 'no_tug', 0, 0, 0],  # success #
-    [7, 0, 0, 3, 1, 'l', 'no_tug', 0, 0, 0],  # success # starts mid reach
+    [1, 0, 0, 3, 1, 'l', 'no_tug', 0, 0],  # success
+    [2, 0, 0, 3, 1, 'l', 'no_tug', 0, 0],  # success # starts mid reach
+    [3, 0, 0, 3, 1, 'l', 'no_tug', 0, 0],  # success # starts mid reach
+    [4, 0, 0, 3, 1, 'l', 'no_tug', 0, 0],  # success # starts mid reach
+    [5, 0, 0, 3, 1, 'l', 'no_tug', 0, 0],  # success # starts mid reach
+    [6, 0, 0, 3, 1, 'l', 'no_tug', 0, 0],  # success #
+    [7, 0, 0, 3, 1, 'l', 'no_tug', 0, 0],  # success # starts mid reach
 ]
 
 # 2019-09-19-S1-RM12-cam2
 rm12_9_19_s1_label = [
-    [0, 0, 0, 0, 0, 0, 'no_tug', 0, 0, 0],  # null
-    [1, 0, 0, 0, 0, 0, 'no_tug', 0, 0, 0],  # null
-    [2, 0, 0, 0, 0, 0, 'no_tug', 0, 0, 0],  # null
-    [3, 0, 0, 0, 0, 0, 'no_tug', 0, 0, 0],  # null
-    [4, 0, 0, 0, 0, 0, 'no_tug', 0, 0, 0],  # null
+    [0, 0, 0, 0, 0, 0, 'no_tug', 0, 0],  # null
+    [1, 0, 0, 0, 0, 0, 'no_tug', 0, 0],  # null
+    [2, 0, 0, 0, 0, 0, 'no_tug', 0, 0],  # null
+    [3, 0, 0, 0, 0, 0, 'no_tug', 0, 0],  # null
+    [4, 0, 0, 0, 0, 0, 'no_tug', 0, 0],  # null
 ]
