@@ -1,23 +1,16 @@
-import matplotlib
-from mpl_toolkits.mplot3d import Axes3D
+
 import pandas as pd
-import pdb
 import pickle
 import matplotlib.pyplot as plt
-from Analysis_Utils import preprocessing_df as preprocessing
 import DataStream_Vis_Utils as utils
 from moviepy.editor import *
 import skvideo
 import cv2
 import imageio
 import numpy as np
-from errno import EEXIST, ENOENT
-import repro_plotting
 import viz_utils as vu
-from scipy import interpolate
 import scipy
-import csv
-
+# Import ffmpeg to write videos here..
 ffm_path = 'C:/Users/bassp/OneDrive/Desktop/ffmpeg/bin/'
 skvideo.setFFmpegPath(ffm_path)
 import skvideo.io
@@ -765,16 +758,6 @@ class ReachViz:
             self.images = []
         return self.reaching_dataframe, self.valid_rmse_list, self.interpolation_rmse_list, self.outlier_rmse_list
 
-    def get_total_outlier_RMSE_session(self):
-        """ Function to visualize entire kinematic dataset's outliers through the use of RMSE pre and post-preprocessing."""
-        fig, [ax1, ax2] = plt.subplots(nrows=2, ncols=1, figsize=(10, 20))
-        for idx, p in enumerate(self.positions):
-            ax1.boxplot(self.outlier_rmse_list[idx], c='r', label='Outlier RMSEs')
-            ax1.boxplot(self.valid_rmse_list[idx], c='r', label='Valid RMSEs')
-            ax1.boxplot(self.interpolation_rmse_list[idx], c='r', label='Interpolation RMSEs')
-        plt.savefig('total_rmse.png')
-        return total_RMSE_session
-
     def plot_interpolation_variables_palm(self, filtype):
         """ Plots displaying feature variables for the left and right palms.
         """
@@ -1173,7 +1156,6 @@ class ReachViz:
             self.lag = 4
         return
 
-
     def plot_predictions_videos(self, segment=False, multi_segment_plot=True, plot_digits=False, draw_skeleton=True,
                                 clean=False, legend_on=False):
         """ Function to plot, frame by frame, the full 3-D reaching behavior over time. """
@@ -1181,7 +1163,6 @@ class ReachViz:
         tlde = 0
         frames_n = np.around(self.time_vector, 2)
         frames = frames_n - frames_n[0]  # normalize frame values by first entry.
-        self.smooth_visuals()
         # Cut off long values for smaller reaching times
         for isx in range(tlde, tldr):
             self.filename = self.sstr + '/plots/' + str(isx) + 'palm_prob_timeseries.png'
@@ -1388,12 +1369,9 @@ class ReachViz:
     def make_gif_reaching(self, segment=False, nr=0):
         """ Function to make a per-trial GIF from the compilation of diagnostic plots made using ReachLoader. """
         if segment:
-            try:
-                imageio.mimsave(self.sstr + '/videos/reaches/reach_' + str(nr) + '3d_movie.mp4', self.images,
+            imageio.mimsave(self.sstr + '/videos/reaches/reach_' + str(nr) + '3d_movie.mp4', self.images,
                                 fps=self.fps)
-                self.gif_save_path = self.sstr + '/videos/reaches/reach_' + str(nr) + '3d_movie.mp4'
-            except:
-                pdb.set_trace()
+            self.gif_save_path = self.sstr + '/videos/reaches/reach_' + str(nr) + '3d_movie.mp4'
         else:
             imageio.mimsave(self.sstr + '/videos/total_3d_movie.mp4', self.images, fps=self.fps)
             self.gif_save_path = self.sstr + '/videos/total_3d_movie.mp4'
