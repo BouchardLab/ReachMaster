@@ -725,7 +725,7 @@ class ReachViz:
                           }
         df = pd.DataFrame({key: pd.Series(np.asarray(value)) for key, value in self.save_dict.items()})
         df.to_pickle(self.sstr + '/data/' + str(trial_num) + 'save_dict.pkl')
-        return
+        return df
 
     def whole_segment_outlier_block(self):
         """ Helper function to snag data. """
@@ -750,13 +750,25 @@ class ReachViz:
             self.segment_reaches_with_position()
             self.analyze_and_classify_reach_vector(sts)
             try:
-                self.segment_data_into_reaches()
+                if self.first_lick_signal > 50 and self.start_trial_indice > 20:
+                    self.segment_and_filter_kinematic_block_single_trial(self.start_trial_indice, self.first_lick_signal)
+                    self.extract_sensor_data(self.start_trial_indice, self.first_lick_signal)
+                else:
+                    self.segment_and_filter_kinematic_block_single_trial(sts-20,
+                                                                         sts+150)
+                    self.extract_sensor_data(sts-20, sts+150)
+                df = self.segment_data_into_reach_dict(ix)
             except:
                 print('No Reaches from this trial')
             self.seg_num = 0
             self.start_trial_indice = []
             self.images = []
-        return self.reaching_dataframe, self.valid_rmse_list, self.interpolation_rmse_list, self.outlier_rmse_list
+            if ix == 0:
+                self.reaching_dataframe = df
+            else:
+                self.reaching_dataframe = pd.concat([df, self.reaching_dataframe])
+        return self.reaching_dataframe
+        #return self.reaching_dataframe, self.valid_rmse_list, self.interpolation_rmse_list, self.outlier_rmse_list
 
     def plot_interpolation_variables_palm(self, filtype):
         """ Plots displaying feature variables for the left and right palms.
