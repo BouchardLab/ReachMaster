@@ -11,12 +11,15 @@ import numpy as np
 import viz_utils as vu
 import scipy
 # Import ffmpeg to write videos here..
+# noinspection SpellCheckingInspection
 ffm_path = 'C:/Users/bassp/OneDrive/Desktop/ffmpeg/bin/'
 skvideo.setFFmpegPath(ffm_path)
 import skvideo.io
 
 
+# noinspection SpellCheckingInspection
 class ReachViz:
+    # noinspection SpellCheckingInspection
     def __init__(self, date, session, data_path, block_vid_file, kin_path, rat):
         self.probabilities, self.bi_reach_vector, self.trial_index, self.first_lick_signal, self.outlier_indexes = [], [], [], [], []
         self.rat = rat
@@ -123,8 +126,8 @@ class ReachViz:
         vu.mkdir_p(self.sstr + '/videos/reaches')
         vu.mkdir_p(self.sstr + '/plots')
         vu.mkdir_p(self.sstr + '/plots/reaches')
-        vu.mkdir_p(self.sstr + '/timeseries')
-        vu.mkdir_p(self.sstr + '/timeseries/reaches')
+        vu.mkdir_p(self.sstr + '/timeseries_analysis_plots')
+        vu.mkdir_p(self.sstr + '/timeseries_analysis_plots/reaches')
         return
 
     def get_block_data(self):
@@ -144,8 +147,8 @@ class ReachViz:
         """ Function to threshold input position vectors by the probability of this position being present. The mean
             over multiple cameras is used to better estimate error.
         """
-        p_vector_hold = np.mean(p_vector, axis=1)
-        low_p_idx = np.where(p_vector_hold < p_thresh)  # Filter positions by ind p values
+        p_mean_vector_hold = np.mean(p_vector, axis=1)
+        low_p_idx = np.where(p_mean_vector_hold < p_thresh)  # Filter positions by ind p values
         return np.asarray(low_p_idx)
 
     def get_starts_stops(self):
@@ -206,8 +209,10 @@ class ReachViz:
         self.prob_left_shoulder = np.squeeze(
             np.mean(self.kinematic_block[self.kinematic_block.columns[9 + 81:12 + 81]].values[cl1:cl2, :],
                     axis=1))
-
+        w = 81
+        # Threshold data if uncertainties in position > threshold
         self.prob_filter_index = np.where(self.prob_nose < coarse_threshold)[0]
+        # Threshold each arm's data if the palm is under a certain % (depreciated 10/21/2021)
         self.left_arm_filter_index = np.where(self.prob_left_arm < p_thresh)[0]  # Index of left removal values
         self.right_arm_filter_index = np.where(self.prob_right_arm < p_thresh)[0]  # Index of right removal values
         # Body parts, XYZ, used in ReachViz
@@ -264,7 +269,6 @@ class ReachViz:
             self.kinematic_block[self.kinematic_block.columns[75:78]].values[cl1:cl2, :])
         self.left_end_tip = vu.norm_coordinates(
             self.kinematic_block[self.kinematic_block.columns[78:81]].values[cl1:cl2, :])
-        w = 81
         # Probabilities
         self.nose_p = self.kinematic_block[self.kinematic_block.columns[6 + w:9 + w]].values[cl1:cl2, :]
         self.handle_p = self.kinematic_block[self.kinematic_block.columns[3 + w:6 + w]].values[cl1:cl2, :]
@@ -357,40 +361,22 @@ class ReachViz:
                              self.right_index_tip_o, self.right_middle_base_o, self.right_middle_tip_o,
                              self.right_third_base_o, self.right_third_tip_o,
                              self.right_end_base_o, self.right_end_tip_o]
-        # Optional: Pre-Process the 3-D Coordinates
-        if get_ints:
-            self.uninterpolated_left_palm = np.asarray(
-                vu.norm_coordinates(self.kinematic_block[self.kinematic_block.columns[18:21]].values[cl1:cl2, :]))
-            self.uninterpolated_right_palm = np.asarray(
-                vu.norm_coordinates(self.kinematic_block[self.kinematic_block.columns[54:57]].values[cl1:cl2, :]))
-            self.uninterpolated_left_forearm = np.asarray(
-                vu.norm_coordinates(self.kinematic_block[self.kinematic_block.columns[12:15]].values[cl1:cl2, :]))
-            self.uninterpolated_right_forearm = np.asarray(
-                vu.norm_coordinates(self.kinematic_block[self.kinematic_block.columns[48:51]].values[cl1:cl2, :]))
-            self.uninterpolated_left_palm_v, s, self.uninterpolated_left_palm_s = \
-                self.calculate_kinematics_from_position(self.uninterpolated_left_palm)
-            self.uninterpolated_right_palm_v, s, self.uninterpolated_right_palm_s = \
-                self.calculate_kinematics_from_position(self.uninterpolated_right_palm)
-            self.uninterpolated_right_forearm_v, s, self.uninterpolated_right_forearm_s = \
-                self.calculate_kinematics_from_position(self.uninterpolated_right_forearm)
-            self.uninterpolated_left_forearm_v, s, self.uninterpolated_left_forearm_s = \
-                self.calculate_kinematics_from_position(self.uninterpolated_left_forearm)
         self.int_gaps = []
         self.int_indices = []
         pos_holder = []
         vel_holder = []
         speed_holder = []
         acc_holder = []
+        # Pre-process (threshold, interpolate if necessary/possible, and apply hamming filter post-interpolation
         if preprocess:
             for di, pos in enumerate(self.positions):
                 o_positions = np.asarray(pos)
-                # Obtain Outlier Indices
+                # Obtain Outlier Indices from uncertainty in position, outliers in velocity
                 probs = self.probabilities[di]
                 prob_outliers = self.threshold_data_with_probabilities(probs, p_thresh=p_thresh)
-                # Segment reaches after filtering.
                 self.vel_list[di], cc, cd = self.calculate_kinematics_from_position(pos)
                 v_outlier_index = np.where(self.vel_list[di] > 1.2)
-                # Interpolate and re-sample over outliers where applicable
+                # Interpolate, re-sample over outliers where applicable. Filter the 3-D vector using hamming filter
                 possi, num_int, gap_ind = vu.interpolate_3d_vector(np.copy(pos), v_outlier_index, prob_outliers)
                 self.int_gaps.append(num_int)
                 self.int_indices.append(gap_ind)
@@ -727,15 +713,9 @@ class ReachViz:
         df.to_pickle(self.sstr + '/data/' + str(trial_num) + 'save_dict.pkl')
         return df
 
-    def whole_segment_outlier_block(self):
-        """ Helper function to snag data. """
-        self.segment_and_filter_kinematic_block_single_trial(0, -1, get_ints=False)  # Returns all data from session
-        # self.segment_data_into_reaches()
-        self.get_total_outlier_RMSE_session()
-        return
-
     def get_reach_dataframe_from_block(self):
-        """ Function that obtains a trialized pandas dataframe for a provided experimental session. """
+        """ Function that obtains a trialized (based on reaching start times)
+            pandas dataframe for a provided experimental session. """
         for ix, sts in enumerate(self.trial_start_vectors):
             self.trial_index = sts
             stp = self.trial_stop_vectors[ix]
@@ -750,7 +730,7 @@ class ReachViz:
             self.segment_reaches_with_position()
             self.analyze_and_classify_reach_vector(sts)
             try:
-                if self.first_lick_signal > 50 and self.start_trial_indice > 20:
+                if self.first_lick_signal > 30 and self.start_trial_indice > 20: # if licking starts ~ .1s after trial
                     self.segment_and_filter_kinematic_block_single_trial(self.start_trial_indice, self.first_lick_signal)
                     self.extract_sensor_data(self.start_trial_indice, self.first_lick_signal)
                 else:
@@ -975,9 +955,9 @@ class ReachViz:
         self.lick = np.asarray(self.lick)
         return
 
-    def analyze_and_classify_reach_vector(self, trial_frame_lag=20, trial_gap=5, verbose=True):
-        """ Function to analyze and classify different reaches into unique behavioral catagories necessary for single-trial
-            aggregate comparisons of kinematics.
+    def analyze_and_classify_reach_vector(self, trial_frame_lag=20, trial_gap=10, verbose=True):
+        """ Function to analyze and classify different reaches into unique behavioral categories necessary for
+        single trial aggregate comparisons of kinematics.
         """
         rsv = list(np.diff(np.where(self.reach_vector > 0)))
         reaching_indexes = np.flatnonzero(np.diff(np.r_[0, self.reach_vector, 0]) != 0).reshape(-1, 2) - [0, 1]
@@ -992,10 +972,10 @@ class ReachViz:
                         self.start_trial_indice.append(reaching_indexes[r, 0])  # In frames
                     self.seg_num += 1
                 except:
+                    print('No valid reaching has been found.')
                     pass
         if verbose:
-            print('Number of total reaches found through position thresholding is ' + str(self.start_trial_indice))
-
+            print('Number of total reaches found through position thresholding is ' + str(len(self.start_trial_indice)))
         # Basic Reach Type Classification
         # We Can use the L R reach vector to ID which arm is doing which reaching
         try:
@@ -1043,7 +1023,7 @@ class ReachViz:
         self.trial_cut_vector = []
         return
 
-    def segment_reaches_with_position(self, posthresh=0.205, v_thresh=0.1, pthresh=0.4):
+    def segment_reaches_with_position(self, posthresh=0.205, v_thresh=0.3, pthresh=0.5):
         """ Function to segment out reaches using a positional and velocity threshold. """
         self.reach_vector = np.zeros((self.left_palm.shape[0]))
         self.l_reach_vector = np.zeros((self.left_palm.shape[0]))
