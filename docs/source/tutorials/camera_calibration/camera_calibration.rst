@@ -38,7 +38,7 @@ Credit to Hedrick Lab for all calibration software, instructions, and examples!
 Our lab uses the software DLTdv to label daily approximately minute-long pre-recorded wand calibration videos.
 
 EasyWand software
-^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^
 
 .. image:: /art/DLTDV.png
 	:align: center

@@ -1,5 +1,6 @@
 
 pandas~=1.0.3
+docutils<0.18
 scipy~=1.4.1
 sphinx
 sphinx-gallery

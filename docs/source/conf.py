@@ -40,8 +40,8 @@ copyright = 'The Regents of the University of California, through Lawrence Berke
 author = 'Brian Gereke'
 
 # The full version, including alpha/beta/rc tags
-version = '0.0.0'
-release = 'alpha'
+version = '1.0.0'
+release = 'beta'
 
 # -- General configuration ---------------------------------------------------
 
@@ -80,7 +80,9 @@ autodoc_mock_imports = [
     'pynwb'
     'vidgear',
     'deeplabcut',
-    'tensorflow'
+    'tensorflow',
+    'scipy',
+    'numpy'
 ]
 
 # Add any paths that contain templates here, relative to this directory.
