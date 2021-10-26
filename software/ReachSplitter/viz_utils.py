@@ -1,3 +1,5 @@
+import pdb
+
 import pandas as pd
 from Analysis_Utils import preprocessing_df as preprocessing
 from moviepy.editor import *
@@ -5,7 +7,9 @@ import cv2
 import numpy as np
 from errno import EEXIST, ENOENT
 import shutil
-from scipy import interpolate
+from scipy import interpolate, signal
+from scipy.signal import butter, sosfiltfilt
+from csaps import csaps
 
 
 def read_from_csv(input_filepath):
@@ -15,16 +19,41 @@ def read_from_csv(input_filepath):
 
 
 def autocorrelate(x, t=1):
-    """ Function to compute regular autocorration using numpy. """
+    """ Function to compute regular auto correlation using numpy. """
     return np.corrcoef(np.array([x[:-t], x[t:]]))
 
 
-def filter_vector_hamming(input_vector, window_length=3):
-    """ Function to filter input vectors using Hamming-Cosine window. """
+def filter_vector_hamming(input_vector, window_length=3.14):
+    """ Function to filter input vectors using Hamming-Cosine window. Used exclusively for DLC-based inputs, not 3-D
+    trajectories. """
     filtered_vector = np.zeros(input_vector.shape)
     for i in range(0, input_vector.shape[1]):
         win = np.hamming(window_length)
         filtered_vector[:, i] = np.convolve(win / win.sum(), input_vector[:, i], mode='same')
+    return filtered_vector
+
+
+def butterworth_filtfilt(input_vector, nyquist_freq, cutoff, filt_order=4):
+    sos = butter(filt_order, cutoff/nyquist_freq, output='sos')
+    y = sosfiltfilt(sos, input_vector.reshape(input_vector.shape[1], input_vector.shape[0]))
+    return y.reshape(y.shape[1], y.shape[0])
+
+
+def cubic_spline_smoothing(input_vector, spline_coeff=0.1):
+    timepoints = np.linspace(0, input_vector.shape[0], input_vector.shape[0])
+    smoothed_vector = np.zeros(input_vector.shape)
+    for i in range(0, 3):
+        smoothed_vector_spline = csaps(timepoints, input_vector[:, i], timepoints, normalizedsmooth=True,
+                                       smooth=spline_coeff)
+        smoothed_vector[3:-3, i] = smoothed_vector_spline[3:-3] # Remove border entries that show windowing
+    return smoothed_vector
+
+
+def filter_vector_median(input_vector, window_length=3):
+    filtered_vector = np.zeros(input_vector.shape)
+    filtered_vector[2:-3, :] = signal.medfilt(input_vector[2:-3, :], kernel_size=window_length)
+    filtered_vector[0:2, :] = input_vector[0:2, :]
+    filtered_vector[-3:-1, :] = input_vector[-3:-1, :]
     return filtered_vector
 
 
@@ -39,7 +68,7 @@ def interpolate_1d_vector(vec, int_kind='cubic'):
     return vec_int
 
 
-def interpolate_3d_vector(xkin_three_vectors, velocity_index, prob_index, gap_num=3):
+def interpolate_3d_vector(xkin_three_vectors, velocity_index, prob_index, gap_num=4):
     """ Function to interpolate and re-sample, using specified indices of outliers, over a full 3-D vector. """
     gap_index = []
     interpolation_number = 0
@@ -63,7 +92,7 @@ def interpolate_3d_vector(xkin_three_vectors, velocity_index, prob_index, gap_nu
                                 interpolation_number += 1
                                 gap_index.append([il])
                                 ff = interpolate.interp1d(xx[il - cz - 1:il + 1], uvs[il - cz - 1:il + 1],
-                                                          kind='slinear', assume_sorted=False)
+                                                          kind='linear', assume_sorted=False)
                                 xkin_three_vectors[il - cz:il, i] = ff(xx[il - cz:il])  # Take middle values
                                 cz = 0
                             if cz == 0:  # no gap

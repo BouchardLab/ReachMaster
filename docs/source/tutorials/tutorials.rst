@@ -5,8 +5,8 @@ analyses with the ReachMaster experimental system and the accompanying software 
 
 .. toctree::
     :maxdepth: 5
-
-    ReachingWithoutBorders_Tutorial/RWB_tutorials
-    3D_camera_calibration/3D_camera_calibration_tutorial
+    camera_calibration/camera_calibration
     ReachPredict3D_Tutorial/ReachPredict3D_tutorial
+    ReachingWithoutBorders_Tutorial/RWB_tutorials
     ReachSplitter_Tutorial/ReachSplitter_tutorial
+    Kinematic_Extraction/kinematics
