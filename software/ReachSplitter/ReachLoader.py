@@ -12,6 +12,7 @@ import viz_utils as vu
 import scipy
 from scipy import signal
 import pdb
+
 # Import ffmpeg to write videos here..
 
 ffm_path = 'C:/Users/bassp/OneDrive/Desktop/ffmpeg/bin/'
@@ -27,32 +28,34 @@ def get_principle_components(positions, vel=False, acc=False, num_pcs=3):
             pos = np.asarray(positions)
             vel = np.asarray(vel)
             acc = np.asarray(acc)
-            pva = np.hstack((pos.reshape(pos.shape[1],pos.shape[0]*pos.shape[2]),
-                             vel.reshape(vel.shape[1], vel.shape[0]*vel.shape[2]),
-                             acc.reshape(acc.shape[1], acc.shape[0]*acc.shape[2])))
+            pva = np.hstack((pos.reshape(pos.shape[1], pos.shape[0] * pos.shape[2]),
+                             vel.reshape(vel.shape[1], vel.shape[0] * vel.shape[2]),
+                             acc.reshape(acc.shape[1], acc.shape[0] * acc.shape[2])))
             pc_vector = pca.fit_transform(pva)
         else:
             pos = np.asarray(positions)
             vel = np.asarray(vel)
-            pv = np.hstack((pos.reshape(pos.shape[1], pos.shape[0]*pos.shape[2]), vel.reshape(vel.shape[1], vel.shape[0]*vel.shape[2]
-                                                                                              )))
+            pv = np.hstack((pos.reshape(pos.shape[1], pos.shape[0] * pos.shape[2]),
+                            vel.reshape(vel.shape[1], vel.shape[0] * vel.shape[2]
+                                        )))
             pc_vector = pca.fit_transform(pv)
     else:
         if acc:
             pos = np.asarray(positions)
             acc = np.asarray(acc)
-            pa = np.hstack((pos.reshape(pos.shape[1], pos.shape[0]*pos.shape[2]), acc.reshape(acc.shape[1], acc.shape[0]*acc.shape[2])))
+            pa = np.hstack((pos.reshape(pos.shape[1], pos.shape[0] * pos.shape[2]),
+                            acc.reshape(acc.shape[1], acc.shape[0] * acc.shape[2])))
             pc_vector = pca.fit_transform(pa)
         else:
             pos = np.asarray(positions)
-            pc_vector = pca.fit_transform(pos.reshape(pos.shape[1], pos.shape[0]*pos.shape[2]))
+            pc_vector = pca.fit_transform(pos.reshape(pos.shape[1], pos.shape[0] * pos.shape[2]))
     return pc_vector
 
 
 class ReachViz:
     # noinspection SpellCheckingInspection
     def __init__(self, date, session, data_path, block_vid_file, kin_path, rat):
-        self.preprocessed_rmse, self.outlier_list =[], []
+        self.preprocessed_rmse, self.outlier_list = [], []
         self.probabilities, self.bi_reach_vector, self.trial_index, self.first_lick_signal, self.outlier_indexes = [], [], [], [], []
         self.rat = rat
         self.date = date
@@ -159,6 +162,7 @@ class ReachViz:
         vu.mkdir_p(self.sstr + '/videos/reaches')
         vu.mkdir_p(self.sstr + '/plots')
         vu.mkdir_p(self.sstr + '/plots/reaches')
+        vu.mkdir_p(self.sstr + '/timeseries')
         vu.mkdir_p(self.sstr + '/timeseries_analysis_plots')
         vu.mkdir_p(self.sstr + '/timeseries_analysis_plots/reaches')
         return
@@ -204,7 +208,7 @@ class ReachViz:
         self.exp_response_sensor = np.asarray(self.block_exp_df['exp_response'].values[0][idxstrt:idxstp])
         # Re-Sample Analog Potentiometer signals to video data sample rate
         robot_length = self.block_exp_df['x_pot'].values[0][::4].shape[0]
-        x_pot = self.block_exp_df['x_pot'].values[0][::4] # sample rate at 4x camera
+        x_pot = self.block_exp_df['x_pot'].values[0][::4]  # sample rate at 4x camera
         y_pot = self.block_exp_df['y_pot'].values[0][::4]
         z_pot = self.block_exp_df['z_pot'].values[0][::4]
         x_pot = x_pot[robot_length - self.k_length:robot_length]
@@ -295,17 +299,17 @@ class ReachViz:
         nose_p = self.kinematic_block[self.kinematic_block.columns[6 + w:9 + w]].values[cl1:cl2, :]
         handle_p = self.kinematic_block[self.kinematic_block.columns[3 + w:6 + w]].values[cl1:cl2, :]
         left_shoulder_p = self.kinematic_block[self.kinematic_block.columns[9 + w:12 + w]].values[cl1:cl2,
-                               :]  # 21 end
+                          :]  # 21 end
         right_shoulder_p = self.kinematic_block[self.kinematic_block.columns[45 + w:48 + w]].values[cl1:cl2,
-                                :]  # 57 end
+                           :]  # 57 end
         left_forearm_p = self.kinematic_block[self.kinematic_block.columns[12 + w:15 + w]].values[cl1:cl2,
-                              :]  # 21 end
+                         :]  # 21 end
         right_forearm_p = self.kinematic_block[self.kinematic_block.columns[48 + w:51 + w]].values[cl1:cl2,
-                               :]  # 57 end
+                          :]  # 57 end
         left_wrist_p = self.kinematic_block[self.kinematic_block.columns[15 + w:18 + w]].values[cl1:cl2,
-                            :]  # 21 end
+                       :]  # 21 end
         right_wrist_p = self.kinematic_block[self.kinematic_block.columns[51 + w:54 + w]].values[cl1:cl2,
-                             :]  # 57 end
+                        :]  # 57 end
         left_palm_p = self.kinematic_block[self.kinematic_block.columns[18 + w:21 + w]].values[cl1:cl2, :]
         right_palm_p = self.kinematic_block[self.kinematic_block.columns[54 + w:57 + w]].values[cl1:cl2, :]
         # Digits, optional for now
@@ -376,8 +380,8 @@ class ReachViz:
                 # Calculate kinematics post-smoothing
                 v, a, s = self.calculate_kinematics_from_position(np.copy(filtered_pos))
                 # Obtain comparable statistics from pre/post pre-processing
-                self.aggregate_preprocessing_statistics(np.copy(pos), np.copy(speeds), np.copy(filtered_pos), np.copy(s),
-                                                        np.copy(probs))
+                self.aggregate_preprocessing_statistics(np.copy(pos), np.copy(speeds), np.copy(filtered_pos),
+                                                        np.copy(s))
                 # Obtain and save still-present outliers in the data
                 self.velocity_outlier_indexes = np.where(s > 1.2)[0]
                 outliers = np.squeeze(np.union1d(self.velocity_outlier_indexes, self.prob_filter_index))
@@ -391,46 +395,52 @@ class ReachViz:
                 speed_holder.append(s)
         # Assign final variables
         [self.nose, self.handle, self.left_shoulder, self.left_forearm, self.left_wrist, \
-        self.left_palm, self.left_index_base, self.left_index_tip, self.left_middle_base, \
-        self.left_middle_tip, self.left_third_base, self.left_third_tip, self.left_end_base, self.left_end_tip, \
-        self.right_shoulder, self.right_forearm, self.right_wrist, self.right_palm, self.right_index_base, \
-        self.right_index_tip, self.right_middle_base, self.right_middle_tip, self.right_third_base, \
-        self.right_third_tip, self.right_end_base, self.right_end_tip] = pos_holder
+         self.left_palm, self.left_index_base, self.left_index_tip, self.left_middle_base, \
+         self.left_middle_tip, self.left_third_base, self.left_third_tip, self.left_end_base, self.left_end_tip, \
+         self.right_shoulder, self.right_forearm, self.right_wrist, self.right_palm, self.right_index_base, \
+         self.right_index_tip, self.right_middle_base, self.right_middle_tip, self.right_third_base, \
+         self.right_third_tip, self.right_end_base, self.right_end_tip] = pos_holder
 
         [self.nose_p, self.handle_p, self.left_shoulder_p, self.left_forearm_p, self.left_wrist_p, \
-        self.left_palm_p, self.left_index_base_p, self.left_index_tip_p, self.left_middle_base_p, \
-        self.left_middle_tip_p, self.left_third_base_p, self.left_third_tip_p, self.left_end_base_p, self.left_end_tip_p, \
-        self.right_shoulder_p, self.right_forearm_p, self.right_wrist_p, self.right_palm_p, self.right_index_base_p, \
-        self.right_index_tip_p, self.right_middle_base_p, self.right_middle_tip_p, self.right_third_base_p, \
-        self.right_third_tip_p, self.right_end_base_p, self.right_end_tip_p] = self.probabilities
+         self.left_palm_p, self.left_index_base_p, self.left_index_tip_p, self.left_middle_base_p, \
+         self.left_middle_tip_p, self.left_third_base_p, self.left_third_tip_p, self.left_end_base_p,
+         self.left_end_tip_p, \
+         self.right_shoulder_p, self.right_forearm_p, self.right_wrist_p, self.right_palm_p, self.right_index_base_p, \
+         self.right_index_tip_p, self.right_middle_base_p, self.right_middle_tip_p, self.right_third_base_p, \
+         self.right_third_tip_p, self.right_end_base_p, self.right_end_tip_p] = self.probabilities
 
         [self.nose_v, self.handle_v, self.left_shoulder_v, self.left_forearm_v, self.left_wrist_v, \
-        self.left_palm_v, self.left_index_base_v, self.left_index_tip_v, self.left_middle_base_v, \
-        self.left_middle_tip_v, self.left_third_base_v, self.left_third_tip_v, self.left_end_base_v, self.left_end_tip_v, \
-        self.right_shoulder_v, self.right_forearm_v, self.right_wrist_v, self.right_palm_v, self.right_index_base_v, \
-        self.right_index_tip_v, self.right_middle_base_v, self.right_middle_tip_v, self.right_third_base_v, \
-        self.right_third_tip_v, self.right_end_base_v, self.right_end_tip_v] = vel_holder
+         self.left_palm_v, self.left_index_base_v, self.left_index_tip_v, self.left_middle_base_v, \
+         self.left_middle_tip_v, self.left_third_base_v, self.left_third_tip_v, self.left_end_base_v,
+         self.left_end_tip_v, \
+         self.right_shoulder_v, self.right_forearm_v, self.right_wrist_v, self.right_palm_v, self.right_index_base_v, \
+         self.right_index_tip_v, self.right_middle_base_v, self.right_middle_tip_v, self.right_third_base_v, \
+         self.right_third_tip_v, self.right_end_base_v, self.right_end_tip_v] = vel_holder
 
         [self.nose_s, self.handle_s, self.left_shoulder_s, self.left_forearm_s, self.left_wrist_s, self.left_palm_s, \
-        self.left_index_base_s, self.left_index_tip_s, self.left_middle_base_s, self.left_middle_tip_s, \
-        self.left_third_base_s, self.left_third_tip_s, self.left_end_base_s, self.left_end_tip_s, self.right_shoulder_s,\
-        self.right_forearm_s, self.right_wrist_s, self.right_palm_s, self.right_index_base_s, self.right_index_tip_s, \
-        self.right_middle_base_s, self.right_middle_tip_s, self.right_third_base_s, self.right_third_tip_s, \
-        self.right_end_base_s, self.right_end_tip_s] = speed_holder
+         self.left_index_base_s, self.left_index_tip_s, self.left_middle_base_s, self.left_middle_tip_s, \
+         self.left_third_base_s, self.left_third_tip_s, self.left_end_base_s, self.left_end_tip_s,
+         self.right_shoulder_s, \
+         self.right_forearm_s, self.right_wrist_s, self.right_palm_s, self.right_index_base_s, self.right_index_tip_s, \
+         self.right_middle_base_s, self.right_middle_tip_s, self.right_third_base_s, self.right_third_tip_s, \
+         self.right_end_base_s, self.right_end_tip_s] = speed_holder
 
         [self.nose_a, self.handle_a, self.left_shoulder_a, self.left_forearm_a, self.left_wrist_a, self.left_palm_a, \
-        self.left_index_base_a, self.left_index_tip_a, self.left_middle_base_a, self.left_middle_tip_a, self.left_third_base_a,\
-        self.left_third_tip_a, self.left_end_base_a, self.left_end_tip_a, self.right_shoulder_a, self.right_forearm_a, \
-        self.right_wrist_a, self.right_palm_a, self.right_index_base_a, self.right_index_tip_a, self.right_middle_base_a, \
-        self.right_middle_tip_a, self.right_third_base_a, self.right_third_tip_a, self.right_end_base_a, \
-        self.right_end_tip_a] = acc_holder
+         self.left_index_base_a, self.left_index_tip_a, self.left_middle_base_a, self.left_middle_tip_a,
+         self.left_third_base_a, \
+         self.left_third_tip_a, self.left_end_base_a, self.left_end_tip_a, self.right_shoulder_a, self.right_forearm_a, \
+         self.right_wrist_a, self.right_palm_a, self.right_index_base_a, self.right_index_tip_a,
+         self.right_middle_base_a, \
+         self.right_middle_tip_a, self.right_third_base_a, self.right_third_tip_a, self.right_end_base_a, \
+         self.right_end_tip_a] = acc_holder
 
         [self.nose_o, self.handle_o, self.left_shoulder_o, self.left_forearm_o, self.left_wrist_o, self.left_palm_o, \
-        self.left_index_base_o, self.left_index_tip_o, self.left_middle_base_o, self.left_middle_tip_o, \
-        self.left_third_base_o, self.left_third_tip_o, self.left_end_base_o, self.left_end_tip_o, self.right_shoulder_o, \
-        self.right_forearm_o, self.right_wrist_o, self.right_palm_o, self.right_index_base_o, self.right_index_tip_o, \
-        self.right_middle_base_o, self.right_middle_tip_o, self.right_third_base_o, self.right_third_tip_o, \
-        self.right_end_base_o, self.right_end_tip_o] = self.outlier_list
+         self.left_index_base_o, self.left_index_tip_o, self.left_middle_base_o, self.left_middle_tip_o, \
+         self.left_third_base_o, self.left_third_tip_o, self.left_end_base_o, self.left_end_tip_o,
+         self.right_shoulder_o, \
+         self.right_forearm_o, self.right_wrist_o, self.right_palm_o, self.right_index_base_o, self.right_index_tip_o, \
+         self.right_middle_base_o, self.right_middle_tip_o, self.right_third_base_o, self.right_third_tip_o, \
+         self.right_end_base_o, self.right_end_tip_o] = self.outlier_list
         # Calculate principal components and frequency decompositions
         self.pos_pc = get_principle_components(pos_holder)
         self.pos_v_pc = get_principle_components(pos_holder, vel=vel_holder)
@@ -444,37 +454,37 @@ class ReachViz:
                                          self.threshold_data_with_probabilities(self.right_palm_p, p_thresh=p_thresh))
         return
 
-
-    def aggregate_preprocessing_statistics(self, pos, speed, prepos, prespeed, probs):
-        rmse_initial =
-        rmse_final =
+    def aggregate_preprocessing_statistics(self, pos, speed, prepos, prespeed):
+        """ Function to aggregate various preprocessing statistics, for use in outlier identification and statistical
+        analysis of reaching data. """
+        rmse_preprocess = np.abs(prepos - pos)
         speed_difference = speed - prespeed
-        return
-    def visualize_preprocessing_statistics(self):
+        return rmse_preprocess, speed_difference
+
+    def visualize_preprocessing_statistics(self, probs, speed, prespeed):
         """ This function computes various statistics to determine the accuracy of our pre-processing pipeline. Output
         statistics, visually plotted for each trial( RMSE positional error and speed compared to the probability of the
         event occurring). """
 
         filename_pos = self.sstr + '/timeseries/' + 'p_v_timeseries.png'
-        #times = np.around((self.time_vector - self.time_vector[0]), 2)
+        # times = np.around((self.time_vector - self.time_vector[0]), 2)
         fig, [ax1, ax2] = plt.subplots(nrows=1, ncols=2, figsize=(10, 10))
         ax1.set_title('RMSE Pre/Post Interpolation/Filtering')
         ax2.set_title('Speeds Pre/Post Interpolation/Filtering vs Probability')
         ax1.plot()
         ax1.legend()
-        ax2.plot(probs, speed, color = 'r', label = 'Pre-Processed Speeds')
-        ax2.plot(probs,prespeed, color = 'b', label = 'Post-Processed Speeds')
+        ax2.plot(probs, speed, color='r', label='Pre-Processed Speeds')
+        ax2.plot(probs, prespeed, color='b', label='Post-Processed Speeds')
         ax2.set_xlabel('Probability')
         ax2.set_ylabel('Speed (m)')
         ax2.legend()
+        plt.savefig(filename_pos, dpi=1200)
         return
-
 
     def segment_data_into_reach_dict(self, trial_num):
         """ Function that iterates over reaching indices,
             saves the segmented data and corresponding class labels into a dataframe.
         """
-
         self.save_dict = {'nose_vx': np.asarray(self.nose_v[:, 0]), 'nose_vy': self.nose_v[:, 1],
                           'nose_vz': self.nose_v[:, 2],
                           'handle_vx': self.handle_v[:, 0], 'handle_vy': self.handle_v[:, 1],
@@ -734,8 +744,8 @@ class ReachViz:
                           # Sorting variables
                           'rat': self.rat, 'date': self.date, 'session': self.session, 'dim': self.dim,
                           # Analysis variables
-                          'PC1': self.pos_pc[0,:], 'PC2': self.pos_pc[1, :], 'PC3': self.pos_pc[2, :],
-                          'vPC1':self.pos_v_pc[0,:], 'vPC2':self.pos_v_pc[1,:], 'vPC3':self.pos_v_pc[2,:]
+                          'PC1': self.pos_pc[0, :], 'PC2': self.pos_pc[1, :], 'PC3': self.pos_pc[2, :],
+                          'vPC1': self.pos_v_pc[0, :], 'vPC2': self.pos_v_pc[1, :], 'vPC3': self.pos_v_pc[2, :]
                           }
         df = pd.DataFrame({key: pd.Series(np.asarray(value)) for key, value in self.save_dict.items()})
         df.to_pickle(self.sstr + '/data/' + str(trial_num) + 'save_dict.pkl')
@@ -828,10 +838,13 @@ class ReachViz:
                     label='Interpolation Intervals')
         ax1.scatter(times_mask_left, self.left_palm[:, 1][self.left_palm_f_x], color='m', alpha=0.6, linestyle='dashed')
         ax1.scatter(times_mask_left, self.left_palm[:, 2][self.left_palm_f_x], color='m', alpha=0.6, linestyle='dashed')
-        ax2.scatter(times_mask_right, self.right_palm[:, 0][self.right_palm_f_x], color='m', alpha=0.6, linestyle='dashed',
+        ax2.scatter(times_mask_right, self.right_palm[:, 0][self.right_palm_f_x], color='m', alpha=0.6,
+                    linestyle='dashed',
                     label='Interpolation Intervals')
-        ax2.scatter(times_mask_right, self.right_palm[:, 1][self.right_palm_f_x], color='m', alpha=0.6, linestyle='dashed')
-        ax2.scatter(times_mask_right, self.right_palm[:, 2][self.right_palm_f_x], color='m', alpha=0.6, linestyle='dashed')
+        ax2.scatter(times_mask_right, self.right_palm[:, 1][self.right_palm_f_x], color='m', alpha=0.6,
+                    linestyle='dashed')
+        ax2.scatter(times_mask_right, self.right_palm[:, 2][self.right_palm_f_x], color='m', alpha=0.6,
+                    linestyle='dashed')
         try:
             for tsi, segment_trials in enumerate(self.start_trial_indice):
                 ax1.axvline(times[segment_trials], color='black', label='Trial ' + str(tsi))
@@ -847,8 +860,8 @@ class ReachViz:
         ax3.plot(times, np.mean(self.right_palm_p, axis=1), color='b', label='Right Palm Mean Probability')
         ax3.plot(times, np.mean(self.nose_p, axis=1), color='m', label='Location Probability')
         ax3.plot(times, self.lick_vector / 10, color='y', label='Licks Occurring')
-        ax4.plot(times, self.left_palm_s, color = 'r', label = 'Left Palm Speed')
-        ax4.plot(times, self.right_palm_s, color = 'b', label = 'Right Palm Speed')
+        ax4.plot(times, self.left_palm_s, color='r', label='Left Palm Speed')
+        ax4.plot(times, self.right_palm_s, color='b', label='Right Palm Speed')
         ax3.set_xlabel('Time (s)')
         ax3.set_ylabel('Probabilities')
         ax3.set_xlabel('Time (s)')
@@ -876,7 +889,6 @@ class ReachViz:
                 (v_holder[ddx, :] - v_holder[ddx - 1, :]) / (self.time_vector[ddx] - self.time_vector[ddx - 1]))
         speed_holder = np.mean(abs(v_holder), axis=1)
         return np.asarray(v_holder), np.asarray(a_holder), np.asarray(speed_holder)
-
 
     def quantify_prob_threshold(self, list_of_mean_thresholds, trial_num=0):
         total_speeds = []
@@ -935,11 +947,11 @@ class ReachViz:
                     if tsi < 1:  # Just split off first detected reach to create the GIF/plots
                         if segment_trials - sts - 30 < 0:  # are we close to the start of the trial?
                             segment_trials += 15  # spacer to keep array values
-                        self.split_trial_video(self.trial_index-10, self.trial_index + self.first_lick_signal + 55,
+                        self.split_trial_video(self.trial_index - 10, self.trial_index + self.first_lick_signal + 55,
                                                segment=True, num_reach=tsi)
-                        self.segment_and_filter_kinematic_block_single_trial(self.trial_index-10,
+                        self.segment_and_filter_kinematic_block_single_trial(self.trial_index - 10,
                                                                              self.trial_index + self.first_lick_signal + 55)
-                        self.extract_sensor_data(self.trial_index-10, self.trial_index + self.first_lick_signal + 55)
+                        self.extract_sensor_data(self.trial_index - 10, self.trial_index + self.first_lick_signal + 55)
                         self.segment_data_into_reach_dict(sts)
                         if timeseries_plot:
                             self.plot_interpolation_variables_palm('reach')
@@ -1087,12 +1099,12 @@ class ReachViz:
         filename_speed = self.sstr + '/timeseries/' + 'full_speed_timeseries.png'
         xyzpalms = self.sstr + '/timeseries/' + 'xyzpalms_timeseries.png'
         rightvsleftxy = self.sstr + '/timeseries/' + 'rlxypalms_timeseries.png'
-        axel0 = plt.figure(figsize=(8,4))
+        axel0 = plt.figure(figsize=(8, 4))
 
         frames_n = np.around(self.time_vector, 2)
         frames = frames_n - frames_n[0]  # normalize frame values by first entry.
         plt.title('Principal Components of Position, P+V, P+V+A')
-        plt.plot(frames,  self.pos_pc[:, 0], c='r', label = 'PC1')
+        plt.plot(frames, self.pos_pc[:, 0], c='r', label='PC1')
         plt.plot(frames, self.pos_pc[:, 1], c='g', linestyle='dashed', label='Pos PC2')
         plt.plot(frames, self.pos_pc[:, 2], c='b', linestyle='dotted', label='Pos PC3')
         plt.plot(frames, self.pos_v_pc[:, 0], c='r', label='Pos + V PC1')
