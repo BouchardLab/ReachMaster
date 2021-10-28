@@ -184,8 +184,7 @@ class ReachViz:
         """ Function to threshold input position vectors by the probability of this position being present. The mean
             over multiple cameras is used to better estimate error.
         """
-        p_mean_vector_hold = np.mean(p_vector, axis=1)
-        low_p_idx = np.where(p_mean_vector_hold < p_thresh)  # Filter positions by ind p values
+        low_p_idx = np.where(p_vector < p_thresh)  # Filter positions by ind p values
         return np.asarray(low_p_idx)
 
     def get_starts_stops(self):
@@ -296,41 +295,39 @@ class ReachViz:
         left_end_tip = vu.norm_coordinates(
             self.kinematic_block[self.kinematic_block.columns[78:81]].values[cl1:cl2, :])
         # Probabilities
-        nose_p = self.kinematic_block[self.kinematic_block.columns[6 + w:9 + w]].values[cl1:cl2, :]
-        handle_p = self.kinematic_block[self.kinematic_block.columns[3 + w:6 + w]].values[cl1:cl2, :]
-        left_shoulder_p = self.kinematic_block[self.kinematic_block.columns[9 + w:12 + w]].values[cl1:cl2,
-                          :]  # 21 end
-        right_shoulder_p = self.kinematic_block[self.kinematic_block.columns[45 + w:48 + w]].values[cl1:cl2,
-                           :]  # 57 end
-        left_forearm_p = self.kinematic_block[self.kinematic_block.columns[12 + w:15 + w]].values[cl1:cl2,
-                         :]  # 21 end
-        right_forearm_p = self.kinematic_block[self.kinematic_block.columns[48 + w:51 + w]].values[cl1:cl2,
-                          :]  # 57 end
-        left_wrist_p = self.kinematic_block[self.kinematic_block.columns[15 + w:18 + w]].values[cl1:cl2,
-                       :]  # 21 end
-        right_wrist_p = self.kinematic_block[self.kinematic_block.columns[51 + w:54 + w]].values[cl1:cl2,
-                        :]  # 57 end
-        left_palm_p = self.kinematic_block[self.kinematic_block.columns[18 + w:21 + w]].values[cl1:cl2, :]
-        right_palm_p = self.kinematic_block[self.kinematic_block.columns[54 + w:57 + w]].values[cl1:cl2, :]
-        # Digits, optional for now
-        right_index_base_p = self.kinematic_block[self.kinematic_block.columns[27 + w:30 + w]].values[cl1:cl2, :]
-        right_index_tip_p = self.kinematic_block[self.kinematic_block.columns[30 + w:33 + w]].values[cl1:cl2, :]
-        right_middle_base_p = self.kinematic_block[self.kinematic_block.columns[36 + w:39 + w]].values[cl1:cl2, :]
-        right_middle_tip_p = self.kinematic_block[self.kinematic_block.columns[39 + w:42 + w]].values[cl1:cl2, :]
-        right_third_base_p = self.kinematic_block[self.kinematic_block.columns[42 + w:45 + w]].values[cl1:cl2, :]
-        right_third_tip_p = self.kinematic_block[self.kinematic_block.columns[45 + w:48 + w]].values[cl1:cl2, :]
-        right_end_base_p = self.kinematic_block[self.kinematic_block.columns[48 + w:51 + w]].values[cl1:cl2, :]
-        right_end_tip_p = self.kinematic_block[self.kinematic_block.columns[51 + w:54 + w]].values[cl1:cl2, :]
-        left_index_base_p = self.kinematic_block[self.kinematic_block.columns[54 + w:57 + w]].values[cl1:cl2, :]
-        left_index_tip_p = self.kinematic_block[self.kinematic_block.columns[57 + w:60 + w]].values[cl1:cl2, :]
-        left_middle_base_p = self.kinematic_block[self.kinematic_block.columns[60 + w:63 + w]].values[cl1:cl2, :]
-        left_middle_tip_p = self.kinematic_block[self.kinematic_block.columns[66 + w:69 + w]].values[cl1:cl2, :]
-        left_third_base_p = self.kinematic_block[self.kinematic_block.columns[69 + w:72 + w]].values[cl1:cl2, :]
-        left_third_tip_p = self.kinematic_block[self.kinematic_block.columns[72 + w:75 + w]].values[cl1:cl2, :]
-        left_end_base_p = self.kinematic_block[self.kinematic_block.columns[75 + w:78 + w]].values[cl1:cl2, :]
-        left_end_tip_p = self.kinematic_block[self.kinematic_block.columns[78 + w:81 + w]].values[cl1:cl2, :]
-        self.extract_sensor_data(cl1, cl2, filter=False,
-                                 check_lick=False)  # Get time vectors for calculating kinematics.
+        nose_p = np.mean(self.kinematic_block[self.kinematic_block.columns[6 + w:9 + w]].values[cl1:cl2, :], axis=1)
+        handle_p = np.mean(self.kinematic_block[self.kinematic_block.columns[3 + w:6 + w]].values[cl1:cl2, :], axis=1)
+        left_shoulder_p = np.mean(self.kinematic_block[self.kinematic_block.columns[9 + w:12 + w]].values[cl1:cl2,
+                          :], axis=1) # 21 end
+        right_shoulder_p = np.mean(self.kinematic_block[self.kinematic_block.columns[45 + w:48 + w]].values[cl1:cl2,
+                           :], axis=1)  # 57 end
+        left_forearm_p = np.mean(self.kinematic_block[self.kinematic_block.columns[12 + w:15 + w]].values[cl1:cl2,
+                         :], axis=1) # 21 end
+        right_forearm_p = np.mean(self.kinematic_block[self.kinematic_block.columns[48 + w:51 + w]].values[cl1:cl2,
+                          :], axis=1) # 57 end
+        left_wrist_p = np.mean(self.kinematic_block[self.kinematic_block.columns[15 + w:18 + w]].values[cl1:cl2,
+                       :], axis=1)  # 21 end
+        right_wrist_p = np.mean(self.kinematic_block[self.kinematic_block.columns[51 + w:54 + w]].values[cl1:cl2,
+                        :], axis=1)# 57 end
+        left_palm_p = np.mean(self.kinematic_block[self.kinematic_block.columns[18 + w:21 + w]].values[cl1:cl2, :], axis=1)
+        right_palm_p = np.mean(self.kinematic_block[self.kinematic_block.columns[54 + w:57 + w]].values[cl1:cl2, :], axis=1)
+        right_index_base_p = np.mean(self.kinematic_block[self.kinematic_block.columns[27 + w:30 + w]].values[cl1:cl2, :], axis=1)
+        right_index_tip_p = np.mean(self.kinematic_block[self.kinematic_block.columns[30 + w:33 + w]].values[cl1:cl2, :], axis=1)
+        right_middle_base_p = np.mean(self.kinematic_block[self.kinematic_block.columns[36 + w:39 + w]].values[cl1:cl2, :],axis=1)
+        right_middle_tip_p = np.mean(self.kinematic_block[self.kinematic_block.columns[39 + w:42 + w]].values[cl1:cl2, :], axis=1)
+        right_third_base_p = np.mean(self.kinematic_block[self.kinematic_block.columns[42 + w:45 + w]].values[cl1:cl2, :], axis=1)
+        right_third_tip_p = np.mean(self.kinematic_block[self.kinematic_block.columns[45 + w:48 + w]].values[cl1:cl2, :], axis=1)
+        right_end_base_p = np.mean(self.kinematic_block[self.kinematic_block.columns[48 + w:51 + w]].values[cl1:cl2, :], axis=1)
+        right_end_tip_p = np.mean(self.kinematic_block[self.kinematic_block.columns[51 + w:54 + w]].values[cl1:cl2, :], axis=1)
+        left_index_base_p = np.mean(self.kinematic_block[self.kinematic_block.columns[54 + w:57 + w]].values[cl1:cl2, :], axis=1)
+        left_index_tip_p = np.mean(self.kinematic_block[self.kinematic_block.columns[57 + w:60 + w]].values[cl1:cl2, :], axis=1)
+        left_middle_base_p = np.mean(self.kinematic_block[self.kinematic_block.columns[60 + w:63 + w]].values[cl1:cl2, :], axis=1)
+        left_middle_tip_p = np.mean(self.kinematic_block[self.kinematic_block.columns[66 + w:69 + w]].values[cl1:cl2, :], axis=1)
+        left_third_base_p = np.mean(self.kinematic_block[self.kinematic_block.columns[69 + w:72 + w]].values[cl1:cl2, :], axis=1)
+        left_third_tip_p = np.mean(self.kinematic_block[self.kinematic_block.columns[72 + w:75 + w]].values[cl1:cl2, :], axis=1)
+        left_end_base_p = np.mean(self.kinematic_block[self.kinematic_block.columns[75 + w:78 + w]].values[cl1:cl2, :], axis=1)
+        left_end_tip_p = np.mean(self.kinematic_block[self.kinematic_block.columns[78 + w:81 + w]].values[cl1:cl2, :], axis=1)
+        self.extract_sensor_data(cl1, cl2, filter=False, check_lick=False)  # Get time vectors for calculating kinematics.
         self.positions = [nose, handle, left_shoulder, left_forearm, left_wrist,
                           left_palm, left_index_base,
                           left_index_tip, left_middle_base, left_middle_tip, left_third_base,
@@ -366,29 +363,26 @@ class ReachViz:
         if preprocess:
             for di, pos in enumerate(self.positions):
                 o_positions = np.asarray(pos)
-                # Obtain Outlier Indices from uncertainty in position, outliers in velocity
                 probs = self.probabilities[di]
                 prob_outliers = self.threshold_data_with_probabilities(probs, p_thresh=p_thresh)
                 svd, acc, speeds = self.calculate_kinematics_from_position(np.copy(pos))
                 v_outlier_index = np.where(svd > 1.2)
-                # Interpolate, re-sample over outliers where applicable. Filter the 3-D vector using hamming filter
                 possi, num_int, gap_ind = vu.interpolate_3d_vector(np.copy(o_positions), v_outlier_index, prob_outliers)
                 self.int_gaps.append(num_int)
                 self.int_indices.append(gap_ind)
-                # Filter positions using hamming window
-                filtered_pos = vu.cubic_spline_smoothing(np.copy(possi), spline_coeff=0.05)
-                # Calculate kinematics post-smoothing
+                filtered_pos = vu.cubic_spline_smoothing(np.copy(possi), spline_coeff=0.15)
                 v, a, s = self.calculate_kinematics_from_position(np.copy(filtered_pos))
                 # Obtain comparable statistics from pre/post pre-processing
                 self.aggregate_preprocessing_statistics(np.copy(pos), np.copy(speeds), np.copy(filtered_pos),
                                                         np.copy(s))
-                # Obtain and save still-present outliers in the data
+                # Find and save still-present outliers in the data
                 self.velocity_outlier_indexes = np.where(s > 1.2)[0]
                 outliers = np.squeeze(np.union1d(self.velocity_outlier_indexes, self.prob_filter_index))
                 if outliers.any():
                     self.outlier_list.append(outliers)
                 else:
                     self.outlier_list.append(0)
+                # Append data into proper data structure
                 pos_holder.append(np.copy(filtered_pos))
                 vel_holder.append(v)
                 acc_holder.append(a)
@@ -464,8 +458,7 @@ class ReachViz:
     def visualize_preprocessing_statistics(self, probs, speed, prespeed):
         """ This function computes various statistics to determine the accuracy of our pre-processing pipeline. Output
         statistics, visually plotted for each trial( RMSE positional error and speed compared to the probability of the
-        event occurring). """
-
+        event occurring)."""
         filename_pos = self.sstr + '/timeseries/' + 'p_v_timeseries.png'
         # times = np.around((self.time_vector - self.time_vector[0]), 2)
         fig, [ax1, ax2] = plt.subplots(nrows=1, ncols=2, figsize=(10, 10))
@@ -748,7 +741,8 @@ class ReachViz:
                           'vPC1': self.pos_v_pc[0, :], 'vPC2': self.pos_v_pc[1, :], 'vPC3': self.pos_v_pc[2, :]
                           }
         df = pd.DataFrame({key: pd.Series(np.asarray(value)) for key, value in self.save_dict.items()})
-        df.to_pickle(self.sstr + '/data/' + str(trial_num) + 'save_dict.pkl')
+        df['Trial'] = trial_num
+        df.set_index('Trial', append=True, inplace=True)
         return df
 
     def get_reach_dataframe_from_block(self):
@@ -856,9 +850,9 @@ class ReachViz:
         ax2.set_ylabel('Distance (M) ')
         ax1.legend()
         ax2.legend()
-        ax3.plot(times, np.mean(self.left_palm_p, axis=1), color='r', label='Left Palm Mean Probability')
-        ax3.plot(times, np.mean(self.right_palm_p, axis=1), color='b', label='Right Palm Mean Probability')
-        ax3.plot(times, np.mean(self.nose_p, axis=1), color='m', label='Location Probability')
+        ax3.plot(times, self.left_palm_p, color='r', label='Left Palm Mean Probability')
+        ax3.plot(times, self.right_palm_p, color='b', label='Right Palm Mean Probability')
+        ax3.plot(times, self.nose_p, color='m', label='Location Probability')
         ax3.plot(times, self.lick_vector / 10, color='y', label='Licks Occurring')
         ax4.plot(times, self.left_palm_s, color='r', label='Left Palm Speed')
         ax4.plot(times, self.right_palm_s, color='b', label='Right Palm Speed')
@@ -1067,15 +1061,15 @@ class ReachViz:
         for rv in range(self.reach_vector.shape[0]):
             # Find all X indices > posthresh (this is past reward zone)
             if self.left_palm[rv, 0] > posthresh:
-                if min(self.left_palm_p[rv, :]) > pthresh:
-                    if self.left_palm_v[rv, 0] > v_thresh:  # is the palm moving?
-                        if self.left_wrist_v[rv, 0] > v_thresh:
+                if self.left_palm_p[rv] > pthresh:
+                    if self.left_palm_s[rv] > v_thresh:  # is the palm moving?
+                        if self.left_wrist_s[rv] > v_thresh:
                             self.l_pos_index[rv] = 1
                             self.pos_index[rv] = 1
             if self.right_palm[rv, 0] > posthresh:
-                if min(self.right_palm_p[rv, :]) > pthresh:
-                    if self.right_palm_v[rv, 0] > v_thresh:
-                        if self.right_wrist_v[rv, 0] > v_thresh:
+                if self.right_palm_p[rv] > pthresh:
+                    if self.right_palm_s[rv] > v_thresh:
+                        if self.right_wrist_s[rv] > v_thresh:
                             self.r_pos_index[rv] = 1
                             self.pos_index[rv] = 1
         bi_reach_idx = np.intersect1d(np.nonzero(self.r_pos_index), np.nonzero(self.l_pos_index))
@@ -1241,158 +1235,156 @@ class ReachViz:
                          label='Nose')
             axel.scatter(self.right_palm[isx - self.lag: isx, 0], self.right_palm[isx - self.lag: isx, 1],
                          self.right_palm[isx - self.lag: isx, 2], marker='.',
-                         s=150 + 300 * (self.prob_right_arm[isx]), c='skyblue',
-                         alpha=(self.prob_right_arm[isx]), label='Right Palm')
+                         s=150 + 300 * (self.right_palm_p[isx]), c='skyblue',
+                         alpha=(self.right_palm_p[isx]), label='Right Palm')
             axel.scatter(self.left_palm[isx - self.lag: isx, 0], self.left_palm[isx - self.lag: isx, 1],
                          self.left_palm[isx - self.lag: isx, 2], marker='.',
-                         s=150 + 300 * (self.prob_left_arm[isx]), c='salmon',
-                         alpha=(self.prob_left_arm[isx]), label='Left Palm')
+                         s=150 + 300 * (self.left_palm_p[isx]), c='salmon',
+                         alpha=(self.left_palm_p[isx]), label='Left Palm')
             if multi_segment_plot:
                 axel.scatter(self.right_forearm[isx - self.lag: isx, 0], self.right_forearm[isx - self.lag: isx, 1],
                              self.right_forearm[isx - self.lag: isx, 2],
-                             s=100 + 300 * (self.prob_right_arm[isx]), c='royalblue',
-                             alpha=(self.prob_right_arm[isx]), label='Right Forearm')
+                             s=100 + 300 * (self.right_forearm_p[isx]), c='royalblue',
+                             alpha=(self.right_forearm_p[isx]), label='Right Forearm')
                 axel.scatter(self.right_wrist[isx - self.lag: isx, 0], self.right_wrist[isx - self.lag: isx, 1],
                              self.right_wrist[isx - self.lag: isx, 2],
-                             s=150 + 300 * (self.prob_right_arm[isx]), c='b',
-                             alpha=(self.prob_right_arm[isx]), label='Right Wrist')
+                             s=150 + 300 * (self.right_wrist_p[isx]), c='b',
+                             alpha=(self.right_wrist_p[isx]), label='Right Wrist')
                 axel.scatter(self.left_wrist[isx - self.lag: isx, 0], self.left_wrist[isx - self.lag: isx, 1],
                              self.left_wrist[isx - self.lag: isx, 2],
-                             s=150 + 300 * (self.prob_left_arm[isx]), c='salmon',
-                             alpha=(self.prob_left_arm[isx]), label='Left Wrist ')
+                             s=150 + 300 * (self.left_wrist_p[isx]), c='salmon',
+                             alpha=(self.left_wrist_p[isx]), label='Left Wrist ')
                 axel.scatter(self.left_forearm[isx - self.lag: isx, 0], self.left_forearm[isx - self.lag: isx, 1],
                              self.left_forearm[isx - self.lag: isx, 2],
-                             s=100 + 300 * (self.prob_left_arm[isx]), c='r',
-                             alpha=(self.prob_left_arm[isx]), label='Left Forearm')
+                             s=100 + 300 * (self.left_forearm_p[isx]), c='r',
+                             alpha=(self.left_forearm_p[isx]), label='Left Forearm')
                 axel.scatter(self.left_shoulder[isx - self.lag: isx, 0], self.left_shoulder[isx - self.lag: isx, 1],
                              self.left_shoulder[isx - self.lag: isx, 2],
-                             s=150 + 300 * (self.prob_left_shoulder[isx]), c='darkred',
-                             alpha=(self.prob_left_shoulder[isx]), label='Left Shoulder ')
+                             s=150 + 300 * (self.left_shoulder_p[isx]), c='darkred',
+                             alpha=(self.left_shoulder_p[isx]), label='Left Shoulder ')
                 axel.scatter(self.right_shoulder[isx - self.lag: isx, 0], self.right_shoulder[isx - self.lag: isx, 1],
                              self.right_shoulder[isx - self.lag: isx, 2],
-                             s=100 + 300 * (self.prob_right_shoulder[isx]), c='navy',
-                             alpha=(self.prob_right_shoulder[isx]), label='Right Shoulder')
+                             s=100 + 300 * (self.right_shoulder_p[isx]), c='navy',
+                             alpha=(self.right_shoulder_p[isx]), label='Right Shoulder')
 
             if draw_skeleton:
                 axel.plot([self.right_wrist[isx, 0], self.right_forearm[isx, 0]],
                           [self.right_wrist[isx, 1], self.right_forearm[isx, 1]],
                           [self.right_wrist[isx, 2], self.right_forearm[isx, 2]],
-                          alpha=(self.prob_right_arm[isx]),
-                          markersize=55 + 50 * np.mean(self.prob_right_arm[isx])
+                          alpha=(self.right_wrist_p[isx]),
+                          markersize=55 + 50 * np.mean(self.right_wrist_p[isx])
                           , c='r', linestyle='dashed')
                 axel.plot([self.right_forearm[isx, 0], self.right_shoulder[isx, 0]],
                           [self.right_forearm[isx, 1], self.right_shoulder[isx, 1]],
                           [self.right_forearm[isx, 2], self.right_shoulder[isx, 2]],
-                          alpha=(self.prob_right_arm[isx]),
-                          markersize=55 + 50 * np.mean(self.prob_right_arm[isx])
+                          alpha=(self.right_shoulder_p[isx]),
+                          markersize=55 + 50 * np.mean(self.right_shoulder_p[isx])
                           , c='b', linestyle='dashed')
                 axel.plot([self.left_forearm[isx, 0], self.left_shoulder[isx, 0]],
                           [self.left_forearm[isx, 1], self.left_shoulder[isx, 1]],
                           [self.left_forearm[isx, 2], self.left_shoulder[isx, 2]],
-                          alpha=(self.prob_left_arm[isx]),
-                          markersize=55 + 50 * np.mean(self.prob_left_arm[isx]),
+                          alpha=(self.left_forearm_p[isx]),
+                          markersize=55 + 50 * np.mean(self.left_forearm_p[isx]),
                           c='r', linestyle='dashed')
                 axel.plot([self.right_wrist[isx, 0], self.right_palm[isx, 0]],
                           [self.right_wrist[isx, 1], self.right_palm[isx, 1]],
                           [self.right_wrist[isx, 2], self.right_palm[isx, 2]],
-                          alpha=(self.prob_right_arm[isx]),
-                          markersize=55 + 35 * np.mean(self.prob_right_arm[isx]),
+                          alpha=(self.right_wrist_p[isx]),
+                          markersize=55 + 35 * np.mean(self.right_wrist_p[isx]),
                           c='r', linestyle='dashed')
                 axel.plot([self.left_wrist[isx, 0], self.left_forearm[isx, 0]],
                           [self.left_wrist[isx, 1], self.left_forearm[isx, 1]],
                           [self.left_wrist[isx, 2], self.left_forearm[isx, 2]],
-                          alpha=(self.prob_left_arm[isx]),
-                          markersize=55 + 50 * np.mean(self.prob_left_arm[isx]),
+                          alpha=(self.left_forearm_p[isx]),
+                          markersize=55 + 50 * np.mean(self.left_forearm_p[isx]),
                           c='c', linestyle='dashed')
                 axel.plot([self.left_wrist[isx, 0], self.left_palm[isx, 0]],
                           [self.left_wrist[isx, 1], self.left_palm[isx, 1]],
                           [self.left_wrist[isx, 2], self.left_palm[isx, 2]],
-                          alpha=(self.prob_left_arm[isx]),
-                          markersize=55 + 40 * np.mean(self.prob_left_arm[isx]),
+                          alpha=(self.left_palm_p[isx]),
+                          markersize=55 + 40 * np.mean(self.left_palm_p[isx]),
                           c='c', linestyle='dashed')
             if plot_digits:
                 axel.scatter(self.left_index_base[isx - self.lag: isx, 0], self.left_index_base[isx - self.lag: isx, 1],
                              self.left_index_base[isx - self.lag: isx, 2], marker='D',
-                             s=50 + 300 * np.mean(self.prob_left_digit[isx]), c='pink',
-                             alpha=np.mean(self.prob_left_digit[isx]), label='Left Index Base ')
+                             s=50 + 30 * self.left_index_base_p[isx], c='dodgerblue',
+                             alpha=self.left_index_base_p[isx], label='Left Index Base ')
                 axel.scatter(self.right_index_base[isx - self.lag: isx, 0],
                              self.right_index_base[isx - self.lag: isx, 1],
                              self.right_index_base[isx - self.lag: isx, 2], marker='D',
-                             s=50 + 300 * np.mean(self.prob_right_digit[isx]), c='dodgerblue',
-                             alpha=np.mean(self.prob_right_digit[isx]), label='Right Index Base ')
+                             s=50 + 30 * self.right_index_base_p[isx], c='pink',
+                             alpha=self.right_index_base_p[isx], label='Right Index Base ')
                 axel.scatter(self.left_middle_base[isx - self.lag: isx, 0],
                              self.left_middle_base[isx - self.lag: isx, 1],
                              self.left_middle_base[isx - self.lag: isx, 2], marker='D',
-                             s=50 + 300 * np.mean(self.prob_left_digit[isx]), c='pink',
-                             alpha=np.mean(self.prob_left_digit[isx]), label='Left Middle Base ')
+                             s=50 + 30 * self.left_middle_base_p[isx], c='dodgerblue',
+                             alpha=self.left_middle_base_p[isx], label='Left Middle Base ')
                 axel.scatter(self.right_middle_base[isx - self.lag: isx, 0],
                              self.right_middle_base[isx - self.lag: isx, 1],
                              self.right_middle_base[isx - self.lag: isx, 2], marker='D',
-                             s=50 + 300 * np.mean(self.prob_right_digit[isx]), c='skyblue',
-                             alpha=np.mean(self.prob_right_digit[isx]), label='Right Middle Base ')
+                             s=50 + 30 * self.right_middle_base_p[isx], c='pink',
+                             alpha=self.right_middle_base_p[isx], label='Right Middle Base ')
                 axel.scatter(self.left_third_base[isx - self.lag: isx, 0], self.left_third_base[isx - self.lag: isx, 1],
                              self.left_third_base[isx - self.lag: isx, 2], marker='D',
-                             s=50 + 300 * np.mean(self.prob_left_digit[isx]), c='pink',
-                             alpha=np.mean(self.prob_left_digit[isx]), label='Left Third Base ')
+                             s=50 + 30 * self.left_third_base_p[isx], c='skyblue',
+                             alpha=self.left_third_base_p[isx], label='Left Third Base ')
                 axel.scatter(self.right_third_base[isx - self.lag: isx, 0],
                              self.right_third_base[isx - self.lag: isx, 1],
                              self.right_third_base[isx - self.lag: isx, 2], marker='D',
-                             s=50 + 300 * np.mean(self.prob_right_digit[isx]), c='skyblue',
-                             alpha=np.mean(self.prob_right_digit[isx]), label='Right Third Base ')
+                             s=50 + 30 * self.right_third_base_p[isx], c='salmon',
+                             alpha=self.left_third_base_p[isx], label='Right Third Base ')
                 axel.scatter(self.left_end_base[isx - self.lag: isx, 0], self.left_end_base[isx - self.lag: isx, 1],
                              self.left_end_base[isx - self.lag: isx, 2], marker='D',
-                             s=50 + 300 * np.mean(self.prob_left_digit[isx]), c='pink',
-                             alpha=np.mean(self.prob_left_digit[isx]), label='Left End Base ')
+                             s=50 + 30 * self.left_end_base_p[isx], c='azure',
+                             alpha=self.left_end_base_p[isx], label='Left End Base ')
                 axel.scatter(self.right_end_base[isx - self.lag: isx, 0],
                              self.right_end_base[isx - self.lag: isx, 1],
                              self.right_end_base[isx - self.lag: isx, 2], marker='D',
-                             s=50 + 300 * np.mean(self.prob_right_digit[isx]), c='skyblue',
-                             alpha=np.mean(self.prob_right_digit[isx]), label='Right End Base ')
+                             s=50 + 30 * self.right_end_base_p[isx], c='mistyrose',
+                             alpha=self.right_end_base_p[isx], label='Right End Base ')
                 axel.scatter(self.left_index_tip[isx - self.lag: isx, 0], self.left_index_tip[isx - self.lag: isx, 1],
                              self.left_index_tip[isx - self.lag: isx, 2], marker='_',
-                             s=50 + 300 * np.mean(self.prob_left_digit[isx]), c='mistyrose',
-                             alpha=np.mean(self.prob_left_digit[isx]), label='Left Index Tip ')
+                             s=50 + 30 * self.left_index_tip_p[isx], c='azure',
+                             alpha=self.left_index_tip_p[isx], label='Left Index Tip ')
                 axel.scatter(self.right_index_tip[isx - self.lag: isx, 0],
                              self.right_index_tip[isx - self.lag: isx, 1],
                              self.right_index_tip[isx - self.lag: isx, 2], marker='_',
-                             s=50 + 300 * np.mean(self.prob_right_digit[isx]), c='skyblue',
-                             alpha=np.mean(self.prob_right_digit[isx]), label='Right Index Tip ')
+                             s=50 + 30 * self.right_index_tip_p[isx], c='mistyrose',
+                             alpha=self.right_index_tip_p[isx], label='Right Index Tip ')
                 axel.scatter(self.left_middle_tip[isx - self.lag: isx, 0],
                              self.left_middle_tip[isx - self.lag: isx, 1],
                              self.left_middle_tip[isx - self.lag: isx, 2], marker='_',
-                             s=50 + 300 * np.mean(self.prob_left_digit[isx]), c='mistyrose',
-                             alpha=np.mean(self.prob_left_digit[isx]), label='Left Middle Tip ')
+                             s=50 + 30 * self.left_middle_tip_p[isx], c='azure',
+                             alpha=self.left_middle_tip_p[isx], label='Left Middle Tip ')
                 axel.scatter(self.right_middle_tip[isx - self.lag: isx, 0],
                              self.right_middle_tip[isx - self.lag: isx, 1],
                              self.right_middle_tip[isx - self.lag: isx, 2], marker='_',
-                             s=50 + 300 * np.mean(self.prob_right_digit[isx]), c='azure',
-                             alpha=np.mean(self.prob_right_digit[isx]), label='Right Middle Tip ')
+                             s=50 + 30 * self.right_middle_tip_p[isx], c='mistyrose',
+                             alpha=self.right_middle_tip_p[isx], label='Right Middle Tip ')
                 axel.scatter(self.left_third_tip[isx - self.lag: isx, 0], self.left_third_tip[isx - self.lag: isx, 1],
                              self.left_third_tip[isx - self.lag: isx, 2], marker='_',
-                             s=50 + 300 * np.mean(self.prob_left_digit[isx]), c='mistyrose',
-                             alpha=np.mean(self.prob_left_digit[isx]), label='Left Third Tip ')
+                             s=50 + 30 * self.left_third_tip_p[isx], c='azure',
+                             alpha=self.left_third_tip_p[isx], label='Left Third Tip ')
                 axel.scatter(self.right_third_tip[isx - self.lag: isx, 0],
                              self.right_third_tip[isx - self.lag: isx, 1],
                              self.right_third_tip[isx - self.lag: isx, 2], marker='_',
-                             s=50 + 300 * np.mean(self.prob_right_digit[isx]), c='azure',
-                             alpha=np.mean(self.prob_right_digit[isx]), label='Right Third Tip ')
+                             s=50 + 30 * self.right_third_tip_p[isx], c='mistyrose',
+                             alpha=self.right_third_tip_p[isx], label='Right Third Tip ')
                 axel.scatter(self.left_end_tip[isx - self.lag: isx, 0], self.left_end_tip[isx - self.lag: isx, 1],
                              self.left_end_tip[isx - self.lag: isx, 2], marker='_',
-                             s=50 + 300 * np.mean(self.prob_left_digit[isx]), c='mistyrose',
-                             alpha=np.mean(self.prob_left_digit[isx]), label='Left End Tip ')
+                             s=50 + 30 * self.left_end_tip_p[isx], c='dodgerblue',
+                             alpha=self.left_end_tip_p[isx], label='Left End Tip ')
                 axel.scatter(self.right_end_tip[isx - self.lag: isx, 0],
                              self.right_end_tip[isx - self.lag: isx, 1],
                              self.right_end_tip[isx - self.lag: isx, 2], marker='_',
-                             s=50 + 300 * np.mean(self.prob_right_digit[isx]), c='azure',
-                             alpha=np.mean(self.prob_right_digit[isx]), label='Right End Tip ')
+                             s=50 + 30 * self.right_end_tip_p[isx], c='pink',
+                             alpha=self.right_end_tip_p[isx], label='Right End Tip ')
             axel.set_xlabel('mm (X)')
             axel.set_ylabel('mm(Y)')
             axel.set_zlabel('mm (Z)')
             axel.view_init(10, -60)
-            left_palm_vis = scipy.signal.medfilt(self.left_palm_s, 3)
-            right_palm_vis = scipy.signal.medfilt(self.right_palm_s, 3)
-            axel2.plot(frames[0:isx], left_palm_vis[0:isx], marker='.', c='red', label='Left Palm Speed')
-            axel2.plot(frames[0:isx], right_palm_vis[0:isx], marker='.', c='skyblue', label='Right Palm Speed')
+            axel2.plot(frames[0:isx], self.left_palm_s[0:isx], marker='.', c='red', label='Left Palm Speed')
+            axel2.plot(frames[0:isx], self.right_palm_s[0:isx], marker='.', c='skyblue', label='Right Palm Speed')
             if self.start_trial_indice:
                 for ere, tre in enumerate(self.start_trial_indice):
                     if isx - 10 > tre > isx + 10:
@@ -1401,7 +1393,7 @@ class ReachViz:
                         print('Plotted a reach..')
             axel2.set_xlabel('Time from trial onset (s)')
             axel2.set_ylabel('m/ s')
-            axel2.set_ylim(0, 1.2)  # Phys max speed is .9
+            axel2.set_ylim(0, 1.4)  # Phys max speed is .9
             axel2.set_xlim(0, frames[-1])
             fixit1.tight_layout(pad=0.005)
             plt.margins(0.0005)

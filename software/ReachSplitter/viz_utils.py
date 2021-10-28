@@ -34,7 +34,7 @@ def filter_vector_hamming(input_vector, window_length=3.14):
 
 
 def butterworth_filtfilt(input_vector, nyquist_freq, cutoff, filt_order=4):
-    sos = butter(filt_order, cutoff/nyquist_freq, output='sos')
+    sos = butter(filt_order, cutoff / nyquist_freq, output='sos')
     y = sosfiltfilt(sos, input_vector.reshape(input_vector.shape[1], input_vector.shape[0]))
     return y.reshape(y.shape[1], y.shape[0])
 
@@ -43,9 +43,8 @@ def cubic_spline_smoothing(input_vector, spline_coeff=0.1):
     timepoints = np.linspace(0, input_vector.shape[0], input_vector.shape[0])
     smoothed_vector = np.zeros(input_vector.shape)
     for i in range(0, 3):
-        smoothed_vector_spline = csaps(timepoints, input_vector[:, i], timepoints, normalizedsmooth=True,
-                                       smooth=spline_coeff)
-        smoothed_vector[3:-3, i] = smoothed_vector_spline[3:-3] # Remove border entries that show windowing
+        smoothed_vector[:, i] = csaps(timepoints, input_vector[:, i], timepoints, normalizedsmooth=True,
+                                      smooth=spline_coeff)
     return smoothed_vector
 
 
