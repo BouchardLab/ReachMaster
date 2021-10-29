@@ -298,36 +298,55 @@ class ReachViz:
         nose_p = np.mean(self.kinematic_block[self.kinematic_block.columns[6 + w:9 + w]].values[cl1:cl2, :], axis=1)
         handle_p = np.mean(self.kinematic_block[self.kinematic_block.columns[3 + w:6 + w]].values[cl1:cl2, :], axis=1)
         left_shoulder_p = np.mean(self.kinematic_block[self.kinematic_block.columns[9 + w:12 + w]].values[cl1:cl2,
-                          :], axis=1) # 21 end
+                                  :], axis=1)  # 21 end
         right_shoulder_p = np.mean(self.kinematic_block[self.kinematic_block.columns[45 + w:48 + w]].values[cl1:cl2,
-                           :], axis=1)  # 57 end
+                                   :], axis=1)  # 57 end
         left_forearm_p = np.mean(self.kinematic_block[self.kinematic_block.columns[12 + w:15 + w]].values[cl1:cl2,
-                         :], axis=1) # 21 end
+                                 :], axis=1)  # 21 end
         right_forearm_p = np.mean(self.kinematic_block[self.kinematic_block.columns[48 + w:51 + w]].values[cl1:cl2,
-                          :], axis=1) # 57 end
+                                  :], axis=1)  # 57 end
         left_wrist_p = np.mean(self.kinematic_block[self.kinematic_block.columns[15 + w:18 + w]].values[cl1:cl2,
-                       :], axis=1)  # 21 end
+                               :], axis=1)  # 21 end
         right_wrist_p = np.mean(self.kinematic_block[self.kinematic_block.columns[51 + w:54 + w]].values[cl1:cl2,
-                        :], axis=1)# 57 end
-        left_palm_p = np.mean(self.kinematic_block[self.kinematic_block.columns[18 + w:21 + w]].values[cl1:cl2, :], axis=1)
-        right_palm_p = np.mean(self.kinematic_block[self.kinematic_block.columns[54 + w:57 + w]].values[cl1:cl2, :], axis=1)
-        right_index_base_p = np.mean(self.kinematic_block[self.kinematic_block.columns[27 + w:30 + w]].values[cl1:cl2, :], axis=1)
-        right_index_tip_p = np.mean(self.kinematic_block[self.kinematic_block.columns[30 + w:33 + w]].values[cl1:cl2, :], axis=1)
-        right_middle_base_p = np.mean(self.kinematic_block[self.kinematic_block.columns[36 + w:39 + w]].values[cl1:cl2, :],axis=1)
-        right_middle_tip_p = np.mean(self.kinematic_block[self.kinematic_block.columns[39 + w:42 + w]].values[cl1:cl2, :], axis=1)
-        right_third_base_p = np.mean(self.kinematic_block[self.kinematic_block.columns[42 + w:45 + w]].values[cl1:cl2, :], axis=1)
-        right_third_tip_p = np.mean(self.kinematic_block[self.kinematic_block.columns[45 + w:48 + w]].values[cl1:cl2, :], axis=1)
-        right_end_base_p = np.mean(self.kinematic_block[self.kinematic_block.columns[48 + w:51 + w]].values[cl1:cl2, :], axis=1)
-        right_end_tip_p = np.mean(self.kinematic_block[self.kinematic_block.columns[51 + w:54 + w]].values[cl1:cl2, :], axis=1)
-        left_index_base_p = np.mean(self.kinematic_block[self.kinematic_block.columns[54 + w:57 + w]].values[cl1:cl2, :], axis=1)
-        left_index_tip_p = np.mean(self.kinematic_block[self.kinematic_block.columns[57 + w:60 + w]].values[cl1:cl2, :], axis=1)
-        left_middle_base_p = np.mean(self.kinematic_block[self.kinematic_block.columns[60 + w:63 + w]].values[cl1:cl2, :], axis=1)
-        left_middle_tip_p = np.mean(self.kinematic_block[self.kinematic_block.columns[66 + w:69 + w]].values[cl1:cl2, :], axis=1)
-        left_third_base_p = np.mean(self.kinematic_block[self.kinematic_block.columns[69 + w:72 + w]].values[cl1:cl2, :], axis=1)
-        left_third_tip_p = np.mean(self.kinematic_block[self.kinematic_block.columns[72 + w:75 + w]].values[cl1:cl2, :], axis=1)
-        left_end_base_p = np.mean(self.kinematic_block[self.kinematic_block.columns[75 + w:78 + w]].values[cl1:cl2, :], axis=1)
-        left_end_tip_p = np.mean(self.kinematic_block[self.kinematic_block.columns[78 + w:81 + w]].values[cl1:cl2, :], axis=1)
-        self.extract_sensor_data(cl1, cl2, filter=False, check_lick=False)  # Get time vectors for calculating kinematics.
+                                :], axis=1)  # 57 end
+        left_palm_p = np.mean(self.kinematic_block[self.kinematic_block.columns[18 + w:21 + w]].values[cl1:cl2, :],
+                              axis=1)
+        right_palm_p = np.mean(self.kinematic_block[self.kinematic_block.columns[54 + w:57 + w]].values[cl1:cl2, :],
+                               axis=1)
+        right_index_base_p = np.mean(
+            self.kinematic_block[self.kinematic_block.columns[27 + w:30 + w]].values[cl1:cl2, :], axis=1)
+        right_index_tip_p = np.mean(
+            self.kinematic_block[self.kinematic_block.columns[30 + w:33 + w]].values[cl1:cl2, :], axis=1)
+        right_middle_base_p = np.mean(
+            self.kinematic_block[self.kinematic_block.columns[36 + w:39 + w]].values[cl1:cl2, :], axis=1)
+        right_middle_tip_p = np.mean(
+            self.kinematic_block[self.kinematic_block.columns[39 + w:42 + w]].values[cl1:cl2, :], axis=1)
+        right_third_base_p = np.mean(
+            self.kinematic_block[self.kinematic_block.columns[42 + w:45 + w]].values[cl1:cl2, :], axis=1)
+        right_third_tip_p = np.mean(
+            self.kinematic_block[self.kinematic_block.columns[45 + w:48 + w]].values[cl1:cl2, :], axis=1)
+        right_end_base_p = np.mean(self.kinematic_block[self.kinematic_block.columns[48 + w:51 + w]].values[cl1:cl2, :],
+                                   axis=1)
+        right_end_tip_p = np.mean(self.kinematic_block[self.kinematic_block.columns[51 + w:54 + w]].values[cl1:cl2, :],
+                                  axis=1)
+        left_index_base_p = np.mean(
+            self.kinematic_block[self.kinematic_block.columns[54 + w:57 + w]].values[cl1:cl2, :], axis=1)
+        left_index_tip_p = np.mean(self.kinematic_block[self.kinematic_block.columns[57 + w:60 + w]].values[cl1:cl2, :],
+                                   axis=1)
+        left_middle_base_p = np.mean(
+            self.kinematic_block[self.kinematic_block.columns[60 + w:63 + w]].values[cl1:cl2, :], axis=1)
+        left_middle_tip_p = np.mean(
+            self.kinematic_block[self.kinematic_block.columns[66 + w:69 + w]].values[cl1:cl2, :], axis=1)
+        left_third_base_p = np.mean(
+            self.kinematic_block[self.kinematic_block.columns[69 + w:72 + w]].values[cl1:cl2, :], axis=1)
+        left_third_tip_p = np.mean(self.kinematic_block[self.kinematic_block.columns[72 + w:75 + w]].values[cl1:cl2, :],
+                                   axis=1)
+        left_end_base_p = np.mean(self.kinematic_block[self.kinematic_block.columns[75 + w:78 + w]].values[cl1:cl2, :],
+                                  axis=1)
+        left_end_tip_p = np.mean(self.kinematic_block[self.kinematic_block.columns[78 + w:81 + w]].values[cl1:cl2, :],
+                                 axis=1)
+        self.extract_sensor_data(cl1, cl2, filter=False,
+                                 check_lick=False)  # Get time vectors for calculating kinematics.
         self.positions = [nose, handle, left_shoulder, left_forearm, left_wrist,
                           left_palm, left_index_base,
                           left_index_tip, left_middle_base, left_middle_tip, left_third_base,
@@ -734,8 +753,7 @@ class ReachViz:
                           'lick_vector': self.lick_vector,
                           'response_sensor': self.exp_response_sensor, 'x_rob': self.x_robot, 'y_rob': self.y_robot,
                           'z_rob': self.z_robot,
-                          # Sorting variables
-                          'rat': self.rat, 'date': self.date, 'session': self.session, 'dim': self.dim,
+                          # Sorting variables ,
                           # Analysis variables
                           'PC1': self.pos_pc[0, :], 'PC2': self.pos_pc[1, :], 'PC3': self.pos_pc[2, :],
                           'vPC1': self.pos_v_pc[0, :], 'vPC2': self.pos_v_pc[1, :], 'vPC3': self.pos_v_pc[2, :]
@@ -781,7 +799,21 @@ class ReachViz:
                 self.reaching_dataframe = df
             else:
                 self.reaching_dataframe = pd.concat([df, self.reaching_dataframe])
+        df['Date'] = self.date
+        df.set_index('Date', append=True, inplace=True)
+        df['Session'] = self.session
+        df.set_index('Session', append=True, inplace=True)
+        df['Rat'] = self.rat
+        df.set_index('Rat', append=True, inplace=True)
+        df['Dim'] = self.dim
+        df.set_index('Dim', append=True, inplace=True)
+        savefile = self.sstr + str(self.rat) + str(self.date)+ str(self.session) + 'final_save_data.csv'
+        self.save_reaching_dataframe(savefile)
         return self.reaching_dataframe
+
+    def save_reaching_dataframe(self, filename):
+        self.reaching_dataframe.to_csv(filename)
+        return
 
     def plot_interpolation_variables_palm(self, filtype):
         """ Plots displaying feature variables for the left and right palms. """
