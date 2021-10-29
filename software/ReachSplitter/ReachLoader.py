@@ -10,7 +10,7 @@ import imageio
 import numpy as np
 import viz_utils as vu
 import scipy
-from scipy import signal
+from scipy.signal import find_peaks
 import pdb
 
 # Import ffmpeg to write videos here..
@@ -807,7 +807,7 @@ class ReachViz:
         df.set_index('Rat', append=True, inplace=True)
         df['Dim'] = self.dim
         df.set_index('Dim', append=True, inplace=True)
-        savefile = self.sstr + str(self.rat) + str(self.date)+ str(self.session) + 'final_save_data.csv'
+        savefile = self.sstr + str(self.rat) + str(self.date) + str(self.session) + 'final_save_data.csv'
         self.save_reaching_dataframe(savefile)
         return self.reaching_dataframe
 
@@ -916,31 +916,6 @@ class ReachViz:
         speed_holder = np.mean(abs(v_holder), axis=1)
         return np.asarray(v_holder), np.asarray(a_holder), np.asarray(speed_holder)
 
-    def quantify_prob_threshold(self, list_of_mean_thresholds, trial_num=0):
-        total_speeds = []
-        total_gaps = []
-        interpolated_speeds = []
-        for ix, sts in enumerate(self.trial_start_vectors):
-            # Check for null trial, if null don't perform visualization
-            if ix > trial_num:
-                self.fps = 30
-                self.trial_num = int(ix)
-                bi = self.block_video_path.rsplit('.')[0]
-                self.sstr = bi + '/trial' + str(ix)
-                stp = self.trial_stop_vectors[ix]
-                self.make_paths()
-                gaps = []
-                speeds = []
-                reaches = []
-                for t in list_of_mean_thresholds:
-                    self.segment_and_filter_kinematic_block_single_trial(sts, stp)  # Segment filtered data
-                    self.extract_sensor_data(sts, stp)  # Extract sensor data
-                rs, ls = self.get_uf_speeds()
-                speeds.append((rs, ls))
-                total_speeds.append(interpolated_speeds)
-                total_gaps.append(gaps)
-        return total_speeds, total_gaps, speeds, reaches
-
     def vid_splitter_and_grapher(self, plot=True, timeseries_plot=True, plot_reach=True, trial_num=0):
         """ Function to split and visualize reaching behavior from a given experimental session. """
         for ix, sts in enumerate(self.trial_start_vectors):
@@ -958,7 +933,7 @@ class ReachViz:
                 self.segment_and_filter_kinematic_block_single_trial(sts, stp)
                 self.extract_sensor_data(sts, stp)
                 self.segment_reaches_with_position()
-                rr = self.analyze_and_classify_reach_vector(sts)
+                self.analyze_and_classify_reach_vector(sts)
                 print('Finished Plotting!   ' + str(ix))
                 if timeseries_plot:
                     self.plot_interpolation_variables_palm('total')
@@ -1044,13 +1019,16 @@ class ReachViz:
             # Arm Checking
             r_reach_vector = self.r_reach_vector[segs - trial_frame_lag:segs + trial_frame_lag]  # This is in idx
             l_reach_vector = self.l_reach_vector[segs - trial_frame_lag:segs + trial_frame_lag]
+            # Find 0 times for segments
             if np.nonzero(r_reach_vector):  # More than 2x Window
                 self.arm_id_list.append('R')
+                start = self.find_start_and_peak_of_reach(segs,left=False)
                 if np.nonzero(l_reach_vector):
                     self.arm_id_list.append('B')
             if np.nonzero(l_reach_vector):
+                start = self.find_start_and_peak_of_reach(segs, left=True)
                 self.arm_id_list.append('L')
-            handle_speed = np.mean(self.handle_v[segs:segs + 40, :], axis=1)
+            handle_speed = np.mean(self.handle_v[start:segs + 40, :], axis=1)
             hidx = np.where(abs(handle_speed) > .2)
             hid = np.zeros(handle_speed.shape[0])
             hid[hidx] = 1
@@ -1058,9 +1036,9 @@ class ReachViz:
                 self.handle_moved = True
             else:
                 self.handle_moved = False
-            self.trial_cut_vector.append(np.array([segs + self.trial_index, 2, self.arm_id_list[rei]]))
+            self.trial_cut_vector.append(np.array([start + self.trial_index, 2, self.arm_id_list[rei]]))
             if self.handle_moved:
-                if np.nonzero(self.lick_vector[segs:segs + 40]):
+                if np.nonzero(self.lick_vector[segs:segs + 50]):
                     self.trial_cut_vector.append(
                         np.array([segs + self.trial_index, 'Successful', self.arm_id_list[rei]]))
                     print('rewarded')
@@ -1081,7 +1059,48 @@ class ReachViz:
         self.trial_cut_vector = []
         return
 
-    def segment_reaches_with_position(self, posthresh=0.21, v_thresh=0.3, pthresh=0.4):
+    def find_start_and_peak_of_reach(self, seg, left = False):
+        """ Function that examines time-series of palm and arm to determine start and peak of reach.
+            We use the find_peaks function to find maxima of the reach. The beginning of the reach is defined
+            as the first time-step where the velocity consecutively increases (4 or more time-steps with increasing
+             velocity. We begin our peak search at 4 time-steps past initiation, due to derivative errors at boundaries."""
+        # Use trial_cut_vector to window data
+        # Examine data from 0.3 s from palm peaks to find minima across palm, and wrist
+        self.reach_start_time = []
+        self.reach_peak_time = []
+        if left:
+            self.left_palm_maxima = find_peaks(self.left_palm_s[seg - 25:seg], height=0.5, distance=15)[0] # find biggest peak in window
+            self.reach_peak_time.append(self.left_palm_maxima)# Record Peak
+            for i in range(0, 1): # Per peak, where is minima?
+                left_palm_below_thresh = np.where(self.left_palm_s[self.left_palm_maxima[i] - 25:self.left_palm_maxima[i]] < 0.1)[0]
+                left_wrist_below_thresh = np.where(self.left_wrist_s[self.left_palm_maxima[i] - 25:self.left_palm_maxima[i]] < 0.1)[0]
+                try:
+                    start_time = np.intersect1d(left_palm_below_thresh, left_wrist_below_thresh)[-1] + self.left_palm_maxima[i] - 25
+                    pdb.set_trace()
+                    self.reach_start_time.append(start_time)
+                except:
+                    print('No left-handed reaches detected.')
+        else:
+            self.right_palm_maxima = find_peaks(self.right_palm_s[seg - 25:seg], height=0.5, distance=15)[0]
+            self.reach_peak_time.append(self.right_palm_maxima)
+            for i in range(0, 1):
+                right_palm_below_thresh = \
+                np.where(self.right_palm_s[self.right_palm_maxima[i] - 25:self.right_palm_maxima[i]] < 0.1)[0]
+                right_wrist_below_thresh = \
+                np.where(self.right_wrist_s[self.right_palm_maxima[i] - 25:self.right_palm_maxima[i]] < 0.1)[0]
+                try:
+                    start_time = np.intersect1d(right_palm_below_thresh, right_wrist_below_thresh)[-1] + self.right_palm_maxima[
+                            i] - 25
+                    pdb.set_trace()
+                    self.reach_start_time.append(start_time)
+
+                except:
+                    print('No Right-Handed reaches detected.')
+        print(self.left_reach_start_time, self.right_reach_start_time)
+
+        return start_time
+
+    def segment_reaches_with_position(self, posthresh=0.21, v_thresh=0.4, pthresh=0.35):
         """ Function to segment out reaches using a positional and velocity threshold. """
         self.reach_vector = np.zeros((self.left_palm.shape[0]))
         self.l_reach_vector = np.zeros((self.left_palm.shape[0]))
@@ -1126,7 +1145,6 @@ class ReachViz:
         xyzpalms = self.sstr + '/timeseries/' + 'xyzpalms_timeseries.png'
         rightvsleftxy = self.sstr + '/timeseries/' + 'rlxypalms_timeseries.png'
         axel0 = plt.figure(figsize=(8, 4))
-
         frames_n = np.around(self.time_vector, 2)
         frames = frames_n - frames_n[0]  # normalize frame values by first entry.
         plt.title('Principal Components of Position, P+V, P+V+A')
@@ -1233,6 +1251,10 @@ class ReachViz:
             self.lag = 3
         if isx == 4:
             self.lag = 4
+        return
+
+    def plot_verification_histograms(self):
+
         return
 
     def plot_predictions_videos(self, segment=False, multi_segment_plot=True, plot_digits=False, draw_skeleton=True,
