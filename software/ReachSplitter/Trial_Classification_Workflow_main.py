@@ -533,7 +533,6 @@ if __name__ == "__main__":
                       'kin_block_RM160190917S2',
                       'kin_block_RM160190917S1',
                       'kin_block_RM160190918S1',
-
                       'kin_block_RM140190920S1',
                       'kin_block_RM140190918S2']
 
@@ -542,7 +541,6 @@ if __name__ == "__main__":
                       'exp_block_RM160190917S2',
                       'exp_block_RM160190917S1',
                       'exp_block_RM160190918S1',
-
                       'exp_block_RM140190920S1',
                       'exp_block_RM140190918S2']
 
@@ -553,9 +551,11 @@ if __name__ == "__main__":
     window_length = 4  # TODO change to preferences, default = 250
     pre = 2  # TODO change to preferences, default = 10
 
+    # Create vectorized list of input training labels
     if args.function == 1:
         vectorized_labels = main_1_vec_labels(labels, label_key_names, save=True)
 
+    # Create experimental input data (depreciated)
     elif args.function == 2:
         kin_blocks, exp_blocks, kin_file_names, exp_file_names = \
             main_2_kin_exp_blocks(kin_data_path, exp_data_path, block_names, save=True)
