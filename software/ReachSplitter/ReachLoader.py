@@ -94,7 +94,7 @@ class ReachViz:
         self.get_starts_stops()
         # Initialize sensor variables
         self.exp_response_sensor, self.trial_sensors, self.h_moving_sensor, self.reward_zone_sensor, self.lick, \
-            self.trial_num = 0, 0, 0, 0, 0, 0
+        self.trial_num = 0, 0, 0, 0, 0, 0
         self.time_vector, self.images, self.bout_vector = [], [], []
         self.trial_rewarded = False
         self.filename = None
@@ -108,69 +108,69 @@ class ReachViz:
         self.left_reach_end_time, self.left_reach_end_times = [], []
         self.right_start_times, self.left_start_times = [], []
         self.left_hand_speeds, self.right_hand_speeds, self.total_speeds, self.left_hand_raw_speeds, \
-            self.right_hand_raw_speeds = [], [], [], [], []
+        self.right_hand_raw_speeds = [], [], [], [], []
         self.right_peak_times = []
         self.bimanual_reach_times = []
         self.k_length = 0
         self.speed_holder, self.raw_speeds = [], []
         self.left_arm_pc_pos, self.left_arm_pc_pos_v, self.left_arm_pc_pos_v_a, self.right_arm_pc_pos, \
-            self.right_arm_pc_pos_v, self.right_arm_pc_pos_v_a = [], [], [], [], [], []
+        self.right_arm_pc_pos_v, self.right_arm_pc_pos_v_a = [], [], [], [], [], []
         self.uninterpolated_left_palm_v, self.uninterpolated_right_palm_v = [], []
         # Initialize kinematic variables
         self.left_palm_velocity, self.right_palm_velocity, self.lag, self.clip_path, self.lick_vector, self.reach_vector, \
-            self.prob_index, self.pos_index, self.seg_num, self.prob_nose, self.right_wrist_velocity, self.left_wrist_velocity \
+        self.prob_index, self.pos_index, self.seg_num, self.prob_nose, self.right_wrist_velocity, self.left_wrist_velocity \
             = 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, [], []
         self.nose_p, self.handle_p, self.left_shoulder_p, self.left_forearm_p, self.left_wrist_p = [], [], [], [], []
         self.left_palm_p, self.left_index_base_p = [], []
         self.left_index_tip_p, self.left_middle_base_p, self.left_middle_tip_p, self.left_third_base_p, \
-            self.left_third_tip_p, self.left_end_base_p, self.left_end_tip_p, self.right_shoulder_p, self.right_forearm_p, \
-            self.right_wrist_p, self.right_palm_p = [], [], [], [], [], [], [], [], [], [], []
+        self.left_third_tip_p, self.left_end_base_p, self.left_end_tip_p, self.right_shoulder_p, self.right_forearm_p, \
+        self.right_wrist_p, self.right_palm_p = [], [], [], [], [], [], [], [], [], [], []
         self.right_index_base_p, self.right_index_tip_p, self.right_middle_base_p, self.right_middle_tip_p = [], [], [], []
         self.right_third_base_p, self.right_third_tip_p, self.right_end_base_p, self.right_end_tip_p = [], [], [], []
         self.fps = 20
         # Kinematic variable initialization
         self.nose_v, self.handle_v, self.left_shoulder_v, self.left_forearm_v, self.left_wrist_v, self.left_palm_v, self.left_index_base_v, \
-            self.left_index_tip_v, self.left_middle_base_v, self.left_middle_tip_v, self.left_third_base_v, self.left_third_tip_v, self.left_end_base_v, \
-            self.left_end_tip_v, self.right_shoulder_v, self.right_forearm_v, self.right_wrist_v, self.right_palm_v, self.right_index_base_v, \
-            self.right_index_tip_v, self.right_middle_base_v, self.right_middle_tip_v, self.right_third_base_v, self.right_third_tip_v, \
-            self.right_end_base_v, self.right_end_tip_v = [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], \
+        self.left_index_tip_v, self.left_middle_base_v, self.left_middle_tip_v, self.left_third_base_v, self.left_third_tip_v, self.left_end_base_v, \
+        self.left_end_tip_v, self.right_shoulder_v, self.right_forearm_v, self.right_wrist_v, self.right_palm_v, self.right_index_base_v, \
+        self.right_index_tip_v, self.right_middle_base_v, self.right_middle_tip_v, self.right_third_base_v, self.right_third_tip_v, \
+        self.right_end_base_v, self.right_end_tip_v = [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], \
                                                       [], [], [], [], [], [], [], [], [], [], []
         self.nose_s, self.handle_s, self.left_shoulder_s, self.left_forearm_s, self.left_wrist_s, self.left_palm_s, self.left_index_base_s, \
-            self.left_index_tip_s, self.left_middle_base_s, self.left_middle_tip_s, self.left_third_base_s, self.left_third_tip_s, self.left_end_base_s, \
-            self.left_end_tip_s, self.right_shoulder_s, self.right_forearm_s, self.right_wrist_s, self.right_palm_s, self.right_index_base_s, \
-            self.right_index_tip_s, self.right_middle_base_s, self.right_middle_tip_s, self.right_third_base_s, self.right_third_tip_s, \
-            self.right_end_base_s, self.right_end_tip_s = [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], \
+        self.left_index_tip_s, self.left_middle_base_s, self.left_middle_tip_s, self.left_third_base_s, self.left_third_tip_s, self.left_end_base_s, \
+        self.left_end_tip_s, self.right_shoulder_s, self.right_forearm_s, self.right_wrist_s, self.right_palm_s, self.right_index_base_s, \
+        self.right_index_tip_s, self.right_middle_base_s, self.right_middle_tip_s, self.right_third_base_s, self.right_third_tip_s, \
+        self.right_end_base_s, self.right_end_tip_s = [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], \
                                                       [], [], [], [], [], [], [], [], []
         self.nose_a, self.handle_a, self.left_shoulder_a, self.left_forearm_a, self.left_wrist_a, self.left_palm_a, self.left_index_base_a, \
-            self.left_index_tip_a, self.left_middle_base_a, self.left_middle_tip_a, self.left_third_base_a, self.left_third_tip_a, self.left_end_base_a, \
-            self.left_end_tip_a, self.right_shoulder_a, self.right_forearm_a, self.right_wrist_a, self.right_palm_a, self.right_index_base_a, \
-            self.right_index_tip_a, self.right_middle_base_a, self.right_middle_tip_a, self.right_third_base_a, self.right_third_tip_a, \
-            self.right_end_base_a, self.right_end_tip_a = [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], \
+        self.left_index_tip_a, self.left_middle_base_a, self.left_middle_tip_a, self.left_third_base_a, self.left_third_tip_a, self.left_end_base_a, \
+        self.left_end_tip_a, self.right_shoulder_a, self.right_forearm_a, self.right_wrist_a, self.right_palm_a, self.right_index_base_a, \
+        self.right_index_tip_a, self.right_middle_base_a, self.right_middle_tip_a, self.right_third_base_a, self.right_third_tip_a, \
+        self.right_end_base_a, self.right_end_tip_a = [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], \
                                                       [], [], [], [], [], [], [], [], []
         self.nose_o, self.handle_o, self.left_shoulder_o, self.left_forearm_o, self.left_wrist_o, self.left_palm_o, self.left_index_base_o, \
-            self.left_index_tip_o, self.left_middle_base_o, self.left_middle_tip_o, self.left_third_base_o, self.left_third_tip_o, self.left_end_base_o, \
-            self.left_end_tip_o, self.right_shoulder_o, self.right_forearm_o, self.right_wrist_o, self.right_palm_o, self.right_index_base_o, \
-            self.right_index_tip_o, self.right_middle_base_o, self.right_middle_tip_o, self.right_third_base_o, self.right_third_tip_o, \
-            self.right_end_base_o, self.right_end_tip_o = [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], \
+        self.left_index_tip_o, self.left_middle_base_o, self.left_middle_tip_o, self.left_third_base_o, self.left_third_tip_o, self.left_end_base_o, \
+        self.left_end_tip_o, self.right_shoulder_o, self.right_forearm_o, self.right_wrist_o, self.right_palm_o, self.right_index_base_o, \
+        self.right_index_tip_o, self.right_middle_base_o, self.right_middle_tip_o, self.right_third_base_o, self.right_third_tip_o, \
+        self.right_end_base_o, self.right_end_tip_o = [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], \
                                                       [], [], [], [], [], [], [], [], []
         # Initialize kinematic, positional and probability-indexed variables
         self.prob_filter_index, self.left_arm_filter_index, self.right_arm_filter_index = [], [], []
         self.right_index_base, self.right_index_tip, self.right_middle_base, self.right_middle_tip, \
-            self.right_third_base, self.right_third_tip, self.right_end_base, self.right_end_tip = [], [], [], [], [], [], [], []
+        self.right_third_base, self.right_third_tip, self.right_end_base, self.right_end_tip = [], [], [], [], [], [], [], []
         self.left_index_base, self.left_index_tip, self.left_middle_base, self.left_middle_tip, self.left_third_base, \
-            self.left_third_tip, self.left_end_base, self.left_end_tip = [], [], [], [], [], [], [], []
+        self.left_third_tip, self.left_end_base, self.left_end_tip = [], [], [], [], [], [], [], []
         self.start_trial_indice, self.trial_cut_vector, self.block_cut_vector, self.handle_velocity, \
-            self.bout_reach = [], [], [], [], []
+        self.bout_reach = [], [], [], [], []
         self.handle_moved, self.gif_save_path, self.prob_right_index, self.prob_left_index, self.l_pos_index, \
-            self.r_pos_index = 0, 0, 0, 0, 0, 0
+        self.r_pos_index = 0, 0, 0, 0, 0, 0
         self.x_robot, self.y_robot, self.z_robot, self.uninterpolated_right_palm, \
-            self.uninterpolated_left_palm = [], [], [], [], []
+        self.uninterpolated_left_palm = [], [], [], [], []
         self.prob_left_digit, self.prob_right_digit, self.left_digit_filter_index, \
-            self.right_digit_filter_index = [], [], [], []
+        self.right_digit_filter_index = [], [], [], []
         self.reaching_mask, self.right_arm_speed, self.left_arm_speed, self.reprojections, \
-            self.interpolation_gaps = [], [], [], [], []
+        self.interpolation_gaps = [], [], [], [], []
         self.left_palm_speed, self.right_palm_speed, self.handle_speed, self.right_arm_velocity, \
-            self.left_arm_velocity = [], [], [], [], []
+        self.left_arm_velocity = [], [], [], [], []
         self.bout_flag, self.positions, self.sensor_data_list = False, [], []
         self.nose, self.handle, self.body_prob, self.central_body_mass, self.prob_left_shoulder, self.prob_right_shoulder = [
             0, 0, 0, 0, 0, 0]
@@ -183,9 +183,9 @@ class ReachViz:
         self.reprojected_right_palm, self.reprojected_left_wrist, self.reprojected_right_wrist, self.reprojected_left_shoulder, self.reprojected_right_shoulder = [
             0, 0, 0, 0, 0]
         self.prob_right_index, self.prob_left_index, self.bi_pos_index, self.r_reach_vector, self.l_reach_vector, \
-            self.left_prob_index, self.right_prob_index = [0, 0, 0, 0, 0, 0, 0]
+        self.left_prob_index, self.right_prob_index = [0, 0, 0, 0, 0, 0, 0]
         self.prob_list, self.pos_list, self.interpolation_rmse_list, self.valid_rmse_list, \
-            self.outlier_rmse_list = [], [], [], [], []
+        self.outlier_rmse_list = [], [], [], [], []
         return
 
     def load_data(self):
@@ -561,7 +561,7 @@ class ReachViz:
                 v_outlier_index = np.where(svd > 2)
                 possi, num_int, gap_ind = vu.interpolate_3d_vector(np.copy(o_positions), v_outlier_index, prob_outliers)
                 filtered_pos = vu.cubic_spline_smoothing(np.copy(possi), spline_coeff=0.3)
-                filtered_pos = scipy.signal.medfilt2d(filtered_pos, 1)
+                #filtered_pos = scipy.signal.medfilt2d(filtered_pos, 1)
                 v, a, s = self.calculate_kinematics_from_position(np.copy(filtered_pos), spline=True)
                 # Find and save still-present outliers in the data
                 velocity_outlier_indexes = np.where(s > 2)[0]
@@ -654,11 +654,11 @@ class ReachViz:
         for ddx in range(0, pos_v.shape[0]):
             v_holder[ddx, :] = np.copy((pos_v[ddx, :] - pos_v[ddx - 1, :]) / (
                     self.time_vector[ddx] - self.time_vector[ddx - 1]))
-            #v_holder[ddx, :] = scipy.ndimage.gaussian_filter1d(v_holder[ddx, :], 3)
+            # v_holder[ddx, :] = scipy.ndimage.gaussian_filter1d(v_holder[ddx, :], 3)
         # Get cubic spline representation of speeds after smoothing
         if spline:
-            v_holder = vu.cubic_spline_smoothing(v_holder, 0.1)
-            v_holder = scipy.signal.medfilt2d(v_holder, 1)
+            v_holder = vu.cubic_spline_smoothing(v_holder, 0.2)
+            #v_holder = scipy.signal.medfilt2d(v_holder, 1)
         # Calculate speed, acceleration from smoothed (no time-dependent jumps) velocities
         try:
             for ddx in range(0, pos_v.shape[0]):
@@ -685,6 +685,7 @@ class ReachViz:
         self.right_peak_times = []
         self.right_reach_end_times = []
         self.left_reach_end_times = []
+        self.reach_duration = []
         # Get some basic information about what's going on in the trial from micro-controller data
         hidx = np.where(self.handle_s > .1)
         hid = np.zeros(self.handle_s.shape[0])
@@ -717,11 +718,13 @@ class ReachViz:
         rps[hidx] = 0
         lps[0:1] = 0  # remove any possible edge effect
         rps[0:1] = 0  # remove any possible edge effect
-        self.left_palm_maxima = find_peaks(lps, height=0.6, distance=15)[0]
+        self.left_palm_maxima = find_peaks(lps, height=0.4, distance=15)[0]
         if self.left_palm_maxima.any():
+            print('Left Palm Reach')
             for ir in range(0, self.left_palm_maxima.shape[0]):
                 if self.left_palm_maxima[ir] > 30:
-                    left_palm_below_thresh = np.argmin(self.left_palm_s[self.left_palm_maxima[ir] - 30: self.left_palm_maxima[ir]])
+                    left_palm_below_thresh = np.argmin(
+                        self.left_palm_s[self.left_palm_maxima[ir] - 30: self.left_palm_maxima[ir]])
                 else:
                     left_palm_below_thresh = np.argmin(self.left_palm_s[0:self.left_palm_maxima[ir]])
                 left_palm_below_thresh_after = self.left_palm_maxima[ir] + \
@@ -729,36 +732,52 @@ class ReachViz:
                                                          self.left_palm_maxima[ir]: self.left_palm_maxima[ir] + 20])
                 start_time_l = self.left_palm_maxima[ir] + left_palm_below_thresh - 30
                 if start_time_l < 0:
-                    start_time_l = 0
+                    start_time_l = 1
                 self.left_start_times.append(start_time_l)
                 self.left_peak_times.append(self.left_palm_maxima[ir])
                 self.reach_peak_time.append(self.left_palm_maxima[ir])  # Record Peak
                 self.left_reach_end_times.append(left_palm_below_thresh_after)  # Record putative end of motion
+                self.reach_duration.append(
+                    self.time_vector[left_palm_below_thresh_after] - self.time_vector[start_time_l])
         # Find peaks in right palm time-series
-        self.right_palm_maxima = find_peaks(rps, height=0.6, distance=15)[0]
+        self.right_palm_maxima = find_peaks(rps, height=0.4, distance=15)[0]
         if self.right_palm_maxima.any():
+            print('Right Palm Reach')
             for ir in range(0, self.right_palm_maxima.shape[0]):
                 if self.right_palm_maxima[ir] > 30:
-                    right_palm_below_thresh = np.argmin(self.right_palm_s[self.right_palm_maxima[ir] - 30:self.right_palm_maxima[ir]])
+                    right_palm_below_thresh = np.argmin(
+                        self.right_palm_s[self.right_palm_maxima[ir] - 30:self.right_palm_maxima[ir]])
                 else:
                     right_palm_below_thresh = np.argmin(self.right_palm_s[0:self.right_palm_maxima[ir]])
                 right_palm_below_thresh_after = self.right_palm_maxima[ir] + np.argmin(
                     self.right_palm_s[self.right_palm_maxima[ir]:self.right_palm_maxima[ir] + 20])
                 start_time_r = self.right_palm_maxima[ir] + right_palm_below_thresh - 30
                 if start_time_r < 0:
-                    start_time_r = 0
+                    start_time_r = 1
                 self.right_start_times.append(start_time_r)
                 self.right_peak_times.append(self.right_palm_maxima[ir])
                 self.reach_peak_time.append(self.right_palm_maxima[ir])
                 self.right_reach_end_times.append(right_palm_below_thresh_after)
+                self.reach_duration.append(
+                    self.time_vector[right_palm_below_thresh_after] - self.time_vector[start_time_r])
         # Check for unrealistic values (late in trial)
         # Take min of right and left start times as "reach times" for start of extraction
-        try:
-            self.reach_start_time = min(list(self.right_start_times) + list(self.left_start_times))
-            print(self.reach_start_time)
-        except:
+        if self.right_start_times and self.left_start_times:
+            self.reach_start_time = min(list(self.right_start_times) + list(self.left_start_times)) + 1
+            self.reach_end_time = max(list(self.right_reach_end_times) + list(self.left_reach_end_times)) + 1
+            print('LR')
+        elif self.right_start_times:
+            self.reach_start_time = min(list(self.right_start_times)) + 1
+            self.reach_end_time = max(list(self.right_reach_end_times)) + 1
+            print('R')
+        elif self.left_start_times:
+            self.reach_start_time = min(list(self.left_start_times)) + 1
+            self.reach_end_time = max(list(self.left_reach_end_times)) + 1
+            print('L')
+        else:
             self.reach_start_time = 0
-            print('no reaching')
+            self.reach_end_time = 150
+            print('No LR')
         self.handle_moved = 0
         self.trial_cut_vector = []
         return
@@ -1033,6 +1052,7 @@ class ReachViz:
                           #            # Class Labels
                           'reach_hand': self.arm_id_list, 'right_start_time': self.right_start_times,
                           'left_start_time': self.left_start_times, 'reach_time': self.reach_start_time,
+                          'reach_duration': self.reach_end_time,
                           'left_end_time': self.left_reach_end_times, 'right_end_time': self.right_reach_end_times,
                           'left_reach_peak': self.left_peak_times, 'right_reach_peak': self.right_peak_times,
                           # Sensor Data
@@ -1089,36 +1109,31 @@ class ReachViz:
                 self.total_outliers = np.hstack((np.asarray(self.outlier_list).flatten(), self.total_outliers))
             win_length = 5
             # Segment reach block
-            if self.lick_vector.any() == 1:  # If trial is rewarded
-                self.first_lick_signal = np.where(self.lick_vector == 1)[0][0]
-                if 5 < self.first_lick_signal < 30:  # If reward is delivered after initial time-out
+            if self.reach_start_time:  # If reach detected
+                if self.lick_vector.any() == 1:  # If trial is rewarded
+                    self.first_lick_signal = np.where(self.lick_vector == 1)[0][0]
+                    if 5 < self.first_lick_signal < 20:  # If reward is delivered after initial time-out
 
-                    self.segment_and_filter_kinematic_block_single_trial(sts, sts + 200)
-                    self.extract_sensor_data(sts, sts + 200)
-                    print('Possible Tug of War Behavior!')
-                else:
-                    if self.reach_start_time:  # If a reach is detected (successful reach)
-                        self.segment_and_filter_kinematic_block_single_trial(sts + self.reach_start_time - win_length,
-                                                                             sts + self.reach_start_time + 180)
+                        self.segment_and_filter_kinematic_block_single_trial(sts, sts + 100)
+                        self.extract_sensor_data(sts, sts + 100)
+                        print('Possible Tug of War Behavior!')
+                    else:  # If a reach is detected (successful reach)
+                        self.segment_and_filter_kinematic_block_single_trial(
+                                sts + self.reach_start_time - win_length,
+                                sts + self.reach_end_time + win_length)
                         self.extract_sensor_data(sts + self.reach_start_time - win_length,
-                                                 sts + self.reach_start_time + 180)
+                                                     sts + self.reach_end_time + win_length)
                         print('Successful Reach Detected')
-                    else:  # no reach detected, but licks detected
-                        print('Lick Noise Detected..')
-                        self.segment_and_filter_kinematic_block_single_trial(sts - win_length, sts + 200)
-                        self.extract_sensor_data(sts - win_length, sts + 200)
-            # no licking detected.
-            else:
-                if self.reach_start_time:  # If reach detected, but not rewarded
+                else:  # unrewarded reach
                     self.segment_and_filter_kinematic_block_single_trial(sts + self.reach_start_time - win_length,
-                                                                         sts + 110 + self.reach_start_time)
+                                                                         sts + self.reach_end_time + win_length)
                     self.extract_sensor_data(sts + self.reach_start_time - win_length, sts +
-                                             self.reach_start_time + 110)
+                                             self.reach_end_time + win_length)
                     print('Un-Rewarded Reach Detected')
-                else:  # If reach not detected in trial
-                    self.segment_and_filter_kinematic_block_single_trial(sts - win_length, sts + 180)
-                    self.extract_sensor_data(sts - win_length, sts + 180)
-                    print('No Reaching Found in Trial Block' + str(ix))
+            else:  # If reach not detected in trial
+                self.segment_and_filter_kinematic_block_single_trial(sts - win_length, sts + 100)
+                self.extract_sensor_data(sts - win_length, sts + 100)
+                print('No Reaching Found in Trial Block' + str(ix))
             df = self.segment_data_into_reach_dict(ix)
             self.seg_num = 0
             self.start_trial_indice = []
