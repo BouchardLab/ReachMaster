@@ -23,6 +23,7 @@ def read_from_csv(input_filepath):
 def autocorrelate(x, t=1):
     """ Function to compute regular auto correlation using numpy. """
     return np.corrcoef(np.array([x[:-t], x[t:]]))
+
 # Code adapted from Github page of agramfort
 def lowess(x, y, f=2. / 3., iter=3):
     """lowess(x, y, f=2./3., iter=3) -> yest

@@ -87,7 +87,8 @@ class Protocols(tk.Toplevel):
         self.cams_connected = False         
         self.lights_on = False
         self.baseline_acquired = False  
-        self.reach_detected = False  
+        self.reach_detected = False
+        self.lick_window = False
         self.reach_init = 0      
         #check config for errors
         if len(self.config['CameraSettings']['saved_pois']) == 0:
@@ -95,26 +96,24 @@ class Protocols(tk.Toplevel):
            self.on_quit()
            return
         #start interfaces, load settings and acquire baseline for reach detection
-        try:
-            print("starting interfaces...")
-            self.exp_controller = expint.start_interface(self.config) 
-            self.exp_connected = True 
-            print("loading experiment settings...")        
-            expint.set_exp_controller(self.exp_controller, self.config)                      
-            self.rob_controller = robint.start_interface(self.config) 
-            self.rob_connected = True     
-            print("loading robot settings...")
-            self.config = robint.set_rob_controller(self.rob_controller, self.config)      
-            self.cams = camint.CameraInterface(self.config)
-            self.cams_connected = True
-            self.cam_thread = threading.Thread(target=self.cam_init())
-            self.cam_thread.start()
-            sleep(30) # give the cameras time to start
-            self._acquire_baseline()
-        except Exception as err:
-            print(err)
-            self.on_quit()  
-            return
+
+        print("starting interfaces...")
+        self.exp_controller = expint.start_interface(self.config)
+        self.exp_connected = True
+        print("loading experiment settings...")
+        expint.set_exp_controller(self.exp_controller, self.config)
+        self.rob_controller = robint.start_interface(self.config)
+        self.rob_connected = True
+        print("loading robot settings...")
+        self.config = robint.set_rob_controller(self.rob_controller, self.config)
+        self.cams = camint.CameraInterface(self.config)
+        self.cams_connected = True
+        self.cams.start_protocol_interface() # start the camera interface
+        #self.cam_thread = threading.Thread(target=self.cam_init())
+        #self.cam_thread.start()
+        sleep(30) # give the cameras time to start
+        self._acquire_baseline()
+
         self._init_data_output()      
         self._configure_window() 
         self.control_message = 'b'

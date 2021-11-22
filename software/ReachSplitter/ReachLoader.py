@@ -716,9 +716,9 @@ class ReachViz:
         lps[left_palm_pos_f] = 0
         lps[hidx] = 0
         rps[hidx] = 0
-        lps[0:1] = 0  # remove any possible edge effect
-        rps[0:1] = 0  # remove any possible edge effect
-        self.left_palm_maxima = find_peaks(lps, height=0.4, distance=15)[0]
+        lps[0:4] = 0  # remove any possible edge effect
+        rps[0:4] = 0  # remove any possible edge effect
+        self.left_palm_maxima = find_peaks(lps, height=0.5, distance=15)[0]
         if self.left_palm_maxima.any():
             print('Left Palm Reach')
             for ir in range(0, self.left_palm_maxima.shape[0]):
@@ -740,7 +740,7 @@ class ReachViz:
                 self.reach_duration.append(
                     self.time_vector[left_palm_below_thresh_after] - self.time_vector[start_time_l])
         # Find peaks in right palm time-series
-        self.right_palm_maxima = find_peaks(rps, height=0.4, distance=15)[0]
+        self.right_palm_maxima = find_peaks(rps, height=0.5, distance=15)[0]
         if self.right_palm_maxima.any():
             print('Right Palm Reach')
             for ir in range(0, self.right_palm_maxima.shape[0]):
@@ -776,7 +776,7 @@ class ReachViz:
             print('L')
         else:
             self.reach_start_time = 0
-            self.reach_end_time = 150
+            self.reach_end_time = 100
             print('No LR')
         self.handle_moved = 0
         self.trial_cut_vector = []
@@ -1065,6 +1065,12 @@ class ReachViz:
         df = pd.DataFrame({key: pd.Series(np.asarray(value)) for key, value in self.save_dict.items()})
         df['Trial'] = trial_num
         df.set_index('Trial', append=True, inplace=True)
+        df['Date'] = self.date
+        df.set_index('Date', append=True, inplace=True)
+        df['Session'] = self.session
+        df.set_index('Session', append=True, inplace=True)
+        df['Rat'] = self.rat
+        df.set_index('Rat', append=True, inplace=True)
         return df
 
     def get_reach_dataframe_from_block(self):
@@ -1110,25 +1116,28 @@ class ReachViz:
             win_length = 5
             # Segment reach block
             if self.reach_start_time:  # If reach detected
+                #tt = self.reach_end_time - self.reach_start_time
+                end_pad = 1 # length of behavior
+                reach_end_time = self.reach_end_time + end_pad # For equally-spaced arrays
+                print(self.reach_start_time, self.reach_end_time)
                 if self.lick_vector.any() == 1:  # If trial is rewarded
                     self.first_lick_signal = np.where(self.lick_vector == 1)[0][0]
                     if 5 < self.first_lick_signal < 20:  # If reward is delivered after initial time-out
-
                         self.segment_and_filter_kinematic_block_single_trial(sts, sts + 100)
                         self.extract_sensor_data(sts, sts + 100)
                         print('Possible Tug of War Behavior!')
                     else:  # If a reach is detected (successful reach)
                         self.segment_and_filter_kinematic_block_single_trial(
                                 sts + self.reach_start_time - win_length,
-                                sts + self.reach_end_time + win_length)
+                                sts + reach_end_time + win_length)
                         self.extract_sensor_data(sts + self.reach_start_time - win_length,
-                                                     sts + self.reach_end_time + win_length)
+                                                     sts + reach_end_time + win_length)
                         print('Successful Reach Detected')
                 else:  # unrewarded reach
                     self.segment_and_filter_kinematic_block_single_trial(sts + self.reach_start_time - win_length,
-                                                                         sts + self.reach_end_time + win_length)
+                                                                         sts + reach_end_time + win_length)
                     self.extract_sensor_data(sts + self.reach_start_time - win_length, sts +
-                                             self.reach_end_time + win_length)
+                                             reach_end_time + win_length)
                     print('Un-Rewarded Reach Detected')
             else:  # If reach not detected in trial
                 self.segment_and_filter_kinematic_block_single_trial(sts - win_length, sts + 100)
@@ -1142,16 +1151,10 @@ class ReachViz:
                 self.reaching_dataframe = df
             else:
                 self.reaching_dataframe = pd.concat([df, self.reaching_dataframe])
-        df['Date'] = self.date
-        df.set_index('Date', append=True, inplace=True)
-        df['Session'] = self.session
-        df.set_index('Session', append=True, inplace=True)
-        df['Rat'] = self.rat
-        df.set_index('Rat', append=True, inplace=True)
         savefile = self.sstr + str(self.rat) + str(self.date) + str(self.session) + 'final_save_data.csv'
         self.save_reaching_dataframe(savefile)
         self.plot_verification_variables()
-        return self.reaching_dataframe, self.total_outliers
+        return self.reaching_dataframe
 
     def save_reaching_dataframe(self, filename):
         self.reaching_dataframe.to_csv(filename)
