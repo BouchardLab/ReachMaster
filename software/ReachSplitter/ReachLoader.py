@@ -12,6 +12,7 @@ import viz_utils as vu
 import scipy
 from scipy.signal import find_peaks
 from scipy.ndimage import gaussian_filter1d
+#from software.ReachAnalysis.DataLoader import DataLoader as DL
 import pdb
 
 # Import ffmpeg to write videos here..
@@ -168,7 +169,7 @@ class ReachViz:
         self.prob_left_digit, self.prob_right_digit, self.left_digit_filter_index, \
         self.right_digit_filter_index = [], [], [], []
         self.reaching_mask, self.right_arm_speed, self.left_arm_speed, self.reprojections, \
-        self.interpolation_gaps = [], [], [], [], []
+        self.interpolation_gaps, self.total_reach_vector = [], [], [], [], [], []
         self.left_palm_speed, self.right_palm_speed, self.handle_speed, self.right_arm_velocity, \
         self.left_arm_velocity = [], [], [], [], []
         self.bout_flag, self.positions, self.sensor_data_list = False, [], []
@@ -195,6 +196,7 @@ class ReachViz:
         with (open(self.kinematic_data_path, "rb")) as openfile:
             self.d = pickle.load(openfile)
         return
+
 
     def make_paths(self):
         """ Function to construct a structured directory to save visual results. """
@@ -291,8 +293,8 @@ class ReachViz:
             accelerations.append(a)
             speed.append(s)
         # Find peaks across entire block
-        right_palm_peaks = find_peaks(speed[3], height=0.6, distance=15)[0]
-        left_palm_peaks = find_peaks(speed[2], height=0.6, distance=15)[0]
+        right_palm_peaks = find_peaks(speed[3], height=0.6, distance=10)[0]
+        left_palm_peaks = find_peaks(speed[2], height=0.6, distance=10)[0]
         # Find minima for each peak across each hand
         for ir in range(0, left_palm_peaks.shape[0]):
             left_palm_below_thresh = \
@@ -560,7 +562,7 @@ class ReachViz:
                 self.raw_speeds.append(speed_c)
                 v_outlier_index = np.where(svd > 2)
                 possi, num_int, gap_ind = vu.interpolate_3d_vector(np.copy(o_positions), v_outlier_index, prob_outliers)
-                filtered_pos = vu.cubic_spline_smoothing(np.copy(possi), spline_coeff=0.3)
+                filtered_pos = vu.cubic_spline_smoothing(np.copy(possi), spline_coeff=0.1)
                 #filtered_pos = scipy.signal.medfilt2d(filtered_pos, 1)
                 v, a, s = self.calculate_kinematics_from_position(np.copy(filtered_pos), spline=True)
                 # Find and save still-present outliers in the data
@@ -657,7 +659,7 @@ class ReachViz:
             # v_holder[ddx, :] = scipy.ndimage.gaussian_filter1d(v_holder[ddx, :], 3)
         # Get cubic spline representation of speeds after smoothing
         if spline:
-            v_holder = vu.cubic_spline_smoothing(v_holder, 0.2)
+            v_holder = vu.cubic_spline_smoothing(v_holder, 0.1)
             #v_holder = scipy.signal.medfilt2d(v_holder, 1)
         # Calculate speed, acceleration from smoothed (no time-dependent jumps) velocities
         try:
@@ -669,7 +671,7 @@ class ReachViz:
         except:
             pass
         if spline:
-            speed_holder = scipy.ndimage.gaussian_filter1d(speed_holder, sigma=5, mode='mirror')
+            speed_holder = scipy.ndimage.gaussian_filter1d(speed_holder, sigma=1, mode='mirror')
         return np.asarray(v_holder), np.asarray(a_holder), np.asarray(speed_holder)
 
     def segment_reaches_with_speed_peaks(self):
@@ -705,8 +707,8 @@ class ReachViz:
         lps[self.prob_filter_index] = 0
         rps[self.prob_filter_index] = 0
         # If palms are < 0.8 p-value, remove chance at "maxima"
-        left_palm_prob = np.where(self.left_palm_p < 0.4)[0]
-        right_palm_prob = np.where(self.right_palm_p < 0.4)[0]
+        left_palm_prob = np.where(self.left_palm_p < 0.5)[0]
+        right_palm_prob = np.where(self.right_palm_p < 0.5)[0]
         # If palms are > 0.22m in the x-direction towards the handle 0 position.
         left_palm_pos_f = np.where(self.left_palm[:, 0] < 0.19)[0]
         right_palm_pos_f = np.where(self.right_palm[:, 0] < 0.19)[0]
@@ -718,7 +720,7 @@ class ReachViz:
         rps[hidx] = 0
         lps[0:4] = 0  # remove any possible edge effect
         rps[0:4] = 0  # remove any possible edge effect
-        self.left_palm_maxima = find_peaks(lps, height=0.5, distance=15)[0]
+        self.left_palm_maxima = find_peaks(lps, height=0.5, distance=10)[0]
         if self.left_palm_maxima.any():
             print('Left Palm Reach')
             for ir in range(0, self.left_palm_maxima.shape[0]):
@@ -740,7 +742,7 @@ class ReachViz:
                 self.reach_duration.append(
                     self.time_vector[left_palm_below_thresh_after] - self.time_vector[start_time_l])
         # Find peaks in right palm time-series
-        self.right_palm_maxima = find_peaks(rps, height=0.5, distance=15)[0]
+        self.right_palm_maxima = find_peaks(rps, height=0.5, distance=10)[0]
         if self.right_palm_maxima.any():
             print('Right Palm Reach')
             for ir in range(0, self.right_palm_maxima.shape[0]):
@@ -761,7 +763,7 @@ class ReachViz:
                 self.reach_duration.append(
                     self.time_vector[right_palm_below_thresh_after] - self.time_vector[start_time_r])
         # Check for unrealistic values (late in trial)
-        # Take min of right and left start times as "reach times" for start of extraction
+        # Take min of right and left start times as "reach times" for start of classification extraction
         if self.right_start_times and self.left_start_times:
             self.reach_start_time = min(list(self.right_start_times) + list(self.left_start_times)) + 1
             self.reach_end_time = max(list(self.right_reach_end_times) + list(self.left_reach_end_times)) + 1
@@ -778,6 +780,20 @@ class ReachViz:
             self.reach_start_time = 0
             self.reach_end_time = 100
             print('No LR')
+        # Merge left and right "reaches" into tenative reach "vectors"
+        #if self.left_start_times and self.right_start_times:
+        #    for id, sss in enumerate(self.right_start_times):
+        #        for ix, sse in enumerate(self.left_start_times):
+        #            if sss - 10 < sss < sss + 10 in sse:  # time doesn't show up in left start time
+        #                self.total_reach_vector.append(min(sss, sse)) # Get overlapping reaches here by taking the minimum
+        #            else:
+        #                self.total_reach_vector.append(sss)
+        #    for sl in self.left_start_times:
+        #        for sd in self.right_start_times:
+        #            if sl - 10 < sl < sl + 10 in sd:
+        #            else:
+         #               self.total_reach_vector.append(sl)
+        #print(self.total_reach_vector)
         self.handle_moved = 0
         self.trial_cut_vector = []
         return
@@ -1187,7 +1203,7 @@ class ReachViz:
         """ Plots displaying feature variables for the left and right palms. """
         filename_pos = self.sstr + '/timeseries/' + str(filtype) + 'interpolation_timeseries.png'
         times = np.around((self.time_vector - self.time_vector[0]), 2)
-        fig, [ax1, ax2, ax3, ax4] = plt.subplots(nrows=4, ncols=1, figsize=(15, 20))
+        fig, [ax1, ax2, ax3, ax4] = plt.subplots(nrows=4, ncols=1, figsize=(15, 28))
         times_mask_left = np.around((np.asarray(self.time_vector)[self.left_palm_f_x] - self.time_vector[0]), 2)
         times_mask_right = np.around((np.asarray(self.time_vector)[self.right_palm_f_x] - self.time_vector[0]), 2)
         left_outliers = np.zeros(self.left_palm_p.shape[0])
@@ -1243,12 +1259,15 @@ class ReachViz:
         try:
             if self.right_start_times:
                 for tsi, segment_trials in enumerate(self.right_start_times):
-                    ax2.axvline(times[segment_trials], color='black', label='Trial ' + str(tsi))
+                    ax2.plot(times[segment_trials], self.right_palm_s[segment_trials], marker='*', color='black',
+                             markersize=20, label='Reach Start')
                     ax4.plot(times[segment_trials], self.right_palm_s[segment_trials], marker='*', color='black',
                              markersize=20, label='Reach Start')
             if self.left_start_times:
                 for tsi, segment_trials in enumerate(self.left_start_times):
-                    ax1.axvline(times[segment_trials], color='black', label='Trial ' + str(tsi))
+                    ax2.plot(times[segment_trials], self.left_palm_s[segment_trials], marker='*', color='black',
+                             markersize=20,
+                             label='Reach Start')
                     ax4.plot(times[segment_trials], self.left_palm_s[segment_trials], marker='*', color='black',
                              markersize=20,
                              label='Reach Start')
@@ -1273,8 +1292,8 @@ class ReachViz:
         # Book-keeping for visuals (metrics, etc)
         ax2.set_xlabel('Time (s) ')
         ax2.set_ylabel('Distance (M) ')
-        ax1.legend()
-        ax2.legend()
+        ax1.legend(loc=1, fontsize='small')
+        ax2.legend(loc=1, fontsize='small')
         ax3.plot(times, self.left_palm_p, color='r', label='Left Palm Mean Probability')
         ax3.plot(times, self.right_palm_p, color='b', label='Right Palm Mean Probability')
         ax3.plot(times, self.nose_p, color='m', label='Location Probability')
@@ -1285,11 +1304,11 @@ class ReachViz:
         ax3.set_xlabel('Time (s)')
         ax3.set_ylabel('Probabilities')
         ax3.set_xlabel('Time (s)')
-        ax4.set_ylabel('M')
+        ax4.set_ylabel('Speed (M)')
         ax4.set_xlabel('Time (s)')
         ax4.set_ylim(0, 2)
-        ax3.legend()
-        ax4.legend()
+        ax3.legend(loc=5, fontsize='small')
+        ax4.legend(loc=5, fontsize='small')
         plt.savefig(filename_pos)
         plt.close()
         return
@@ -1447,7 +1466,7 @@ class ReachViz:
         plt.plot(frames, self.left_palm_v[:, 0], c='r', label='X Left Palm')
         plt.plot(frames, self.left_palm_v[:, 1], c='r', linestyle='dashed', label='Y Left Palm')
         plt.plot(frames, self.left_palm_v[:, 2], c='r', linestyle='dotted', label='Z Left Palm')
-        plt.ylim(-1.2, 1.2)
+        plt.ylim(-1, 1.6)
         plt.xlabel('Time (s)')
         plt.ylabel(' Palm Velocity (m/s)')
         axel1.legend()
