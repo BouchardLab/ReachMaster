@@ -10,7 +10,7 @@ kin_file_bases = ['/Users/bassp/OneDrive/Desktop/DataFrames/3D_positions_RM9.pkl
                   '/Users/bassp/OneDrive/Desktop/DataFrames/3D_positions_RM14.pkl',
                   '/Users/bassp/OneDrive/Desktop/DataFrames/3D_positions_RM15.pkl',
                   '/Users/bassp/OneDrive/Desktop/DataFrames/3D_positions_RM16.pkl']
-exp_datafile_base = ['/Users/bassp/OneDrive/Desktop/DataFrames/RM9_expdf.pickle',
+exp_datafile_bases = ['/Users/bassp/OneDrive/Desktop/DataFrames/RM9_expdf.pickle',
                      '/Users/bassp/OneDrive/Desktop/DataFrames/RM10_expdf.pickle',
                      '/Users/bassp/OneDrive/Desktop/DataFrames/RM11_expdf.pickle',
                      '/Users/bassp/OneDrive/Desktop/DataFrames/RM12_expdf.pickle',
@@ -24,7 +24,6 @@ rats = ['RM9', 'RM10', 'RM11', 'RM12', 'RM13', 'RM14', 'RM15', 'RM16']
 
 
 def loop_over_rat_and_extract_reaches(prediction_dataframe, e_dataframe, dummy_video_path, rat):
-    save_path = '/Users/bassp/OneDrive/Desktop/Classification Project/reach_data/'
     # Get rat, date, session for each block we need to process.
     k_dataframe = pd.read_pickle(prediction_dataframe)
 
@@ -53,3 +52,7 @@ def extract_reaching_data_from_unprocessed_data(block_video_file_id, kin_file_ba
             rat_final_df = complete_rat_df
         rat_final_df = pd.concat(complete_rat_df, rat_final_df)
     return rat_final_df
+
+save_path = '/Users/bassp/OneDrive/Desktop/Classification Project/reach_data/'
+final_df = extract_reaching_data_from_unprocessed_data(block_video_file, kin_file_bases, exp_datafile_bases)
+final_df.to_hdf(save_path)
