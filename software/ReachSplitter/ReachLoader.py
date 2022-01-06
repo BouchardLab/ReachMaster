@@ -2,13 +2,13 @@ from sklearn.decomposition import PCA
 import pandas as pd
 import pickle
 import matplotlib.pyplot as plt
-import DataStream_Vis_Utils as utils
+import software.ReachSplitter.DataStream_Vis_Utils as utils
 from moviepy.editor import *
 import skvideo
 import cv2
 import imageio
 import numpy as np
-import viz_utils as vu
+import software.ReachSplitter.viz_utils as vu
 import scipy
 from scipy.signal import find_peaks
 from scipy.ndimage import gaussian_filter1d
@@ -232,114 +232,6 @@ class ReachViz:
         self.block_exp_df = self.sensors.loc[self.sensors['Date'] == self.date].loc[self.sensors['S'] == self.session]
         return
 
-    def get_reaches_from_block(self):
-        self.reach_start_time = []
-        self.reach_peak_time = []
-        self.left_start_times = []
-        self.right_start_times = []
-        self.left_peak_times = []
-        self.right_peak_times = []
-        self.right_reach_end_times = []
-        self.left_reach_end_times = []
-        # Extract sensor data across whole block
-        self.extract_sensor_data(0, -1)
-        # Extract kinematic data across whole block
-        left_wrist = vu.norm_coordinates(
-            self.kinematic_block[self.kinematic_block.columns[15:18]].values)  # 21 end
-        right_wrist = vu.norm_coordinates(
-            self.kinematic_block[self.kinematic_block.columns[51:54]].values)  # 57 end
-        left_palm = vu.norm_coordinates(
-            self.kinematic_block[self.kinematic_block.columns[18:21]].values)
-        right_palm = vu.norm_coordinates(
-            self.kinematic_block[self.kinematic_block.columns[54:57]].values)
-        state_values = [left_wrist, right_wrist, left_palm, right_palm]
-        w = 81
-        left_wrist_p = np.mean(self.kinematic_block[self.kinematic_block.columns[15 + w:18 + w]].values,
-                               axis=1)  # 21 end
-        right_wrist_p = np.mean(self.kinematic_block[self.kinematic_block.columns[51 + w:54 + w]].values,
-                                axis=1)  # 57 end
-        left_palm_p = np.mean(self.kinematic_block[self.kinematic_block.columns[18 + w:21 + w]].values,
-                              axis=1)
-        right_palm_p = np.mean(self.kinematic_block[self.kinematic_block.columns[54 + w:57 + w]].values,
-                               axis=1)
-        prob_values = [left_wrist_p, right_wrist_p, left_palm_p, right_palm_p]
-        prob_nose = np.squeeze(
-            np.mean(self.kinematic_block[self.kinematic_block.columns[6 + 81:9 + 81]].values, axis=1))
-        prob_filter_index = np.where(prob_nose < 0.3)[0]
-        positions = []
-        velocities = []
-        accelerations = []
-        speed = []
-        filtered_pos = []
-        # Pre-Process input data
-        for idx, pos_val in enumerate(state_values):
-            p_val = prob_values[idx]
-            p_o = self.threshold_data_with_probabilities(p_val, p_thresh=0.6)
-            svd, acc, speeds = self.calculate_kinematics_from_position(np.copy(pos_val))
-            v_o = np.where(svd > 2)
-            possi, num_int, gap_ind = vu.interpolate_3d_vector(np.copy(pos_val), v_o, p_o)
-            # filtered_pos = vu.cubic_spline_smoothing(np.copy(possi), spline_coeff=0.1)
-            for ix in range(0, 3):
-                filtered_pos.append(gkern(np.copy(possi[ix, :]), 3))
-            filtered_pos_spline = vu.cubic_spline_smoothing(np.copy(filtered_pos), spline_coeff=0.99)
-            v, a, s = self.calculate_kinematics_from_position(np.copy(filtered_pos_spline))
-            # 0 out non-values
-            filtered_pos[prob_filter_index] = 0
-            v[prob_filter_index] = 0
-            s[prob_filter_index] = 0
-            a[prob_filter_index] = 0
-            positions.append(filtered_pos)
-            velocities.append(v)
-            accelerations.append(a)
-            speed.append(s)
-        # Find peaks across entire block
-        right_palm_peaks = find_peaks(speed[3], height=0.6, distance=10)[0]
-        left_palm_peaks = find_peaks(speed[2], height=0.6, distance=10)[0]
-        # Find minima for each peak across each hand
-        for ir in range(0, left_palm_peaks.shape[0]):
-            left_palm_below_thresh = \
-                np.where(speed[2][left_palm_peaks[ir] - 30:left_palm_peaks[ir]] < 0.1)[0]
-            left_wrist_below_thresh = \
-                np.where(speed[2][left_palm_peaks[ir] - 30:left_palm_peaks[ir]] < 0.1)[0]
-            left_palm_post_peak = np.where(speed[2][left_palm_peaks[ir]:left_palm_peaks[ir] + 30])
-            try:
-                start_time_l = left_palm_peaks[ir] - \
-                               np.intersect1d(left_palm_below_thresh, left_wrist_below_thresh)[-1]
-            except:
-                start_time_l = left_palm_peaks[ir] - left_palm_below_thresh[-1]
-            self.left_start_times.append(start_time_l)
-            self.left_peak_times.append(left_palm_peaks[ir])
-            self.reach_peak_time.append(left_palm_peaks[ir])  # Record Peak
-            self.reach_start_time.append(start_time_l)
-            self.left_reach_end_time.append(left_palm_post_peak)
-        # Same, for right hand
-        for ir in range(0, right_palm_peaks.shape[0]):
-            right_palm_below_thresh = \
-                np.where(speed[3][right_palm_peaks[ir] - 30:right_palm_peaks[ir]] < 0.1)[0]
-            right_wrist_below_thresh = \
-                np.where(speed[3][right_palm_peaks[ir] - 30:right_palm_peaks[ir]] < 0.1)[0]
-            right_palm_post_peak = np.where(speed[3][right_palm_peaks[ir]:right_palm_peaks[ir] + 30] < 0.1)[0]
-            try:
-                start_time_r = right_palm_peaks[ir] - \
-                               np.intersect1d(right_palm_below_thresh, right_wrist_below_thresh)[-1]
-            except:
-                start_time_r = right_palm_peaks[ir] - right_palm_below_thresh[-1]
-            self.left_start_times.append(start_time_r)
-            self.left_peak_times.append(right_palm_peaks[ir])
-            self.reach_peak_time.append(right_palm_peaks[ir])  # Record Peak
-            self.reach_start_time.append(start_time_r)
-            self.right_reach_end_time.append(right_palm_post_peak)
-        self.right_start_times = list(self.right_start_times)
-        self.right_peak_times = list(self.right_peak_times)
-        self.bimanual_reach_times = []
-        # For each tentative right-handed reach, check if there is a "left" start within 15 frames
-        for right_reach in self.right_start_times:
-            for left_reach in self.left_start_times:
-                if left_reach - 10 < right_reach < left_reach + 10:  # Mark as bi-manual
-                    self.bimanual_reach_times.append(np.asarray([right_reach, left_reach]))
-        self.split_videos_into_reaches()
-        return
-
     def split_videos_into_reaches(self):
         bi = self.block_video_path.rsplit('.')[0]
         self.sstr = bi + '/reaching_split_trials'
@@ -554,7 +446,6 @@ class ReachViz:
         # Pre-process (threshold, interpolate if necessary/possible, and apply hamming filter post-interpolation
         if preprocess:
             for di, pos in enumerate(self.positions):
-                filtered_pos = []
                 o_positions = np.asarray(pos)
                 probs = self.probabilities[di]
                 prob_outliers = self.threshold_data_with_probabilities(probs, p_thresh=p_thresh)
@@ -563,10 +454,10 @@ class ReachViz:
                 v_outlier_index = np.where(svd > 2)
                 possi, num_int, gap_ind = vu.interpolate_3d_vector(np.copy(o_positions), v_outlier_index, prob_outliers)
                 filtered_pos = vu.cubic_spline_smoothing(np.copy(possi), spline_coeff=0.1)
-                #filtered_pos = scipy.signal.medfilt2d(filtered_pos, 1)
                 v, a, s = self.calculate_kinematics_from_position(np.copy(filtered_pos), spline=True)
                 # Find and save still-present outliers in the data
                 velocity_outlier_indexes = np.where(s > 2)[0]
+                # Find array of total outliers
                 outliers = np.squeeze(np.union1d(velocity_outlier_indexes, self.prob_filter_index)).flatten()
                 if outliers.any():
                     self.outlier_list.append(outliers)
@@ -626,18 +517,22 @@ class ReachViz:
          self.right_middle_base_o, self.right_middle_tip_o, self.right_third_base_o, self.right_third_tip_o,
          self.right_end_base_o, self.right_end_tip_o] = self.outlier_list
         # Calculate principal components and frequency decompositions
-        self.pos_pc = get_principle_components(pos_holder)
-        self.pos_v_pc = get_principle_components(pos_holder, vel=vel_holder)
-        self.pos_v_a_pc = get_principle_components(pos_holder, vel=vel_holder, acc=acc_holder)
-        # Calculate physiologically-relevant PCA components
-        self.left_arm_pc_pos = get_principle_components(pos_holder[2:14])
-        self.right_arm_pc_pos = get_principle_components(pos_holder[14:-1])
-        self.left_arm_pc_pos_v = get_principle_components(pos_holder[2:14], vel=vel_holder[2:14])
-        self.left_arm_pc_pos_v_a = get_principle_components(pos_holder[2:14], vel=vel_holder[2:14],
-                                                            acc=acc_holder[2:14])
-        self.right_arm_pc_pos_v = get_principle_components(pos_holder[14:-1], vel=vel_holder[14:-1])
-        self.right_arm_pc_pos_v_a = get_principle_components(pos_holder[14:-1],
-                                                             vel=vel_holder[14:-1], acc=acc_holder[14:-1])
+        try:
+            self.pos_pc = get_principle_components(pos_holder)
+            self.pos_v_pc = get_principle_components(pos_holder, vel=vel_holder)
+            self.pos_v_a_pc = get_principle_components(pos_holder, vel=vel_holder, acc=acc_holder)
+
+            # Calculate physiologically-relevant PCA components
+            self.left_arm_pc_pos = get_principle_components(pos_holder[2:14])
+            self.right_arm_pc_pos = get_principle_components(pos_holder[14:-1])
+            self.left_arm_pc_pos_v = get_principle_components(pos_holder[2:14], vel=vel_holder[2:14])
+            self.left_arm_pc_pos_v_a = get_principle_components(pos_holder[2:14], vel=vel_holder[2:14],
+                                                                acc=acc_holder[2:14])
+            self.right_arm_pc_pos_v = get_principle_components(pos_holder[14:-1], vel=vel_holder[14:-1])
+            self.right_arm_pc_pos_v_a = get_principle_components(pos_holder[14:-1],
+                                                                 vel=vel_holder[14:-1], acc=acc_holder[14:-1])
+        except:
+            print('Cant take PCs from this reach')
         # Depreciated methods to obtain variables for plotting
         right_speeds = np.mean(self.uninterpolated_right_palm_v, axis=1)
         left_speeds = np.mean(self.uninterpolated_left_palm_v, axis=1)

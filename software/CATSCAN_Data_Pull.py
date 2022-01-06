@@ -27,7 +27,7 @@ def loop_over_rat_and_extract_reaches(prediction_dataframe, e_dataframe, dummy_v
     # Get rat, date, session for each block we need to process.
     k_dataframe = pd.read_pickle(prediction_dataframe)
 
-    for kk, ilx in enumerate(k_dataframe):
+    for ilx, kk in enumerate(k_dataframe):
         session = kk.columns[2][1]
         date = kk.columns[2][0][2:4]
         print(session, date)
@@ -36,16 +36,17 @@ def loop_over_rat_and_extract_reaches(prediction_dataframe, e_dataframe, dummy_v
         reaching_df = R.get_reach_dataframe_from_block()
         if ilx == 0:
             final_df = reaching_df
-        final_df = pd.concat(final_df, reaching_df)
+        final_df = pd.concat([final_df, reaching_df])
     return final_df
 
 
 def extract_reaching_data_from_unprocessed_data(block_video_file_id, kin_file_base_array, exp_datafile_base_array):
-    for single_file, num in enumerate(kin_file_base_array):
+    for num, single_file in enumerate(kin_file_base_array):
         exp_file = exp_datafile_base_array[num]
         ratt = single_file[-8:-4]
+        print(ratt)
         if '_' in ratt:
-            ratt = ratt[1:-1]
+            ratt = ratt[1:]
             print(ratt)
         complete_rat_df = loop_over_rat_and_extract_reaches(single_file, exp_file, block_video_file_id, ratt)
         if num == 0:
