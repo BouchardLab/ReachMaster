@@ -1055,6 +1055,7 @@ class ReachViz:
                 self.extract_sensor_data(sts - win_length, sts + 100)
                 print('No Reaching Found in Trial Block' + str(ix))
             df = self.segment_data_into_reach_dict(ix)
+            pdb.set_trace()
             self.seg_num = 0
             self.start_trial_indice = []
             self.images = []
@@ -1062,9 +1063,7 @@ class ReachViz:
                 self.reaching_dataframe = df
             else:
                 self.reaching_dataframe = pd.concat([df, self.reaching_dataframe])
-        savefile = self.sstr + str(self.rat) + str(self.date) + str(self.session) + 'final_save_data.csv'
-        self.save_reaching_dataframe(savefile)
-        self.plot_verification_variables()
+        #savefile = self.sstr + str(self.rat) + str(self.date) + str(self.session) + 'final_save_data.csv'
         return self.reaching_dataframe
 
     def save_reaching_dataframe(self, filename):

@@ -54,6 +54,6 @@ def extract_reaching_data_from_unprocessed_data(block_video_file_id, kin_file_ba
         rat_final_df = pd.concat(complete_rat_df, rat_final_df)
     return rat_final_df
 
-save_path = '/Users/bassp/OneDrive/Desktop/Classification Project/reach_data/'
+save_path = '/Users/bassp/OneDrive/Desktop/Classification Project/reach_data/Pilot_Data.h5'
 final_df = extract_reaching_data_from_unprocessed_data(block_video_file, kin_file_bases, exp_datafile_bases)
 final_df.to_hdf(save_path)

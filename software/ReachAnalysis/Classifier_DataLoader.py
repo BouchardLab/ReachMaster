@@ -126,9 +126,9 @@ class DataLoader:
                 sd = dd
             else:
                 sd = pd.concat([sd, dd])
+        pdb.set_trace()
         if save_dataframe_address:
-            with open(save_dataframe_address, 'wb') as f:
-                pickle.dump(sd, f)
+            sd.to_pickle(save_dataframe_address)
         return sd
 
     def get_data_from_block(self, date, sesh, experiment_data, kin_data, ratt):
