@@ -413,6 +413,7 @@ class ReachViz:
                                  axis=1)
         self.extract_sensor_data(cl1, cl2, filter_sensors=False,
                                  check_lick=False)  # Get time vectors for calculating kinematics.
+
         self.positions = [nose, handle, left_shoulder, left_forearm, left_wrist,
                           left_palm, left_index_base,
                           left_index_tip, left_middle_base, left_middle_tip, left_third_base,
@@ -438,43 +439,75 @@ class ReachViz:
         # For graphing examples
         self.uninterpolated_right_palm_v = self.calculate_kinematics_from_position(right_palm)[0]
         self.uninterpolated_left_palm_v = self.calculate_kinematics_from_position(left_palm)[0]
-        pos_holder = []
-        vel_holder = []
+        self.pos_holder = []
+        self.vel_holder = []
         self.speed_holder = []
-        acc_holder = []
+        self.acc_holder = []
         self.raw_speeds = []
         # Pre-process (threshold, interpolate if necessary/possible, and apply hamming filter post-interpolation
         if preprocess:
-            for di, pos in enumerate(self.positions):
-                o_positions = np.asarray(pos)
-                probs = self.probabilities[di]
-                prob_outliers = self.threshold_data_with_probabilities(probs, p_thresh=p_thresh)
-                svd, acc, speed_c = self.calculate_kinematics_from_position(np.copy(pos), spline=False)
-                self.raw_speeds.append(speed_c)
-                v_outlier_index = np.where(svd > 2)
-                possi, num_int, gap_ind = vu.interpolate_3d_vector(np.copy(o_positions), v_outlier_index, prob_outliers)
-                filtered_pos = vu.cubic_spline_smoothing(np.copy(possi), spline_coeff=0.1)
-                v, a, s = self.calculate_kinematics_from_position(np.copy(filtered_pos), spline=True)
-                # Find and save still-present outliers in the data
-                velocity_outlier_indexes = np.where(s > 2)[0]
-                # Find array of total outliers
-                outliers = np.squeeze(np.union1d(velocity_outlier_indexes, self.prob_filter_index)).flatten()
-                if outliers.any():
-                    self.outlier_list.append(outliers)
-                else:
-                    self.outlier_list.append(0)
-                # Append data into proper data structure
-                pos_holder.append(np.copy(filtered_pos))
-                vel_holder.append(v)
-                acc_holder.append(a)
-                self.speed_holder.append(s)
-        # Assign final variables
+
+            self.preprocess_kinematics(p_thresh=0.1)
+        self.assign_final_variables()
+        # Calculate principal components
+        try:
+            self.pos_pc = get_principle_components(self.pos_holder)
+            self.pos_v_pc = get_principle_components(self.pos_holder, vel=self.vel_holder)
+            self.pos_v_a_pc = get_principle_components(self.pos_holder, vel=self.vel_holder, acc=self.acc_holder)
+
+            # Calculate physiologically-relevant PCA components
+            self.left_arm_pc_pos = get_principle_components(self.pos_holder[2:14])
+            self.right_arm_pc_pos = get_principle_components(self.pos_holder[14:-1])
+            self.left_arm_pc_pos_v = get_principle_components(self.pos_holder[2:14], vel=self.vel_holder[2:14])
+            self.left_arm_pc_pos_v_a = get_principle_components(self.pos_holder[2:14], vel=self.vel_holder[2:14],
+                                                                acc=self.acc_holder[2:14])
+            self.right_arm_pc_pos_v = get_principle_components(self.pos_holder[14:-1], vel=self.vel_holder[14:-1])
+            self.right_arm_pc_pos_v_a = get_principle_components(self.pos_holder[14:-1],
+                                                                 vel=self.vel_holder[14:-1], acc=self.acc_holder[14:-1])
+        except:
+            print('Cant take PCs from this reach')
+        # method to obtain variables for plotting
+        right_speeds = np.mean(self.uninterpolated_right_palm_v, axis=1)
+        left_speeds = np.mean(self.uninterpolated_left_palm_v, axis=1)
+        self.left_palm_f_x = np.union1d(np.where(left_speeds > 1.2),
+                                        self.threshold_data_with_probabilities(self.left_palm_p, p_thresh=p_thresh))
+        self.right_palm_f_x = np.union1d(np.where(right_speeds > 1.2),
+                                         self.threshold_data_with_probabilities(self.right_palm_p, p_thresh=p_thresh))
+        return
+
+    def preprocess_kinematics(self, p_thresh, spline = 0.1):
+        for di, pos in enumerate(self.positions):
+            o_positions = np.asarray(pos)
+            probs = self.probabilities[di]
+            prob_outliers = self.threshold_data_with_probabilities(probs, p_thresh=p_thresh)
+            svd, acc, speed_c = self.calculate_kinematics_from_position(np.copy(pos), spline=False)
+            self.raw_speeds.append(speed_c)
+            v_outlier_index = np.where(svd > 2)
+            possi, num_int, gap_ind = vu.interpolate_3d_vector(np.copy(o_positions), v_outlier_index, prob_outliers)
+            filtered_pos = vu.cubic_spline_smoothing(np.copy(possi), spline_coeff=spline)
+            v, a, s = self.calculate_kinematics_from_position(np.copy(filtered_pos), spline=True)
+            # Find and save still-present outliers in the data
+            velocity_outlier_indexes = np.where(s > 2)[0]
+            # Find array of total outliers
+            outliers = np.squeeze(np.union1d(velocity_outlier_indexes, self.prob_filter_index)).flatten()
+            if outliers.any():
+                self.outlier_list.append(outliers)
+            else:
+                self.outlier_list.append(0)
+            # Append data into proper data structure
+            self.pos_holder.append(np.copy(filtered_pos))
+            self.vel_holder.append(v)
+            self.acc_holder.append(a)
+            self.speed_holder.append(s)
+        return
+
+    def assign_final_variables(self):
         [self.nose, self.handle, self.left_shoulder, self.left_forearm, self.left_wrist,
          self.left_palm, self.left_index_base, self.left_index_tip, self.left_middle_base,
          self.left_middle_tip, self.left_third_base, self.left_third_tip, self.left_end_base, self.left_end_tip,
          self.right_shoulder, self.right_forearm, self.right_wrist, self.right_palm, self.right_index_base,
          self.right_index_tip, self.right_middle_base, self.right_middle_tip, self.right_third_base,
-         self.right_third_tip, self.right_end_base, self.right_end_tip] = pos_holder
+         self.right_third_tip, self.right_end_base, self.right_end_tip] = self.pos_holder
 
         [self.nose_p, self.handle_p, self.left_shoulder_p, self.left_forearm_p, self.left_wrist_p,
          self.left_palm_p, self.left_index_base_p, self.left_index_tip_p, self.left_middle_base_p,
@@ -490,7 +523,7 @@ class ReachViz:
          self.left_end_tip_v,
          self.right_shoulder_v, self.right_forearm_v, self.right_wrist_v, self.right_palm_v, self.right_index_base_v,
          self.right_index_tip_v, self.right_middle_base_v, self.right_middle_tip_v, self.right_third_base_v,
-         self.right_third_tip_v, self.right_end_base_v, self.right_end_tip_v] = vel_holder
+         self.right_third_tip_v, self.right_end_base_v, self.right_end_tip_v] = self.vel_holder
 
         [self.nose_s, self.handle_s, self.left_shoulder_s, self.left_forearm_s, self.left_wrist_s, self.left_palm_s,
          self.left_index_base_s, self.left_index_tip_s, self.left_middle_base_s, self.left_middle_tip_s,
@@ -507,7 +540,7 @@ class ReachViz:
          self.right_wrist_a, self.right_palm_a, self.right_index_base_a, self.right_index_tip_a,
          self.right_middle_base_a,
          self.right_middle_tip_a, self.right_third_base_a, self.right_third_tip_a, self.right_end_base_a,
-         self.right_end_tip_a] = acc_holder
+         self.right_end_tip_a] = self.acc_holder
 
         [self.nose_o, self.handle_o, self.left_shoulder_o, self.left_forearm_o, self.left_wrist_o, self.left_palm_o,
          self.left_index_base_o, self.left_index_tip_o, self.left_middle_base_o, self.left_middle_tip_o,
@@ -516,31 +549,9 @@ class ReachViz:
          self.right_forearm_o, self.right_wrist_o, self.right_palm_o, self.right_index_base_o, self.right_index_tip_o,
          self.right_middle_base_o, self.right_middle_tip_o, self.right_third_base_o, self.right_third_tip_o,
          self.right_end_base_o, self.right_end_tip_o] = self.outlier_list
-        # Calculate principal components and frequency decompositions
-        try:
-            self.pos_pc = get_principle_components(pos_holder)
-            self.pos_v_pc = get_principle_components(pos_holder, vel=vel_holder)
-            self.pos_v_a_pc = get_principle_components(pos_holder, vel=vel_holder, acc=acc_holder)
-
-            # Calculate physiologically-relevant PCA components
-            self.left_arm_pc_pos = get_principle_components(pos_holder[2:14])
-            self.right_arm_pc_pos = get_principle_components(pos_holder[14:-1])
-            self.left_arm_pc_pos_v = get_principle_components(pos_holder[2:14], vel=vel_holder[2:14])
-            self.left_arm_pc_pos_v_a = get_principle_components(pos_holder[2:14], vel=vel_holder[2:14],
-                                                                acc=acc_holder[2:14])
-            self.right_arm_pc_pos_v = get_principle_components(pos_holder[14:-1], vel=vel_holder[14:-1])
-            self.right_arm_pc_pos_v_a = get_principle_components(pos_holder[14:-1],
-                                                                 vel=vel_holder[14:-1], acc=acc_holder[14:-1])
-        except:
-            print('Cant take PCs from this reach')
-        # Depreciated methods to obtain variables for plotting
-        right_speeds = np.mean(self.uninterpolated_right_palm_v, axis=1)
-        left_speeds = np.mean(self.uninterpolated_left_palm_v, axis=1)
-        self.left_palm_f_x = np.union1d(np.where(left_speeds > 1.2),
-                                        self.threshold_data_with_probabilities(self.left_palm_p, p_thresh=p_thresh))
-        self.right_palm_f_x = np.union1d(np.where(right_speeds > 1.2),
-                                         self.threshold_data_with_probabilities(self.right_palm_p, p_thresh=p_thresh))
         return
+
+
 
     def calculate_kinematics_from_position(self, pos_v, spline=False):
         """ Function that calculates velocity, speed, and acceleration on a per-bodypart basis."""
@@ -973,6 +984,7 @@ class ReachViz:
                           'response_sensor': self.exp_response_sensor, 'x_rob': self.x_robot, 'y_rob': self.y_robot,
                           'z_rob': self.z_robot
                           }
+        # Create dataframe object from df, containing
         df = pd.DataFrame({key: pd.Series(np.asarray(value)) for key, value in self.save_dict.items()})
         df['Trial'] = trial_num
         df.set_index('Trial', append=True, inplace=True)
@@ -984,7 +996,7 @@ class ReachViz:
         df.set_index('Rat', append=True, inplace=True)
         return df
 
-    def get_reach_dataframe_from_block(self):
+    def get_reach_dataframe_from_block(self, outlier_data=False):
         """ Function that obtains a trialized (based on reaching start times)
             pandas dataframe for a provided experimental session. """
         self.total_speeds = []
@@ -993,6 +1005,7 @@ class ReachViz:
         self.left_hand_raw_speeds = []
         self.right_hand_raw_speeds = []
         self.total_outliers = []
+        # Code here to count # of "peaks" in total data
         for ix, sts in enumerate(self.trial_start_vectors):
             self.trial_index = sts
             try:
@@ -1002,9 +1015,6 @@ class ReachViz:
             except:
                 stp = sts + 350  # bad trial stop information from arduino..use first 3 1/2 seconds
             self.trial_num = int(ix)
-            bi = self.block_video_path.rsplit('.')[0]
-            self.sstr = bi + '/trial' + str(ix)
-            self.make_paths()
             print('Making dataframe for trial:' + str(ix))
             # Obtain values from experimental data
             self.segment_and_filter_kinematic_block_single_trial(sts, stp)
@@ -1015,15 +1025,16 @@ class ReachViz:
             # Find and obtain basic classifications for each reach in the data
             self.segment_reaches_with_speed_peaks()
             # Collect data about outliers, robustness of kinematics
-            if ix == 0:
-                self.total_raw_speeds = np.asarray(self.raw_speeds).flatten()
-                self.total_preprocessed_speeds = np.asarray(self.speeds).flatten()
-                self.total_outliers = np.asarray(self.outlier_list).flatten()
-            else:
-                self.total_raw_speeds = np.hstack((self.total_raw_speeds, np.asarray(self.raw_speeds).flatten()))
-                self.total_preprocessed_speeds = np.hstack((self.total_preprocessed_speeds,
-                                                            np.asarray(self.speeds).flatten()))
-                self.total_outliers = np.hstack((np.asarray(self.outlier_list).flatten(), self.total_outliers))
+            if outlier_data:
+                if ix == 0:
+                    self.total_raw_speeds = np.asarray(self.raw_speeds).flatten()
+                    self.total_preprocessed_speeds = np.asarray(self.speeds).flatten()
+                    self.total_outliers = np.asarray(self.outlier_list).flatten()
+                else:
+                    self.total_raw_speeds = np.hstack((self.total_raw_speeds, np.asarray(self.raw_speeds).flatten()))
+                    self.total_preprocessed_speeds = np.hstack((self.total_preprocessed_speeds,
+                                                                np.asarray(self.speeds).flatten()))
+                    self.total_outliers = np.hstack((np.asarray(self.outlier_list).flatten(), self.total_outliers))
             win_length = 5
             # Segment reach block
             if self.reach_start_time:  # If reach detected
@@ -1062,9 +1073,9 @@ class ReachViz:
                 self.reaching_dataframe = df
             else:
                 self.reaching_dataframe = pd.concat([df, self.reaching_dataframe])
-        savefile = self.sstr + str(self.rat) + str(self.date) + str(self.session) + 'final_save_data.csv'
-        self.save_reaching_dataframe(savefile)
-        self.plot_verification_variables()
+        #savefile = self.sstr + str(self.rat) + str(self.date) + str(self.session) + 'final_save_data.csv'
+        #self.save_reaching_dataframe(savefile)
+        #self.plot_verification_variables()
         return self.reaching_dataframe
 
     def save_reaching_dataframe(self, filename):

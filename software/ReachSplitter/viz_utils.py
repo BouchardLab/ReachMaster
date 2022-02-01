@@ -11,8 +11,6 @@ import shutil
 from scipy import interpolate, signal
 from scipy.signal import butter, sosfiltfilt
 from csaps import csaps
-import skfda.preprocessing.smoothing.kernel_smoothers as ks
-import skfda.preprocessing.smoothing.validation as val
 
 def read_from_csv(input_filepath):
     """ Function to read in csv. """
@@ -58,16 +56,6 @@ def lowess(x, y, f=2. / 3., iter=3):
         delta = (1 - delta ** 2) ** 2
 
     return yest
-
-def knn_smoother(input_data, neighbors):
-    n_neighbors = np.arange(1, neighbors)
-    knn = val.SmoothingParameterSearch(
-        ks.KNeighborsSmoother(),
-        n_neighbors,
-    )
-    knn.fit(input_data)
-    knn_smoothed = knn.transform(input_data)
-    return knn_smoothed
 
 def filter_vector_hamming(input_vector, window_length=3.14):
     """ Function to filter input vectors using Hamming-Cosine window. Used exclusively for DLC-based inputs, not 3-D
