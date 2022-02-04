@@ -1,23 +1,29 @@
 from software.ReachSplitter.ReachLoader import ReachViz
 import pandas as pd
+import os
 
-block_video_file = '/Users/bassp/OneDrive/Desktop/Classification Project/2019-09-20-S1-RM14_cam2DLC_FinalColors.mp4'
-kin_file_bases = ['/Users/bassp/OneDrive/Desktop/DataFrames/3D_positions_RM9.pkl',
-                  '/Users/bassp/OneDrive/Desktop/DataFrames/3D_positions_RM10.pkl',
-                  '/Users/bassp/OneDrive/Desktop/DataFrames/3D_positions_RM11.pkl',
-                  '/Users/bassp/OneDrive/Desktop/DataFrames/3D_positions_RM12.pkl',
-                  '/Users/bassp/OneDrive/Desktop/DataFrames/3D_positions_RM13.pkl',
-                  '/Users/bassp/OneDrive/Desktop/DataFrames/3D_positions_RM14.pkl',
-                  '/Users/bassp/OneDrive/Desktop/DataFrames/3D_positions_RM15.pkl',
-                  '/Users/bassp/OneDrive/Desktop/DataFrames/3D_positions_RM16.pkl']
-exp_datafile_bases = ['/Users/bassp/OneDrive/Desktop/DataFrames/RM9_expdf.pickle',
-                     '/Users/bassp/OneDrive/Desktop/DataFrames/RM10_expdf.pickle',
-                     '/Users/bassp/OneDrive/Desktop/DataFrames/RM11_expdf.pickle',
-                     '/Users/bassp/OneDrive/Desktop/DataFrames/RM12_expdf.pickle',
-                     '/Users/bassp/OneDrive/Desktop/DataFrames/RM13_expdf.pickle',
-                     '/Users/bassp/OneDrive/Desktop/DataFrames/RM14_expdf.pickle',
-                     '/Users/bassp/OneDrive/Desktop/DataFrames/RM15_expdf.pickle',
-                     '/Users/bassp/OneDrive/Desktop/DataFrames/RM16_expdf.pickle']
+root = "C:\\Users\\bassp\\Desktop"
+os.chdir(root)
+block_video_file = 'Classification Project\\2019-09-20-S1-RM14_cam2DLC_FinalColors.mp4'
+save_df_address = 'Full_Pilot_Reaches.pkl'
+
+kinematics_addresses = ['DataFrames\\3D_positions_RM9.pkl',
+                        'DataFrames\\3D_positions_RM10.pkl',
+                        'DataFrames\\3D_positions_RM11.pkl',
+                        'DataFrames\\3D_positions_RM12.pkl',
+                        'DataFrames\\3D_positions_RM13.pkl',
+                        'DataFrames\\3D_positions_RM14.pkl',
+                        'DataFrames\\3D_positions_RM15.pkl',
+                        'DataFrames\\3D_positions_RM16.pkl']
+
+exp_addresses = ['DataFrames\\RM9_expdf.pickle',
+                 'DataFrames\\RM10_expdf.pickle',
+                 'DataFrames\\RM11_expdf.pickle',
+                 'DataFrames\\RM12_expdf.pickle',
+                 'DataFrames\\RM13_expdf.pickle',
+                 'DataFrames\\RM14_expdf.pickle',
+                 'DataFrames\\RM15_expdf.pickle',
+                 'DataFrames\\RM16_expdf.pickle']
 # For each rat, we have a kinematics (positions) file. Additionally, we have a sensor data (experiment datafile)
 
 rats = ['RM9', 'RM10', 'RM11', 'RM12', 'RM13', 'RM14', 'RM15', 'RM16']
@@ -55,5 +61,5 @@ def extract_reaching_data_from_unprocessed_data(block_video_file_id, kin_file_ba
     return rat_final_df
 
 save_path = '/Users/bassp/OneDrive/Desktop/Classification Project/reach_data/Pilot_Data.h5'
-final_df = extract_reaching_data_from_unprocessed_data(block_video_file, kin_file_bases, exp_datafile_bases)
+final_df = extract_reaching_data_from_unprocessed_data(block_video_file, kinematics_addresses, exp_addresses)
 final_df.to_hdf(save_path)

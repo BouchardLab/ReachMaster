@@ -143,25 +143,28 @@ class DataLoader:
 dates = ['17', '18', '17', '20', '19', '25', '17', '20', '18', '19', '18', '17', '19']
 rats = [16, 16, 16, 16, 16, 15, 15, 14, 14, 12, 11, 10, 9]
 sessions = ['S1', 'S1', 'S2', 'S3', 'S3', 'S3', 'S4', 'S1', 'S2', 'S1', 'S4', 'S2', 'S3']
-block_video_file = '/Users/bassp/OneDrive/Desktop/Classification Project/2019-09-20-S1-RM14_cam2DLC_FinalColors.mp4'
-save_df_address = '/Users/bassp/OneDrive/Desktop/Sample_Reaches.pkl'
-kinematics_addresses = ['/Users/bassp/OneDrive/Desktop/DataFrames/3D_positions_RM9.pkl',
-                        '/Users/bassp/OneDrive/Desktop/DataFrames/3D_positions_RM10.pkl',
-                        '/Users/bassp/OneDrive/Desktop/DataFrames/3D_positions_RM11.pkl',
-                        '/Users/bassp/OneDrive/Desktop/DataFrames/3D_positions_RM12.pkl',
-                        '/Users/bassp/OneDrive/Desktop/DataFrames/3D_positions_RM13.pkl',
-                        '/Users/bassp/OneDrive/Desktop/DataFrames/3D_positions_RM14.pkl',
-                        '/Users/bassp/OneDrive/Desktop/DataFrames/3D_positions_RM15.pkl',
-                        '/Users/bassp/OneDrive/Desktop/DataFrames/3D_positions_RM16.pkl']
+root = "C:\\Users\\bassp\\Desktop"
+os.chdir(root)
+block_video_file = 'Classification Project\\2019-09-20-S1-RM14_cam2DLC_FinalColors.mp4'
+save_df_address = 'Sample_Reaches.pkl'
 
-exp_addresses = ['/Users/bassp/OneDrive/Desktop/DataFrames/RM9_expdf.pickle',
-                 '/Users/bassp/OneDrive/Desktop/DataFrames/RM10_expdf.pickle',
-                 '/Users/bassp/OneDrive/Desktop/DataFrames/RM11_expdf.pickle',
-                 '/Users/bassp/OneDrive/Desktop/DataFrames/RM12_expdf.pickle',
-                 '/Users/bassp/OneDrive/Desktop/DataFrames/RM13_expdf.pickle',
-                 '/Users/bassp/OneDrive/Desktop/DataFrames/RM14_expdf.pickle',
-                 '/Users/bassp/OneDrive/Desktop/DataFrames/RM15_expdf.pickle',
-                 '/Users/bassp/OneDrive/Desktop/DataFrames/RM16_expdf.pickle']
+kinematics_addresses = ['DataFrames\\3D_positions_RM9.pkl',
+                        'DataFrames\\3D_positions_RM10.pkl',
+                        'DataFrames\\3D_positions_RM11.pkl',
+                        'DataFrames\\3D_positions_RM12.pkl',
+                        'DataFrames\\3D_positions_RM13.pkl',
+                        'DataFrames\\3D_positions_RM14.pkl',
+                        'DataFrames\\3D_positions_RM15.pkl',
+                        'DataFrames\\3D_positions_RM16.pkl']
+
+exp_addresses = ['DataFrames\\RM9_expdf.pickle',
+                 'DataFrames\\RM10_expdf.pickle',
+                 'DataFrames\\RM11_expdf.pickle',
+                 'DataFrames\\RM12_expdf.pickle',
+                 'DataFrames\\RM13_expdf.pickle',
+                 'DataFrames\\RM14_expdf.pickle',
+                 'DataFrames\\RM15_expdf.pickle',
+                 'DataFrames\\RM16_expdf.pickle']
 
 DL = DataLoader(kinematics_addresses, exp_addresses)
 DL.select_blocks_from_list(rats, sessions, dates, save_dataframe_address=save_df_address)

@@ -551,8 +551,6 @@ class ReachViz:
          self.right_end_base_o, self.right_end_tip_o] = self.outlier_list
         return
 
-
-
     def calculate_kinematics_from_position(self, pos_v, spline=False):
         """ Function that calculates velocity, speed, and acceleration on a per-bodypart basis."""
         v_holder = np.zeros(pos_v.shape)
@@ -583,8 +581,8 @@ class ReachViz:
     def segment_reaches_with_speed_peaks(self):
         """ Function to segment out reaches using a positional and velocity threshold. """
         # find peaks of speed velocities
-        # For each peak > 0.3 m/s, find the local minima (s < 0.05) for that time series
-        # Take minima - 5 as tentative reach start time
+        # For each peak > 0.4 m/s, find the local minima (s < 0.05) for that time series
+        # Take minima - 15 as tentative reach start time
         self.reach_start_time = []
         self.reach_peak_time = []
         self.left_start_times = []
@@ -613,11 +611,11 @@ class ReachViz:
         lps[self.prob_filter_index] = 0
         rps[self.prob_filter_index] = 0
         # If palms are < 0.8 p-value, remove chance at "maxima"
-        left_palm_prob = np.where(self.left_palm_p < 0.5)[0]
-        right_palm_prob = np.where(self.right_palm_p < 0.5)[0]
+        left_palm_prob = np.where(self.left_palm_p < 0.3)[0]
+        right_palm_prob = np.where(self.right_palm_p < 0.3)[0]
         # If palms are > 0.22m in the x-direction towards the handle 0 position.
-        left_palm_pos_f = np.where(self.left_palm[:, 0] < 0.19)[0]
-        right_palm_pos_f = np.where(self.right_palm[:, 0] < 0.19)[0]
+        left_palm_pos_f = np.where(self.left_palm[:, 0] < 0.20)[0]
+        right_palm_pos_f = np.where(self.right_palm[:, 0] < 0.20)[0]
         lps[left_palm_prob] = 0
         rps[right_palm_prob] = 0
         rps[right_palm_pos_f] = 0
@@ -626,19 +624,19 @@ class ReachViz:
         rps[hidx] = 0
         lps[0:4] = 0  # remove any possible edge effect
         rps[0:4] = 0  # remove any possible edge effect
-        self.left_palm_maxima = find_peaks(lps, height=0.5, distance=10)[0]
+        self.left_palm_maxima = find_peaks(lps, height=0.4, distance=8)[0]
         if self.left_palm_maxima.any():
             print('Left Palm Reach')
             for ir in range(0, self.left_palm_maxima.shape[0]):
-                if self.left_palm_maxima[ir] > 30:
+                if self.left_palm_maxima[ir] > 15:
                     left_palm_below_thresh = np.argmin(
-                        self.left_palm_s[self.left_palm_maxima[ir] - 30: self.left_palm_maxima[ir]])
+                        self.left_palm_s[self.left_palm_maxima[ir] - 15: self.left_palm_maxima[ir]])
                 else:
                     left_palm_below_thresh = np.argmin(self.left_palm_s[0:self.left_palm_maxima[ir]])
                 left_palm_below_thresh_after = self.left_palm_maxima[ir] + \
                                                np.argmin(self.left_palm_s[
                                                          self.left_palm_maxima[ir]: self.left_palm_maxima[ir] + 20])
-                start_time_l = self.left_palm_maxima[ir] + left_palm_below_thresh - 30
+                start_time_l = self.left_palm_maxima[ir] + left_palm_below_thresh - 20
                 if start_time_l < 0:
                     start_time_l = 1
                 self.left_start_times.append(start_time_l)
@@ -648,18 +646,18 @@ class ReachViz:
                 self.reach_duration.append(
                     self.time_vector[left_palm_below_thresh_after] - self.time_vector[start_time_l])
         # Find peaks in right palm time-series
-        self.right_palm_maxima = find_peaks(rps, height=0.5, distance=10)[0]
+        self.right_palm_maxima = find_peaks(rps, height=0.4, distance=8)[0]
         if self.right_palm_maxima.any():
             print('Right Palm Reach')
             for ir in range(0, self.right_palm_maxima.shape[0]):
                 if self.right_palm_maxima[ir] > 30:
                     right_palm_below_thresh = np.argmin(
-                        self.right_palm_s[self.right_palm_maxima[ir] - 30:self.right_palm_maxima[ir]])
+                        self.right_palm_s[self.right_palm_maxima[ir] - 15:self.right_palm_maxima[ir]])
                 else:
                     right_palm_below_thresh = np.argmin(self.right_palm_s[0:self.right_palm_maxima[ir]])
                 right_palm_below_thresh_after = self.right_palm_maxima[ir] + np.argmin(
                     self.right_palm_s[self.right_palm_maxima[ir]:self.right_palm_maxima[ir] + 20])
-                start_time_r = self.right_palm_maxima[ir] + right_palm_below_thresh - 30
+                start_time_r = self.right_palm_maxima[ir] + right_palm_below_thresh - 20
                 if start_time_r < 0:
                     start_time_r = 1
                 self.right_start_times.append(start_time_r)
