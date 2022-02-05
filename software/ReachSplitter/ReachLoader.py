@@ -475,7 +475,7 @@ class ReachViz:
                                          self.threshold_data_with_probabilities(self.right_palm_p, p_thresh=p_thresh))
         return
 
-    def preprocess_kinematics(self, p_thresh, spline = 0.1):
+    def preprocess_kinematics(self, p_thresh, spline=0.05):
         for di, pos in enumerate(self.positions):
             o_positions = np.asarray(pos)
             probs = self.probabilities[di]
@@ -684,20 +684,6 @@ class ReachViz:
             self.reach_start_time = 0
             self.reach_end_time = 100
             print('No LR')
-        # Merge left and right "reaches" into tenative reach "vectors"
-        #if self.left_start_times and self.right_start_times:
-        #    for id, sss in enumerate(self.right_start_times):
-        #        for ix, sse in enumerate(self.left_start_times):
-        #            if sss - 10 < sss < sss + 10 in sse:  # time doesn't show up in left start time
-        #                self.total_reach_vector.append(min(sss, sse)) # Get overlapping reaches here by taking the minimum
-        #            else:
-        #                self.total_reach_vector.append(sss)
-        #    for sl in self.left_start_times:
-        #        for sd in self.right_start_times:
-        #            if sl - 10 < sl < sl + 10 in sd:
-        #            else:
-         #               self.total_reach_vector.append(sl)
-        #print(self.total_reach_vector)
         self.handle_moved = 0
         self.trial_cut_vector = []
         return
