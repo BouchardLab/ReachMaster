@@ -12,7 +12,7 @@ import software.ReachSplitter.viz_utils as vu
 import scipy
 from scipy.signal import find_peaks
 from scipy.ndimage import gaussian_filter1d
-#from software.ReachAnalysis.DataLoader import DataLoader as DL
+# from software.ReachAnalysis.DataLoader import DataLoader as DL
 import pdb
 
 # Import ffmpeg to write videos here..
@@ -23,7 +23,7 @@ import skvideo.io
 
 
 # Public functions
-def get_principle_components(positions, vel=0, acc=0, num_pcs=3):
+def get_principle_components(positions, vel=0, acc=0, num_pcs=10):
     pca = PCA(n_components=num_pcs, whiten=True, svd_solver='full')
     if vel:
         if acc:
@@ -51,10 +51,11 @@ def get_principle_components(positions, vel=0, acc=0, num_pcs=3):
         else:
             pos = np.asarray(positions)
             pc_vector = pca.fit_transform(pos.reshape(pos.shape[1], pos.shape[0] * pos.shape[2]))
-    return pc_vector
+    explained_variance_ratio = pca.explained_variance_ratio_
+    return pc_vector, explained_variance_ratio
 
 
-def gkern(input_vector, sig=1.):
+def gkern(input_vector, sig=1.0):
     """\
     creates gaussian kernel with side length `l` and a sigma of `sig`. Filters N-D vector.
     """
@@ -197,7 +198,6 @@ class ReachViz:
             self.d = pickle.load(openfile)
         return
 
-
     def make_paths(self):
         """ Function to construct a structured directory to save visual results. """
         vu.mkdir_p(self.sstr)
@@ -230,17 +230,6 @@ class ReachViz:
                         print('Hooked block positions for date  ' + date[0] + '     and session  ' + sess[0])
                         self.kinematic_block = kin_items
         self.block_exp_df = self.sensors.loc[self.sensors['Date'] == self.date].loc[self.sensors['S'] == self.session]
-        return
-
-    def split_videos_into_reaches(self):
-        bi = self.block_video_path.rsplit('.')[0]
-        self.sstr = bi + '/reaching_split_trials'
-        for ir, r in enumerate(self.right_start_times):
-            print('Splitting video at' + str(r))
-            self.split_trial_video(r - 5, self.right_reach_end_time + 5, segment=True, num_reach=ir)
-        for ir, r in enumerate(self.left_start_times):
-            print('Splitting video at' + str(r))
-            self.split_trial_video(r - 5, self.left_reach_end_time + 5, segment=True, num_reach=ir + 3000)
         return
 
     def threshold_data_with_probabilities(self, p_vector, p_thresh):
@@ -296,9 +285,34 @@ class ReachViz:
                                  self.x_robot, self.y_robot, self.z_robot]
         return
 
-    def segment_and_filter_kinematic_block_single_trial(self, cl1, cl2, p_thresh=0.4, coarse_threshold=0.4,
+    def calculate_number_of_speed_peaks_in_block(self):
+        left_palm = vu.norm_coordinates(
+            self.kinematic_block[self.kinematic_block.columns[18:21]].values[0:-1, :])
+        right_palm = vu.norm_coordinates(
+            self.kinematic_block[self.kinematic_block.columns[54:57]].values[0:-1, :])
+        self.time_vector = list(right_palm[0, :])
+        left_palm_p = np.mean(self.kinematic_block[self.kinematic_block.columns[18 + 81:21 + 81]].values[0:-1, :],
+                              axis=1)
+        right_palm_p = np.mean(self.kinematic_block[self.kinematic_block.columns[54 + 81:57 + 81]].values[0:-1, :],
+                               axis=1)
+        left_palm_f = vu.cubic_spline_smoothing(np.copy(left_palm), spline_coeff=0.1)
+        right_palm_f = vu.cubic_spline_smoothing(np.copy(right_palm), spline_coeff=0.1)
+        # If palms are < 0.8 p-value, remove chance at "maxima"
+        left_palm_prob = np.where(left_palm_p < 0.5)[0]
+        right_palm_prob = np.where(right_palm_p < 0.5)[0]
+        # If palms are > 0.21m in the x-direction towards the handle 0 position.
+        left_palm_f[left_palm_prob, 0] = 0
+        right_palm_f[right_palm_prob, 0] = 0
+        right_palm_maxima = find_peaks(right_palm_f[:, 0], height=0.265, distance=8)[0]
+        left_palm_maxima = find_peaks(left_palm_f[:, 0], height=0.265, distance=8)[0]
+        num_peaks = len(right_palm_maxima)+len(left_palm_maxima)
+        print("Number of tentative reaching actions detected:  " + str(num_peaks))
+        return num_peaks
+
+    def segment_and_filter_kinematic_block(self, cl1, cl2, p_thresh=0.4, coarse_threshold=0.4,
                                                         preprocess=True):
-        """ Function to segment, filter, and interpolate positional data across all bodyparts, using start and stop indices across
+        """ Function to segment, filter, and interpolate positional data across all bodyparts,
+         using start and stop indices across
             whole-trial kinematics. """
         self.k_length = self.kinematic_block[self.kinematic_block.columns[3:6]].values.shape[0]
         self.prob_nose = np.squeeze(
@@ -446,26 +460,21 @@ class ReachViz:
         self.raw_speeds = []
         # Pre-process (threshold, interpolate if necessary/possible, and apply hamming filter post-interpolation
         if preprocess:
-
             self.preprocess_kinematics(p_thresh=0.1)
         self.assign_final_variables()
         # Calculate principal components
-        try:
-            self.pos_pc = get_principle_components(self.pos_holder)
-            self.pos_v_pc = get_principle_components(self.pos_holder, vel=self.vel_holder)
-            self.pos_v_a_pc = get_principle_components(self.pos_holder, vel=self.vel_holder, acc=self.acc_holder)
-
-            # Calculate physiologically-relevant PCA components
-            self.left_arm_pc_pos = get_principle_components(self.pos_holder[2:14])
-            self.right_arm_pc_pos = get_principle_components(self.pos_holder[14:-1])
-            self.left_arm_pc_pos_v = get_principle_components(self.pos_holder[2:14], vel=self.vel_holder[2:14])
-            self.left_arm_pc_pos_v_a = get_principle_components(self.pos_holder[2:14], vel=self.vel_holder[2:14],
-                                                                acc=self.acc_holder[2:14])
-            self.right_arm_pc_pos_v = get_principle_components(self.pos_holder[14:-1], vel=self.vel_holder[14:-1])
-            self.right_arm_pc_pos_v_a = get_principle_components(self.pos_holder[14:-1],
-                                                                 vel=self.vel_holder[14:-1], acc=self.acc_holder[14:-1])
-        except:
-            print('Cant take PCs from this reach')
+        self.pos_v_a_pc, self.pos_v_a_pc_variance = get_principle_components(self.pos_holder, vel=self.vel_holder,
+                                                                             acc=self.acc_holder)
+        self.left_arm_pc_pos_v_a, self.left_arm_pos_v_a_pc_variance = get_principle_components(self.pos_holder[2:14],
+                                                                                               vel=self.vel_holder[
+                                                                                                   2:14],
+                                                                                               acc=self.acc_holder[
+                                                                                                   2:14])
+        self.right_arm_pc_pos_v_a, self.right_arm_pos_v_a_pc_variance = get_principle_components(self.pos_holder[14:-1],
+                                                                                                 vel=self.vel_holder[
+                                                                                                     14:-1],
+                                                                                                 acc=self.acc_holder[
+                                                                                                     14:-1])
         # method to obtain variables for plotting
         right_speeds = np.mean(self.uninterpolated_right_palm_v, axis=1)
         left_speeds = np.mean(self.uninterpolated_left_palm_v, axis=1)
@@ -473,7 +482,20 @@ class ReachViz:
                                         self.threshold_data_with_probabilities(self.left_palm_p, p_thresh=p_thresh))
         self.right_palm_f_x = np.union1d(np.where(right_speeds > 1.2),
                                          self.threshold_data_with_probabilities(self.right_palm_p, p_thresh=p_thresh))
+        self.endpoint_error = self.calculate_endpoint_error()
         return
+
+    def calculate_endpoint_error(self):
+        """Function to calculate the kinematic feature 'endpoint_error' by finding the minimum distance between
+        the position of the palm and the center of the reaching target."""
+        total_distance_error = min(
+            min(np.sqrt(((self.left_palm[0, :] - self.handle[0, :]) ** 2 + (self.left_palm[1, :] -
+                                                                            self.handle[1, :]) ** 2 +
+                         (self.left_palm[2, :] - self.handle[2, :]) ** 2))),
+            min(np.sqrt(((self.right_palm[0, :] - self.handle[0, :]) ** 2 + (self.right_palm[1, :] -
+                                                                             self.handle[1, :]) ** 2 +
+                         (self.right_palm[2, :] - self.handle[2, :]) ** 2))))
+        return total_distance_error
 
     def preprocess_kinematics(self, p_thresh, spline=0.05):
         for di, pos in enumerate(self.positions):
@@ -564,7 +586,7 @@ class ReachViz:
         # Get cubic spline representation of speeds after smoothing
         if spline:
             v_holder = vu.cubic_spline_smoothing(v_holder, 0.1)
-            #v_holder = scipy.signal.medfilt2d(v_holder, 1)
+            # v_holder = scipy.signal.medfilt2d(v_holder, 1)
         # Calculate speed, acceleration from smoothed (no time-dependent jumps) velocities
         try:
             for ddx in range(0, pos_v.shape[0]):
@@ -578,7 +600,7 @@ class ReachViz:
             speed_holder = scipy.ndimage.gaussian_filter1d(speed_holder, sigma=1, mode='mirror')
         return np.asarray(v_holder), np.asarray(a_holder), np.asarray(speed_holder)
 
-    def segment_reaches_with_speed_peaks(self):
+    def segment_reaches_with_speed_peaks(self, block=False):
         """ Function to segment out reaches using a positional and velocity threshold. """
         # find peaks of speed velocities
         # For each peak > 0.4 m/s, find the local minima (s < 0.05) for that time series
@@ -592,6 +614,7 @@ class ReachViz:
         self.right_reach_end_times = []
         self.left_reach_end_times = []
         self.reach_duration = []
+        self.total_block_reaches = 0
         # Get some basic information about what's going on in the trial from micro-controller data
         hidx = np.where(self.handle_s > .1)
         hid = np.zeros(self.handle_s.shape[0])
@@ -613,9 +636,9 @@ class ReachViz:
         # If palms are < 0.8 p-value, remove chance at "maxima"
         left_palm_prob = np.where(self.left_palm_p < 0.3)[0]
         right_palm_prob = np.where(self.right_palm_p < 0.3)[0]
-        # If palms are > 0.22m in the x-direction towards the handle 0 position.
-        left_palm_pos_f = np.where(self.left_palm[:, 0] < 0.20)[0]
-        right_palm_pos_f = np.where(self.right_palm[:, 0] < 0.20)[0]
+        # If palms are > 0.21m in the x-direction towards the handle 0 position.
+        left_palm_pos_f = np.where(self.left_palm[:, 0] < 0.23)[0]
+        right_palm_pos_f = np.where(self.right_palm[:, 0] < 0.23)[0]
         lps[left_palm_prob] = 0
         rps[right_palm_prob] = 0
         rps[right_palm_pos_f] = 0
@@ -624,7 +647,7 @@ class ReachViz:
         rps[hidx] = 0
         lps[0:4] = 0  # remove any possible edge effect
         rps[0:4] = 0  # remove any possible edge effect
-        self.left_palm_maxima = find_peaks(lps, height=0.4, distance=8)[0]
+        self.left_palm_maxima = find_peaks(lps, height=0.3, distance=8)[0]
         if self.left_palm_maxima.any():
             print('Left Palm Reach')
             for ir in range(0, self.left_palm_maxima.shape[0]):
@@ -646,7 +669,7 @@ class ReachViz:
                 self.reach_duration.append(
                     self.time_vector[left_palm_below_thresh_after] - self.time_vector[start_time_l])
         # Find peaks in right palm time-series
-        self.right_palm_maxima = find_peaks(rps, height=0.4, distance=8)[0]
+        self.right_palm_maxima = find_peaks(rps, height=0.3, distance=8)[0]
         if self.right_palm_maxima.any():
             print('Right Palm Reach')
             for ir in range(0, self.right_palm_maxima.shape[0]):
@@ -666,6 +689,9 @@ class ReachViz:
                 self.right_reach_end_times.append(right_palm_below_thresh_after)
                 self.reach_duration.append(
                     self.time_vector[right_palm_below_thresh_after] - self.time_vector[start_time_r])
+        if block:
+            self.total_block_reaches = 0
+            pdb.set_trace()
         # Check for unrealistic values (late in trial)
         # Take min of right and left start times as "reach times" for start of classification extraction
         if self.right_start_times and self.left_start_times:
@@ -955,18 +981,26 @@ class ReachViz:
                           'right_third_base_o': self.right_third_base_o,
                           'right_third_tip_o': self.right_third_tip_o,
                           'right_end_base_o': self.right_end_base_o, 'right_end_tip_o': self.right_end_tip_o,
-                          #            # Class Labels
+                          # Kinematic Features
                           'reach_hand': self.arm_id_list, 'right_start_time': self.right_start_times,
                           'left_start_time': self.left_start_times, 'reach_time': self.reach_start_time,
                           'reach_duration': self.reach_end_time,
                           'left_end_time': self.left_reach_end_times, 'right_end_time': self.right_reach_end_times,
                           'left_reach_peak': self.left_peak_times, 'right_reach_peak': self.right_peak_times,
+                          'endpoint_error': self.endpoint_error,
                           # Sensor Data
                           'handle_moving_sensor': self.h_moving_sensor, 'lick_beam': self.lick_vector,
                           'reward_zone': self.reward_zone_sensor, 'time_vector': self.time_vector,
                           'lick_vector': self.lick_vector,
                           'response_sensor': self.exp_response_sensor, 'x_rob': self.x_robot, 'y_rob': self.y_robot,
-                          'z_rob': self.z_robot
+                          'z_rob': self.z_robot,
+                          # Principle components
+                          'PC1': self.pos_v_a_pc[:, 0], 'PC2': self.pos_v_a_pc[:, 1], 'PC3': self.pos_v_a_pc[:, 2],
+                          'PCvar': self.pos_v_a_pc_variance,
+                          'Left_PC1': self.left_arm_pc_pos_v_a[:, 0], 'Left_PC2': self.left_arm_pc_pos_v_a[:, 0],
+                          'Left_PC3': self.left_arm_pc_pos_v_a[:, 0], 'LeftPCVar': self.left_arm_pos_v_a_pc_variance,
+                          'Right_PC1': self.right_arm_pc_pos_v_a[:, 0], 'Right_PC2': self.right_arm_pc_pos_v_a[:, 1],
+                          'Right_PC3': self.right_arm_pc_pos_v_a[:, 2], 'RightPCVar': self.right_arm_pos_v_a_pc_variance
                           }
         # Create dataframe object from df, containing
         df = pd.DataFrame({key: pd.Series(np.asarray(value)) for key, value in self.save_dict.items()})
@@ -990,6 +1024,7 @@ class ReachViz:
         self.right_hand_raw_speeds = []
         self.total_outliers = []
         # Code here to count # of "peaks" in total data
+        self.calculate_number_of_speed_peaks_in_block()
         for ix, sts in enumerate(self.trial_start_vectors):
             self.trial_index = sts
             try:
@@ -1001,7 +1036,7 @@ class ReachViz:
             self.trial_num = int(ix)
             print('Making dataframe for trial:' + str(ix))
             # Obtain values from experimental data
-            self.segment_and_filter_kinematic_block_single_trial(sts, stp)
+            self.segment_and_filter_kinematic_block(sts, stp)
             self.extract_sensor_data(sts, stp)
             # Collect data about the trial
             self.left_hand_raw_speeds.append(np.asarray(self.raw_speeds[2:14]))
@@ -1022,31 +1057,31 @@ class ReachViz:
             win_length = 5
             # Segment reach block
             if self.reach_start_time:  # If reach detected
-                #tt = self.reach_end_time - self.reach_start_time
-                end_pad = 1 # length of behavior
-                reach_end_time = self.reach_end_time + end_pad # For equally-spaced arrays
+                # tt = self.reach_end_time - self.reach_start_time
+                end_pad = 1  # length of behavior
+                reach_end_time = self.reach_end_time + end_pad  # For equally-spaced arrays
                 print(self.reach_start_time, self.reach_end_time)
                 if self.lick_vector.any() == 1:  # If trial is rewarded
                     self.first_lick_signal = np.where(self.lick_vector == 1)[0][0]
                     if 5 < self.first_lick_signal < 20:  # If reward is delivered after initial time-out
-                        self.segment_and_filter_kinematic_block_single_trial(sts, sts + 100)
+                        self.segment_and_filter_kinematic_block(sts, sts + 100)
                         self.extract_sensor_data(sts, sts + 100)
                         print('Possible Tug of War Behavior!')
                     else:  # If a reach is detected (successful reach)
-                        self.segment_and_filter_kinematic_block_single_trial(
-                                sts + self.reach_start_time - win_length,
-                                sts + reach_end_time + win_length)
+                        self.segment_and_filter_kinematic_block(
+                            sts + self.reach_start_time - win_length,
+                            sts + reach_end_time + win_length)
                         self.extract_sensor_data(sts + self.reach_start_time - win_length,
-                                                     sts + reach_end_time + win_length)
+                                                 sts + reach_end_time + win_length)
                         print('Successful Reach Detected')
                 else:  # unrewarded reach
-                    self.segment_and_filter_kinematic_block_single_trial(sts + self.reach_start_time - win_length,
+                    self.segment_and_filter_kinematic_block(sts + self.reach_start_time - win_length,
                                                                          sts + reach_end_time + win_length)
                     self.extract_sensor_data(sts + self.reach_start_time - win_length, sts +
                                              reach_end_time + win_length)
                     print('Un-Rewarded Reach Detected')
             else:  # If reach not detected in trial
-                self.segment_and_filter_kinematic_block_single_trial(sts - win_length, sts + 100)
+                self.segment_and_filter_kinematic_block(sts - win_length, sts + 100)
                 self.extract_sensor_data(sts - win_length, sts + 100)
                 print('No Reaching Found in Trial Block' + str(ix))
             df = self.segment_data_into_reach_dict(ix)
@@ -1057,9 +1092,9 @@ class ReachViz:
                 self.reaching_dataframe = df
             else:
                 self.reaching_dataframe = pd.concat([df, self.reaching_dataframe])
-        #savefile = self.sstr + str(self.rat) + str(self.date) + str(self.session) + 'final_save_data.csv'
-        #self.save_reaching_dataframe(savefile)
-        #self.plot_verification_variables()
+        # savefile = self.sstr + str(self.rat) + str(self.date) + str(self.session) + 'final_save_data.csv'
+        # self.save_reaching_dataframe(savefile)
+        # self.plot_verification_variables()
         return self.reaching_dataframe
 
     def save_reaching_dataframe(self, filename):
@@ -1680,4 +1715,15 @@ class ReachViz:
             c += 1
         vc.release()
         out.release()
+        return
+
+    def split_videos_into_reaches(self):
+        bi = self.block_video_path.rsplit('.')[0]
+        self.sstr = bi + '/reaching_split_trials'
+        for ir, r in enumerate(self.right_start_times):
+            print('Splitting video at' + str(r))
+            self.split_trial_video(r - 5, self.right_reach_end_time + 5, segment=True, num_reach=ir)
+        for ir, r in enumerate(self.left_start_times):
+            print('Splitting video at' + str(r))
+            self.split_trial_video(r - 5, self.left_reach_end_time + 5, segment=True, num_reach=ir + 3000)
         return
