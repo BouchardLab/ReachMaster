@@ -246,6 +246,20 @@ class ReachViz:
         print('Number of Trials: ' + str(len(self.trial_start_vectors)))
         return
 
+    def get_robot_and_handle_data_across_block(self):
+        coordinate_dataframe = []
+        # Take handle data from entire block
+        self.handle = np.mean(
+            [self.kinematic_block[self.kinematic_block.columns[0:3]].values[0:-1, :],
+             self.kinematic_block[self.kinematic_block.columns[3:6]].values[0:-1, :]], axis=0)
+        # Take robot data from entire block
+        self.extract_sensor_data(0, -1, check_lick=False)
+        df_matrix = np.vstack([self.handle[:, 0], self.handle[:, 1], self.handle[:, 2], self.x_robot, self.y_robot, self.z_robot])
+
+        coordinate_dataframe = pd.DataFrame(df_matrix.T,
+                                            columns=['handle_px', 'handle_py', 'handle_pz', 'robot_px', 'robot_py', 'robot_pz'])
+        return coordinate_dataframe
+
     def extract_sensor_data(self, idxstrt, idxstp, check_lick=True):
         """ Function to extract probability thresholded sensor data from ReachMaster. Data is coarsely filtered.
         """
