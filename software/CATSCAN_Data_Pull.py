@@ -7,18 +7,18 @@ os.chdir(root)
 block_video_file = 'Classification Project\\2019-09-20-S1-RM14_cam2DLC_FinalColors.mp4'
 save_df_address = 'Full_Pilot_Reaches.pkl'
 
-kinematics_addresses = ['DataFrames\\3D_positions_RM9.pkl',
-                        'DataFrames\\3D_positions_RM10.pkl',
-                        'DataFrames\\3D_positions_RM11.pkl',
+kinematics_addresses = [#'DataFrames\\3D_positions_RM9.pkl',
+                        #'DataFrames\\3D_positions_RM10.pkl',
+                        #'DataFrames\\3D_positions_RM11.pkl',
                         'DataFrames\\3D_positions_RM12.pkl',
                         'DataFrames\\3D_positions_RM13.pkl',
                         'DataFrames\\3D_positions_RM14.pkl',
                         'DataFrames\\3D_positions_RM15.pkl',
                         'DataFrames\\3D_positions_RM16.pkl']
 
-exp_addresses = ['DataFrames\\RM9_expdf.pickle',
-                 'DataFrames\\RM10_expdf.pickle',
-                 'DataFrames\\RM11_expdf.pickle',
+exp_addresses = [#'DataFrames\\RM9_expdf.pickle',
+                 #'DataFrames\\RM10_expdf.pickle',
+                 #'DataFrames\\RM11_expdf.pickle',
                  'DataFrames\\RM12_expdf.pickle',
                  'DataFrames\\RM13_expdf.pickle',
                  'DataFrames\\RM14_expdf.pickle',
@@ -57,7 +57,8 @@ def extract_reaching_data_from_unprocessed_data(block_video_file_id, kin_file_ba
         complete_rat_df = loop_over_rat_and_extract_reaches(single_file, exp_file, block_video_file_id, ratt)
         if num == 0:
             rat_final_df = complete_rat_df
-        rat_final_df = pd.concat(complete_rat_df, rat_final_df)
+        else:
+            rat_final_df = pd.concat([complete_rat_df, rat_final_df])
     return rat_final_df
 
 save_path = '/Users/bassp/OneDrive/Desktop/Classification Project/reach_data/Pilot_Data.h5'

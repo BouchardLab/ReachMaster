@@ -246,7 +246,7 @@ class ReachViz:
         print('Number of Trials: ' + str(len(self.trial_start_vectors)))
         return
 
-    def extract_sensor_data(self, idxstrt, idxstp, filter_sensors=True, check_lick=True):
+    def extract_sensor_data(self, idxstrt, idxstp, check_lick=True):
         """ Function to extract probability thresholded sensor data from ReachMaster. Data is coarsely filtered.
         """
         self.k_length = self.kinematic_block[self.kinematic_block.columns[3:6]].values.shape[0]
@@ -634,8 +634,8 @@ class ReachViz:
         lps[self.prob_filter_index] = 0
         rps[self.prob_filter_index] = 0
         # If palms are < 0.8 p-value, remove chance at "maxima"
-        left_palm_prob = np.where(self.left_palm_p < 0.3)[0]
-        right_palm_prob = np.where(self.right_palm_p < 0.3)[0]
+        left_palm_prob = np.where(self.left_palm_p < 0.5)[0]
+        right_palm_prob = np.where(self.right_palm_p < 0.5)[0]
         # If palms are > 0.21m in the x-direction towards the handle 0 position.
         left_palm_pos_f = np.where(self.left_palm[:, 0] < 0.23)[0]
         right_palm_pos_f = np.where(self.right_palm[:, 0] < 0.23)[0]
@@ -647,7 +647,7 @@ class ReachViz:
         rps[hidx] = 0
         lps[0:4] = 0  # remove any possible edge effect
         rps[0:4] = 0  # remove any possible edge effect
-        self.left_palm_maxima = find_peaks(lps, height=0.3, distance=8)[0]
+        self.left_palm_maxima = find_peaks(lps, height=0.4, distance=8)[0]
         if self.left_palm_maxima.any():
             print('Left Palm Reach')
             for ir in range(0, self.left_palm_maxima.shape[0]):
@@ -669,7 +669,7 @@ class ReachViz:
                 self.reach_duration.append(
                     self.time_vector[left_palm_below_thresh_after] - self.time_vector[start_time_l])
         # Find peaks in right palm time-series
-        self.right_palm_maxima = find_peaks(rps, height=0.3, distance=8)[0]
+        self.right_palm_maxima = find_peaks(rps, height=0.4, distance=8)[0]
         if self.right_palm_maxima.any():
             print('Right Palm Reach')
             for ir in range(0, self.right_palm_maxima.shape[0]):
