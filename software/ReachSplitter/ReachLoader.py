@@ -260,7 +260,7 @@ class ReachViz:
                                             columns=['handle_px', 'handle_py', 'handle_pz', 'robot_px', 'robot_py', 'robot_pz'])
         return coordinate_dataframe
 
-    def extract_sensor_data(self, idxstrt, idxstp, check_lick=True):
+    def extract_sensor_data(self, idxstrt, idxstp, check_lick=True, filter=True):
         """ Function to extract probability thresholded sensor data from ReachMaster. Data is coarsely filtered.
         """
         self.k_length = self.kinematic_block[self.kinematic_block.columns[3:6]].values.shape[0]
@@ -439,8 +439,7 @@ class ReachViz:
                                   axis=1)
         left_end_tip_p = np.mean(self.kinematic_block[self.kinematic_block.columns[78 + w:81 + w]].values[cl1:cl2, :],
                                  axis=1)
-        self.extract_sensor_data(cl1, cl2, filter_sensors=False,
-                                 check_lick=False)  # Get time vectors for calculating kinematics.
+        self.extract_sensor_data(cl1, cl2, check_lick=False)  # Get time vectors for calculating kinematics.
 
         self.positions = [nose, handle, left_shoulder, left_forearm, left_wrist,
                           left_palm, left_index_base,

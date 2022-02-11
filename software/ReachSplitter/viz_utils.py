@@ -138,22 +138,24 @@ def norm_coordinates(kin_three_vector, aff_t=False):
     generating this transformation, see ReachPredict3D's documentation on handle matching."""
     if aff_t:
         ax = aff_t[0, 0]
-        bx = aff_t[0, 1]
-        cx = aff_t[0, 2]
+        by = aff_t[0, 1]
+        cz = aff_t[0, 2]
         a = aff_t[1, 0]
         b = aff_t[1, 1]
         c = aff_t[1, 2]
     else:
-        ax = -2.5
-        bx = -0.2
-        cx = 1.5
-        a = .25
-        b = .25
-        c = .5
+        # Values found using approximate linear transformation between robot and handle coordinates
+        # Notebook found in ReachSplitter : handle_DLC_Robot_CoordinateMatch
+        ax = -2.6
+        by = -0.25
+        cz = 1.8
+        a = .21
+        b = .15
+        c = .38
     xkin_three_vector = np.zeros(kin_three_vector.shape)
-    xkin_three_vector[:, 0] = kin_three_vector[:, 0] * ax + a  # flip x-axis
-    xkin_three_vector[:, 1] = kin_three_vector[:, 1] * bx + b  # flip y-axis
-    xkin_three_vector[:, 2] = kin_three_vector[:, 2] * cx + c
+    xkin_three_vector[:, 0] = kin_three_vector[:, 0] * ax + a
+    xkin_three_vector[:, 1] = kin_three_vector[:, 1] * by + b
+    xkin_three_vector[:, 2] = kin_three_vector[:, 2] * cz + c
     return np.copy(xkin_three_vector)
 
 

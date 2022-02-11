@@ -1,3 +1,5 @@
+import pdb
+
 from software.ReachSplitter.ReachLoader import ReachViz
 import pandas as pd
 import os
@@ -29,7 +31,7 @@ exp_addresses = [#'DataFrames\\RM9_expdf.pickle',
 rats = ['RM9', 'RM10', 'RM11', 'RM12', 'RM13', 'RM14', 'RM15', 'RM16']
 
 
-def loop_over_rat_and_extract_reaches(prediction_dataframe, e_dataframe, dummy_video_path, rat):
+def loop_over_rat_and_extract_data(prediction_dataframe, e_dataframe, dummy_video_path, rat, reaching=True):
     # Get rat, date, session for each block we need to process.
     k_dataframe = pd.read_pickle(prediction_dataframe)
 
@@ -39,7 +41,10 @@ def loop_over_rat_and_extract_reaches(prediction_dataframe, e_dataframe, dummy_v
         print(session, date)
         R = ReachViz(date, session, e_dataframe, dummy_video_path, prediction_dataframe, rat)
         # Using ReachViz object, pull dataframe
-        reaching_df = R.get_reach_dataframe_from_block()
+        if reaching:
+            reaching_df = R.get_reach_dataframe_from_block()
+        else:
+            reaching_df = R.get_robot_and_handle_data_across_block()
         if ilx == 0:
             final_df = reaching_df
         final_df = pd.concat([final_df, reaching_df])
@@ -54,13 +59,14 @@ def extract_reaching_data_from_unprocessed_data(block_video_file_id, kin_file_ba
         if '_' in ratt:
             ratt = ratt[1:]
             print(ratt)
-        complete_rat_df = loop_over_rat_and_extract_reaches(single_file, exp_file, block_video_file_id, ratt)
+        complete_rat_df = loop_over_rat_and_extract_data(single_file, exp_file, block_video_file_id, ratt, reaching=False)
         if num == 0:
             rat_final_df = complete_rat_df
         else:
             rat_final_df = pd.concat([complete_rat_df, rat_final_df])
     return rat_final_df
 
-save_path = '/Users/bassp/OneDrive/Desktop/Classification Project/reach_data/Pilot_Data.h5'
+save_path = 'Pilot_Data.pickle'
 final_df = extract_reaching_data_from_unprocessed_data(block_video_file, kinematics_addresses, exp_addresses)
-final_df.to_hdf(save_path)
+
+final_df.to_pickle(save_path)
