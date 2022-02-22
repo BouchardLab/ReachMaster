@@ -27,7 +27,7 @@ import time
 import datetime
 import numpy as np
 import os 
-from collections import deque
+from vidgear.gears import WriteGear
 import subprocess as sp
 
 class CameraSettings(tk.Toplevel):
@@ -525,6 +525,7 @@ class CameraSettings(tk.Toplevel):
         """Allows the user to record a video which is saved to the `calibration
         videos` folder of the data output directory."""
         if not self.streaming:
+            # Set up camera settings, initialize cams
             self.config['CameraSettings']['num_cams'] = int(self.num_cams.get())
             self.config['CameraSettings']['fps'] = int(self.fps.get())
             self.config['CameraSettings']['exposure'] = int(self.exposure.get())
@@ -541,23 +542,27 @@ class CameraSettings(tk.Toplevel):
             calibration_path = self.config['ReachMaster']['data_dir'] + "/calibration_videos/"
             if not os.path.isdir(calibration_path):
                 os.makedirs(calibration_path)
-            vid_fn = calibration_path + str(datetime.datetime.now()) + '.mp4'  
-            ffmpeg_command = self.ffmpeg_command          
-            ffmpeg_command.append(vid_fn)
-            ffmpeg_command[ffmpeg_command.index('-s') + 1] = str(
-                self.config['CameraSettings']['img_width'] * 
-                self.config['CameraSettings']['num_cams']
-                ) + 'x' + str(self.config['CameraSettings']['img_height'])
-            ffmpeg_command[ffmpeg_command.index('-r') + 1] = str(
-                self.config['CameraSettings']['fps']
-                )
-            self.ffmpeg_process = sp.Popen(
-            ffmpeg_command, 
-            stdin=sp.PIPE, 
-            stdout=sp.DEVNULL, 
-            stderr=sp.DEVNULL, 
-            bufsize=-1
-            )
+            vid_fn = calibration_path + str(datetime.datetime.now()) + '.mp4'
+            # Initialize vidgear wheels
+            self.vidgear_writer_cal = WriteGear(output_filename=vid_fn)
+            # ffmpeg unit commands, depreciated
+            #ffmpeg_command = self.ffmpeg_command
+            #ffmpeg_command.append(vid_fn)
+            #ffmpeg_command[ffmpeg_command.index('-s') + 1] = str(
+            #    self.config['CameraSettings']['img_width'] *
+            #    self.config['CameraSettings']['num_cams']
+            #    ) + 'x' + str(self.config['CameraSettings']['img_height'])
+            #ffmpeg_command[ffmpeg_command.index('-r') + 1] = str(
+            #    self.config['CameraSettings']['fps']
+            #    )
+            # ffmpeg pipes (depreciated)
+            #self.ffmpeg_process = sp.Popen(
+            #ffmpeg_command,
+            #stdin=sp.PIPE,
+            #stdout=sp.DEVNULL,
+            #stderr=sp.DEVNULL,
+            #bufsize=-1
+            #)
             self.delay = int(np.round(1.0/float(self.config['CameraSettings']['fps'])*1000.0))
             self.record = True
             self._rec()
@@ -678,8 +683,8 @@ class CameraSettings(tk.Toplevel):
 
     def _rec(self):
         if self.record:
+            frame = 0
             expint.trigger_image(self.exp_controller)
-            now = str(int(round(time.time()*1000)))
             try:          
                 for i in range(self.config['CameraSettings']['num_cams']):
                     npimg = camint.get_npimage(self.cams[i],self.img)
@@ -691,6 +696,8 @@ class CameraSettings(tk.Toplevel):
             except Exception as err:
                 tkinter.messagebox.showinfo("Warning", err)
                 self.stop_rec_callback() 
-                return      
-            self.ffmpeg_process.stdin.write(frame)
-            self.after(self.delay,self._rec)
+                return
+            # Use WriteGear to write video processed
+            self.vidgear_writer_cal.write(frame)
+            # reset frame back to real value
+            self.after(self.delay, self._rec)
