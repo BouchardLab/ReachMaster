@@ -2,13 +2,14 @@ from sklearn.decomposition import PCA
 import pandas as pd
 import pickle
 import matplotlib.pyplot as plt
-import software.ReachSplitter.DataStream_Vis_Utils as utils
+#import software.ReachSplitter.DataStream_Vis_Utils as utils
+import DataStream_Vis_Utils as utils
 from moviepy.editor import *
 import skvideo
 import cv2
 import imageio
 import numpy as np
-import software.ReachSplitter.viz_utils as vu
+import viz_utils as vu
 import scipy
 from scipy.signal import find_peaks
 from scipy.ndimage import gaussian_filter1d
@@ -655,10 +656,10 @@ class ReachViz:
         rps = np.copy(self.right_palm_s[:])
         lps[self.prob_filter_index] = 0
         rps[self.prob_filter_index] = 0
-        # If palms are < 0.8 p-value, remove chance at "maxima"
-        left_palm_prob = np.where(self.left_palm_p < 0.5)[0]
-        right_palm_prob = np.where(self.right_palm_p < 0.5)[0]
-        # If palms are > 0.21m in the x-direction towards the handle 0 position.
+        # If palms are < 0.6 p-value, remove chance at "maxima"
+        left_palm_prob = np.where(self.left_palm_p < 0.6)[0]
+        right_palm_prob = np.where(self.right_palm_p < 0.6)[0]
+        # If palms are > 0.23m in the x-direction towards the handle 0 position.
         left_palm_pos_f = np.where(self.left_palm[:, 0] < 0.23)[0]
         right_palm_pos_f = np.where(self.right_palm[:, 0] < 0.23)[0]
         lps[left_palm_prob] = 0
@@ -673,15 +674,15 @@ class ReachViz:
         if self.left_palm_maxima.any():
             print('Left Palm Reach')
             for ir in range(0, self.left_palm_maxima.shape[0]):
-                if self.left_palm_maxima[ir] > 15:
+                if self.left_palm_maxima[ir] > 20:
                     left_palm_below_thresh = np.argmin(
-                        self.left_palm_s[self.left_palm_maxima[ir] - 15: self.left_palm_maxima[ir]])
+                        self.left_palm_s[self.left_palm_maxima[ir] - 20: self.left_palm_maxima[ir]])
                 else:
                     left_palm_below_thresh = np.argmin(self.left_palm_s[0:self.left_palm_maxima[ir]])
                 left_palm_below_thresh_after = self.left_palm_maxima[ir] + \
                                                np.argmin(self.left_palm_s[
-                                                         self.left_palm_maxima[ir]: self.left_palm_maxima[ir] + 20])
-                start_time_l = self.left_palm_maxima[ir] + left_palm_below_thresh - 20
+                                                         self.left_palm_maxima[ir]: self.left_palm_maxima[ir] + 15])
+                start_time_l = self.left_palm_maxima[ir] - left_palm_below_thresh
                 if start_time_l < 0:
                     start_time_l = 1
                 self.left_start_times.append(start_time_l)
@@ -695,14 +696,14 @@ class ReachViz:
         if self.right_palm_maxima.any():
             print('Right Palm Reach')
             for ir in range(0, self.right_palm_maxima.shape[0]):
-                if self.right_palm_maxima[ir] > 30:
+                if self.right_palm_maxima[ir] > 20:
                     right_palm_below_thresh = np.argmin(
-                        self.right_palm_s[self.right_palm_maxima[ir] - 15:self.right_palm_maxima[ir]])
+                        self.right_palm_s[self.right_palm_maxima[ir] - 20:self.right_palm_maxima[ir]])
                 else:
                     right_palm_below_thresh = np.argmin(self.right_palm_s[0:self.right_palm_maxima[ir]])
                 right_palm_below_thresh_after = self.right_palm_maxima[ir] + np.argmin(
-                    self.right_palm_s[self.right_palm_maxima[ir]:self.right_palm_maxima[ir] + 20])
-                start_time_r = self.right_palm_maxima[ir] + right_palm_below_thresh - 20
+                    self.right_palm_s[self.right_palm_maxima[ir]:self.right_palm_maxima[ir] + 15])
+                start_time_r = self.right_palm_maxima[ir] - right_palm_below_thresh
                 if start_time_r < 0:
                     start_time_r = 1
                 self.right_start_times.append(start_time_r)
@@ -1376,8 +1377,8 @@ class ReachViz:
         frames_n = np.around(self.time_vector, 2)
         frames = frames_n - frames_n[0]  # normalize frame values by first entry.
         plt.title('Principal Components of Position, P+V, P+V+A')
-        plt.plot(self.left_arm_pc_pos[:, 0], self.left_arm_pc_pos[:, 1], c='r', label='Left Arm PC')
-        plt.plot(self.right_arm_pc_pos[:, 0], self.right_arm_pc_pos[:, 1], c='b', label='Right Arm PC')
+        #plt.plot(self.pos_v_a_pc_variance[:, 0], self.pos_v_a_pc_variance[:, 1], c='r', label='PCs for total kinematics')
+        #plt.plot(self.right_arm_pc_pos[:, 0], self.right_arm_pc_pos[:, 1], c='b', label='Right Arm PC')
         axel0.tight_layout(pad=0.005)
         axel0.legend()
         axel0.savefig(filename_pc, bbox_inches='tight')
@@ -1652,9 +1653,9 @@ class ReachViz:
                              self.right_end_tip[isx - self.lag: isx, 2], marker='_',
                              s=50 + 30 * self.right_end_tip_p[isx], c='pink',
                              alpha=self.right_end_tip_p[isx], label='Right End Tip ')
-            axel.set_xlabel('mm (X)')
-            axel.set_ylabel('mm(Y)')
-            axel.set_zlabel('mm (Z)')
+            axel.set_xlabel('M (X)')
+            axel.set_ylabel('M(Y)')
+            axel.set_zlabel('M (Z)')
             axel.view_init(10, -60)
             axel2.plot(frames[0:isx], self.left_palm_s[0:isx], marker='.', c='red', label='Left Palm Speed')
             axel2.plot(frames[0:isx], self.right_palm_s[0:isx], marker='.', c='skyblue', label='Right Palm Speed')
