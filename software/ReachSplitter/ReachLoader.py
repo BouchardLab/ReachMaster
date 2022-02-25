@@ -67,6 +67,7 @@ def gkern(input_vector, sig=1.0):
 class ReachViz:
     # noinspection SpellCheckingInspection
     def __init__(self, date, session, data_path, block_vid_file, kin_path, rat):
+        self.endpoint_error, self.x_endpoint_error, self.y_endpoint_error, self.z_endpoint_error = 0
         self.preprocessed_rmse, self.outlier_list = [], []
         self.probabilities, self.bi_reach_vector, self.trial_index, self.first_lick_signal, self.outlier_indexes = \
             [], [], [], [], []
@@ -495,7 +496,8 @@ class ReachViz:
                                         self.threshold_data_with_probabilities(self.left_palm_p, p_thresh=p_thresh))
         self.right_palm_f_x = np.union1d(np.where(right_speeds > 1.2),
                                          self.threshold_data_with_probabilities(self.right_palm_p, p_thresh=p_thresh))
-        self.endpoint_error = self.calculate_endpoint_error()
+        self.endpoint_error, self.x_endpoint_error, self.y_endpoint_error, self.z_endpoint_error = \
+            self.calculate_endpoint_error()
         return
 
     def calculate_endpoint_error(self):
@@ -508,7 +510,12 @@ class ReachViz:
             min(np.sqrt(((self.right_palm[0, :] - self.handle[0, :]) ** 2 + (self.right_palm[1, :] -
                                                                              self.handle[1, :]) ** 2 +
                          (self.right_palm[2, :] - self.handle[2, :]) ** 2))))
-        return total_distance_error
+
+        x_distance_error = min((self.left_palm[0, :] - self.handle[0, :]), (self.right_palm[0, :] - self.handle[0, :]))
+        y_distance_error = min((self.left_palm[1, :] - self.handle[1, :]), (self.right_palm[1, :] - self.handle[1, :]))
+        z_distance_error = min((self.left_palm[2, :] - self.handle[2, :]), (self.right_palm[2, :] - self.handle[2, :]))
+
+        return total_distance_error, x_distance_error, y_distance_error, z_distance_error
 
     def preprocess_kinematics(self, p_thresh, spline=0.05):
         for di, pos in enumerate(self.positions):
