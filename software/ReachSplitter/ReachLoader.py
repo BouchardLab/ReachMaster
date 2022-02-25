@@ -67,7 +67,7 @@ def gkern(input_vector, sig=1.0):
 class ReachViz:
     # noinspection SpellCheckingInspection
     def __init__(self, date, session, data_path, block_vid_file, kin_path, rat):
-        self.endpoint_error, self.x_endpoint_error, self.y_endpoint_error, self.z_endpoint_error = 0
+        self.endpoint_error, self.x_endpoint_error, self.y_endpoint_error, self.z_endpoint_error = 0, 0, 0, 0
         self.preprocessed_rmse, self.outlier_list = [], []
         self.probabilities, self.bi_reach_vector, self.trial_index, self.first_lick_signal, self.outlier_indexes = \
             [], [], [], [], []
@@ -255,10 +255,12 @@ class ReachViz:
              self.kinematic_block[self.kinematic_block.columns[3:6]].values[0:-1, :]], axis=0)
         # Take robot data from entire block
         self.extract_sensor_data(0, -1, check_lick=False)
-        df_matrix = np.vstack([self.handle[:, 0], self.handle[:, 1], self.handle[:, 2], self.x_robot, self.y_robot, self.z_robot])
+        df_matrix = np.vstack(
+            [self.handle[:, 0], self.handle[:, 1], self.handle[:, 2], self.x_robot, self.y_robot, self.z_robot])
 
         coordinate_dataframe = pd.DataFrame(df_matrix.T,
-                                            columns=['handle_px', 'handle_py', 'handle_pz', 'robot_px', 'robot_py', 'robot_pz'])
+                                            columns=['handle_px', 'handle_py', 'handle_pz', 'robot_px', 'robot_py',
+                                                     'robot_pz'])
         return coordinate_dataframe
 
     def extract_sensor_data(self, idxstrt, idxstp, check_lick=True, filter=True):
@@ -320,12 +322,12 @@ class ReachViz:
         right_palm_f[right_palm_prob, 0] = 0
         right_palm_maxima = find_peaks(right_palm_f[:, 0], height=0.265, distance=8)[0]
         left_palm_maxima = find_peaks(left_palm_f[:, 0], height=0.265, distance=8)[0]
-        num_peaks = len(right_palm_maxima)+len(left_palm_maxima)
+        num_peaks = len(right_palm_maxima) + len(left_palm_maxima)
         print("Number of tentative reaching actions detected:  " + str(num_peaks))
         return num_peaks
 
     def segment_and_filter_kinematic_block(self, cl1, cl2, p_thresh=0.4, coarse_threshold=0.4,
-                                                        preprocess=True):
+                                           preprocess=True):
         """ Function to segment, filter, and interpolate positional data across all bodyparts,
          using start and stop indices across
             whole-trial kinematics. """
@@ -511,9 +513,9 @@ class ReachViz:
                                                                              self.handle[1, :]) ** 2 +
                          (self.right_palm[2, :] - self.handle[2, :]) ** 2))))
 
-        x_distance_error = min((self.left_palm[0, :] - self.handle[0, :]), (self.right_palm[0, :] - self.handle[0, :]))
-        y_distance_error = min((self.left_palm[1, :] - self.handle[1, :]), (self.right_palm[1, :] - self.handle[1, :]))
-        z_distance_error = min((self.left_palm[2, :] - self.handle[2, :]), (self.right_palm[2, :] - self.handle[2, :]))
+        x_distance_error = min(min(self.left_palm[0, :] - self.handle[0, :]), min(self.right_palm[0, :] - self.handle[0, :]))
+        y_distance_error = min(min(self.left_palm[1, :] - self.handle[1, :]), min(self.right_palm[1, :] - self.handle[1, :]))
+        z_distance_error = min(min(self.left_palm[2, :] - self.handle[2, :]), min(self.right_palm[2, :] - self.handle[2, :]))
 
         return total_distance_error, x_distance_error, y_distance_error, z_distance_error
 
@@ -1096,7 +1098,7 @@ class ReachViz:
                         print('Successful Reach Detected')
                 else:  # unrewarded reach
                     self.segment_and_filter_kinematic_block(sts + self.reach_start_time - win_length,
-                                                                         sts + reach_end_time + win_length)
+                                                            sts + reach_end_time + win_length)
                     self.extract_sensor_data(sts + self.reach_start_time - win_length, sts +
                                              reach_end_time + win_length)
                     print('Un-Rewarded Reach Detected')
@@ -1258,7 +1260,7 @@ class ReachViz:
         plt.close()
         return
 
-    def vid_splitter_and_grapher(self, plot=True, timeseries_plot=True, plot_reach=True, trial_num=0):
+    def vid_splitter_and_grapher(self, trial_num=0, plot=True, timeseries_plot=True, plot_reach=True, save_data=False):
         """ Function to split and visualize reaching behavior from a given experimental session. """
         for ix, sts in enumerate(self.trial_start_vectors):
             self.trial_index = sts
@@ -1272,7 +1274,7 @@ class ReachViz:
                 stp = self.trial_stop_vectors[ix]
                 self.split_trial_video(sts, stp)
                 print('Split Trial' + str(ix) + ' Video')
-                self.segment_and_filter_kinematic_block_single_trial(sts, stp)
+                self.segment_and_filter_kinematic_block(sts, stp)
                 self.plot_verification_variables()
                 self.extract_sensor_data(sts, stp)
                 self.segment_reaches_with_speed_peaks()
@@ -1294,7 +1296,7 @@ class ReachViz:
                             self.reach_start_time += 15  # spacer to keep array values
                         self.split_trial_video(self.reach_start_time + self.trial_index - 30, self.trial_index +
                                                self.first_lick_signal + 20, segment=True, num_reach=0)
-                        self.segment_and_filter_kinematic_block_single_trial(
+                        self.segment_and_filter_kinematic_block(
                             self.reach_start_time + self.trial_index - 30,
                             self.trial_index + self.first_lick_signal + 20)
                         self.extract_sensor_data(self.trial_index + self.reach_start_time - 30, self.trial_index +
@@ -1305,7 +1307,7 @@ class ReachViz:
                         self.split_trial_video(self.reach_start_time + self.trial_index - 30,
                                                self.trial_index + win_length,
                                                segment=True, num_reach=0)
-                        self.segment_and_filter_kinematic_block_single_trial(
+                        self.segment_and_filter_kinematic_block(
                             self.reach_start_time + self.trial_index - 30,
                             self.trial_index + win_length)
                         self.extract_sensor_data(self.reach_start_time + self.trial_index - 30,
@@ -1314,13 +1316,13 @@ class ReachViz:
                     if self.first_lick_signal:
                         self.split_trial_video(self.trial_index, self.trial_index + self.first_lick_signal + 10,
                                                segment=True, num_reach=0)
-                        self.segment_and_filter_kinematic_block_single_trial(self.trial_index,
-                                                                             self.first_lick_signal + self.trial_index + 10)
+                        self.segment_and_filter_kinematic_block(self.trial_index,
+                                                                self.first_lick_signal + self.trial_index + 10)
                         self.extract_sensor_data(self.trial_index, self.trial_index + self.first_lick_signal + 10)
                     else:
                         print('No Reach Detected.')
                         self.split_trial_video(self.trial_index, self.trial_index + 200, segment=True, num_reach=0)
-                        self.segment_and_filter_kinematic_block_single_trial(self.trial_index, self.trial_index + 200)
+                        self.segment_and_filter_kinematic_block(self.trial_index, self.trial_index + 200)
                         self.extract_sensor_data(self.trial_index, self.trial_index + 200)
                 if timeseries_plot:
                     self.plot_interpolation_variables_palm('reach')
@@ -1334,11 +1336,12 @@ class ReachViz:
                 self.seg_num = 0
                 self.start_trial_indice = []
                 self.images = []
-        reaching_trial_indices_df = pd.DataFrame(self.block_cut_vector)
-        reaching_trial_indices_df.to_csv(
-            'reaching_vector_' + str(self.rat) + str(self.rat) + str(self.date) + str(self.session) + '.csv',
-            index=False, header=False)
-        print('Saved reaching indices and bouts for block..' + str(self.date) + str(self.session))
+        if save_data:
+            reaching_trial_indices_df = pd.DataFrame(self.block_cut_vector)
+            reaching_trial_indices_df.to_csv(
+                'reaching_vector_' + str(self.rat) + str(self.rat) + str(self.date) + str(self.session) + '.csv',
+                index=False, header=False)
+            print('Saved reaching indices and bouts for block..' + str(self.date) + str(self.session))
         return self.block_cut_vector
 
     def check_licking_times_and_make_vector(self):
