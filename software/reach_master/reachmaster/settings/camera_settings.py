@@ -544,8 +544,23 @@ class CameraSettings(tk.Toplevel):
                 os.makedirs(calibration_path)
             vid_fn = calibration_path + str(datetime.datetime.now()) + '.mp4'
             # Initialize vidgear wheels
-            output_params = self.ffmpeg_command
-            #output_params_ = {"-vcodec": "libx264", "-crf": 10, "-preset": "fast", "-tune": "zerolatency"}
+            #output_params = self.ffmpeg_command
+            #"-vcodec":"libx264",
+            output_params = {'-s': str(
+                                    self.config['CameraSettings']['img_width'] *
+                                    self.config['CameraSettings']['num_cams']
+                                    ) + 'x' + str(self.config['CameraSettings']['img_height']),
+                                '-r': str(self.config['CameraSettings']['fps']),
+                                '-pix_fmt': 'bgr24',
+                                '-i': '-',
+                                '-b:v': '2M',
+                                '-maxrate': '2M',
+                                '-bufsize': '1M',
+                                '-c:v': 'h264_nvenc',
+                                '-preset': 'llhp',
+                                '-profile:v': 'high',
+                                '-rc': 'cbr',
+                                '-pix_fmt': 'yuv420p'}
             self.vidgear_writer_cal = WriteGear(output_filename=vid_fn, compression_mode=True, logging=True, **output_params)
             # ffmpeg unit commands, depreciated
             #ffmpeg_command = self.ffmpeg_command
