@@ -404,15 +404,16 @@ class CameraInterface:
             vid_fn = (
                 self.config['ReachMaster']['data_dir'] + '/videos/trial' +
                 str(trial_num) + '_cam' + str(cam_id) + '.mp4'
-                )        
-        self.ffmpeg_command.append(vid_fn)
-        ffmpeg_process = sp.Popen(
-            self.ffmpeg_command, 
-            stdin=sp.PIPE, 
-            stdout=sp.DEVNULL, 
-            stderr=sp.DEVNULL, 
-            bufsize=-1
-            )
+                )
+        self.vidgear_writer_cal = WriteGear(output_filename=vid_fn)
+        #self.ffmpeg_command.append(vid_fn)
+        #ffmpeg_process = sp.Popen(
+        #    self.ffmpeg_command,
+        #    stdin=sp.PIPE,
+        #    stdout=sp.DEVNULL,
+        #    stderr=sp.DEVNULL,
+        #    bufsize=-1
+        #    )
         while self.cams_started.value == True:        
             if trigger_pipe.poll():
                 trigger_pipe.recv()
@@ -421,7 +422,8 @@ class CameraInterface:
                     trigger_pipe.send('c')
                     npimg = img.get_image_data_numpy()     
                     frame = cv2.cvtColor(npimg, cv2.COLOR_BAYER_BG2BGR)
-                    ffmpeg_process.stdin.write(frame)
+                    self.vidgear_writer_cal.write(frame)
+                    #ffmpeg_process.stdin.write(frame)
                     dev = self._estimate_poi_deviation(cam_id, npimg, poi_means, poi_std)      
                     poi_deviation_pipe.send(dev)
                 except Exception as err:
@@ -432,28 +434,18 @@ class CameraInterface:
                 trial_ended_pipe.poll()
                 ):
                 trial_ended_pipe.recv()
-                ffmpeg_process.stdin.close()
-                ffmpeg_process.wait()
-                ffmpeg_process = None
+                self.vidgear_writer_cal.close()
+                #ffmpeg_process.stdin.close()
+                #ffmpeg_process.wait()
+                #ffmpeg_process = None
                 trial_num += 1
                 vid_fn = (
                 self.config['ReachMaster']['data_dir'] + '/videos/trial' +
                 str(trial_num) + '_cam' + str(cam_id) + '.mp4'
                 )
-                self.ffmpeg_command[-1] = vid_fn
-                ffmpeg_process = sp.Popen(
-                    self.ffmpeg_command, 
-                    stdin=sp.PIPE, 
-                    stdout=sp.DEVNULL, 
-                    stderr=sp.DEVNULL, 
-                    bufsize=-1
-                    )
         cam.stop_acquisition()
         cam.close_device()
-        if ffmpeg_process is not None:
-            ffmpeg_process.stdin.close()
-            ffmpeg_process.wait()
-            ffmpeg_process = None
+
 
 # if __name__ == '__main__':
 #     #for debugging purposes only 

@@ -106,6 +106,8 @@ class Protocols(tk.Toplevel):
         self.rob_connected = True
         print("loading robot settings...")
         self.config = robint.set_rob_controller(self.rob_controller, self.config)
+
+
         self.cams = camint.CameraInterface(self.config)
         self.cams_connected = True
         self.cams.start_protocol_interface() # start the camera interface

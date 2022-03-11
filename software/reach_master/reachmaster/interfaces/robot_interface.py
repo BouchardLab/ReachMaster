@@ -15,9 +15,13 @@ Todo:
 """
 
 import numpy as np
+import pandas as pd
 import serial
 from serial.tools import list_ports
-
+import pdb
+import ast
+import json
+import time
 #private functions----------------------------------------------
 
 def _load_calibration_variable(rob_controller, varname, value):
@@ -26,6 +30,9 @@ def _load_calibration_variable(rob_controller, varname, value):
         rob_controller.write((varname + "\n").encode('utf-8'))
         if rob_controller.read() == b"c":
             rob_controller.write(str(value).encode('utf-8'))
+    else:
+        rob_controller.write(b"c")
+        pdb.set_trace()
     if rob_controller.read() == b"c":
         print((varname + ' loaded'))
     else:
@@ -57,6 +64,21 @@ def _variable_write(rob_controller, varname, value):
         if rob_controller.read() == b"v":
             rob_controller.write(bytes(value + "\n", 'utf-8'))
 
+def read_calibration_file(calibration_file):
+    calibration_dict = pd.read_csv(calibration_file) # Read in Json
+    return calibration_dict
+
+def set_calibration_config(config):
+    cal_file = read_calibration_file(config['RobotSettings']['calibration_file'])
+    config['RobotSettings']['dis'] = np.asarray(cal_file['displacement'])
+    config['RobotSettings']['pos'] = np.asarray(cal_file['position'])
+    config['RobotSettings']['x_push_dur'] = np.asarray(cal_file['xPushDuration'])
+    config['RobotSettings']['x_pull_dur'] = np.asarray(cal_file['xPullDuration'])
+    config['RobotSettings']['y_push_dur'] = np.asarray(cal_file['yPushDuration'])
+    config['RobotSettings']['y_pull_dur']  =  np.asarray(cal_file['yPullDuration'])
+    config['RobotSettings']['z_push_dur'] = np.asarray(cal_file['zPushDuration'])
+    config['RobotSettings']['z_pull_dur'] = np.asarray(cal_file['zPullDuration'])
+    return
 #public functions---------------------------------------------------
 
 def start_interface(config):
@@ -127,6 +149,7 @@ def load_config_calibration(rob_controller, config):
         The currently loaded configuration file.     
 
     """
+    # UD 1/2022. Force-fetch calibration items from calibration file before writing.
     try:
         _load_calibration_variable(rob_controller, 'dis', config['RobotSettings']['dis'])
         _load_calibration_variable(rob_controller, 'pos', config['RobotSettings']['pos'])
@@ -136,8 +159,8 @@ def load_config_calibration(rob_controller, config):
         _load_calibration_variable(rob_controller, 'y_pull_dur', config['RobotSettings']['y_pull_dur'])
         _load_calibration_variable(rob_controller, 'z_push_dur', config['RobotSettings']['z_push_dur'])
         _load_calibration_variable(rob_controller, 'z_pull_dur', config['RobotSettings']['z_pull_dur'])
-    except Exception as varname:
-        raise Exception(varname)      
+    except:
+        pdb.set_trace()
 
 def load_config_commands(rob_controller, config):
     """Load the position commands to the robot controller.
@@ -301,6 +324,8 @@ def set_rob_controller(rob_controller, config):
         the command values that were loaded.
 
     """
+    set_calibration_config(config)  # Make sure current calibration settings are uploaded.
+    config = load_config_commands(rob_controller, config)
     _variable_write(rob_controller, 'pos_smoothing', str(config['RobotSettings']['pos_smoothing']))
     _variable_write(rob_controller, 'tol', str(config['RobotSettings']['tol']))
     _variable_write(rob_controller, 'period', str(config['RobotSettings']['period']))
@@ -318,5 +343,4 @@ def set_rob_controller(rob_controller, config):
     _variable_write(rob_controller, 'rew_zone_z_min', str(config['RobotSettings']['rew_zone_z_min']))
     _variable_write(rob_controller, 'rew_zone_z_max', str(config['RobotSettings']['rew_zone_z_max']))
     load_config_calibration(rob_controller, config)
-    config = load_config_commands(rob_controller, config)    
     return config
