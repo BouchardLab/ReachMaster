@@ -99,14 +99,17 @@ class Protocols(tk.Toplevel):
 
         print("starting interfaces...")
         self.exp_controller = expint.start_interface(self.config)
+        sleep(1)
         self.exp_connected = True
         print("loading experiment settings...")
         expint.set_exp_controller(self.exp_controller, self.config)
+        sleep(1)
         self.rob_controller = robint.start_interface(self.config)
+        sleep(2)
         self.rob_connected = True
         print("loading robot settings...")
         self.config = robint.set_rob_controller(self.rob_controller, self.config)
-
+        sleep(2)
 
         self.cams = camint.CameraInterface(self.config)
         self.cams_connected = True

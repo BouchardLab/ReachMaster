@@ -234,6 +234,7 @@ class CameraInterface:
         """   
 
         print('starting camera processes... ')
+        self.vidgear_writer = WriteGear(output_filename=vid_fn)
         for cam_id in range(self.config['CameraSettings']['num_cams']):
             trigger_parent, trigger_child = mp.Pipe()
             self.cam_trigger_pipes.append(trigger_parent)
@@ -363,6 +364,11 @@ class CameraInterface:
         poi_deviation_pipe, 
         trial_ended_pipe
         ):
+        #Create Id's for video functions
+        vid_fn = (
+                self.config['ReachMaster']['data_dir'] + '/videos/trial' +
+                str(trial_num) + '_cam' + str(cam_id) + '.mp4'
+        )
         sleep(2*cam_id) #prevents simultaneous calls to the ximea api
         print('finding camera: ', cam_id)
         cam = xiapi.Camera(dev_id = cam_id)
