@@ -2,14 +2,14 @@ from sklearn.decomposition import PCA
 import pandas as pd
 import pickle
 import matplotlib.pyplot as plt
-#import software.ReachSplitter.DataStream_Vis_Utils as utils
-import DataStream_Vis_Utils as utils
+import software.ReachSplitter.DataStream_Vis_Utils as utils
+# import DataStream_Vis_Utils as utils
 from moviepy.editor import *
 import skvideo
 import cv2
 import imageio
 import numpy as np
-import viz_utils as vu
+import software.ReachSplitter.viz_utils as vu
 import scipy
 from scipy.signal import find_peaks
 from scipy.ndimage import gaussian_filter1d
@@ -24,6 +24,38 @@ import skvideo.io
 
 
 # Public functions
+def find_linear_transformation_between_DLC_and_robot(handle_vector, robot_vector):
+    # Find each dimensions transform
+    T = np.zeros((2, 3))
+    x_int = 0.15
+    y_int = 0.15
+    z_int = 0.4
+    T[1, 0] = x_int
+    T[1, 1] = y_int
+    T[1, 2] = z_int
+    for i in range(0, handle_vector.shape[1]):
+        M = np.linalg.lstsq(handle_vector[:, i].reshape(-1, 1), robot_vector[:, i].reshape(-1, 1))[0]
+        T[0, i] = M
+    return T
+
+
+def apply_linear_transformation_to_DLC_data(input_data, transformation_vector):
+    new_data = np.zeros(input_data.shape)
+    for il in range(0, input_data.shape[1]):
+        dd = np.array([np.dot(i, transformation_vector[0, il]) for i in input_data[:, il]])
+        new_data[:, il] = np.squeeze(dd)
+    return new_data
+
+
+def plot_session_alignment(input_data, robot_data, transformed_data, dim='x'):
+    length = np.linspace(0, input_data.shape[0], input_data.shape[0])
+    plt.scatter(length, input_data, label='handle_' + dim)
+    plt.scatter(length, robot_data, label='robot_' + dim)
+    plt.scatter(length, transformed_data, label='Xformed_' + dim)
+    plt.legend()
+    plt.show()
+
+
 def get_principle_components(positions, vel=0, acc=0, num_pcs=10):
     pca = PCA(n_components=num_pcs, whiten=True, svd_solver='full')
     if vel:
@@ -69,7 +101,7 @@ class ReachViz:
     # noinspection SpellCheckingInspection
     def __init__(self, date, session, data_path, block_vid_file, kin_path, rat):
         self.endpoint_error, self.x_endpoint_error, self.y_endpoint_error, self.z_endpoint_error = 0, 0, 0, 0
-        self.preprocessed_rmse, self.outlier_list = [], []
+        self.preprocessed_rmse, self.outlier_list, self.transformation_matrix = [], [], []
         self.probabilities, self.bi_reach_vector, self.trial_index, self.first_lick_signal, self.outlier_indexes = \
             [], [], [], [], []
         self.rat = rat
@@ -248,24 +280,33 @@ class ReachViz:
         print('Number of Trials: ' + str(len(self.trial_start_vectors)))
         return
 
-    def get_robot_and_handle_data_across_block(self):
-        coordinate_dataframe = []
-        # Take handle data from entire block
+    def align_workspace_coordinates_session(self, plot_handle_transformation=False):
+        """ Function to align our potentiometer-based coordinate system with our DeepLabCut predictions
+            coordinate system"""
+        x_int = 0.15
+        y_int = 0.15
+        z_int = 0.4
         self.handle = np.mean(
-            [self.kinematic_block[self.kinematic_block.columns[0:3]].values[0:-1, :],
-             self.kinematic_block[self.kinematic_block.columns[3:6]].values[0:-1, :]], axis=0)
+            [self.kinematic_block[self.kinematic_block.columns[0:3]].values[100:500, :],
+             self.kinematic_block[self.kinematic_block.columns[3:6]].values[100:500, :]], axis=0)
         # Take robot data from entire block
-        self.extract_sensor_data(0, -1, check_lick=False)
-        df_matrix = np.vstack(
-            [self.handle[:, 0], self.handle[:, 1], self.handle[:, 2], self.x_robot, self.y_robot, self.z_robot])
+        self.extract_sensor_data(100, 500, check_lick=False)
+        df_matrix = np.vstack([self.x_robot, self.y_robot, self.z_robot]).T
+        # Use input data to generate linear transformation matrix between DLC handle coordinates and pot coordinates
+        self.handle[:, 0] = self.handle[:, 0] + x_int
+        self.handle[:, 1] = self.handle[:, 1] + y_int
+        self.handle[:, 2] = self.handle[:, 2] + z_int
+        self.transformation_matrix = find_linear_transformation_between_DLC_and_robot(self.handle, df_matrix)
+        if plot_handle_transformation:
+            handle_transformed = apply_linear_transformation_to_DLC_data(self.handle, self.transformation_matrix)
+            plot_session_alignment(self.handle[:, 0], df_matrix[:, 0], handle_transformed[:, 0])
+            plot_session_alignment(self.handle[:, 1], df_matrix[:, 1], handle_transformed[:, 1], dim='y')
+            plot_session_alignment(self.handle[:, 2], df_matrix[:, 2], handle_transformed[:, 2], dim='z')
+        return self.transformation_matrix
 
-        coordinate_dataframe = pd.DataFrame(df_matrix.T,
-                                            columns=['handle_px', 'handle_py', 'handle_pz', 'robot_px', 'robot_py',
-                                                     'robot_pz'])
-        return coordinate_dataframe
-
-    def extract_sensor_data(self, idxstrt, idxstp, check_lick=True, filter=True):
-        """ Function to extract probability thresholded sensor data from ReachMaster. Data is coarsely filtered.
+    def extract_sensor_data(self, idxstrt, idxstp, check_lick=True, filter=False):
+        """ Function to extract probability thresholded sensor data from ReachMaster. Data has the option for it to be
+         coarsely filtered.
         """
         self.k_length = self.kinematic_block[self.kinematic_block.columns[3:6]].values.shape[0]
         self.block_exp_df = self.sensors.loc[self.sensors['Date'] == self.date].loc[self.sensors['S'] == self.session]
@@ -280,11 +321,14 @@ class ReachViz:
         x_pot = self.block_exp_df['x_pot'].values[0][::4]  # sample rate at 4x camera
         y_pot = self.block_exp_df['y_pot'].values[0][::4]
         z_pot = self.block_exp_df['z_pot'].values[0][::4]
+
         x_pot = x_pot[robot_length - self.k_length:robot_length]
         y_pot = y_pot[robot_length - self.k_length:robot_length]
         z_pot = z_pot[robot_length - self.k_length:robot_length]
+
         r, theta, phi, self.x_robot, self.y_robot, self.z_robot = utils.forward_xform_coords(
             x_pot[idxstrt:idxstp], y_pot[idxstrt:idxstp], z_pot[idxstrt:idxstp])
+        # pdb.set_trace()
         if check_lick:
             self.check_licking_times_and_make_vector()
         if filter:
@@ -305,9 +349,9 @@ class ReachViz:
 
     def calculate_number_of_speed_peaks_in_block(self):
         left_palm = vu.norm_coordinates(
-            self.kinematic_block[self.kinematic_block.columns[18:21]].values[0:-1, :])
+            self.kinematic_block[self.kinematic_block.columns[18:21]].values[0:-1, :], self.transformation_matrix)
         right_palm = vu.norm_coordinates(
-            self.kinematic_block[self.kinematic_block.columns[54:57]].values[0:-1, :])
+            self.kinematic_block[self.kinematic_block.columns[54:57]].values[0:-1, :], self.transformation_matrix)
         self.time_vector = list(right_palm[0, :])
         left_palm_p = np.mean(self.kinematic_block[self.kinematic_block.columns[18 + 81:21 + 81]].values[0:-1, :],
                               axis=1)
@@ -339,59 +383,87 @@ class ReachViz:
         # Threshold data if uncertainties in position > threshold
         self.prob_filter_index = np.where(self.prob_nose < coarse_threshold)[0]
         # Body parts, XYZ, used in ReachViz
-        nose = vu.norm_coordinates(self.kinematic_block[self.kinematic_block.columns[6:9]].values[cl1:cl2, :])
+        nose = vu.norm_coordinates(self.kinematic_block[self.kinematic_block.columns[6:9]].values[cl1:cl2, :],
+                                   aff_t=self.transformation_matrix)
         handle = np.mean(
-            [vu.norm_coordinates(self.kinematic_block[self.kinematic_block.columns[0:3]].values[cl1:cl2, :]),
-             vu.norm_coordinates(self.kinematic_block[self.kinematic_block.columns[3:6]].values[cl1:cl2, :])], axis=0)
+            [vu.norm_coordinates(self.kinematic_block[self.kinematic_block.columns[0:3]].values[cl1:cl2, :],
+                                 aff_t=self.transformation_matrix),
+             vu.norm_coordinates(self.kinematic_block[self.kinematic_block.columns[3:6]].values[cl1:cl2, :],
+                                 aff_t=self.transformation_matrix
+                                 )], axis=0)
         left_shoulder = vu.norm_coordinates(
-            self.kinematic_block[self.kinematic_block.columns[9:12]].values[cl1:cl2, :])  # 21 end
+            self.kinematic_block[self.kinematic_block.columns[9:12]].values[cl1:cl2, :],
+            aff_t=self.transformation_matrix)  # 21 end
         right_shoulder = vu.norm_coordinates(
-            self.kinematic_block[self.kinematic_block.columns[45:48]].values[cl1:cl2, :])  # 57 end
+            self.kinematic_block[self.kinematic_block.columns[45:48]].values[cl1:cl2, :],
+            aff_t=self.transformation_matrix)  # 57 end
         left_forearm = vu.norm_coordinates(
-            self.kinematic_block[self.kinematic_block.columns[12:15]].values[cl1:cl2, :])  # 21 end
+            self.kinematic_block[self.kinematic_block.columns[12:15]].values[cl1:cl2, :],
+            aff_t=self.transformation_matrix)  # 21 end
         right_forearm = vu.norm_coordinates(
-            self.kinematic_block[self.kinematic_block.columns[48:51]].values[cl1:cl2, :])  # 57 end
+            self.kinematic_block[self.kinematic_block.columns[48:51]].values[cl1:cl2, :],
+            aff_t=self.transformation_matrix)  # 57 end
         left_wrist = vu.norm_coordinates(
-            self.kinematic_block[self.kinematic_block.columns[15:18]].values[cl1:cl2, :])  # 21 end
+            self.kinematic_block[self.kinematic_block.columns[15:18]].values[cl1:cl2, :],
+            aff_t=self.transformation_matrix)  # 21 end
         right_wrist = vu.norm_coordinates(
-            self.kinematic_block[self.kinematic_block.columns[51:54]].values[cl1:cl2, :])  # 57 end
+            self.kinematic_block[self.kinematic_block.columns[51:54]].values[cl1:cl2, :],
+            aff_t=self.transformation_matrix)  # 57 end
         left_palm = vu.norm_coordinates(
-            self.kinematic_block[self.kinematic_block.columns[18:21]].values[cl1:cl2, :])
+            self.kinematic_block[self.kinematic_block.columns[18:21]].values[cl1:cl2, :],
+            aff_t=self.transformation_matrix)
         right_palm = vu.norm_coordinates(
-            self.kinematic_block[self.kinematic_block.columns[54:57]].values[cl1:cl2, :])
+            self.kinematic_block[self.kinematic_block.columns[54:57]].values[cl1:cl2, :],
+            aff_t=self.transformation_matrix)
         # Digits, optional for now
         right_index_base = vu.norm_coordinates(
-            self.kinematic_block[self.kinematic_block.columns[27:30]].values[cl1:cl2, :])
+            self.kinematic_block[self.kinematic_block.columns[27:30]].values[cl1:cl2, :],
+            aff_t=self.transformation_matrix)
         right_index_tip = vu.norm_coordinates(
-            self.kinematic_block[self.kinematic_block.columns[30:33]].values[cl1:cl2, :])
+            self.kinematic_block[self.kinematic_block.columns[30:33]].values[cl1:cl2, :],
+            aff_t=self.transformation_matrix)
         right_middle_base = vu.norm_coordinates(
-            self.kinematic_block[self.kinematic_block.columns[36:39]].values[cl1:cl2, :])
+            self.kinematic_block[self.kinematic_block.columns[36:39]].values[cl1:cl2, :],
+            aff_t=self.transformation_matrix)
         right_middle_tip = vu.norm_coordinates(
-            self.kinematic_block[self.kinematic_block.columns[39:42]].values[cl1:cl2, :])
+            self.kinematic_block[self.kinematic_block.columns[39:42]].values[cl1:cl2, :],
+            aff_t=self.transformation_matrix)
         right_third_base = vu.norm_coordinates(
-            self.kinematic_block[self.kinematic_block.columns[42:45]].values[cl1:cl2, :])
+            self.kinematic_block[self.kinematic_block.columns[42:45]].values[cl1:cl2, :],
+            aff_t=self.transformation_matrix)
         right_third_tip = vu.norm_coordinates(
-            self.kinematic_block[self.kinematic_block.columns[45:48]].values[cl1:cl2, :])
+            self.kinematic_block[self.kinematic_block.columns[45:48]].values[cl1:cl2, :],
+            aff_t=self.transformation_matrix)
         right_end_base = vu.norm_coordinates(
-            self.kinematic_block[self.kinematic_block.columns[48:51]].values[cl1:cl2, :])
+            self.kinematic_block[self.kinematic_block.columns[48:51]].values[cl1:cl2, :],
+            aff_t=self.transformation_matrix)
         right_end_tip = vu.norm_coordinates(
-            self.kinematic_block[self.kinematic_block.columns[51:54]].values[cl1:cl2, :])
+            self.kinematic_block[self.kinematic_block.columns[51:54]].values[cl1:cl2, :],
+            aff_t=self.transformation_matrix)
         left_index_base = vu.norm_coordinates(
-            self.kinematic_block[self.kinematic_block.columns[54:57]].values[cl1:cl2, :])
+            self.kinematic_block[self.kinematic_block.columns[54:57]].values[cl1:cl2, :],
+            aff_t=self.transformation_matrix)
         left_index_tip = vu.norm_coordinates(
-            self.kinematic_block[self.kinematic_block.columns[57:60]].values[cl1:cl2, :])
+            self.kinematic_block[self.kinematic_block.columns[57:60]].values[cl1:cl2, :],
+            aff_t=self.transformation_matrix)
         left_middle_base = vu.norm_coordinates(
-            self.kinematic_block[self.kinematic_block.columns[60:63]].values[cl1:cl2, :])
+            self.kinematic_block[self.kinematic_block.columns[60:63]].values[cl1:cl2, :],
+            aff_t=self.transformation_matrix)
         left_middle_tip = vu.norm_coordinates(
-            self.kinematic_block[self.kinematic_block.columns[66:69]].values[cl1:cl2, :])
+            self.kinematic_block[self.kinematic_block.columns[66:69]].values[cl1:cl2, :],
+            aff_t=self.transformation_matrix)
         left_third_base = vu.norm_coordinates(
-            self.kinematic_block[self.kinematic_block.columns[69:72]].values[cl1:cl2, :])
+            self.kinematic_block[self.kinematic_block.columns[69:72]].values[cl1:cl2, :],
+            aff_t=self.transformation_matrix)
         left_third_tip = vu.norm_coordinates(
-            self.kinematic_block[self.kinematic_block.columns[72:75]].values[cl1:cl2, :])
+            self.kinematic_block[self.kinematic_block.columns[72:75]].values[cl1:cl2, :],
+            aff_t=self.transformation_matrix)
         left_end_base = vu.norm_coordinates(
-            self.kinematic_block[self.kinematic_block.columns[75:78]].values[cl1:cl2, :])
+            self.kinematic_block[self.kinematic_block.columns[75:78]].values[cl1:cl2, :],
+            aff_t=self.transformation_matrix)
         left_end_tip = vu.norm_coordinates(
-            self.kinematic_block[self.kinematic_block.columns[78:81]].values[cl1:cl2, :])
+            self.kinematic_block[self.kinematic_block.columns[78:81]].values[cl1:cl2, :],
+            aff_t=self.transformation_matrix)
         # Probabilities
         nose_p = np.mean(self.kinematic_block[self.kinematic_block.columns[6 + w:9 + w]].values[cl1:cl2, :], axis=1)
         handle_p = np.mean(self.kinematic_block[self.kinematic_block.columns[3 + w:6 + w]].values[cl1:cl2, :], axis=1)
@@ -514,9 +586,12 @@ class ReachViz:
                                                                              self.handle[1, :]) ** 2 +
                          (self.right_palm[2, :] - self.handle[2, :]) ** 2))))
 
-        x_distance_error = min(min(self.left_palm[0, :] - self.handle[0, :]), min(self.right_palm[0, :] - self.handle[0, :]))
-        y_distance_error = min(min(self.left_palm[1, :] - self.handle[1, :]), min(self.right_palm[1, :] - self.handle[1, :]))
-        z_distance_error = min(min(self.left_palm[2, :] - self.handle[2, :]), min(self.right_palm[2, :] - self.handle[2, :]))
+        x_distance_error = min(min(self.left_palm[0, :] - self.handle[0, :]),
+                               min(self.right_palm[0, :] - self.handle[0, :]))
+        y_distance_error = min(min(self.left_palm[1, :] - self.handle[1, :]),
+                               min(self.right_palm[1, :] - self.handle[1, :]))
+        z_distance_error = min(min(self.left_palm[2, :] - self.handle[2, :]),
+                               min(self.right_palm[2, :] - self.handle[2, :]))
 
         return total_distance_error, x_distance_error, y_distance_error, z_distance_error
 
@@ -1046,6 +1121,8 @@ class ReachViz:
         self.left_hand_raw_speeds = []
         self.right_hand_raw_speeds = []
         self.total_outliers = []
+        # Obtain workspace coordinate alignment
+        self.align_workspace_coordinates_session()
         # Code here to count # of "peaks" in total data
         self.calculate_number_of_speed_peaks_in_block()
         for ix, sts in enumerate(self.trial_start_vectors):
@@ -1077,7 +1154,7 @@ class ReachViz:
                     self.total_preprocessed_speeds = np.hstack((self.total_preprocessed_speeds,
                                                                 np.asarray(self.speeds).flatten()))
                     self.total_outliers = np.hstack((np.asarray(self.outlier_list).flatten(), self.total_outliers))
-            win_length = 5
+            win_length = 15
             # Segment reach block
             if self.reach_start_time:  # If reach detected
                 # tt = self.reach_end_time - self.reach_start_time
@@ -1377,8 +1454,8 @@ class ReachViz:
         frames_n = np.around(self.time_vector, 2)
         frames = frames_n - frames_n[0]  # normalize frame values by first entry.
         plt.title('Principal Components of Position, P+V, P+V+A')
-        #plt.plot(self.pos_v_a_pc_variance[:, 0], self.pos_v_a_pc_variance[:, 1], c='r', label='PCs for total kinematics')
-        #plt.plot(self.right_arm_pc_pos[:, 0], self.right_arm_pc_pos[:, 1], c='b', label='Right Arm PC')
+        # plt.plot(self.pos_v_a_pc_variance[:, 0], self.pos_v_a_pc_variance[:, 1], c='r', label='PCs for total kinematics')
+        # plt.plot(self.right_arm_pc_pos[:, 0], self.right_arm_pc_pos[:, 1], c='b', label='Right Arm PC')
         axel0.tight_layout(pad=0.005)
         axel0.legend()
         axel0.savefig(filename_pc, bbox_inches='tight')

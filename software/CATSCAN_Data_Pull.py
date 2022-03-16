@@ -44,10 +44,11 @@ def loop_over_rat_and_extract_data(prediction_dataframe, e_dataframe, dummy_vide
         if reaching:
             reaching_df = R.get_reach_dataframe_from_block()
         else:
-            reaching_df = R.get_robot_and_handle_data_across_block()
+            reaching_df = R.align_workspace_coordinates_session()
         if ilx == 0:
-            final_df = reaching_df
-        final_df = pd.concat([final_df, reaching_df])
+            final_df = pd.DataFrame(reaching_df)
+        else:
+            final_df = pd.concat([final_df, pd.DataFrame(reaching_df)])
     return final_df
 
 
@@ -59,7 +60,7 @@ def extract_reaching_data_from_unprocessed_data(block_video_file_id, kin_file_ba
         if '_' in ratt:
             ratt = ratt[1:]
             print(ratt)
-        complete_rat_df = loop_over_rat_and_extract_data(single_file, exp_file, block_video_file_id, ratt, reaching=False)
+        complete_rat_df = loop_over_rat_and_extract_data(single_file, exp_file, block_video_file_id, ratt, reaching=True)
         if num == 0:
             rat_final_df = complete_rat_df
         else:

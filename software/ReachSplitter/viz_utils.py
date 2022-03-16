@@ -2,7 +2,7 @@ import pdb
 from math import ceil
 from scipy import linalg
 import pandas as pd
-from Analysis_Utils import preprocessing_df as preprocessing
+from software.ReachSplitter.Analysis_Utils import preprocessing_df as preprocessing
 from moviepy.editor import *
 import cv2
 import numpy as np
@@ -133,19 +133,18 @@ def interpolate_3d_vector(xkin_three_vectors, velocity_index, prob_index, gap_nu
     return np.asarray(xkin_three_vectors), interpolation_number, np.squeeze(np.asarray(gap_index))
 
 
-def norm_coordinates(kin_three_vector, aff_t=False):
+def norm_coordinates(kin_three_vector, aff_t):
     """ Function to import and transform kinematic data using pre-generated affine transformation. For more information on
     generating this transformation, see ReachPredict3D's documentation on handle matching."""
-    if aff_t:
+
+    try:
         ax = aff_t[0, 0]
         by = aff_t[0, 1]
         cz = aff_t[0, 2]
         a = aff_t[1, 0]
         b = aff_t[1, 1]
         c = aff_t[1, 2]
-    else:
-        # Values found using approximate linear transformation between robot and handle coordinates
-        # Notebook found in ReachSplitter : handle_DLC_Robot_CoordinateMatch
+    except:
         ax = -2.6
         by = -0.25
         cz = 1.8
