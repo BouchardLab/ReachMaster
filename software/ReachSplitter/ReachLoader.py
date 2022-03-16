@@ -2,14 +2,14 @@ from sklearn.decomposition import PCA
 import pandas as pd
 import pickle
 import matplotlib.pyplot as plt
-import software.ReachSplitter.DataStream_Vis_Utils as utils
+import DataStream_Vis_Utils as utils
 # import DataStream_Vis_Utils as utils
 from moviepy.editor import *
 import skvideo
 import cv2
 import imageio
 import numpy as np
-import software.ReachSplitter.viz_utils as vu
+import viz_utils as vu
 import scipy
 from scipy.signal import find_peaks
 from scipy.ndimage import gaussian_filter1d
@@ -1340,6 +1340,7 @@ class ReachViz:
 
     def vid_splitter_and_grapher(self, trial_num=0, plot=True, timeseries_plot=True, plot_reach=True, save_data=False):
         """ Function to split and visualize reaching behavior from a given experimental session. """
+        tm = self.align_workspace_coordinates_session()
         for ix, sts in enumerate(self.trial_start_vectors):
             self.trial_index = sts
             if ix > trial_num:
@@ -1350,11 +1351,11 @@ class ReachViz:
                 self.make_paths()
                 self.clip_path = self.sstr + '/videos/trial_video.mp4'
                 stp = self.trial_stop_vectors[ix]
-                self.split_trial_video(sts, stp)
+                self.split_trial_video(sts, sts+300)
                 print('Split Trial' + str(ix) + ' Video')
-                self.segment_and_filter_kinematic_block(sts, stp)
+                self.segment_and_filter_kinematic_block(sts, sts+300)
                 self.plot_verification_variables()
-                self.extract_sensor_data(sts, stp)
+                self.extract_sensor_data(sts, sts+300)
                 self.segment_reaches_with_speed_peaks()
                 self.plot_velocities_against_probabilities()
                 print('Finished Plotting!   ' + str(ix))

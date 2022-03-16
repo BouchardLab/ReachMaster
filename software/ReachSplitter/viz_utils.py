@@ -2,7 +2,7 @@ import pdb
 from math import ceil
 from scipy import linalg
 import pandas as pd
-from software.ReachSplitter.Analysis_Utils import preprocessing_df as preprocessing
+from Analysis_Utils import preprocessing_df as preprocessing
 from moviepy.editor import *
 import cv2
 import numpy as np
@@ -136,21 +136,12 @@ def interpolate_3d_vector(xkin_three_vectors, velocity_index, prob_index, gap_nu
 def norm_coordinates(kin_three_vector, aff_t):
     """ Function to import and transform kinematic data using pre-generated affine transformation. For more information on
     generating this transformation, see ReachPredict3D's documentation on handle matching."""
-
-    try:
-        ax = aff_t[0, 0]
-        by = aff_t[0, 1]
-        cz = aff_t[0, 2]
-        a = aff_t[1, 0]
-        b = aff_t[1, 1]
-        c = aff_t[1, 2]
-    except:
-        ax = -2.6
-        by = -0.25
-        cz = 1.8
-        a = .21
-        b = .15
-        c = .38
+    ax = -1.0
+    by = -0.99
+    cz = 1.0
+    a = 0.15
+    b = 0.15
+    c = 0.4
     xkin_three_vector = np.zeros(kin_three_vector.shape)
     xkin_three_vector[:, 0] = kin_three_vector[:, 0] * ax + a
     xkin_three_vector[:, 1] = kin_three_vector[:, 1] * by + b
