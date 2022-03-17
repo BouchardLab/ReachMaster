@@ -137,7 +137,7 @@ def norm_coordinates(kin_three_vector, aff_t):
     """ Function to import and transform kinematic data using pre-generated affine transformation. For more information on
     generating this transformation, see ReachPredict3D's documentation on handle matching."""
     ax = -1.0
-    by = -0.99
+    by = -1.0
     cz = 1.0
     a = 0.15
     b = 0.15
