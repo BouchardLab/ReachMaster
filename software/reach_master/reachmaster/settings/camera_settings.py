@@ -135,6 +135,23 @@ class CameraSettings(tk.Toplevel):
         self.protocol("WM_DELETE_WINDOW", self.on_quit) 
         #initialize tk variables from config
         self.config = config.load_config('./temp/tmp_config.json')
+        self.ffmpeg_object = {
+            '-f':'rawvideo',
+            '-s':str(
+                self.config['CameraSettings']['img_width'] *
+                self.config['CameraSettings']['num_cams']
+            ) + 'x' + str(self.config['CameraSettings']['img_height']),
+            '-pix_fmt': 'bgr24',
+            '-r': str(self.config['CameraSettings']['fps']),
+            '-i': '-',
+            '-b:v': '2M',
+            '-maxrate': '2M',
+            '-bufsize': '1M',
+            '-c:v': 'libx264',
+            '-preset': 'superfast',
+            '-rc': 'cbr',
+            '-pix_fmt': 'yuv420p'
+        }
         self.ffmpeg_command = [
         'ffmpeg', '-y', 
         '-hwaccel', 'cuvid', 
@@ -546,22 +563,18 @@ class CameraSettings(tk.Toplevel):
             # Initialize vidgear wheels
             #output_params = self.ffmpeg_command
             #"-vcodec":"libx264",
-            output_params = {'-s': str(
-                                    self.config['CameraSettings']['img_width'] *
-                                    self.config['CameraSettings']['num_cams']
-                                    ) + 'x' + str(self.config['CameraSettings']['img_height']),
-                                '-r': str(self.config['CameraSettings']['fps']),
+            output_params = {'-r': str(self.config['CameraSettings']['fps']),
                                 '-pix_fmt': 'bgr24',
                                 '-i': '-',
                                 '-b:v': '2M',
                                 '-maxrate': '2M',
                                 '-bufsize': '1M',
-                                '-c:v': 'h264_nvenc',
+                                '-c:v': 'libx264',
                                 '-preset': 'llhp',
                                 '-profile:v': 'high',
                                 '-rc': 'cbr',
                                 '-pix_fmt': 'yuv420p'}
-            self.vidgear_writer_cal = WriteGear(output_filename=vid_fn, compression_mode=True, logging=True, **output_params)
+            self.vidgear_writer_cal = WriteGear(output_filename=vid_fn, compression_mode=True, logging=True, **self.ffmpeg_object)
             # ffmpeg unit commands, depreciated
             #ffmpeg_command = self.ffmpeg_command
             #ffmpeg_command.append(vid_fn)

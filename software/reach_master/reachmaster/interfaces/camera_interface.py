@@ -234,7 +234,7 @@ class CameraInterface:
         """   
 
         print('starting camera processes... ')
-        self.vidgear_writer = WriteGear(output_filename=vid_fn)
+        #self.vidgear_writer = WriteGear(output_filename=vid_fn)
         for cam_id in range(self.config['CameraSettings']['num_cams']):
             trigger_parent, trigger_child = mp.Pipe()
             self.cam_trigger_pipes.append(trigger_parent)
@@ -366,8 +366,7 @@ class CameraInterface:
         ):
         #Create Id's for video functions
         vid_fn = (
-                self.config['ReachMaster']['data_dir'] + '/videos/trial' +
-                str(trial_num) + '_cam' + str(cam_id) + '.mp4'
+                self.config['ReachMaster']['data_dir'] + '/videos/trial'  + '_cam' + str(cam_id) + '.mp4'
         )
         sleep(2*cam_id) #prevents simultaneous calls to the ximea api
         print('finding camera: ', cam_id)
@@ -411,7 +410,7 @@ class CameraInterface:
                 self.config['ReachMaster']['data_dir'] + '/videos/trial' +
                 str(trial_num) + '_cam' + str(cam_id) + '.mp4'
                 )
-        self.vidgear_writer_cal = WriteGear(output_filename=vid_fn)
+        vidgear_writer_cal = WriteGear(output_filename=vid_fn)
         #self.ffmpeg_command.append(vid_fn)
         #ffmpeg_process = sp.Popen(
         #    self.ffmpeg_command,
@@ -428,7 +427,7 @@ class CameraInterface:
                     trigger_pipe.send('c')
                     npimg = img.get_image_data_numpy()     
                     frame = cv2.cvtColor(npimg, cv2.COLOR_BAYER_BG2BGR)
-                    self.vidgear_writer_cal.write(frame)
+                    vidgear_writer_cal.write(frame)
                     #ffmpeg_process.stdin.write(frame)
                     dev = self._estimate_poi_deviation(cam_id, npimg, poi_means, poi_std)      
                     poi_deviation_pipe.send(dev)
