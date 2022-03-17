@@ -2,14 +2,14 @@ from sklearn.decomposition import PCA
 import pandas as pd
 import pickle
 import matplotlib.pyplot as plt
-import DataStream_Vis_Utils as utils
+import software.ReachSplitter.DataStream_Vis_Utils as utils
 # import DataStream_Vis_Utils as utils
 from moviepy.editor import *
 import skvideo
 import cv2
 import imageio
 import numpy as np
-import viz_utils as vu
+import software.ReachSplitter.viz_utils as vu
 import scipy
 from scipy.signal import find_peaks
 from scipy.ndimage import gaussian_filter1d
@@ -365,9 +365,13 @@ class ReachViz:
         # If palms are > 0.21m in the x-direction towards the handle 0 position.
         left_palm_f[left_palm_prob, 0] = 0
         right_palm_f[right_palm_prob, 0] = 0
-        right_palm_maxima = find_peaks(right_palm_f[:, 0], height=0.265, distance=8)[0]
-        left_palm_maxima = find_peaks(left_palm_f[:, 0], height=0.265, distance=8)[0]
+        right_palm_maxima = find_peaks(right_palm_f[:, 0], height=0.17, distance=8)[0]
+        left_palm_maxima = find_peaks(left_palm_f[:, 0], height=0.17, distance=8)[0]
         num_peaks = len(right_palm_maxima) + len(left_palm_maxima)
+        if num_peaks < 1:
+            plt.plot(left_palm_f[:, 0])
+            plt.plot(right_palm_f[:, 0])
+            plt.show()
         print("Number of tentative reaching actions detected:  " + str(num_peaks))
         return num_peaks
 
@@ -732,11 +736,11 @@ class ReachViz:
         lps[self.prob_filter_index] = 0
         rps[self.prob_filter_index] = 0
         # If palms are < 0.6 p-value, remove chance at "maxima"
-        left_palm_prob = np.where(self.left_palm_p < 0.6)[0]
-        right_palm_prob = np.where(self.right_palm_p < 0.6)[0]
-        # If palms are > 0.23m in the x-direction towards the handle 0 position.
-        left_palm_pos_f = np.where(self.left_palm[:, 0] < 0.15)[0]
-        right_palm_pos_f = np.where(self.right_palm[:, 0] < 0.15)[0]
+        left_palm_prob = np.where(self.left_palm_p < 0.5)[0]
+        right_palm_prob = np.where(self.right_palm_p < 0.5)[0]
+        # If palms are > 0.15m in the x-direction towards the handle 0 position.
+        left_palm_pos_f = np.where(self.left_palm[:, 0] < 0.14)[0]
+        right_palm_pos_f = np.where(self.right_palm[:, 0] < 0.14)[0]
         lps[left_palm_prob] = 0
         rps[right_palm_prob] = 0
         rps[right_palm_pos_f] = 0
@@ -745,7 +749,11 @@ class ReachViz:
         rps[hidx] = 0
         lps[0:4] = 0  # remove any possible edge effect
         rps[0:4] = 0  # remove any possible edge effect
-        self.left_palm_maxima = find_peaks(lps, height=0.3, distance=8)[0]
+        #plt.plot(lps, label='ls')
+        #plt.plot(rps, label='rs')
+        #plt.legend()
+        #plt.show()
+        self.left_palm_maxima = find_peaks(lps, height=0.2, distance=8)[0]
         if self.left_palm_maxima.any():
             print('Left Palm Reach')
             for ir in range(0, self.left_palm_maxima.shape[0]):
@@ -767,7 +775,7 @@ class ReachViz:
                 self.reach_duration.append(
                     self.time_vector[left_palm_below_thresh_after] - self.time_vector[start_time_l])
         # Find peaks in right palm time-series
-        self.right_palm_maxima = find_peaks(rps, height=0.3, distance=8)[0]
+        self.right_palm_maxima = find_peaks(rps, height=0.2, distance=8)[0]
         if self.right_palm_maxima.any():
             print('Right Palm Reach')
             for ir in range(0, self.right_palm_maxima.shape[0]):
@@ -789,8 +797,13 @@ class ReachViz:
                     self.time_vector[right_palm_below_thresh_after] - self.time_vector[start_time_r])
         if block:
             self.total_block_reaches = 0
-            pdb.set_trace()
         # Check for unrealistic values (late in trial)
+        for idx, time in enumerate(self.right_reach_end_times):
+            if time > 700:
+                self.right_reach_end_times[idx] = 700 # Max trial time.
+        for idx, time in enumerate(self.left_reach_end_times):
+            if time > 700:
+                self.left_reach_end_times[idx] = 700 # Max trial time.
         # Take min of right and left start times as "reach times" for start of classification extraction
         if self.right_start_times and self.left_start_times:
             self.reach_start_time = min(list(self.right_start_times) + list(self.left_start_times)) + 1
