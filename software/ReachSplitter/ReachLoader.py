@@ -608,7 +608,10 @@ class ReachViz:
             self.raw_speeds.append(speed_c)
             v_outlier_index = np.where(svd > 2)
             possi, num_int, gap_ind = vu.interpolate_3d_vector(np.copy(o_positions), v_outlier_index, prob_outliers)
-            filtered_pos = vu.cubic_spline_smoothing(np.copy(possi), spline_coeff=spline)
+            try:
+                filtered_pos = vu.cubic_spline_smoothing(np.copy(possi), spline_coeff=spline)
+            except:
+                print('bad filter')
             v, a, s = self.calculate_kinematics_from_position(np.copy(filtered_pos), spline=True)
             # Find and save still-present outliers in the data
             velocity_outlier_indexes = np.where(s > 2)[0]

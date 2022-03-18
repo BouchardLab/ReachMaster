@@ -85,7 +85,6 @@ class ReachUtils:
         self.trial_start_vectors = []
         self.trial_stop_vectors = []
         #self.load_data()
-        self.get_block_data()
         self.get_start_stop()
         self.save_list = []
         self.sensor_array = []
@@ -94,32 +93,9 @@ class ReachUtils:
         self.prob_features = []
         return
 
-    def load_data(self):
-        #self.sensors = self.import_robot_data().reset_index(drop=True)
-        #with (open(self.kinematic_data_path, "rb")) as openfile:
-        #    self.d = pickle.load(openfile)
-        return
-
-    def import_robot_data(self):
-        #df = pd.read_pickle(self.rdata_path)
-        #df = preprocessing(df)
-        return #df
-
     def get_start_stop(self):
         self.trial_start_vectors = self.block_exp_df['r_start'].values[0]
         self.trial_stop_vectors = self.block_exp_df['r_stop'].values[0]
-        return
-
-    def get_block_data(self):
-        #for kin_items in self.d:
-        #    sess = kin_items.columns.levels[1]
-        #    date = kin_items.columns.levels[2]
-        #    if sess[0] in self.session:
-         #       if date[0][-2:] in self.date:
-         #           print('Hooked block positions for date  ' + date[0] + '     and session  ' + sess[0])
-         #           self.kinematic_block = kin_items
-        #self.block_exp_df = self.sensors.loc[self.sensors['Date'] == self.date].loc[self.sensors['S'] == self.session]
-        #assert len(self.block_exp_df) != 0, "Block not found"
         return
 
     def extract_sensor_data_for_reaching_predictions(self, idxstrt, idxstp):
