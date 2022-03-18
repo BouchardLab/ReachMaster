@@ -612,7 +612,10 @@ class ReachViz:
                 filtered_pos = vu.cubic_spline_smoothing(np.copy(possi), spline_coeff=spline)
             except:
                 print('bad filter')
-            v, a, s = self.calculate_kinematics_from_position(np.copy(filtered_pos), spline=True)
+            try:
+                v, a, s = self.calculate_kinematics_from_position(np.copy(filtered_pos), spline=True)
+            except:
+                print('bf')
             # Find and save still-present outliers in the data
             velocity_outlier_indexes = np.where(s > 2)[0]
             # Find array of total outliers
@@ -1184,12 +1187,15 @@ class ReachViz:
                         self.extract_sensor_data(sts, sts + 100)
                         print('Possible Tug of War Behavior!')
                     else:  # If a reach is detected (successful reach)
-                        self.segment_and_filter_kinematic_block(
-                            sts + self.reach_start_time - win_length,
-                            sts + reach_end_time + win_length)
-                        self.extract_sensor_data(sts + self.reach_start_time - win_length,
+                        try:
+                            self.segment_and_filter_kinematic_block(
+                                sts + self.reach_start_time - win_length,
+                                sts + reach_end_time + win_length)
+                            self.extract_sensor_data(sts + self.reach_start_time - win_length,
                                                  sts + reach_end_time + win_length)
-                        print('Successful Reach Detected')
+                            print('Successful Reach Detected')
+                        except:
+                            continue
                 else:  # unrewarded reach
                     self.segment_and_filter_kinematic_block(sts + self.reach_start_time - win_length,
                                                             sts + reach_end_time + win_length)
