@@ -285,7 +285,7 @@ class Protocols(tk.Toplevel):
 
         # self.cams = camint.CameraInterface(self.config)
         self.cams_connected = True
-        self.start_protocol_interface()  # start the camera interface
+        self.start_camera_interface()  # start the camera interface
         # self.cam_thread = threading.Thread(target=self.cam_init())
         # self.cam_thread.start()
         sleep(10)  # give the cameras time to start
@@ -492,6 +492,11 @@ class Protocols(tk.Toplevel):
             self.move_robot_callback()
             self.reach_detected = False
 
+    def trial_ended(self):
+        """Alert cameras processes that a trial has ended."""
+        for pipe in self.trial_ended_pipes:
+            pipe.send(1)
+
     def run(self):
         """Execute a single iteration of the selected protocol type.
         
@@ -510,17 +515,15 @@ class Protocols(tk.Toplevel):
         else:
             print("Invalid protocol!")
             self.on_quit()
+# Camera processes and functions -----------------------------------------
 
-    ###### Camera processes
-
-    def start_protocol_interface(self):
+    def start_camera_interface(self):
         """Sets up the camera process and pipe system for each
         camera.
 
         """
 
         print('starting camera processes... ')
-        # self.vidgear_writer = WriteGear(output_filename=vid_fn)
         for cam_id in range(self.config['CameraSettings']['num_cams']):
             trigger_parent, trigger_child = mp.Pipe()
             self.cam_trigger_pipes.append(trigger_parent)
@@ -530,7 +533,7 @@ class Protocols(tk.Toplevel):
             self.trial_ended_pipes.append(trial_parent)
             self.camera_processes.append(
                 mp.Process(
-                    target=self._protocol_process,
+                    target=self._camera_processes,
                     args=(
                         cam_id,
                         trigger_child,
@@ -544,106 +547,7 @@ class Protocols(tk.Toplevel):
             process.start()
         sleep(5)  # give cameras time to setup
 
-    def stop_interface(self):
-        """Tells the camera processes to shut themselves down, waits
-        for them to exit, then cleans all the pipes.
-        """
-        self.cams_started.value = False
-        for proc in self.camera_processes:
-            proc.join()
-        self.cam_trigger_pipes = []
-        self.poi_deviation_pipes = []
-        self.trial_ended_pipes = []
-
-    def triggered(self):
-        """Alert camera processes that cameras have been triggered"""
-        for pipe in self.cam_trigger_pipes:
-            pipe.send(1)
-
-    def all_triggerable(self):
-        """Check if camera processes are ready for cameras to be
-        triggered.
-
-        Returns
-        -------
-        triggerable : bool
-            True if cameras ready.
-        """
-        if all([pipe.poll() for pipe in self.cam_trigger_pipes]):
-            for pipe in self.cam_trigger_pipes:
-                pipe.recv()
-            triggerable = True
-        else:
-            triggerable = False
-        return triggerable
-
-    def get_poi_deviation(self):
-        """Check the smallest deviation from baseline of pixels of
-        interest across all cameras.
-
-        Returns
-        -------
-        dev : int
-            The minimum deviation across all cameras.
-        """
-        if all([pipe.poll() for pipe in self.poi_deviation_pipes]):
-            deviations = [pipe.recv() for pipe in self.poi_deviation_pipes]
-            dev = min(deviations)
-        else:
-            dev = 0
-        return dev
-
-    def trial_ended(self):
-        """Alert cameras processes that a trial has ended."""
-        for pipe in self.trial_ended_pipes:
-            pipe.send(1)
-
-    def _acquire_baseline(self, cam, cam_id, img, num_imgs, trigger_pipe):
-        poi_indices = self.config['CameraSettings']['saved_pois'][cam_id]
-        num_pois = len(poi_indices)
-        baseline_pois = np.zeros(shape=(num_pois, num_imgs))
-        trigger_pipe.send(1)
-        # acquire baseline images
-        for i in range(num_imgs):
-            while not trigger_pipe.poll():
-                pass
-            trigger_pipe.recv()
-            try:
-                cam.get_image(img, timeout=2000)
-                trigger_pipe.send('c')
-                npimg = img.get_image_data_numpy()
-                for j in range(num_pois):
-                    baseline_pois[j, i] = npimg[
-                        poi_indices[j][1],
-                        poi_indices[j][0]
-                    ]
-            except Exception as err:
-                print("error: " + str(cam_id))
-                print(err)
-        # compute summary stats
-        poi_means = np.mean(baseline_pois, axis=1)
-        poi_std = np.std(
-            np.sum(
-                np.square(
-                    baseline_pois - poi_means.reshape(num_pois, 1)
-                ),
-                axis=0
-            )
-        )
-        return poi_means, poi_std
-
-    def _estimate_poi_deviation(self, cam_id, npimg, poi_means, poi_std):
-        poi_indices = self.config['CameraSettings']['saved_pois'][cam_id]
-        num_pois = len(poi_indices)
-        poi_obs = np.zeros(num_pois)
-        for j in range(num_pois):
-            poi_obs[j] = npimg[poi_indices[j][1], poi_indices[j][0]]
-        dev = int(
-            np.sum(np.square(poi_obs - poi_means)) / (poi_std + np.finfo(float).eps)
-        )
-        return dev
-
-    def _protocol_process(
+    def _camera_processes(
             self,
             cam_id,
             trigger_pipe,
@@ -733,3 +637,103 @@ class Protocols(tk.Toplevel):
                 trial_num += 1
         cam.stop_acquisition()
         cam.close_device()
+
+    def stop_interface(self):
+        """Tells the camera processes to shut themselves down, waits
+        for them to exit, then cleans all the pipes.
+        """
+        self.cams_started.value = False
+        for proc in self.camera_processes:
+            proc.join()
+        self.cam_trigger_pipes = []
+        self.poi_deviation_pipes = []
+        self.trial_ended_pipes = []
+
+    def triggered(self):
+        """Alert camera processes that cameras have been triggered"""
+        for pipe in self.cam_trigger_pipes:
+            pipe.send(1)
+
+    def all_triggerable(self):
+        """Check if camera processes are ready for cameras to be
+        triggered.
+
+        Returns
+        -------
+        triggerable : bool
+            True if cameras ready.
+        """
+        if all([pipe.poll() for pipe in self.cam_trigger_pipes]):
+            for pipe in self.cam_trigger_pipes:
+                pipe.recv()
+            triggerable = True
+        else:
+            triggerable = False
+        return triggerable
+
+    # Tools to estimate, report large light deviations in pre-set POI regions. This is how "reaches" are detected in
+    # a trial.
+
+    def _acquire_baseline(self, cam, cam_id, img, num_imgs, trigger_pipe):
+        poi_indices = self.config['CameraSettings']['saved_pois'][cam_id]
+        num_pois = len(poi_indices)
+        baseline_pois = np.zeros(shape=(num_pois, num_imgs))
+        trigger_pipe.send(1)
+        # acquire baseline images
+        for i in range(num_imgs):
+            while not trigger_pipe.poll():
+                pass
+            trigger_pipe.recv()
+            try:
+                cam.get_image(img, timeout=2000)
+                trigger_pipe.send('c')
+                npimg = img.get_image_data_numpy()
+                for j in range(num_pois):
+                    baseline_pois[j, i] = npimg[
+                        poi_indices[j][1],
+                        poi_indices[j][0]
+                    ]
+            except Exception as err:
+                print("error: " + str(cam_id))
+                print(err)
+        # compute summary stats
+        poi_means = np.mean(baseline_pois, axis=1)
+        poi_std = np.std(
+            np.sum(
+                np.square(
+                    baseline_pois - poi_means.reshape(num_pois, 1)
+                ),
+                axis=0
+            )
+        )
+        return poi_means, poi_std
+
+    def _estimate_poi_deviation(self, cam_id, npimg, poi_means, poi_std):
+        poi_indices = self.config['CameraSettings']['saved_pois'][cam_id]
+        num_pois = len(poi_indices)
+        poi_obs = np.zeros(num_pois)
+        for j in range(num_pois):
+            poi_obs[j] = npimg[poi_indices[j][1], poi_indices[j][0]]
+        dev = int(
+            np.sum(np.square(poi_obs - poi_means)) / (poi_std + np.finfo(float).eps)
+        )
+        return dev
+
+    def get_poi_deviation(self):
+        """Check the smallest deviation from baseline of pixels of
+        interest across all cameras.
+
+        Returns
+        -------
+        dev : int
+            The minimum deviation across all cameras.
+        """
+        if all([pipe.poll() for pipe in self.poi_deviation_pipes]):
+            deviations = [pipe.recv() for pipe in self.poi_deviation_pipes]
+            dev = min(deviations)
+        else:
+            dev = 0
+        return dev
+
+
+
