@@ -28,7 +28,6 @@ import multiprocessing as mp
 import threading
 
 
-
 def _set_camera(cam, config):
     cam.set_imgdataformat(config['CameraSettings']['imgdataformat'])
     cam.set_exposure(config['CameraSettings']['exposure'])
@@ -47,23 +46,23 @@ def _set_camera(cam, config):
         if (config['CameraSettings']['img_width'] % widthIncrement) != 0:
             raise Exception(
                 "Image width not divisible by " + str(widthIncrement)
-                )
+            )
             return
         elif (config['CameraSettings']['img_height'] % heightIncrement) != 0:
             raise Exception(
                 "Image height not divisible by " + str(heightIncrement)
-                )
+            )
             return
         elif (
-            config['CameraSettings']['img_width'] +
-            config['CameraSettings']['offset_x']
-            ) > 1280:
+                config['CameraSettings']['img_width'] +
+                config['CameraSettings']['offset_x']
+        ) > 1280:
             raise Exception("Image width + x offset > 1280")
             return
         elif (
-            config['CameraSettings']['img_height'] +
-            config['CameraSettings']['offset_y']
-            ) > 1024:
+                config['CameraSettings']['img_height'] +
+                config['CameraSettings']['offset_y']
+        ) > 1024:
             raise Exception("Image height + y offset > 1024")
             return
         else:
@@ -73,25 +72,29 @@ def _set_camera(cam, config):
             cam.set_offsetY(config['CameraSettings']['offset_y'])
     cam.enable_recent_frame()
 
+
 def _set_cameras(cams, config):
     for i in range(config['CameraSettings']['num_cams']):
-        print(('Setting camera %d ...' %i))
+        print(('Setting camera %d ...' % i))
         _set_camera(cams[i], config)
+
 
 def _open_cameras(config):
     cams = []
     for i in range(config['CameraSettings']['num_cams']):
-        print(('loading camera %s ...' %(i)))
-        cams.append(xiapi.Camera(dev_id = i))
+        print(('loading camera %s ...' % (i)))
+        cams.append(xiapi.Camera(dev_id=i))
         cams[i].open_device()
     return cams
 
+
 def _start_cameras(cams):
     for i in range(len(cams)):
-        print(('Starting camera %d ...' %i))
+        print(('Starting camera %d ...' % i))
         cams[i].start_acquisition()
 
-#public functions -----------------------------------------------------------------
+
+# public functions -----------------------------------------------------------------
 
 def stop_interface(cams):
     """Stop image acquisition and close all cameras.
@@ -103,9 +106,10 @@ def stop_interface(cams):
 
     """
     for i in range(len(cams)):
-        print(('stopping camera %d ...' %i))
+        print(('stopping camera %d ...' % i))
         cams[i].stop_acquisition()
         cams[i].close_device()
+
 
 def start_interface(config):
     """Open all cameras, loads user-selected settings, and
@@ -135,6 +139,7 @@ def start_interface(config):
         raise Exception(err)
     return cams
 
+
 def init_image():
     """Initialize a ximea container object to store images.
 
@@ -146,6 +151,7 @@ def init_image():
     """
     img = xiapi.Image()
     return img
+
 
 def get_npimage(cam, img):
     """Get the most recent image from a camera as a numpy
@@ -165,9 +171,10 @@ def get_npimage(cam, img):
         as a numpy array.
 
     """
-    cam.get_image(img, timeout = 2000)
+    cam.get_image(img, timeout=2000)
     npimg = img.get_image_data_numpy()
     return npimg
+
 
 def list_protocols():
     """Generate a list of the available protocol types. Currently 
@@ -268,7 +275,9 @@ class Protocols(tk.Toplevel):
             self.on_quit()
             return
         # start interfaces, load settings and acquire baseline for reach detection
-
+        print('starting speaker...')
+        self.initialize_speaker()
+        self.load_auditory_stimuli(self.config)
         print("starting interfaces...")
         self.exp_controller = expint.start_interface(self.config)
         sleep(1)
@@ -293,11 +302,12 @@ class Protocols(tk.Toplevel):
 
         self._init_data_output()
         self._configure_window()
-        self.control_message = 'b'
-        while not self.all_triggerable():# If camera's not triggerable..
+        self.control_message = 'b'  # Send experimental micro-controller message indicating initiation
+        while not self.all_triggerable():  # If camera's not triggerable..
             pass
-        self.exp_response = expint.start_experiment(self.exp_controller)
+        self.exp_response = expint.start_experiment(self.exp_controller)  # start experiment
         self.ready = True
+        self.run_auditory_stimuli()  # runs sound at beginning of experiment!
 
     def on_quit(self):
         """Called prior to destruction protocol window.
@@ -379,6 +389,20 @@ class Protocols(tk.Toplevel):
         in experiment settings."""
         expint.deliver_water(self.exp_controller)
 
+    # Auditory stimuli ---------------------------------------------------------------
+    def initialize_speaker(self):
+        return
+
+    def load_auditory_stimuli(self, config):
+        # audio_file = config['Protocol']['audio_file']
+        # load auditory file into speaker
+        return
+
+    def run_auditory_stimuli(self):
+        # command to check if speaker is online
+        # command to initiate auditory stimuli (single use in experiment)
+        return
+
     # Protocol types ---------------------------------------------------------------
 
     def run_continuous(self):
@@ -398,16 +422,16 @@ class Protocols(tk.Toplevel):
             * Absorb communication codes into experiment interface module and document
 
         """
-        now = str(int(round(time() * 1000)))
-        if self.exp_response[3] == '1':
+        now = str(int(round(time() * 1000)))  # Norm time
+        if self.exp_response[3] == '1':  # If a trial is taking place
             self.triggered()
             self.lights_on = 1
-            self.poi_deviation = self.get_poi_deviation()
-            while not self.all_triggerable():
+            self.poi_deviation = self.get_poi_deviation()  # get deviation from captured frame
+            while not self.all_triggerable():  # are camera pipes triggerable?
                 pass
-        else:
-            self.lights_on = 0
-            self.poi_deviation = 0
+        else:  # If trial is re-setting, robot moving etc
+            self.lights_on = 0  # turn off lights
+            self.poi_deviation = 0  # reset deviation
         expint.write_message(self.exp_controller, self.control_message)
         self.exp_response = expint.read_response(self.exp_controller)
         self.outputfile.write(
@@ -515,7 +539,8 @@ class Protocols(tk.Toplevel):
         else:
             print("Invalid protocol!")
             self.on_quit()
-# Camera processes and functions -----------------------------------------
+
+    # Camera processes and functions -----------------------------------------
 
     def start_camera_interface(self):
         """Sets up the camera process and pipe system for each
@@ -615,10 +640,10 @@ class Protocols(tk.Toplevel):
                 trigger_pipe.recv()
                 try:
                     cam.get_image(img, timeout=2000)
-                    trigger_pipe.send('c') # MP, triggers camera pipe to clear image on arduino.
-                    npimg = img.get_image_data_numpy() # Numpy matrix for image.
-                    frame = cv2.cvtColor(npimg, cv2.COLOR_BAYER_BG2BGR) # Takes frame from BG to BGR color encoding.
-                    vidgear_writer_cal.write(frame)#
+                    trigger_pipe.send('c')  # MP, triggers camera pipe to clear image on arduino.
+                    npimg = img.get_image_data_numpy()  # Numpy matrix for image.
+                    frame = cv2.cvtColor(npimg, cv2.COLOR_BAYER_BG2BGR)  # Takes frame from BG to BGR color encoding.
+                    vidgear_writer_cal.write(frame)  #
                     # ffmpeg_process.stdin.write(frame)
                     dev = self._estimate_poi_deviation(cam_id, npimg, poi_means, poi_std)
                     poi_deviation_pipe.send(dev)
@@ -734,6 +759,3 @@ class Protocols(tk.Toplevel):
         else:
             dev = 0
         return dev
-
-
-
