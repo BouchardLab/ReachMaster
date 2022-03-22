@@ -288,13 +288,13 @@ class Protocols(tk.Toplevel):
         self.start_protocol_interface()  # start the camera interface
         # self.cam_thread = threading.Thread(target=self.cam_init())
         # self.cam_thread.start()
-        sleep(30)  # give the cameras time to start
+        sleep(10)  # give the cameras time to start
         self._acquire_baseline()
 
         self._init_data_output()
         self._configure_window()
         self.control_message = 'b'
-        while not self.all_triggerable():
+        while not self.all_triggerable():# If camera's not triggerable..
             pass
         self.exp_response = expint.start_experiment(self.exp_controller)
         self.ready = True
@@ -313,33 +313,6 @@ class Protocols(tk.Toplevel):
         if self.cams_connected:
             self.stop_interface()
         self.destroy()
-
-    def _acquire_baseline(self):
-        print("Acquiring baseline...")
-        # make sure lights are on
-        if not self.lights_on:
-            self.toggle_lights_callback()
-        num_imgs = (
-            int(
-                np.round(
-                    float(
-                        self.config['ExperimentSettings']['baseline_dur']
-                    ) *
-                    float(
-                        self.config['CameraSettings']['fps']
-                    ),
-                    decimals=0
-                )
-            )
-        )
-        for cnt in range(num_imgs):
-            while not self.all_triggerable():
-                pass
-            expint.trigger_image(self.exp_controller)
-            self.triggered()
-        self.baseline_acquired = True
-        print("Baseline acquired!")
-        return 1
 
     def _init_data_output(self):
         self.controller_data_path = self.config['ReachMaster']['data_dir'] + "/controller_data/"
@@ -677,6 +650,7 @@ class Protocols(tk.Toplevel):
             poi_deviation_pipe,
             trial_ended_pipe
     ):
+        """ Process containing recording, reach-detection techniques. """
         # Create Id's for video functions
         vid_fn = (
                 self.config['ReachMaster']['data_dir'] + '/videos/trial' + '_cam' + str(cam_id) + '.mp4'
@@ -732,15 +706,15 @@ class Protocols(tk.Toplevel):
         #    stderr=sp.DEVNULL,
         #    bufsize=-1
         #    )
-        while self.cams_started == True:
+        while self.cams_started:
             if trigger_pipe.poll():
                 trigger_pipe.recv()
                 try:
                     cam.get_image(img, timeout=2000)
-                    trigger_pipe.send('c')
-                    npimg = img.get_image_data_numpy()
-                    frame = cv2.cvtColor(npimg, cv2.COLOR_BAYER_BG2BGR)
-                    vidgear_writer_cal.write(frame)
+                    trigger_pipe.send('c') # MP, triggers camera pipe to clear image on arduino.
+                    npimg = img.get_image_data_numpy() # Numpy matrix for image.
+                    frame = cv2.cvtColor(npimg, cv2.COLOR_BAYER_BG2BGR) # Takes frame from BG to BGR color encoding.
+                    vidgear_writer_cal.write(frame)#
                     # ffmpeg_process.stdin.write(frame)
                     dev = self._estimate_poi_deviation(cam_id, npimg, poi_means, poi_std)
                     poi_deviation_pipe.send(dev)
@@ -752,14 +726,10 @@ class Protocols(tk.Toplevel):
                     trial_ended_pipe.poll()
             ):
                 trial_ended_pipe.recv()
-                self.vidgear_writer_cal.close()
+                vidgear_writer_cal.close()
                 # ffmpeg_process.stdin.close()
                 # ffmpeg_process.wait()
                 # ffmpeg_process = None
                 trial_num += 1
-                vid_fn = (
-                        self.config['ReachMaster']['data_dir'] + '/videos/trial' +
-                        str(trial_num) + '_cam' + str(cam_id) + '.mp4'
-                )
         cam.stop_acquisition()
         cam.close_device()

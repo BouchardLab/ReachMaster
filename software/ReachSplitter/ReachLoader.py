@@ -368,10 +368,10 @@ class ReachViz:
         right_palm_maxima = find_peaks(right_palm_f[:, 0], height=0.17, distance=8)[0]
         left_palm_maxima = find_peaks(left_palm_f[:, 0], height=0.17, distance=8)[0]
         num_peaks = len(right_palm_maxima) + len(left_palm_maxima)
-        if num_peaks < 1:
-            plt.plot(left_palm_f[:, 0])
-            plt.plot(right_palm_f[:, 0])
-            plt.show()
+        #if num_peaks < 1:
+        #    plt.plot(left_palm_f[:, 0])
+        #    plt.plot(right_palm_f[:, 0])
+        #    plt.show()
         print("Number of tentative reaching actions detected:  " + str(num_peaks))
         return num_peaks
 
@@ -803,11 +803,15 @@ class ReachViz:
                     self.time_vector[right_palm_below_thresh_after] - self.time_vector[start_time_r])
         if block:
             self.total_block_reaches = 0
-        # Check for unrealistic values (late in trial)
+        # Check for unrealistic start and stop values (late in trial)
         for idx, time in enumerate(self.right_reach_end_times):
+            if self.right_start_times[idx] > 650:
+                self.right_start_times[idx] = 650
             if time > 700:
                 self.right_reach_end_times[idx] = 700 # Max trial time.
         for idx, time in enumerate(self.left_reach_end_times):
+            if self.left_start_times[idx] > 650:
+                self.left_start_times[idx] = 650
             if time > 700:
                 self.left_reach_end_times[idx] = 700 # Max trial time.
         # Take min of right and left start times as "reach times" for start of classification extraction
