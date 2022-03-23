@@ -260,7 +260,6 @@ class Protocols(tk.Toplevel):
             '-bufsize': '1M',
             '-c:v': 'libx264',
             '-preset': 'superfast',
-            '-rc': 'cbr',
             '-pix_fmt': 'yuv420p'
         }
         self.ffmpeg_command = [

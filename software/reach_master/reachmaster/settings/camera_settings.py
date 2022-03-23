@@ -137,12 +137,12 @@ class CameraSettings(tk.Toplevel):
         self.config = config.load_config('./temp/tmp_config.json')
         self.ffmpeg_object = {
             '-f':'rawvideo',
-            '-thread_queue_size' :'512',
+            '-thread_queue_size': '512',
+            '-pix_fmt': 'bgr24',
             '-s':str(
                 self.config['CameraSettings']['img_width'] *
                 self.config['CameraSettings']['num_cams']
             ) + 'x' + str(self.config['CameraSettings']['img_height']),
-            '-pix_fmt': 'bgr24',
             '-r': str(self.config['CameraSettings']['fps']),
             '-i': '-',
             '-b:v': '2M',
@@ -150,7 +150,6 @@ class CameraSettings(tk.Toplevel):
             '-bufsize': '1M',
             '-c:v': 'libx264',
             '-preset': 'superfast',
-            '-rc': 'cbr',
             '-pix_fmt': 'yuv420p'
         }
         self.ffmpeg_command = [
