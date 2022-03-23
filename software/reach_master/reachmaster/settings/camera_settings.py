@@ -137,6 +137,7 @@ class CameraSettings(tk.Toplevel):
         self.config = config.load_config('./temp/tmp_config.json')
         self.ffmpeg_object = {
             '-f':'rawvideo',
+            '-thread_queue_size' :'512',
             '-s':str(
                 self.config['CameraSettings']['img_width'] *
                 self.config['CameraSettings']['num_cams']
@@ -560,39 +561,7 @@ class CameraSettings(tk.Toplevel):
             if not os.path.isdir(calibration_path):
                 os.makedirs(calibration_path)
             vid_fn = calibration_path + str(datetime.datetime.now()) + '.mp4'
-            # Initialize vidgear wheels
-            #output_params = self.ffmpeg_command
-            #"-vcodec":"libx264",
-            output_params = {'-r': str(self.config['CameraSettings']['fps']),
-                                '-pix_fmt': 'bgr24',
-                                '-i': '-',
-                                '-b:v': '2M',
-                                '-maxrate': '2M',
-                                '-bufsize': '1M',
-                                '-c:v': 'libx264',
-                                '-preset': 'llhp',
-                                '-profile:v': 'high',
-                                '-rc': 'cbr',
-                                '-pix_fmt': 'yuv420p'}
             self.vidgear_writer_cal = WriteGear(output_filename=vid_fn, compression_mode=True, logging=True, **self.ffmpeg_object)
-            # ffmpeg unit commands, depreciated
-            #ffmpeg_command = self.ffmpeg_command
-            #ffmpeg_command.append(vid_fn)
-            #ffmpeg_command[ffmpeg_command.index('-s') + 1] = str(
-            #    self.config['CameraSettings']['img_width'] *
-            #    self.config['CameraSettings']['num_cams']
-            #    ) + 'x' + str(self.config['CameraSettings']['img_height'])
-            #ffmpeg_command[ffmpeg_command.index('-r') + 1] = str(
-            #    self.config['CameraSettings']['fps']
-            #    )
-            # ffmpeg pipes (depreciated)
-            #self.ffmpeg_process = sp.Popen(
-            #ffmpeg_command,
-            #stdin=sp.PIPE,
-            #stdout=sp.DEVNULL,
-            #stderr=sp.DEVNULL,
-            #bufsize=-1
-            #)
             self.delay = int(np.round(1.0/float(self.config['CameraSettings']['fps'])*1000.0))
             self.record = True
             self._rec()
