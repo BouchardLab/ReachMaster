@@ -26,6 +26,7 @@ import os
 import numpy as np
 import multiprocessing as mp
 import threading
+import pdb
 
 
 def _set_camera(cam, config):
@@ -245,14 +246,33 @@ class Protocols(tk.Toplevel):
         self.lick_window = False
         self.reach_init = 0
         # New config for sliding camera's into protocols
+        self.ffmpeg_object = {
+            '-f': 'rawvideo',
+            '-s': str(
+                self.config['CameraSettings']['img_width'] *
+                self.config['CameraSettings']['num_cams']
+            ) + 'x' + str(self.config['CameraSettings']['img_height']),
+            '-pix_fmt': 'bgr24',
+            '-r': str(self.config['CameraSettings']['fps']),
+            '-i': '-',
+            '-b:v': '2M',
+            '-maxrate': '2M',
+            '-bufsize': '1M',
+            '-c:v': 'libx264',
+            '-preset': 'superfast',
+            '-rc': 'cbr',
+            '-pix_fmt': 'yuv420p'
+        }
         self.ffmpeg_command = [
             'ffmpeg', '-y',
             '-hwaccel', 'cuvid',
             '-f', 'rawvideo',
-            '-s', str(config['CameraSettings']['img_width']) + 'x' +
-                  str(config['CameraSettings']['img_height']),
+            '-s', str(
+                self.config['CameraSettings']['img_width'] *
+                self.config['CameraSettings']['num_cams']
+            ) + 'x' + str(self.config['CameraSettings']['img_height']),
             '-pix_fmt', 'bgr24',
-            '-r', str(config['CameraSettings']['fps']),
+            '-r', str(self.config['CameraSettings']['fps']),
             '-i', '-',
             '-b:v', '2M',
             '-maxrate', '2M',
@@ -284,6 +304,21 @@ class Protocols(tk.Toplevel):
         self.exp_connected = True
         print("loading experiment settings...")
         expint.set_exp_controller(self.exp_controller, self.config)
+
+        # self.cams = camint.CameraInterface(self.config)
+        self.cams_connected = True
+        self.start_camera_interface()  # start the camera interface
+        # self.cam_thread = threading.Thread(target=self.cam_init())
+        # self.cam_thread.start()
+        sleep(10)  # give the cameras time to start
+        #self._acquire_baseline()
+
+        self._init_data_output()
+        self._configure_window()
+        self.control_message = 'b'  # Send experimental micro-controller message indicating initiation
+        while not self.all_triggerable():  # If camera's not triggerable..
+            pass
+        # Start up robot processes.
         sleep(1)
         self.rob_controller = robint.start_interface(self.config)
         sleep(2)
@@ -292,19 +327,6 @@ class Protocols(tk.Toplevel):
         self.config = robint.set_rob_controller(self.rob_controller, self.config)
         sleep(2)
 
-        # self.cams = camint.CameraInterface(self.config)
-        self.cams_connected = True
-        self.start_camera_interface()  # start the camera interface
-        # self.cam_thread = threading.Thread(target=self.cam_init())
-        # self.cam_thread.start()
-        sleep(10)  # give the cameras time to start
-        self._acquire_baseline()
-
-        self._init_data_output()
-        self._configure_window()
-        self.control_message = 'b'  # Send experimental micro-controller message indicating initiation
-        while not self.all_triggerable():  # If camera's not triggerable..
-            pass
         self.exp_response = expint.start_experiment(self.exp_controller)  # start experiment
         self.ready = True
         self.run_auditory_stimuli()  # runs sound at beginning of experiment!
@@ -567,7 +589,7 @@ class Protocols(tk.Toplevel):
                     )
                 )
             )
-        self.cams_started.value = True
+        self.cams_started = True
         for process in self.camera_processes:
             process.start()
         sleep(5)  # give cameras time to setup
@@ -667,7 +689,7 @@ class Protocols(tk.Toplevel):
         """Tells the camera processes to shut themselves down, waits
         for them to exit, then cleans all the pipes.
         """
-        self.cams_started.value = False
+        self.cams_started = False
         for proc in self.camera_processes:
             proc.join()
         self.cam_trigger_pipes = []

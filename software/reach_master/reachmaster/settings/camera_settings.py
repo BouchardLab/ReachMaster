@@ -602,6 +602,7 @@ class CameraSettings(tk.Toplevel):
     def stop_rec_callback(self):
         """Stops a video recording."""
         self.record = False
+        self.vidgear_writer_cal.close()
         if self.ffmpeg_process is not None:
             self.ffmpeg_process.stdin.close()
             self.ffmpeg_process.wait()
