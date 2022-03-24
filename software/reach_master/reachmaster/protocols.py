@@ -245,6 +245,9 @@ class Protocols(tk.Toplevel):
         self.reach_detected = False
         self.lick_window = False
         self.reach_init = 0
+        self.exp_controller = False
+        self.rob_controller = False
+        self.exp_response = False
         # New config for sliding camera's into protocols
         self.ffmpeg_object = {
             '-f': 'rawvideo',
@@ -287,12 +290,38 @@ class Protocols(tk.Toplevel):
         self.poi_deviation_pipes = []
         self.trial_ended_pipes = []
         self.cams_started = False
-
         # check config for errors
         if len(self.config['CameraSettings']['saved_pois']) == 0:
             tkinter.messagebox.showinfo("Warning", "No saved POIs")
             self.on_quit()
             return
+        # self.start_and_load_robot_interface()
+        # self.start_and_load_experimental_and_stimuli_variables()
+        self.cams_connected = True
+        self.start_camera_interface()  # start the camera interface
+        # self.cam_thread = threading.Thread(target=self.cam_init())
+        # self.cam_thread.start()
+        sleep(10)  # give the cameras time to start
+        self._init_data_output()
+        self._configure_window()
+        self.control_message = 'b'  # Send experimental micro-controller message indicating initiation
+        while not self.all_triggerable():  # If camera's not triggerable..
+            pass
+        self.ready = True
+        self.run_auditory_stimuli()  # runs sound at beginning of experiment!
+
+    def start_and_load_robot_interface(self):
+        """ Called on class initiation, starts robot software module."""
+        sleep(1)
+        self.rob_controller = robint.start_interface(self.config)
+        sleep(2)
+        self.rob_connected = True
+        print("loading robot settings...")
+        self.config = robint.set_rob_controller(self.rob_controller, self.config)
+        sleep(2)
+
+    def start_and_load_experimental_and_stimuli_variables(self):
+        """ Called on class initiation, starts audio and experiment micro-controller-based class module. """
         # start interfaces, load settings and acquire baseline for reach detection
         print('starting speaker...')
         self.initialize_speaker()
@@ -303,47 +332,7 @@ class Protocols(tk.Toplevel):
         self.exp_connected = True
         print("loading experiment settings...")
         expint.set_exp_controller(self.exp_controller, self.config)
-
-        # self.cams = camint.CameraInterface(self.config)
-        self.cams_connected = True
-        self.start_camera_interface()  # start the camera interface
-        # self.cam_thread = threading.Thread(target=self.cam_init())
-        # self.cam_thread.start()
-        sleep(10)  # give the cameras time to start
-        #self._acquire_baseline()
-
-        self._init_data_output()
-        self._configure_window()
-        self.control_message = 'b'  # Send experimental micro-controller message indicating initiation
-        while not self.all_triggerable():  # If camera's not triggerable..
-            pass
-        # Start up robot processes.
-        sleep(1)
-        self.rob_controller = robint.start_interface(self.config)
-        sleep(2)
-        self.rob_connected = True
-        print("loading robot settings...")
-        self.config = robint.set_rob_controller(self.rob_controller, self.config)
-        sleep(2)
-
         self.exp_response = expint.start_experiment(self.exp_controller)  # start experiment
-        self.ready = True
-        self.run_auditory_stimuli()  # runs sound at beginning of experiment!
-
-    def on_quit(self):
-        """Called prior to destruction protocol window.
-
-        Prior to destruction, all interfaces must be stopped.
-
-        """
-        self.ready = False
-        if self.exp_connected:
-            expint.stop_interface(self.exp_controller)
-        if self.rob_connected:
-            robint.stop_interface(self.rob_controller)
-        if self.cams_connected:
-            self.stop_interface()
-        self.destroy()
 
     def _init_data_output(self):
         self.controller_data_path = self.config['ReachMaster']['data_dir'] + "/controller_data/"
@@ -386,6 +375,21 @@ class Protocols(tk.Toplevel):
             width=14,
             command=self.deliver_water_callback
         ).grid(row=3, sticky='W')
+
+    def on_quit(self):
+        """Called prior to destruction protocol window.
+
+        Prior to destruction, all interfaces must be stopped.
+
+        """
+        self.ready = False
+        if self.exp_connected:
+            expint.stop_interface(self.exp_controller)
+        if self.rob_connected:
+            robint.stop_interface(self.rob_controller)
+        if self.cams_connected:
+            self.stop_interface()
+        self.destroy()
 
     # Callbacks ------------------------------------------------------------------
 
