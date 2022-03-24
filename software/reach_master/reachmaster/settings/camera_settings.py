@@ -128,7 +128,8 @@ class CameraSettings(tk.Toplevel):
     def __init__(self, parent):
         #create window and suppress parent
         tk.Toplevel.__init__(self, parent)
-        self.transient(parent) 
+        self.vidgear_writer_cal = None
+        self.transient(parent)
         self.grab_set()
         self.title("Camera Settings")
         self.configure(bg="white")
@@ -553,14 +554,15 @@ class CameraSettings(tk.Toplevel):
             self.config['CameraSettings']['img_height'] = int(self.img_height.get())
             self.config['CameraSettings']['offset_x'] = int(self.offset_x.get())
             self.config['CameraSettings']['offset_y'] = int(self.offset_y.get())          
-            self.cams = camint.start_interface(self.config)
+            self.cams = camint.start_interface(self.config) # Initializes, sets, and 'starts' cameras.
             self.cams_connected = True
-            self.img = camint.init_image()
+            self.img = camint.init_image() # Take an image to make sure we can do trigger an image.
             calibration_path = self.config['ReachMaster']['data_dir'] + "/calibration_videos/"
             if not os.path.isdir(calibration_path):
                 os.makedirs(calibration_path)
             vid_fn = calibration_path + str(datetime.datetime.now()) + '.mp4'
-            self.vidgear_writer_cal = WriteGear(output_filename=vid_fn, compression_mode=True, logging=True, **self.ffmpeg_object)
+            self.vidgear_writer_cal = WriteGear(output_filename=vid_fn, compression_mode=True,
+                                                logging=True, **self.ffmpeg_object)
             self.delay = int(np.round(1.0/float(self.config['CameraSettings']['fps'])*1000.0))
             self.record = True
             self._rec()

@@ -227,8 +227,11 @@ class Protocols(tk.Toplevel):
     """
 
     def __init__(self, parent):
+        self.cams = None
         self.ready = False
         # create window
+        self.cam_poi_means = []
+        self.cam_poi_std = []
         tk.Toplevel.__init__(self, parent)
         self.transient(parent)
         self.grab_set()
@@ -245,9 +248,10 @@ class Protocols(tk.Toplevel):
         self.reach_detected = False
         self.lick_window = False
         self.reach_init = 0
-        self.exp_controller = False
-        self.rob_controller = False
-        self.exp_response = False
+        self.exp_controller = None
+        self.rob_controller = None
+        self.exp_response = None
+        self.vidgear_writer_cal = None
         # New config for sliding camera's into protocols
         self.ffmpeg_object = {
             '-f': 'rawvideo',
@@ -298,15 +302,19 @@ class Protocols(tk.Toplevel):
         # self.start_and_load_robot_interface()
         # self.start_and_load_experimental_and_stimuli_variables()
         self.cams_connected = True
-        self.start_camera_interface()  # start the camera interface
+        self.start_and_initialize_cameras()
         # self.cam_thread = threading.Thread(target=self.cam_init())
         # self.cam_thread.start()
-        sleep(10)  # give the cameras time to start
+        sleep(10)  # give the cameras time to start, capture baseline images.
         self._init_data_output()
         self._configure_window()
-        self.control_message = 'b'  # Send experimental micro-controller message indicating initiation
-        while not self.all_triggerable():  # If camera's not triggerable..
+        self.control_message = 'b'  # Send experimental micro-controller message indicating initiation of camera
+        # trigger.
+        while not expint.trigger_image(self.exp_controller):  # If camera's not triggerable..
             pass
+        # obtain baseline for camera's to detect movement
+        self.img = init_image()
+        self.start_acquiring_baseline()
         self.ready = True
         self.run_auditory_stimuli()  # runs sound at beginning of experiment!
 
@@ -428,7 +436,145 @@ class Protocols(tk.Toplevel):
         # command to initiate auditory stimuli (single use in experiment)
         return
 
-    # Protocol types ---------------------------------------------------------------
+    # Camera processes and functions -----------------------------------------
+
+    def start_and_initialize_cameras(self):
+        """ Sets up camera. Finds, sets, and starts up each camera defined by the config file. """
+        self.config['CameraSettings']['num_cams'] = int(self.num_cams.get())
+        self.config['CameraSettings']['fps'] = int(self.fps.get())
+        self.config['CameraSettings']['exposure'] = int(self.exposure.get())
+        self.config['CameraSettings']['gain'] = float(self.gain.get())
+        self.config['CameraSettings']['trigger_source'] = self.trigger_source.get()
+        self.config['CameraSettings']['gpo_mode'] = self.gpo_mode.get()
+        self.config['CameraSettings']['img_width'] = int(self.img_width.get())
+        self.config['CameraSettings']['img_height'] = int(self.img_height.get())
+        self.config['CameraSettings']['offset_x'] = int(self.offset_x.get())
+        self.config['CameraSettings']['offset_y'] = int(self.offset_y.get())
+        # Start pipes for POI estimation
+        self.cams = start_interface(self.config)
+        self.cams_connected = True
+        # self.img = init_image()
+        # Initialize data location for recorded video.
+        if self.config['Protocol']['type'] == 'CONTINUOUS':
+            vid_fn = (
+                    self.config['ReachMaster']['data_dir'] + '/videos/' +
+                    str(datetime.datetime.now()) + '_cam.mp4'
+            )
+        elif self.config['Protocol']['type'] == 'TRIALS':
+            trial_num = 0
+            vid_fn = (
+                    self.config['ReachMaster']['data_dir'] + '/videos/trial' +
+                    str(trial_num) + '_cam.mp4')
+        # Set up video writer.
+        self.vidgear_writer_cal = WriteGear(output_filename=vid_fn, compression_mode=True, logging=True,
+                                            **self.ffmpeg_object)
+
+    def start_acquiring_baseline(self):
+        num_baseline = (
+            int(
+                np.round(
+                    float(
+                        self.config['ExperimentSettings']['baseline_dur']
+                    ) *
+                    float(
+                        self.config['CameraSettings']['fps']
+                    ),
+                    decimals=0
+                )
+            )
+        )
+        if num_baseline > 0:
+            self.simply_acquire_baseline(num_baseline)  # for each camera, find the POI's
+
+    def simply_acquire_baseline(self, num_imgs):
+        baseline_pois = []  # List of baseline poi vectors.
+        poi_indices = []
+        num_pois = []
+        for cam_id in range(self.config['CameraSettings']['num_cams']):
+            poi_indices.append(self.config['CameraSettings']['saved_pois'][cam_id])  # Take POI regions
+            num_pois = len(poi_indices)
+            baseline_pois.append(np.zeros(shape=(num_pois, num_imgs)))  # Create baseline array of POI's
+        # acquire baseline images
+        for i in range(num_imgs):
+            try:
+                expint.trigger_image(self.exp_controller)
+                for cam_id, cam_obj in enumerate(self.cams):
+                    npimg = self.img.get_image_data_numpy(cam_obj)  # Collect statistics about image data.
+                    for j in range(num_pois[cam_id]):
+                        baseline_pois[cam_id][j, i] = npimg[
+                            poi_indices[cam_id][j][1],
+                            poi_indices[cam_id][j][0]]
+            except Exception as err:
+                print("error: " + str(cam_id))
+                print(err)
+        # compute summary stats
+        for cam_id, cam_obj in enumerate(self.cams):
+            poi_means = np.mean(baseline_pois[cam_id], axis=1)
+            poi_std = np.std(
+                np.sum(
+                    np.square(
+                        baseline_pois[cam_id] - poi_means.reshape(num_pois, 1)
+                    ),
+                    axis=0
+                )
+            )
+            self.cam_poi_means.append(poi_means)  # append class object
+            self.cam_poi_std.append(poi_std)  # append class object
+
+    def trigger_record_and_save_image_from_camera_get_deviation(self):
+        frame = 0
+        expint.trigger_image(self.exp_controller)
+        dev = []
+        try:
+            for idx, cam_obj in self.cams:
+                npimg = camint.get_npimage(cam_obj, self.img)
+                npimg = cv2.cvtColor(npimg, cv2.COLOR_BAYER_BG2BGR)
+                if idx == 0:
+                    frame = npimg
+                else:
+                    frame = np.hstack((frame, npimg))
+                dev.append(self._estimate_poi_deviation(npimg, self.cam_poi_means[idx], self.cam_poi_std[idx]))
+
+        except Exception as err:
+            tkinter.messagebox.showinfo("Warning, couldn't trigger cameras. Please check experimental micro-controller."
+                                        , err)
+            self.stop_camera_recording()
+            return
+        # Use WriteGear to write video processed
+        self.vidgear_writer_cal.write(frame)
+        return dev
+
+    def stop_camera_recording(self):
+        self.vidgear_writer_cal.close()
+        camint.stop_interface(self.cams)
+        self.cams_connected = False
+
+    def stop_interface(self):
+        """Tells the camera processes to shut themselves down, waits
+        for them to exit, then cleans all the pipes.
+        """
+        self.cams_started = False
+        for proc in self.camera_processes:
+            proc.join()
+        self.cam_trigger_pipes = []
+        self.poi_deviation_pipes = []
+        self.trial_ended_pipes = []
+
+    # Tools to estimate, report large light deviations in pre-set POI regions. This is how "reaches" are detected in
+    # a trial.
+
+    def _estimate_poi_deviation(self, cam_id, npimg, poi_means, poi_std):
+        poi_indices = self.config['CameraSettings']['saved_pois'][cam_id]
+        num_pois = len(poi_indices)
+        poi_obs = np.zeros(num_pois)
+        for j in range(num_pois):
+            poi_obs[j] = npimg[poi_indices[j][1], poi_indices[j][0]]
+        dev = int(
+            np.sum(np.square(poi_obs - poi_means)) / (poi_std + np.finfo(float).eps)
+        )
+        return dev
+
+        # Protocol types ---------------------------------------------------------------
 
     def run_continuous(self):
         """Operations performed for a single iteration of protocol type CONTINOUS.
@@ -436,42 +582,40 @@ class Protocols(tk.Toplevel):
         If an image is triggered by the experiment controller, reach detection is
         performed on the images, the images are concatenated, and encoded to mp4
         continuously, even during intertrial intervals, in real-time. Consequently,
-        for this protocol type, the lights remain on during the intertrial interval. 
-        Messages are sent to the experiment controller to signal important events 
-        such as reach detections, beginnings/ends of trials, and to initiate robot 
-        movement. Responses are read from the experiment controller and saved to 
-        the controller data output file.   
-
-        Todo:
-            * Functionalize code chunks so logic is clearer and custom protocol types are easier to implement. 
-            * Absorb communication codes into experiment interface module and document
+        for this protocol type, the lights remain on during the intertrial interval.
+        Messages are sent to the experiment controller to signal important events
+        such as reach detections, beginnings/ends of trials, and to initiate robot
+        movement. Responses are read from the experiment controller and saved to
+        the controller data output file.
 
         """
-        now = str(int(round(time() * 1000)))  # Norm time
-        if self.exp_response[3] == '1':  # If a trial is taking place
-            self.triggered()
-            self.lights_on = 1
-            self.poi_deviation = self.get_poi_deviation()  # get deviation from captured frame
-            while not self.all_triggerable():  # are camera pipes triggerable?
-                pass
+        now = str(int(round(time() * 1000)))  # Normed PC time
+        if self.exp_response[3] == '1':  # If a trial is taking place, capture image and save it, calculate dev
+            self.lights_on = 1  # Keep lights on
+            self.poi_deviation = self.trigger_record_and_save_image_from_camera_get_deviation()  # get deviation from captured frame
         else:  # If trial is re-setting, robot moving etc
             self.lights_on = 0  # turn off lights
             self.poi_deviation = 0  # reset deviation
+        # write, read exp controller output
         expint.write_message(self.exp_controller, self.control_message)
         self.exp_response = expint.read_response(self.exp_controller)
+        # Write experiment controller data to a text file
         self.outputfile.write(
             now + " " + self.exp_response[0:-1:1] + " " + str(self.poi_deviation) + "\n"
         )
         self.exp_response = self.exp_response.split()
+
+        # Trial commands to micro-controller.
         if (
-                self.exp_response[1] == 's' and
-                self.exp_response[2] == '0' and
-                self.poi_deviation > self.config['CameraSettings']['poi_threshold']
+                self.exp_response[1] == 's' and  # No robot movement
+                self.exp_response[2] == '0' and  # Not trial reset
+                # Are any poi deviations
+                all(self.poi_deviation) > self.config['CameraSettings']['poi_threshold']
         ):
             self.reach_init = now
-            self.reach_detected = True
+            self.reach_detected = True  # Can use this value to manipulate robot callback
             self.control_message = 'r'
-        elif self.exp_response[1] == 'e':
+        elif self.exp_response[1] == 'e':  # Trial has fully reset, reset reach value.
             self.poi_deviation = 0
             self.control_message = 's'
             self.reach_detected = False
@@ -489,28 +633,25 @@ class Protocols(tk.Toplevel):
         """Operations performed for a single iteration of protocol type TRIALS.
 
         If an image is triggered by the experiment controller, reach detection is
-        performed on the images. For this protocol type, the lights are turned off 
-        during the intertrial interval and a separate video is encoded for each 
-        trial. Messages are sent to the experiment controller to signal important 
-        events such as reach detections, beginnings/ends of trials, and to initiate 
-        robot movement. Responses are read from the experiment controller and saved 
-        to the controller data output file.    
+        performed on the images. For this protocol type, the lights are turned off
+        during the intertrial interval and a separate video is encoded for each
+        trial. Messages are sent to the experiment controller to signal important
+        events such as reach detections, beginnings/ends of trials, and to initiate
+        robot movement. Responses are read from the experiment controller and saved
+        to the controller data output file.
 
         Todo:
             * Functionalize code chunks so logic is clearer and custom protocol types are easier to implement.
             * Absorb communication codes into experiment interface module and document
 
         """
-        now = str(int(round(time() * 1000)))
-        if self.exp_response[3] == '1':
-            self.triggered()
-            self.lights_on = 1
-            self.poi_deviation = self.get_poi_deviation()
-            while not self.all_triggerable():
-                pass
-        else:
-            self.lights_on = 0
-            self.poi_deviation = 0
+        now = str(int(round(time() * 1000)))  # Normed PC time
+        if self.exp_response[3] == '1':  # If a trial is taking place, capture image and save it, calculate dev
+            self.lights_on = 1  # Keep lights on
+            self.poi_deviation = self.trigger_record_and_save_image_from_camera_get_deviation()  # get deviation from captured frame
+        else:  # If trial is re-setting, robot moving etc
+            self.lights_on = 0  # turn off lights
+            self.poi_deviation = 0  # reset deviation
         expint.write_message(self.exp_controller, self.control_message)
         self.exp_response = expint.read_response(self.exp_controller)
         self.outputfile.write(
@@ -520,7 +661,7 @@ class Protocols(tk.Toplevel):
         if (
                 self.exp_response[1] == 's' and
                 self.exp_response[2] == '0' and
-                self.poi_deviation > self.config['CameraSettings']['poi_threshold']
+                all(self.poi_deviation) > self.config['CameraSettings']['poi_threshold']
         ):
             self.reach_init = now
             self.reach_detected = True
@@ -548,12 +689,12 @@ class Protocols(tk.Toplevel):
 
     def run(self):
         """Execute a single iteration of the selected protocol type.
-        
-        The currently supported protocol types are TRIALS and 
-        CONTINUOUS. In order to add a custom type, developers must 
-        write a `run_newtype()` method and add it to the call 
-        search here. The run methods for each protocol type are 
-        where all the vital real-time operations are executed via 
+
+        The currently supported protocol types are TRIALS and
+        CONTINUOUS. In order to add a custom type, developers must
+        write a `run_newtype()` method and add it to the call
+        search here. The run methods for each protocol type are
+        where all the vital real-time operations are executed via
         communication with the interface modules.
 
         """
@@ -564,223 +705,3 @@ class Protocols(tk.Toplevel):
         else:
             print("Invalid protocol!")
             self.on_quit()
-
-    # Camera processes and functions -----------------------------------------
-
-    def start_camera_interface(self):
-        """Sets up the camera process and pipe system for each
-        camera.
-
-        """
-
-        print('starting camera processes... ')
-        for cam_id in range(self.config['CameraSettings']['num_cams']):
-            trigger_parent, trigger_child = mp.Pipe()
-            self.cam_trigger_pipes.append(trigger_parent)
-            poi_parent, poi_child = mp.Pipe()
-            self.poi_deviation_pipes.append(poi_parent)
-            trial_parent, trial_child = mp.Pipe()
-            self.trial_ended_pipes.append(trial_parent)
-            self.camera_processes.append(
-                mp.Process(
-                    target=self._camera_processes,
-                    args=(
-                        cam_id,
-                        trigger_child,
-                        poi_child,
-                        trial_child
-                    )
-                )
-            )
-        self.cams_started = True
-        for process in self.camera_processes:
-            process.start()
-        sleep(5)  # give cameras time to setup
-
-    def _camera_processes(
-            self,
-            cam_id,
-            trigger_pipe,
-            poi_deviation_pipe,
-            trial_ended_pipe
-    ):
-        """ Process containing recording, reach-detection techniques. """
-        # Create Id's for video functions
-        vid_fn = (
-                self.config['ReachMaster']['data_dir'] + '/videos/trial' + '_cam' + str(cam_id) + '.mp4'
-        )
-        sleep(2 * cam_id)  # prevents simultaneous calls to the ximea api
-        print('finding camera: ', cam_id)
-        cam = xiapi.Camera(dev_id=cam_id)
-        print('opening camera: ', cam_id)
-        cam.open_device()
-        print('setting camera: ', cam_id)
-        _set_camera(cam, self.config)
-        print('starting camera: ', cam_id)
-        cam.start_acquisition()
-        img = xiapi.Image()
-        num_baseline = (
-            int(
-                np.round(
-                    float(
-                        self.config['ExperimentSettings']['baseline_dur']
-                    ) *
-                    float(
-                        self.config['CameraSettings']['fps']
-                    ),
-                    decimals=0
-                )
-            )
-        )
-        if num_baseline > 0:
-            poi_means, poi_std = self._acquire_baseline(
-                cam,
-                cam_id,
-                img,
-                num_baseline,
-                trigger_pipe
-            )
-        if self.config['Protocol']['type'] == 'CONTINUOUS':
-            vid_fn = (
-                    self.config['ReachMaster']['data_dir'] + '/videos/' +
-                    str(datetime.datetime.now()) + '_cam' + str(cam_id) + '.mp4'
-            )
-        elif self.config['Protocol']['type'] == 'TRIALS':
-            trial_num = 0
-            vid_fn = (
-                    self.config['ReachMaster']['data_dir'] + '/videos/trial' +
-                    str(trial_num) + '_cam' + str(cam_id) + '.mp4'
-            )
-        vidgear_writer_cal = WriteGear(output_filename=vid_fn)
-        # self.ffmpeg_command.append(vid_fn)
-        # ffmpeg_process = sp.Popen(
-        #    self.ffmpeg_command,
-        #    stdin=sp.PIPE,
-        #    stdout=sp.DEVNULL,
-        #    stderr=sp.DEVNULL,
-        #    bufsize=-1
-        #    )
-        while self.cams_started:
-            if trigger_pipe.poll():
-                trigger_pipe.recv()
-                try:
-                    cam.get_image(img, timeout=2000)
-                    trigger_pipe.send('c')  # MP, triggers camera pipe to clear image on arduino.
-                    npimg = img.get_image_data_numpy()  # Numpy matrix for image.
-                    frame = cv2.cvtColor(npimg, cv2.COLOR_BAYER_BG2BGR)  # Takes frame from BG to BGR color encoding.
-                    vidgear_writer_cal.write(frame)  #
-                    # ffmpeg_process.stdin.write(frame)
-                    dev = self._estimate_poi_deviation(cam_id, npimg, poi_means, poi_std)
-                    poi_deviation_pipe.send(dev)
-                except Exception as err:
-                    print("cam_id: " + str(err))
-                    pass
-            elif (
-                    self.config['Protocol']['type'] == 'TRIALS' and
-                    trial_ended_pipe.poll()
-            ):
-                trial_ended_pipe.recv()
-                vidgear_writer_cal.close()
-                # ffmpeg_process.stdin.close()
-                # ffmpeg_process.wait()
-                # ffmpeg_process = None
-                trial_num += 1
-        cam.stop_acquisition()
-        cam.close_device()
-
-    def stop_interface(self):
-        """Tells the camera processes to shut themselves down, waits
-        for them to exit, then cleans all the pipes.
-        """
-        self.cams_started = False
-        for proc in self.camera_processes:
-            proc.join()
-        self.cam_trigger_pipes = []
-        self.poi_deviation_pipes = []
-        self.trial_ended_pipes = []
-
-    def triggered(self):
-        """Alert camera processes that cameras have been triggered"""
-        for pipe in self.cam_trigger_pipes:
-            pipe.send(1)
-
-    def all_triggerable(self):
-        """Check if camera processes are ready for cameras to be
-        triggered.
-
-        Returns
-        -------
-        triggerable : bool
-            True if cameras ready.
-        """
-        if all([pipe.poll() for pipe in self.cam_trigger_pipes]):
-            for pipe in self.cam_trigger_pipes:
-                pipe.recv()
-            triggerable = True
-        else:
-            triggerable = False
-        return triggerable
-
-    # Tools to estimate, report large light deviations in pre-set POI regions. This is how "reaches" are detected in
-    # a trial.
-
-    def _acquire_baseline(self, cam, cam_id, img, num_imgs, trigger_pipe):
-        poi_indices = self.config['CameraSettings']['saved_pois'][cam_id]
-        num_pois = len(poi_indices)
-        baseline_pois = np.zeros(shape=(num_pois, num_imgs))
-        trigger_pipe.send(1)
-        # acquire baseline images
-        for i in range(num_imgs):
-            while not trigger_pipe.poll():
-                pass
-            trigger_pipe.recv()
-            try:
-                cam.get_image(img, timeout=2000)
-                trigger_pipe.send('c')
-                npimg = img.get_image_data_numpy()
-                for j in range(num_pois):
-                    baseline_pois[j, i] = npimg[
-                        poi_indices[j][1],
-                        poi_indices[j][0]
-                    ]
-            except Exception as err:
-                print("error: " + str(cam_id))
-                print(err)
-        # compute summary stats
-        poi_means = np.mean(baseline_pois, axis=1)
-        poi_std = np.std(
-            np.sum(
-                np.square(
-                    baseline_pois - poi_means.reshape(num_pois, 1)
-                ),
-                axis=0
-            )
-        )
-        return poi_means, poi_std
-
-    def _estimate_poi_deviation(self, cam_id, npimg, poi_means, poi_std):
-        poi_indices = self.config['CameraSettings']['saved_pois'][cam_id]
-        num_pois = len(poi_indices)
-        poi_obs = np.zeros(num_pois)
-        for j in range(num_pois):
-            poi_obs[j] = npimg[poi_indices[j][1], poi_indices[j][0]]
-        dev = int(
-            np.sum(np.square(poi_obs - poi_means)) / (poi_std + np.finfo(float).eps)
-        )
-        return dev
-
-    def get_poi_deviation(self):
-        """Check the smallest deviation from baseline of pixels of
-        interest across all cameras.
-
-        Returns
-        -------
-        dev : int
-            The minimum deviation across all cameras.
-        """
-        if all([pipe.poll() for pipe in self.poi_deviation_pipes]):
-            deviations = [pipe.recv() for pipe in self.poi_deviation_pipes]
-            dev = min(deviations)
-        else:
-            dev = 0
-        return dev

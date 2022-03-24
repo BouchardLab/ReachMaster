@@ -22,7 +22,8 @@ from time import time, sleep
 import datetime
 import numpy as np
 
-#private functions -----------------------------------------------------------------
+
+# private functions -----------------------------------------------------------------
 
 def _set_camera(cam, config):
     cam.set_imgdataformat(config['CameraSettings']['imgdataformat'])
@@ -33,7 +34,7 @@ def _set_camera(cam, config):
     cam.set_gpi_mode(config['CameraSettings']['gpi_mode'])
     cam.set_trigger_source(config['CameraSettings']['trigger_source'])
     cam.set_gpo_selector(config['CameraSettings']['gpo_selector'])
-    cam.set_gpo_mode(config['CameraSettings']['gpo_mode'])        
+    cam.set_gpo_mode(config['CameraSettings']['gpo_mode'])
     if config['CameraSettings']['downsampling'] == "XI_DWN_2x2":
         cam.set_downsampling(config['CameraSettings']['downsampling'])
     else:
@@ -42,24 +43,24 @@ def _set_camera(cam, config):
         if (config['CameraSettings']['img_width'] % widthIncrement) != 0:
             raise Exception(
                 "Image width not divisible by " + str(widthIncrement)
-                )
+            )
             return
         elif (config['CameraSettings']['img_height'] % heightIncrement) != 0:
             raise Exception(
-                "Image height not divisible by " + str(heightIncrement) 
-                )
+                "Image height not divisible by " + str(heightIncrement)
+            )
             return
         elif (
-            config['CameraSettings']['img_width'] + 
-            config['CameraSettings']['offset_x']
-            ) > 1280:
-            raise Exception("Image width + x offset > 1280") 
+                config['CameraSettings']['img_width'] +
+                config['CameraSettings']['offset_x']
+        ) > 1280:
+            raise Exception("Image width + x offset > 1280")
             return
         elif (
-            config['CameraSettings']['img_height'] + 
-            config['CameraSettings']['offset_y']
-            ) > 1024:
-            raise Exception("Image height + y offset > 1024") 
+                config['CameraSettings']['img_height'] +
+                config['CameraSettings']['offset_y']
+        ) > 1024:
+            raise Exception("Image height + y offset > 1024")
             return
         else:
             cam.set_height(config['CameraSettings']['img_height'])
@@ -68,25 +69,29 @@ def _set_camera(cam, config):
             cam.set_offsetY(config['CameraSettings']['offset_y'])
     cam.enable_recent_frame()
 
+
 def _set_cameras(cams, config):
     for i in range(config['CameraSettings']['num_cams']):
-        print(('Setting camera %d ...' %i))
+        print(('Setting camera %d ...' % i))
         _set_camera(cams[i], config)
 
-def _open_cameras(config):              
+
+def _open_cameras(config):
     cams = []
     for i in range(config['CameraSettings']['num_cams']):
-        print(('loading camera %s ...' %(i)))
-        cams.append(xiapi.Camera(dev_id = i))
-        cams[i].open_device()     
+        print(('loading camera %s ...' % (i)))
+        cams.append(xiapi.Camera(dev_id=i))
+        cams[i].open_device()
     return cams
+
 
 def _start_cameras(cams):
     for i in range(len(cams)):
-        print(('Starting camera %d ...' %i))
+        print(('Starting camera %d ...' % i))
         cams[i].start_acquisition()
 
-#public functions -----------------------------------------------------------------
+
+# public functions -----------------------------------------------------------------
 
 def stop_interface(cams):
     """Stop image acquisition and close all cameras.
@@ -98,9 +103,10 @@ def stop_interface(cams):
 
     """
     for i in range(len(cams)):
-        print(('stopping camera %d ...' %i))
+        print(('stopping camera %d ...' % i))
         cams[i].stop_acquisition()
         cams[i].close_device()
+
 
 def start_interface(config):
     """Open all cameras, loads user-selected settings, and
@@ -120,15 +126,16 @@ def start_interface(config):
     cams = _open_cameras(config)
     _set_cameras(cams, config)
     try:
-        _start_cameras(cams)     
+        _start_cameras(cams)
     except xiapi.Xi_error as err:
         expActive = False
         stop_interface(cams)
         if err.status == 10:
             raise Exception("No image triggers detected.")
             return
-        raise Exception(err)   
-    return cams
+        raise Exception(err)
+    return  #
+
 
 def init_image():
     """Initialize a ximea container object to store images.
@@ -138,9 +145,10 @@ def init_image():
     img : ximea.xiapi.Image
         A ximea api Image container object
 
-    """ 
+    """
     img = xiapi.Image()
     return img
+
 
 def get_npimage(cam, img):
     """Get the most recent image from a camera as a numpy 
@@ -160,9 +168,10 @@ def get_npimage(cam, img):
         as a numpy array.
 
     """
-    cam.get_image(img, timeout = 2000)                  
+    cam.get_image(img, timeout=2000)
     npimg = img.get_image_data_numpy()
     return npimg
+
 
 class CameraInterface:
     """The primary class for the camera interface module.
@@ -204,37 +213,37 @@ class CameraInterface:
     def __init__(self, config):
         self.config = config
         self.ffmpeg_command = [
-        'ffmpeg', '-y', 
-        '-hwaccel', 'cuvid', 
-        '-f', 'rawvideo',  
-        '-s', str(config['CameraSettings']['img_width']) + 'x' + 
-        str(config['CameraSettings']['img_height']), 
-        '-pix_fmt', 'bgr24',
-        '-r', str(config['CameraSettings']['fps']), 
-        '-i', '-',
-        '-b:v', '2M', 
-        '-maxrate', '2M', 
-        '-bufsize', '1M',
-        '-c:v', 'h264_nvenc', 
-        '-preset', 'llhp', 
-        '-profile:v', 'high',
-        '-rc', 'cbr', 
-        '-pix_fmt', 'yuv420p'
+            'ffmpeg', '-y',
+            '-hwaccel', 'cuvid',
+            '-f', 'rawvideo',
+            '-s', str(config['CameraSettings']['img_width']) + 'x' +
+                  str(config['CameraSettings']['img_height']),
+            '-pix_fmt', 'bgr24',
+            '-r', str(config['CameraSettings']['fps']),
+            '-i', '-',
+            '-b:v', '2M',
+            '-maxrate', '2M',
+            '-bufsize', '1M',
+            '-c:v', 'h264_nvenc',
+            '-preset', 'llhp',
+            '-profile:v', 'high',
+            '-rc', 'cbr',
+            '-pix_fmt', 'yuv420p'
         ]
         self.camera_processes = []
         self.cam_trigger_pipes = []
         self.poi_deviation_pipes = []
         self.trial_ended_pipes = []
-        self.cams_started = mp.Value(c_bool, False)                  
+        self.cams_started = mp.Value(c_bool, False)
 
     def start_protocol_interface(self):
         """Sets up the camera process and pipe system for each 
         camera.
 
-        """   
+        """
 
         print('starting camera processes... ')
-        #self.vidgear_writer = WriteGear(output_filename=vid_fn)
+        # self.vidgear_writer = WriteGear(output_filename=vid_fn)
         for cam_id in range(self.config['CameraSettings']['num_cams']):
             trigger_parent, trigger_child = mp.Pipe()
             self.cam_trigger_pipes.append(trigger_parent)
@@ -244,19 +253,19 @@ class CameraInterface:
             self.trial_ended_pipes.append(trial_parent)
             self.camera_processes.append(
                 mp.Process(
-                    target = self._protocol_process, 
-                    args = (
+                    target=self._protocol_process,
+                    args=(
                         cam_id,
                         trigger_child,
                         poi_child,
                         trial_child
-                        )
                     )
                 )
-        self.cams_started.value = True   
+            )
+        self.cams_started.value = True
         for process in self.camera_processes:
             process.start()
-        sleep(5) #give cameras time to setup       
+        sleep(5)  # give cameras time to setup
 
     def stop_interface(self):
         """Tells the camera processes to shut themselves down, waits
@@ -287,7 +296,7 @@ class CameraInterface:
             for pipe in self.cam_trigger_pipes:
                 pipe.recv()
             triggerable = True
-        else: 
+        else:
             triggerable = False
         return triggerable
 
@@ -302,7 +311,7 @@ class CameraInterface:
         """
         if all([pipe.poll() for pipe in self.poi_deviation_pipes]):
             deviations = [pipe.recv() for pipe in self.poi_deviation_pipes]
-            dev =  min(deviations)
+            dev = min(deviations)
         else:
             dev = 0
         return dev
@@ -315,62 +324,62 @@ class CameraInterface:
     def _acquire_baseline(self, cam, cam_id, img, num_imgs, trigger_pipe):
         poi_indices = self.config['CameraSettings']['saved_pois'][cam_id]
         num_pois = len(poi_indices)
-        baseline_pois = np.zeros(shape = (num_pois, num_imgs))
+        baseline_pois = np.zeros(shape=(num_pois, num_imgs))
         trigger_pipe.send(1)
-        #acquire baseline images 
-        for i in range(num_imgs):  
+        # acquire baseline images
+        for i in range(num_imgs):
             while not trigger_pipe.poll():
-                pass 
+                pass
             trigger_pipe.recv()
             try:
-                cam.get_image(img, timeout = 2000) 
-                trigger_pipe.send('c') 
-                npimg = img.get_image_data_numpy()   
-                for j in range(num_pois): 
-                    baseline_pois[j,i] = npimg[
-                    poi_indices[j][1],
-                    poi_indices[j][0]
+                cam.get_image(img, timeout=2000)
+                trigger_pipe.send('c')
+                npimg = img.get_image_data_numpy()
+                for j in range(num_pois):
+                    baseline_pois[j, i] = npimg[
+                        poi_indices[j][1],
+                        poi_indices[j][0]
                     ]
             except Exception as err:
-                print("error: "+str(cam_id))
+                print("error: " + str(cam_id))
                 print(err)
-        #compute summary stats
-        poi_means = np.mean(baseline_pois, axis = 1)            
+        # compute summary stats
+        poi_means = np.mean(baseline_pois, axis=1)
         poi_std = np.std(
             np.sum(
                 np.square(
                     baseline_pois - poi_means.reshape(num_pois, 1)
-                    ), 
-                axis = 0
-                )
+                ),
+                axis=0
             )
+        )
         return poi_means, poi_std
 
     def _estimate_poi_deviation(self, cam_id, npimg, poi_means, poi_std):
         poi_indices = self.config['CameraSettings']['saved_pois'][cam_id]
         num_pois = len(poi_indices)
         poi_obs = np.zeros(num_pois)
-        for j in range(num_pois): 
+        for j in range(num_pois):
             poi_obs[j] = npimg[poi_indices[j][1], poi_indices[j][0]]
         dev = int(
             np.sum(np.square(poi_obs - poi_means)) / (poi_std + np.finfo(float).eps)
-            )
+        )
         return dev
 
     def _protocol_process(
-        self, 
-        cam_id, 
-        trigger_pipe, 
-        poi_deviation_pipe, 
-        trial_ended_pipe
-        ):
-        #Create Id's for video functions
+            self,
+            cam_id,
+            trigger_pipe,
+            poi_deviation_pipe,
+            trial_ended_pipe
+    ):
+        # Create Id's for video functions
         vid_fn = (
-                self.config['ReachMaster']['data_dir'] + '/videos/trial'  + '_cam' + str(cam_id) + '.mp4'
+                self.config['ReachMaster']['data_dir'] + '/videos/trial' + '_cam' + str(cam_id) + '.mp4'
         )
-        sleep(2*cam_id) #prevents simultaneous calls to the ximea api
+        sleep(2 * cam_id)  # prevents simultaneous calls to the ximea api
         print('finding camera: ', cam_id)
-        cam = xiapi.Camera(dev_id = cam_id)
+        cam = xiapi.Camera(dev_id=cam_id)
         print('opening camera: ', cam_id)
         cam.open_device()
         print('setting camera: ', cam_id)
@@ -383,14 +392,14 @@ class CameraInterface:
                 np.round(
                     float(
                         self.config['ExperimentSettings']['baseline_dur']
-                        ) * 
+                    ) *
                     float(
                         self.config['CameraSettings']['fps']
-                        ), 
-                    decimals = 0
-                    )
+                    ),
+                    decimals=0
                 )
             )
+        )
         if num_baseline > 0:
             poi_means, poi_std = self._acquire_baseline(
                 cam,
@@ -398,59 +407,58 @@ class CameraInterface:
                 img,
                 num_baseline,
                 trigger_pipe
-                ) 
+            )
         if self.config['Protocol']['type'] == 'CONTINUOUS':
             vid_fn = (
-                self.config['ReachMaster']['data_dir'] + '/videos/' +
-                str(datetime.datetime.now()) + '_cam' + str(cam_id) + '.mp4'
-                )
+                    self.config['ReachMaster']['data_dir'] + '/videos/' +
+                    str(datetime.datetime.now()) + '_cam' + str(cam_id) + '.mp4'
+            )
         elif self.config['Protocol']['type'] == 'TRIALS':
             trial_num = 0
             vid_fn = (
-                self.config['ReachMaster']['data_dir'] + '/videos/trial' +
-                str(trial_num) + '_cam' + str(cam_id) + '.mp4'
-                )
+                    self.config['ReachMaster']['data_dir'] + '/videos/trial' +
+                    str(trial_num) + '_cam' + str(cam_id) + '.mp4'
+            )
         vidgear_writer_cal = WriteGear(output_filename=vid_fn)
-        #self.ffmpeg_command.append(vid_fn)
-        #ffmpeg_process = sp.Popen(
+        # self.ffmpeg_command.append(vid_fn)
+        # ffmpeg_process = sp.Popen(
         #    self.ffmpeg_command,
         #    stdin=sp.PIPE,
         #    stdout=sp.DEVNULL,
         #    stderr=sp.DEVNULL,
         #    bufsize=-1
         #    )
-        while self.cams_started.value == True:        
+        while self.cams_started.value == True:
             if trigger_pipe.poll():
                 trigger_pipe.recv()
                 try:
-                    cam.get_image(img, timeout = 2000) 
+                    cam.get_image(img, timeout=2000)
                     trigger_pipe.send('c')
-                    npimg = img.get_image_data_numpy()     
+                    npimg = img.get_image_data_numpy()
                     frame = cv2.cvtColor(npimg, cv2.COLOR_BAYER_BG2BGR)
                     vidgear_writer_cal.write(frame)
-                    #ffmpeg_process.stdin.write(frame)
-                    dev = self._estimate_poi_deviation(cam_id, npimg, poi_means, poi_std)      
+                    # ffmpeg_process.stdin.write(frame)
+                    dev = self._estimate_poi_deviation(cam_id, npimg, poi_means, poi_std)
                     poi_deviation_pipe.send(dev)
                 except Exception as err:
                     print("cam_id: " + str(err))
                     pass
             elif (
-                self.config['Protocol']['type'] == 'TRIALS' and 
-                trial_ended_pipe.poll()
-                ):
+                    self.config['Protocol']['type'] == 'TRIALS' and
+                    trial_ended_pipe.poll()
+            ):
                 trial_ended_pipe.recv()
                 self.vidgear_writer_cal.close()
-                #ffmpeg_process.stdin.close()
-                #ffmpeg_process.wait()
-                #ffmpeg_process = None
+                # ffmpeg_process.stdin.close()
+                # ffmpeg_process.wait()
+                # ffmpeg_process = None
                 trial_num += 1
                 vid_fn = (
-                self.config['ReachMaster']['data_dir'] + '/videos/trial' +
-                str(trial_num) + '_cam' + str(cam_id) + '.mp4'
+                        self.config['ReachMaster']['data_dir'] + '/videos/trial' +
+                        str(trial_num) + '_cam' + str(cam_id) + '.mp4'
                 )
         cam.stop_acquisition()
         cam.close_device()
-
 
 # if __name__ == '__main__':
 #     #for debugging purposes only 
