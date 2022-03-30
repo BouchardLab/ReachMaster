@@ -299,34 +299,36 @@ class Protocols(tk.Toplevel):
             tkinter.messagebox.showinfo("Warning", "No saved POIs")
             self.on_quit()
             return
-        # self.start_and_load_robot_interface()
-        # self.start_and_load_experimental_and_stimuli_variables()
+        #self.start_and_load_robot_interface()
+        self.start_and_load_experimental_and_stimuli_variables()
         self.cams_connected = True
         self.start_and_initialize_cameras()
-        # self.cam_thread = threading.Thread(target=self.cam_init())
-        # self.cam_thread.start()
         sleep(10)  # give the cameras time to start, capture baseline images.
         self._init_data_output()
         self._configure_window()
         self.control_message = 'b'  # Send experimental micro-controller message indicating initiation of camera
         # trigger.
-        while not expint.trigger_image(self.exp_controller):  # If camera's not triggerable..
-            pass
-        # obtain baseline for camera's to detect movement
         self.img = init_image()
+        try:
+            expint.trigger_image(self.exp_controller)  # If camera's not triggerable..
+            print('triggering.')
+        except:
+            print('No Trigger Detected.')
+            pdb.set_trace()
+        # obtain baseline for camera's to detect movement
+        print('Baseline')
         self.start_acquiring_baseline()
         self.ready = True
         self.run_auditory_stimuli()  # runs sound at beginning of experiment!
 
     def start_and_load_robot_interface(self):
         """ Called on class initiation, starts robot software module."""
-        sleep(1)
         self.rob_controller = robint.start_interface(self.config)
-        sleep(2)
+        sleep(1)
         self.rob_connected = True
         print("loading robot settings...")
         self.config = robint.set_rob_controller(self.rob_controller, self.config)
-        sleep(2)
+        sleep(5)
 
     def start_and_load_experimental_and_stimuli_variables(self):
         """ Called on class initiation, starts audio and experiment micro-controller-based class module. """
@@ -440,16 +442,16 @@ class Protocols(tk.Toplevel):
 
     def start_and_initialize_cameras(self):
         """ Sets up camera. Finds, sets, and starts up each camera defined by the config file. """
-        self.config['CameraSettings']['num_cams'] = int(self.num_cams.get())
-        self.config['CameraSettings']['fps'] = int(self.fps.get())
-        self.config['CameraSettings']['exposure'] = int(self.exposure.get())
-        self.config['CameraSettings']['gain'] = float(self.gain.get())
-        self.config['CameraSettings']['trigger_source'] = self.trigger_source.get()
-        self.config['CameraSettings']['gpo_mode'] = self.gpo_mode.get()
-        self.config['CameraSettings']['img_width'] = int(self.img_width.get())
-        self.config['CameraSettings']['img_height'] = int(self.img_height.get())
-        self.config['CameraSettings']['offset_x'] = int(self.offset_x.get())
-        self.config['CameraSettings']['offset_y'] = int(self.offset_y.get())
+        #self.config['CameraSettings']['num_cams'] = int(self.num_cams.get())
+        #self.config['CameraSettings']['fps'] = int(self.fps.get())
+        #self.config['CameraSettings']['exposure'] = int(self.exposure.get())
+        #self.config['CameraSettings']['gain'] = float(self.gain.get())
+        #self.config['CameraSettings']['trigger_source'] = self.trigger_source.get()
+        #self.config['CameraSettings']['gpo_mode'] = self.gpo_mode.get()
+        #self.config['CameraSettings']['img_width'] = int(self.img_width.get())
+        #self.config['CameraSettings']['img_height'] = int(self.img_height.get())
+        #self.config['CameraSettings']['offset_x'] = int(self.offset_x.get())
+        #self.config['CameraSettings']['offset_y'] = int(self.offset_y.get())
         # Start pipes for POI estimation
         self.cams = start_interface(self.config)
         self.cams_connected = True
@@ -483,6 +485,7 @@ class Protocols(tk.Toplevel):
                 )
             )
         )
+        print('num_baseline images = ' + str(num_baseline))
         if num_baseline > 0:
             self.simply_acquire_baseline(num_baseline)  # for each camera, find the POI's
 
@@ -492,24 +495,28 @@ class Protocols(tk.Toplevel):
         num_pois = []
         for cam_id in range(self.config['CameraSettings']['num_cams']):
             poi_indices.append(self.config['CameraSettings']['saved_pois'][cam_id])  # Take POI regions
-            num_pois = len(poi_indices)
-            baseline_pois.append(np.zeros(shape=(num_pois, num_imgs)))  # Create baseline array of POI's
+            num_pois.append(len(poi_indices))
+            try:
+                baseline_pois.append(np.zeros((num_pois, num_imgs)))  # Create baseline array of POI's
+            except:
+                print('no cam POIs selected for cam  ' + str(cam_id))
+                baseline_pois.append(np.zeros((1 , num_imgs)))
+        print('Got baseline arrays')
         # acquire baseline images
         for i in range(num_imgs):
-            try:
-                expint.trigger_image(self.exp_controller)
-                for cam_id, cam_obj in enumerate(self.cams):
-                    npimg = self.img.get_image_data_numpy(cam_obj)  # Collect statistics about image data.
-                    for j in range(num_pois[cam_id]):
-                        baseline_pois[cam_id][j, i] = npimg[
-                            poi_indices[cam_id][j][1],
-                            poi_indices[cam_id][j][0]]
-            except Exception as err:
-                print("error: " + str(cam_id))
-                print(err)
+            expint.trigger_image(self.exp_controller)
+            for cam_id, cam_obj in enumerate(self.cams):
+                npimg = self.img.get_image_data_numpy(cam_obj)  # Collect data from image data as numpy array
+                for j in range(num_pois[cam_id]):
+                    baseline_pois[cam_id][j, i] = npimg[
+                        poi_indices[cam_id][j][1],
+                        poi_indices[cam_id][j][0]]
+        print('Got baseline images.')
         # compute summary stats
+        pdb.set_trace()
         for cam_id, cam_obj in enumerate(self.cams):
             poi_means = np.mean(baseline_pois[cam_id], axis=1)
+            pdb.set_trace()
             poi_std = np.std(
                 np.sum(
                     np.square(
@@ -520,6 +527,7 @@ class Protocols(tk.Toplevel):
             )
             self.cam_poi_means.append(poi_means)  # append class object
             self.cam_poi_std.append(poi_std)  # append class object
+        print('Got baseline statistics.')
 
     def trigger_record_and_save_image_from_camera_get_deviation(self):
         frame = 0

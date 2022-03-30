@@ -134,7 +134,7 @@ def start_interface(config):
             raise Exception("No image triggers detected.")
             return
         raise Exception(err)
-    return  #
+    return cams
 
 
 def init_image():

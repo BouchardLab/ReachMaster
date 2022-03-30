@@ -29,6 +29,7 @@ import numpy as np
 import os 
 from vidgear.gears import WriteGear
 import subprocess as sp
+import pdb
 
 class CameraSettings(tk.Toplevel):
     """The primary class for the camera settings window.
@@ -202,7 +203,8 @@ class CameraSettings(tk.Toplevel):
         self.downsampling.set(str(self.config['CameraSettings']['downsampling']))
         self.poi_threshold = tk.StringVar()
         self.poi_threshold.set(str(self.config['CameraSettings']['poi_threshold']))   
-        #initialize housekeeping variables     
+        #initialize housekeeping variables
+        self.cams = []
         self.streaming = False
         self.cams_connected = False
         self.draw_saved = False
@@ -224,21 +226,24 @@ class CameraSettings(tk.Toplevel):
         must be closed. 
 
         """
-        self.config['CameraSettings']['num_cams'] = int(self.num_cams.get())
-        self.config['CameraSettings']['fps'] = int(self.fps.get())
-        self.config['CameraSettings']['exposure'] = int(self.exposure.get())
-        self.config['CameraSettings']['gain'] = float(self.gain.get()) 
-        self.config['CameraSettings']['img_width'] = int(self.img_width.get())
-        self.config['CameraSettings']['img_height'] = int(self.img_height.get())
-        self.config['CameraSettings']['offset_x'] = int(self.offset_x.get())
-        self.config['CameraSettings']['offset_y'] = int(self.offset_y.get())
-        self.config['CameraSettings']['downsampling'] = self.downsampling.get()
-        self.config['CameraSettings']['trigger_source'] = self.trigger_source.get()
-        self.config['CameraSettings']['gpo_mode'] = self.gpo_mode.get()
-        self.config['CameraSettings']['poi_threshold'] = float(self.poi_threshold.get())
-        config.save_tmp(self.config)
-        if self.streaming:
-            self._on_stream_quit()
+        try:
+            self.config['CameraSettings']['num_cams'] = int(self.num_cams.get())
+            self.config['CameraSettings']['fps'] = int(self.fps.get())
+            self.config['CameraSettings']['exposure'] = int(self.exposure.get())
+            self.config['CameraSettings']['gain'] = float(self.gain.get())
+            self.config['CameraSettings']['img_width'] = int(self.img_width.get())
+            self.config['CameraSettings']['img_height'] = int(self.img_height.get())
+            self.config['CameraSettings']['offset_x'] = int(self.offset_x.get())
+            self.config['CameraSettings']['offset_y'] = int(self.offset_y.get())
+            self.config['CameraSettings']['downsampling'] = self.downsampling.get()
+            self.config['CameraSettings']['trigger_source'] = self.trigger_source.get()
+            self.config['CameraSettings']['gpo_mode'] = self.gpo_mode.get()
+            self.config['CameraSettings']['poi_threshold'] = float(self.poi_threshold.get())
+            config.save_tmp(self.config)
+            if self.streaming:
+                self._on_stream_quit()
+        except:
+            pass
         expint.stop_interface(self.exp_controller)
         self.destroy()
 
@@ -462,21 +467,25 @@ class CameraSettings(tk.Toplevel):
     def start_stream_callback(self):
         """Begins triggering and displaying camera images to the screen."""
         if not self.cams_connected:
-            self.config['CameraSettings']['num_cams'] = int(self.num_cams.get())
-            self.config['CameraSettings']['fps'] = int(self.fps.get())
-            self.config['CameraSettings']['exposure'] = int(self.exposure.get())
-            self.config['CameraSettings']['gain'] = float(self.gain.get())   
-            self.config['CameraSettings']['trigger_source'] = self.trigger_source.get()
-            self.config['CameraSettings']['gpo_mode'] = self.gpo_mode.get()
-            self.config['CameraSettings']['img_width'] = int(self.img_width.get())
-            self.config['CameraSettings']['img_height'] = int(self.img_height.get())
-            self.config['CameraSettings']['offset_x'] = int(self.offset_x.get())
-            self.config['CameraSettings']['offset_y'] = int(self.offset_y.get())  
-            self.config['CameraSettings']['downsampling'] = self.downsampling.get()
-            self.cams = camint.start_interface(self.config)
-            self.cams_connected = True 
-            self.img = camint.init_image()                                     
+            try:
+                self.config['CameraSettings']['num_cams'] = int(self.num_cams.get())
+                self.config['CameraSettings']['fps'] = int(self.fps.get())
+                self.config['CameraSettings']['exposure'] = int(self.exposure.get())
+                self.config['CameraSettings']['gain'] = float(self.gain.get())
+                self.config['CameraSettings']['trigger_source'] = self.trigger_source.get()
+                self.config['CameraSettings']['gpo_mode'] = self.gpo_mode.get()
+                self.config['CameraSettings']['img_width'] = int(self.img_width.get())
+                self.config['CameraSettings']['img_height'] = int(self.img_height.get())
+                self.config['CameraSettings']['offset_x'] = int(self.offset_x.get())
+                self.config['CameraSettings']['offset_y'] = int(self.offset_y.get())
+                self.config['CameraSettings']['downsampling'] = self.downsampling.get()
+            except:
+                pass
+        self.cams = camint.start_interface(self.config)
+        self.cams_connected = True
+        self.img = camint.init_image()
         if not self.streaming:
+            pdb.set_trace()
             self._start_stream()
         else: 
             tkinter.messagebox.showinfo("Warning", "Already streaming.") 
@@ -619,9 +628,10 @@ class CameraSettings(tk.Toplevel):
             self._on_stream_quit()
 
     def _refresh(self):
+        frame = 0
         if self.streaming:
             expint.trigger_image(self.exp_controller)
-            now = str(int(round(time.time()*1000)))            
+            now = str(int(round(time.time()*1000)))
             for i in range(self.config['CameraSettings']['num_cams']):
                 #display image
                 npimg = camint.get_npimage(self.cams[i],self.img)
