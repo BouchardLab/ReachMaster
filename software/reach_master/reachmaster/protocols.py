@@ -504,16 +504,19 @@ class Protocols(tk.Toplevel):
         print('Got baseline arrays')
         # acquire baseline images
         for i in range(num_imgs):
+            print(i)
             expint.trigger_image(self.exp_controller)
             for cam_id, cam_obj in enumerate(self.cams):
                 try:
-                    npimg = self.img.get_image_data_numpy(cam_obj)  # Collect data from image data as numpy array
+                    npimg = get_npimage(cam_obj, self.img)
+                    # Collect data from image data as numpy array
                 except:
                     pdb.set_trace()
                 for j in range(num_pois[cam_id]):
                     baseline_pois[cam_id][j, i] = npimg[
                         poi_indices[cam_id][j][1],
                         poi_indices[cam_id][j][0]]
+            sleep(0.05) # wait 5ms before triggering next baseline image.
         print('Got baseline images.')
         # compute summary stats
         pdb.set_trace()
