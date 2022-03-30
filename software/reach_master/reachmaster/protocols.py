@@ -495,9 +495,9 @@ class Protocols(tk.Toplevel):
         num_pois = []
         for cam_id in range(self.config['CameraSettings']['num_cams']):
             poi_indices.append(self.config['CameraSettings']['saved_pois'][cam_id])  # Take POI regions
-            num_pois.append(len(poi_indices))
+            num_pois.append(len(poi_indices[cam_id]))
             try:
-                baseline_pois.append(np.zeros((num_pois, num_imgs)))  # Create baseline array of POI's
+                baseline_pois.append(np.zeros((num_pois[cam_id], num_imgs)))  # Create baseline array of POI's
             except:
                 print('no cam POIs selected for cam  ' + str(cam_id))
                 baseline_pois.append(np.zeros((1 , num_imgs)))
@@ -506,7 +506,10 @@ class Protocols(tk.Toplevel):
         for i in range(num_imgs):
             expint.trigger_image(self.exp_controller)
             for cam_id, cam_obj in enumerate(self.cams):
-                npimg = self.img.get_image_data_numpy(cam_obj)  # Collect data from image data as numpy array
+                try:
+                    npimg = self.img.get_image_data_numpy(cam_obj)  # Collect data from image data as numpy array
+                except:
+                    pdb.set_trace()
                 for j in range(num_pois[cam_id]):
                     baseline_pois[cam_id][j, i] = npimg[
                         poi_indices[cam_id][j][1],
