@@ -331,7 +331,6 @@ class Protocols(tk.Toplevel):
         # start interfaces, load settings and acquire baseline for reach detection
         print('starting speaker...')
         self.initialize_speaker()
-        self.load_auditory_stimuli(self.config)
         print("starting interfaces...")
         self.exp_controller = expint.start_interface(self.config)
         sleep(1)
@@ -425,10 +424,8 @@ class Protocols(tk.Toplevel):
 
         return
 
-
     def run_auditory_stimuli(self):
         # command to check if speaker is online
-
         # command to initiate auditory stimuli (single use in experiment)
         playsound(self.audio_file)
         return
