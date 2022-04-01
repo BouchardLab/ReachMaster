@@ -3,12 +3,6 @@ ReachMaster root application. It allows the user to set any
 experiment parameters required by the experiment 
 microcontroller (e.g., number/size of rewards, trial delays, 
 etc.).
-
-
-Todo:
-    * Move protocol type options here?
-    * Automate unit tests
-
 """
 
 from .. import config
@@ -88,6 +82,8 @@ class ExperimentSettings(tk.Toplevel):
         self.flush_dur.set(str(self.config['ExperimentSettings']['flush_dur']))
         self.reach_delay = tk.StringVar()
         self.reach_delay.set(str(self.config['ExperimentSettings']['reach_delay']))
+        self.audio_file = tk.StringVar()
+        self.audio_file.set(str(self.config['ExperimentSettings']['audio_file']))
         self._configure_window()
 
     def on_quit(self):
@@ -184,4 +180,14 @@ class ExperimentSettings(tk.Toplevel):
             width = 23,
             anchor = "e"
             ).grid(row = 8, column = 0)   
-        tk.Entry(self, textvariable = self.reach_delay, width = 17).grid(row = 8, column = 1)
+        tk.Entry(self, textvariable = self.flush_dur, width = 17).grid(row=8, column = 1)
+        tk.Entry(self, textvariable=self.audio_file, width=17).grid(row=9, column=1)
+        tk.Label(
+            self,
+            text="Auditory Stimuli",
+            font='Arial 10 bold',
+            bg="white",
+            width=23,
+            anchor="e"
+        ).grid(row=8, column=0)
+        tk.Entry(self, textvariable=self.audio_file, width=17).grid(row=9, column=1)

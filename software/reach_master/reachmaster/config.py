@@ -4,13 +4,7 @@ Configurations files are json files that store all the settings
 used in a ReachMaster session. Functions are provided to
 generate default configuration files, as well as to save and 
 load previous configurations. This encourages persistence of 
-settings across experiments. 
-
-Todo:
-    * Automate unit tests 
-    * Integrate ffmpeg settings
-    * Flesh out field descriptions
-
+settings across experiments.
 """
 
 import os
@@ -67,7 +61,8 @@ def default_config():
             'max_rewards': 3,
             'lights_off_dur': 3000,
             'lights_on_dur': 5000,
-            'reach_delay': 100
+            'reach_delay': 100,
+            'audio_file': 'default_trial_audio.mp4'
         },
         'RobotSettings': {
             'calibration_file': None,
@@ -118,6 +113,20 @@ def default_config():
         },
         'Protocol': {
             'type': 'TRIALS'
+        },
+        'FFMPEG': {
+            '-f': 'rawvideo',
+            '-s': str(688 * 3) + 'x' + str(688),
+            '-pix_fmt': 'bgr24',
+            '-r': '200',
+            '-i': '-',
+            '-vsync': '0',
+            '-b:v': '2M',
+            '-maxrate': '2M',
+            '-bufsize': '1M',
+            '-c:v': 'libx264',
+            '-preset': 'superfast',
+            '-pix_fmt': 'yuv420p'
         }
     }
     return config

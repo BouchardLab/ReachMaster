@@ -3,11 +3,6 @@ ReachMaster root application whenever a protocol is run. It
 provides basic functionality for interacting with the rig 
 while an experiment is running (e.g., for manual reward 
 delivery, toggling lights, etc.).
-
-Todo:
-    * Keep adding new protocol types
-    * Automate unit tests
-
 """
 
 from . import config
@@ -24,10 +19,8 @@ from time import time, sleep
 import datetime
 import os
 import numpy as np
-import multiprocessing as mp
-import threading
 import pdb
-
+import playsound
 
 def _set_camera(cam, config):
     cam.set_imgdataformat(config['CameraSettings']['imgdataformat'])
@@ -262,6 +255,7 @@ class Protocols(tk.Toplevel):
             '-pix_fmt': 'bgr24',
             '-r': str(self.config['CameraSettings']['fps']),
             '-i': '-',
+            '-vsync': '0',
             '-b:v': '2M',
             '-maxrate': '2M',
             '-bufsize': '1M',
@@ -283,6 +277,7 @@ class Protocols(tk.Toplevel):
             '-b:v', '2M',
             '-maxrate', '2M',
             '-bufsize', '1M',
+            '-vsync' ,'0',
             '-c:v', 'h264_nvenc',
             '-preset', 'llhp',
             '-profile:v', 'high',
@@ -294,12 +289,13 @@ class Protocols(tk.Toplevel):
         self.poi_deviation_pipes = []
         self.trial_ended_pipes = []
         self.cams_started = False
+        self.audio_file = config['ExperimentSettings']['audio_file']
         # check config for errors
         if len(self.config['CameraSettings']['saved_pois']) == 0:
             tkinter.messagebox.showinfo("Warning", "No saved POIs")
             self.on_quit()
             return
-        #self.start_and_load_robot_interface()
+        # self.start_and_load_robot_interface()
         self.start_and_load_experimental_and_stimuli_variables()
         self.cams_connected = True
         self.start_and_initialize_cameras()
@@ -426,32 +422,21 @@ class Protocols(tk.Toplevel):
 
     # Auditory stimuli ---------------------------------------------------------------
     def initialize_speaker(self):
+
         return
 
-    def load_auditory_stimuli(self, config):
-        # audio_file = config['Protocol']['audio_file']
-        # load auditory file into speaker
-        return
 
     def run_auditory_stimuli(self):
         # command to check if speaker is online
+
         # command to initiate auditory stimuli (single use in experiment)
+        playsound(self.audio_file)
         return
 
     # Camera processes and functions -----------------------------------------
 
     def start_and_initialize_cameras(self):
         """ Sets up camera. Finds, sets, and starts up each camera defined by the config file. """
-        #self.config['CameraSettings']['num_cams'] = int(self.num_cams.get())
-        #self.config['CameraSettings']['fps'] = int(self.fps.get())
-        #self.config['CameraSettings']['exposure'] = int(self.exposure.get())
-        #self.config['CameraSettings']['gain'] = float(self.gain.get())
-        #self.config['CameraSettings']['trigger_source'] = self.trigger_source.get()
-        #self.config['CameraSettings']['gpo_mode'] = self.gpo_mode.get()
-        #self.config['CameraSettings']['img_width'] = int(self.img_width.get())
-        #self.config['CameraSettings']['img_height'] = int(self.img_height.get())
-        #self.config['CameraSettings']['offset_x'] = int(self.offset_x.get())
-        #self.config['CameraSettings']['offset_y'] = int(self.offset_y.get())
         # Start pipes for POI estimation
         self.cams = start_interface(self.config)
         self.cams_connected = True
@@ -500,7 +485,7 @@ class Protocols(tk.Toplevel):
                 baseline_pois.append(np.zeros((num_pois[cam_id], num_imgs)))  # Create baseline array of POI's
             except:
                 print('no cam POIs selected for cam  ' + str(cam_id))
-                baseline_pois.append(np.zeros((1 , num_imgs)))
+                baseline_pois.append(np.zeros((1, num_imgs)))
         print('Got baseline arrays')
         # acquire baseline images
         for i in range(num_imgs):
@@ -516,7 +501,7 @@ class Protocols(tk.Toplevel):
                     baseline_pois[cam_id][j, i] = npimg[
                         poi_indices[cam_id][j][1],
                         poi_indices[cam_id][j][0]]
-            sleep(0.05) # wait 5ms before triggering next baseline image.
+            sleep(0.05)  # wait 5ms before triggering next baseline image.
         print('Got baseline images.')
         # compute summary stats
         pdb.set_trace()
@@ -537,47 +522,37 @@ class Protocols(tk.Toplevel):
 
     def trigger_record_and_save_image_from_camera_get_deviation(self):
         frame = 0
-        expint.trigger_image(self.exp_controller)
+        expint.trigger_image(self.exp_controller)  # camera triggered here
         dev = []
         try:
             for idx, cam_obj in self.cams:
-                npimg = camint.get_npimage(cam_obj, self.img)
+                npimg = get_npimage(cam_obj, self.img)
                 npimg = cv2.cvtColor(npimg, cv2.COLOR_BAYER_BG2BGR)
                 if idx == 0:
                     frame = npimg
                 else:
                     frame = np.hstack((frame, npimg))
-                dev.append(self._estimate_poi_deviation(npimg, self.cam_poi_means[idx], self.cam_poi_std[idx]))
-
+                dev.append(self._estimate_poi_deviation_single_camera(npimg, self.cam_poi_means[idx],
+                                                                      self.cam_poi_std[idx]))
         except Exception as err:
             tkinter.messagebox.showinfo("Warning, couldn't trigger cameras. Please check experimental micro-controller."
                                         , err)
             self.stop_camera_recording()
             return
-        # Use WriteGear to write video processed
+        return dev, frame
+
+    def write_video_frame(self, frame):
         self.vidgear_writer_cal.write(frame)
-        return dev
 
     def stop_camera_recording(self):
         self.vidgear_writer_cal.close()
         camint.stop_interface(self.cams)
         self.cams_connected = False
 
-    def stop_interface(self):
-        """Tells the camera processes to shut themselves down, waits
-        for them to exit, then cleans all the pipes.
-        """
-        self.cams_started = False
-        for proc in self.camera_processes:
-            proc.join()
-        self.cam_trigger_pipes = []
-        self.poi_deviation_pipes = []
-        self.trial_ended_pipes = []
-
     # Tools to estimate, report large light deviations in pre-set POI regions. This is how "reaches" are detected in
     # a trial.
 
-    def _estimate_poi_deviation(self, cam_id, npimg, poi_means, poi_std):
+    def _estimate_poi_deviation_single_camera(self, cam_id, npimg, poi_means, poi_std):
         poi_indices = self.config['CameraSettings']['saved_pois'][cam_id]
         num_pois = len(poi_indices)
         poi_obs = np.zeros(num_pois)
@@ -589,6 +564,28 @@ class Protocols(tk.Toplevel):
         return dev
 
         # Protocol types ---------------------------------------------------------------
+
+    def run_video_capture(self):
+        now = str(int(round(time() * 1000)))  # Normed PC time
+        if not self.lights_on:
+            self.lights_on = 1  # Make sure lights are on
+        dev, frame = self.trigger_record_and_save_image_from_camera_get_deviation()  # Trigger and save camera frame
+        if frame:
+            self.write_video_frame(frame)
+        expint.write_message(self.exp_controller, self.control_message)
+        self.exp_response = expint.read_response(self.exp_controller)
+        if (
+                self.exp_response[1] == 's' and  # No robot movement
+                self.exp_response[2] == '0'):  # Not trial reset
+            self.control_message = 'r'  # Start time handle spends in particular location
+            self.reach_init = now  # set variables
+            self.reach_detected = True
+        elif (self.exp_response[4] == '0' and
+              (int(now) - int(self.reach_init)) >
+              self.config['ExperimentSettings']['reach_timeout']):  # robot not moving
+            self.move_robot_callback()
+            self.reach_detected = False
+            self.reach_init = now
 
     def run_continuous(self):
         """Operations performed for a single iteration of protocol type CONTINOUS.
@@ -682,7 +679,7 @@ class Protocols(tk.Toplevel):
             self.reach_detected = True
             self.control_message = 'r'
         elif self.exp_response[1] == 'e':
-            self.trial_ended()
+            #self.trial_ended()
             self.poi_deviation = 0
             self.control_message = 's'
             self.reach_detected = False
@@ -696,10 +693,6 @@ class Protocols(tk.Toplevel):
             self.move_robot_callback()
             self.reach_detected = False
 
-    def trial_ended(self):
-        """Alert cameras processes that a trial has ended."""
-        for pipe in self.trial_ended_pipes:
-            pipe.send(1)
 
     def run(self):
         """Execute a single iteration of the selected protocol type.
