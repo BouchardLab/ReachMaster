@@ -3,8 +3,11 @@ ReachMaster root application whenever a protocol is run. It
 provides basic functionality for interacting with the rig 
 while an experiment is running (e.g., for manual reward 
 delivery, toggling lights, etc.).
+
 """
 
+#Camera trigger check, code to move robot to different positions every 5 seconds (no cameras), camera frame save
+#Auditory stimuli checked, loaded into config.
 from . import config
 from .interfaces import camera_interface as camint
 from .interfaces import robot_interface as robint
@@ -289,7 +292,7 @@ class Protocols(tk.Toplevel):
         self.poi_deviation_pipes = []
         self.trial_ended_pipes = []
         self.cams_started = False
-        self.audio_file = config['ExperimentSettings']['audio_file']
+        #self.audio_file = config['ExperimentSettings']['audio_file']
         # check config for errors
         if len(self.config['CameraSettings']['saved_pois']) == 0:
             tkinter.messagebox.showinfo("Warning", "No saved POIs")
@@ -313,9 +316,17 @@ class Protocols(tk.Toplevel):
             pdb.set_trace()
         # obtain baseline for camera's to detect movement
         print('Baseline')
-        self.start_acquiring_baseline()
+        #self.start_acquiring_baseline()
         self.ready = True
-        self.run_auditory_stimuli()  # runs sound at beginning of experiment!
+        tf = 0 # triggered frame
+        while self.ready:
+            self.run_video_capture()
+            tf += 1
+            if tf > 10000:
+                self.ready = False
+        #self.run_auditory_stimuli()  # runs sound at beginning of experiment!
+        # debug
+        pdb.set_trace()
 
     def start_and_load_robot_interface(self):
         """ Called on class initiation, starts robot software module."""
@@ -329,9 +340,6 @@ class Protocols(tk.Toplevel):
     def start_and_load_experimental_and_stimuli_variables(self):
         """ Called on class initiation, starts audio and experiment micro-controller-based class module. """
         # start interfaces, load settings and acquire baseline for reach detection
-        print('starting speaker...')
-        self.initialize_speaker()
-        self.load_auditory_stimuli(self.config)
         print("starting interfaces...")
         self.exp_controller = expint.start_interface(self.config)
         sleep(1)
@@ -525,16 +533,18 @@ class Protocols(tk.Toplevel):
         expint.trigger_image(self.exp_controller)  # camera triggered here
         dev = []
         try:
-            for idx, cam_obj in self.cams:
+            for idx, cam_obj in enumerate(self.cams):
                 npimg = get_npimage(cam_obj, self.img)
                 npimg = cv2.cvtColor(npimg, cv2.COLOR_BAYER_BG2BGR)
                 if idx == 0:
                     frame = npimg
                 else:
                     frame = np.hstack((frame, npimg))
-                dev.append(self._estimate_poi_deviation_single_camera(npimg, self.cam_poi_means[idx],
-                                                                      self.cam_poi_std[idx]))
+                dev.append(0)
+                #dev.append(self._estimate_poi_deviation_single_camera(npimg, self.cam_poi_means[idx],
+                #                                                      self.cam_poi_std[idx]))
         except Exception as err:
+            pdb.set_trace()
             tkinter.messagebox.showinfo("Warning, couldn't trigger cameras. Please check experimental micro-controller."
                                         , err)
             self.stop_camera_recording()
@@ -565,27 +575,15 @@ class Protocols(tk.Toplevel):
 
         # Protocol types ---------------------------------------------------------------
 
-    def run_video_capture(self):
-        now = str(int(round(time() * 1000)))  # Normed PC time
+    def run_video_capture(self):  # Normed PC time
         if not self.lights_on:
             self.lights_on = 1  # Make sure lights are on
         dev, frame = self.trigger_record_and_save_image_from_camera_get_deviation()  # Trigger and save camera frame
-        if frame:
-            self.write_video_frame(frame)
+        self.write_video_frame(frame)
+        # Code here to read/write information from micro-controllers
         expint.write_message(self.exp_controller, self.control_message)
         self.exp_response = expint.read_response(self.exp_controller)
-        if (
-                self.exp_response[1] == 's' and  # No robot movement
-                self.exp_response[2] == '0'):  # Not trial reset
-            self.control_message = 'r'  # Start time handle spends in particular location
-            self.reach_init = now  # set variables
-            self.reach_detected = True
-        elif (self.exp_response[4] == '0' and
-              (int(now) - int(self.reach_init)) >
-              self.config['ExperimentSettings']['reach_timeout']):  # robot not moving
-            self.move_robot_callback()
-            self.reach_detected = False
-            self.reach_init = now
+        # If/else logic loop to determine what next micro-controller output should be
 
     def run_continuous(self):
         """Operations performed for a single iteration of protocol type CONTINOUS.
