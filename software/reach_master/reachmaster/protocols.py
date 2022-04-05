@@ -266,27 +266,6 @@ class Protocols(tk.Toplevel):
             '-preset': 'superfast',
             '-pix_fmt': 'yuv420p'
         }
-        self.ffmpeg_command = [
-            'ffmpeg', '-y',
-            '-hwaccel', 'cuvid',
-            '-f', 'rawvideo',
-            '-s', str(
-                self.config['CameraSettings']['img_width'] *
-                self.config['CameraSettings']['num_cams']
-            ) + 'x' + str(self.config['CameraSettings']['img_height']),
-            '-pix_fmt', 'bgr24',
-            '-r', str(self.config['CameraSettings']['fps']),
-            '-i', '-',
-            '-b:v', '2M',
-            '-maxrate', '2M',
-            '-bufsize', '1M',
-            '-vsync' ,'0',
-            '-c:v', 'h264_nvenc',
-            '-preset', 'llhp',
-            '-profile:v', 'high',
-            '-rc', 'cbr',
-            '-pix_fmt', 'yuv420p'
-        ]
         self.camera_processes = []
         self.cam_trigger_pipes = []
         self.poi_deviation_pipes = []
@@ -557,7 +536,7 @@ class Protocols(tk.Toplevel):
     def stop_camera_recording(self):
         self.vidgear_writer_cal.close()
         stop_interface(self.cams)
-        self.cams_connected = Fals
+        self.cams_connected = False
     # Tools to estimate, report large light deviations in pre-set POI regions. This is how "reaches" are detected in
     # a trial.
 
