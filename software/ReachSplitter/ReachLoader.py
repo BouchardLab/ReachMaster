@@ -328,7 +328,6 @@ class ReachViz:
 
         r, theta, phi, self.x_robot, self.y_robot, self.z_robot = utils.forward_xform_coords(
             x_pot[idxstrt:idxstp], y_pot[idxstrt:idxstp], z_pot[idxstrt:idxstp])
-        # pdb.set_trace()
         if check_lick:
             self.check_licking_times_and_make_vector()
         if filter:
@@ -368,14 +367,10 @@ class ReachViz:
         right_palm_maxima = find_peaks(right_palm_f[:, 0], height=0.17, distance=8)[0]
         left_palm_maxima = find_peaks(left_palm_f[:, 0], height=0.17, distance=8)[0]
         num_peaks = len(right_palm_maxima) + len(left_palm_maxima)
-        #if num_peaks < 1:
-        #    plt.plot(left_palm_f[:, 0])
-        #    plt.plot(right_palm_f[:, 0])
-        #    plt.show()
         print("Number of tentative reaching actions detected:  " + str(num_peaks))
         return num_peaks
 
-    def segment_and_filter_kinematic_block(self, cl1, cl2, p_thresh=0.4, coarse_threshold=0.4,
+    def segment_and_filter_kinematic_block(self, cl1, cl2, p_thresh=0.5, coarse_threshold=0.3,
                                            preprocess=True):
         """ Function to segment, filter, and interpolate positional data across all bodyparts,
          using start and stop indices across
@@ -553,7 +548,9 @@ class ReachViz:
         self.raw_speeds = []
         # Pre-process (threshold, interpolate if necessary/possible, and apply hamming filter post-interpolation
         if preprocess:
-            self.preprocess_kinematics(p_thresh=0.1)
+            self.preprocess_kinematics(p_thresh=0.3)
+        # Zero out any large outliers in the data, as well as any low probability events.
+        self.zero_out_outliers()
         self.assign_final_variables()
         # Calculate principal components
         self.pos_v_a_pc, self.pos_v_a_pc_variance = get_principle_components(self.pos_holder, vel=self.vel_holder,
@@ -578,6 +575,14 @@ class ReachViz:
         self.endpoint_error, self.x_endpoint_error, self.y_endpoint_error, self.z_endpoint_error = \
             self.calculate_endpoint_error()
         return
+
+    def zero_out_outliers(self):
+        for idx, pos in self.positions:
+            outlier_index = self.outlier_list[idx]
+            self.speed_holder[idx][outlier_index] = 0
+            self.pos_holder[idx][outlier_index] = 0
+            self.vel_holder[idx][outlier_index] = 0
+            self.acc_holder[idx][outlier_index] = 0
 
     def calculate_endpoint_error(self):
         """Function to calculate the kinematic feature 'endpoint_error' by finding the minimum distance between
@@ -617,7 +622,7 @@ class ReachViz:
             except:
                 print('bf')
             # Find and save still-present outliers in the data
-            velocity_outlier_indexes = np.where(s > 2)[0]
+            velocity_outlier_indexes = np.where(s > 1.4)[0]
             # Find array of total outliers
             outliers = np.squeeze(np.union1d(velocity_outlier_indexes, self.prob_filter_index)).flatten()
             if outliers.any():
@@ -755,11 +760,8 @@ class ReachViz:
         rps[hidx] = 0
         lps[0:4] = 0  # remove any possible edge effect
         rps[0:4] = 0  # remove any possible edge effect
-        #plt.plot(lps, label='ls')
-        #plt.plot(rps, label='rs')
-        #plt.legend()
-        #plt.show()
-        self.left_palm_maxima = find_peaks(lps, height=0.2, distance=8)[0]
+        self.left_palm_maxima = find_peaks(lps, height=0.3, distance=8)[0]
+        initiation_window = 10  # Frames we take before thresholding, to ensure we have full reach in window
         if self.left_palm_maxima.any():
             print('Left Palm Reach')
             for ir in range(0, self.left_palm_maxima.shape[0]):
@@ -771,7 +773,7 @@ class ReachViz:
                 left_palm_below_thresh_after = self.left_palm_maxima[ir] + \
                                                np.argmin(self.left_palm_s[
                                                          self.left_palm_maxima[ir]: self.left_palm_maxima[ir] + 15])
-                start_time_l = self.left_palm_maxima[ir] - left_palm_below_thresh
+                start_time_l = self.left_palm_maxima[ir] - left_palm_below_thresh - initiation_window
                 if start_time_l < 0:
                     start_time_l = 1
                 self.left_start_times.append(start_time_l)
@@ -781,7 +783,7 @@ class ReachViz:
                 self.reach_duration.append(
                     self.time_vector[left_palm_below_thresh_after] - self.time_vector[start_time_l])
         # Find peaks in right palm time-series
-        self.right_palm_maxima = find_peaks(rps, height=0.2, distance=8)[0]
+        self.right_palm_maxima = find_peaks(rps, height=0.3, distance=8)[0]
         if self.right_palm_maxima.any():
             print('Right Palm Reach')
             for ir in range(0, self.right_palm_maxima.shape[0]):
@@ -792,7 +794,7 @@ class ReachViz:
                     right_palm_below_thresh = np.argmin(self.right_palm_s[0:self.right_palm_maxima[ir]])
                 right_palm_below_thresh_after = self.right_palm_maxima[ir] + np.argmin(
                     self.right_palm_s[self.right_palm_maxima[ir]:self.right_palm_maxima[ir] + 15])
-                start_time_r = self.right_palm_maxima[ir] - right_palm_below_thresh
+                start_time_r = self.right_palm_maxima[ir] - right_palm_below_thresh - initiation_window
                 if start_time_r < 0:
                     start_time_r = 1
                 self.right_start_times.append(start_time_r)
@@ -808,12 +810,12 @@ class ReachViz:
             if self.right_start_times[idx] > 650:
                 self.right_start_times[idx] = 650
             if time > 700:
-                self.right_reach_end_times[idx] = 700 # Max trial time.
+                self.right_reach_end_times[idx] = 700  # Max trial time.
         for idx, time in enumerate(self.left_reach_end_times):
             if self.left_start_times[idx] > 650:
                 self.left_start_times[idx] = 650
             if time > 700:
-                self.left_reach_end_times[idx] = 700 # Max trial time.
+                self.left_reach_end_times[idx] = 700  # Max trial time.
         # Take min of right and left start times as "reach times" for start of classification extraction
         if self.right_start_times and self.left_start_times:
             self.reach_start_time = min(list(self.right_start_times) + list(self.left_start_times)) + 1
@@ -1196,7 +1198,7 @@ class ReachViz:
                                 sts + self.reach_start_time - win_length,
                                 sts + reach_end_time + win_length)
                             self.extract_sensor_data(sts + self.reach_start_time - win_length,
-                                                 sts + reach_end_time + win_length)
+                                                     sts + reach_end_time + win_length)
                             print('Successful Reach Detected')
                         except:
                             continue
@@ -1377,11 +1379,11 @@ class ReachViz:
                 self.make_paths()
                 self.clip_path = self.sstr + '/videos/trial_video.mp4'
                 stp = self.trial_stop_vectors[ix]
-                self.split_trial_video(sts, sts+300)
+                self.split_trial_video(sts, sts + 300)
                 print('Split Trial' + str(ix) + ' Video')
-                self.segment_and_filter_kinematic_block(sts, sts+300)
+                self.segment_and_filter_kinematic_block(sts, sts + 300)
                 self.plot_verification_variables()
-                self.extract_sensor_data(sts, sts+300)
+                self.extract_sensor_data(sts, sts + 300)
                 self.segment_reaches_with_speed_peaks()
                 self.plot_velocities_against_probabilities()
                 print('Finished Plotting!   ' + str(ix))
