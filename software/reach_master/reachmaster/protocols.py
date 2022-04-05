@@ -402,7 +402,7 @@ class Protocols(tk.Toplevel):
         if self.rob_connected:
             robint.stop_interface(self.rob_controller)
         if self.cams_connected:
-            self.stop_interface()
+            self.stop_camera_recording()
         self.destroy()
 
     # Callbacks ------------------------------------------------------------------
@@ -556,9 +556,8 @@ class Protocols(tk.Toplevel):
 
     def stop_camera_recording(self):
         self.vidgear_writer_cal.close()
-        camint.stop_interface(self.cams)
-        self.cams_connected = False
-
+        stop_interface(self.cams)
+        self.cams_connected = Fals
     # Tools to estimate, report large light deviations in pre-set POI regions. This is how "reaches" are detected in
     # a trial.
 
@@ -601,11 +600,12 @@ class Protocols(tk.Toplevel):
         now = str(int(round(time() * 1000)))  # Normed PC time
         if self.exp_response[3] == '1':  # If a trial is taking place, capture image and save it, calculate dev
             self.lights_on = 1  # Keep lights on
-            self.poi_deviation = self.trigger_record_and_save_image_from_camera_get_deviation()  # get deviation from captured frame
+            self.poi_deviation, frame = self.trigger_record_and_save_image_from_camera_get_deviation()  # get deviation from captured frame
         else:  # If trial is re-setting, robot moving etc
             self.lights_on = 0  # turn off lights
             self.poi_deviation = 0  # reset deviation
         # write, read exp controller output
+        self.write_video_frame(frame)
         expint.write_message(self.exp_controller, self.control_message)
         self.exp_response = expint.read_response(self.exp_controller)
         # Write experiment controller data to a text file
