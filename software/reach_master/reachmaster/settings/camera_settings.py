@@ -175,7 +175,10 @@ class CameraSettings(tk.Toplevel):
         '-pix_fmt', 'yuv420p'
         ] 
         self.ffmpeg_process = None
-        self.exp_controller = expint.start_interface(self.config)
+        try:
+            self.exp_controller = expint.start_interface(self.config)
+        except:
+            self.exp_controller = expint.start_interface(self.config) # Try again to communicate.
         self.exp_connected = True       
         self.num_cams = tk.StringVar()
         self.num_cams.set(str(self.config['CameraSettings']['num_cams']))
