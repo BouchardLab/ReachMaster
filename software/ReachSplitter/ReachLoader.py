@@ -104,6 +104,8 @@ class ReachViz:
         self.preprocessed_rmse, self.outlier_list, self.transformation_matrix = [], [], []
         self.probabilities, self.bi_reach_vector, self.trial_index, self.first_lick_signal, self.outlier_indexes = \
             [], [], [], [], []
+        self.pos_holder, self.acc_holder, self.vel_holder, self.speed_holder = [], [], [], []
+
         self.rat = rat
         self.date = date
         self.session = session
@@ -541,11 +543,6 @@ class ReachViz:
         # For graphing examples
         self.uninterpolated_right_palm_v = self.calculate_kinematics_from_position(right_palm)[0]
         self.uninterpolated_left_palm_v = self.calculate_kinematics_from_position(left_palm)[0]
-        self.pos_holder = []
-        self.vel_holder = []
-        self.speed_holder = []
-        self.acc_holder = []
-        self.raw_speeds = []
         # Pre-process (threshold, interpolate if necessary/possible, and apply hamming filter post-interpolation
         if preprocess:
             self.preprocess_kinematics(p_thresh=0.3)
@@ -1110,7 +1107,8 @@ class ReachViz:
                           'reach_duration': self.reach_end_time,
                           'left_end_time': self.left_reach_end_times, 'right_end_time': self.right_reach_end_times,
                           'left_reach_peak': self.left_peak_times, 'right_reach_peak': self.right_peak_times,
-                          'endpoint_error': self.endpoint_error,
+                          'endpoint_error': self.endpoint_error,'endpoint_error_x': self.x_endpoint_error,
+                          'endpoint_error_y': self.y_endpoint_error, 'endpoint_error_z':self.z_endpoint_error,
                           # Sensor Data
                           'handle_moving_sensor': self.h_moving_sensor, 'lick_beam': self.lick_vector,
                           'reward_zone': self.reward_zone_sensor, 'time_vector': self.time_vector,
@@ -1308,7 +1306,6 @@ class ReachViz:
                     linestyle='dashed')
         ax2.scatter(times_mask_right, self.right_palm[:, 2][self.right_palm_f_x], color='m', alpha=0.3,
                     linestyle='dashed')
-        # Plot reachsplitter variables
         try:
             if self.right_start_times:
                 for tsi, segment_trials in enumerate(self.right_start_times):
