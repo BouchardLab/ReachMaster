@@ -1364,8 +1364,6 @@ class ReachViz:
         plt.close()
         return
 
-    def plot_variables_and_graph(self, sts):
-
     def vid_splitter_and_grapher(self, trial_num=0, plot=True, timeseries_plot=True, plot_reach=True, save_data=False):
         """ Function to split and visualize reaching behavior from a given experimental session. """
         #tm = self.align_workspace_coordinates_session()

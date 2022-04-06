@@ -3,11 +3,15 @@ import numpy as np
 from sklearn.preprocessing import StandardScaler
 from sklearn.preprocessing import LabelEncoder
 import pickle5 as pickle
+from sklearn.decomposition import PCA
+import plotly.express as px
+import pdb
 
 
 def load_preprocessed_dataframe(dataframe_address):
     with open(dataframe_address, "rb") as fh:
         data = pickle.load(fh)
+    data = data.reset_index()
     return data
 
 
@@ -152,4 +156,22 @@ def get_matched_labels_and_data(dataframe_address, labels_address, var_col_names
             labels_df = drop_labels_from_data(labels_df, item[0], item[1], item[2])
     matched_data = match_input_data_with_labels_and_make_standardized_discrete_dataframe(pp_df1, labels_df)
     concat_data = concat_labels_to_discrete_dataframe(labels_df, matched_data)
-    return concat_data
+    return concat_data, matched_data
+
+
+class Visualize:
+
+    def __init__(self, dataframe_address, labels_address, col_names, drop_list):
+        self.matched_data, self.discrete_data = get_matched_labels_and_data(dataframe_address, labels_address,
+                                                                            col_names, drop_list)
+        self.PCA = PCA()
+        self.PCA_data = self.PCA.fit_transform(self.discrete_data)
+
+    def visualize_PCA_cumulative_sum(self):
+        exp_var_cumul = np.cumsum(self.PCA_data.explained_variance_ratio_)
+        fig = px.area(
+            x=range(1, exp_var_cumul.shape[0] + 1),
+            y=exp_var_cumul,
+            labels={"x": "# Components", "y": "Explained Variance"}
+        )
+        fig.show()
