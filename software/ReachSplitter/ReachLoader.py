@@ -2,14 +2,14 @@ from sklearn.decomposition import PCA
 import pandas as pd
 import pickle
 import matplotlib.pyplot as plt
-import software.ReachSplitter.DataStream_Vis_Utils as utils
+import DataStream_Vis_Utils as utils
 # import DataStream_Vis_Utils as utils
 from moviepy.editor import *
 import skvideo
 import cv2
 import imageio
 import numpy as np
-import software.ReachSplitter.viz_utils as vu
+import viz_utils as vu
 import scipy
 from scipy.signal import find_peaks
 from scipy.ndimage import gaussian_filter1d
@@ -544,6 +544,7 @@ class ReachViz:
         self.uninterpolated_right_palm_v = self.calculate_kinematics_from_position(right_palm)[0]
         self.uninterpolated_left_palm_v = self.calculate_kinematics_from_position(left_palm)[0]
         # Pre-process (threshold, interpolate if necessary/possible, and apply hamming filter post-interpolation
+        self.pos_holder, self.acc_holder, self.speed_holder, self.vel_holder = [], [], [], []
         if preprocess:
             self.preprocess_kinematics(p_thresh=0.3)
         # Zero out any large outliers in the data, as well as any low probability events.
@@ -746,9 +747,9 @@ class ReachViz:
         # If palms are < 0.6 p-value, remove chance at "maxima"
         left_palm_prob = np.where(self.left_palm_p < 0.4)[0]
         right_palm_prob = np.where(self.right_palm_p < 0.4)[0]
-        # If palms are > 0.15m in the x-direction towards the handle 0 position.
-        left_palm_pos_f = np.where(self.left_palm[:, 0] < 0.14)[0]
-        right_palm_pos_f = np.where(self.right_palm[:, 0] < 0.14)[0]
+        # If palms are > 0.13m in the x-direction towards the handle 0 position.
+        left_palm_pos_f = np.where(self.left_palm[:, 0] < 0.13)[0]
+        right_palm_pos_f = np.where(self.right_palm[:, 0] < 0.13)[0]
         lps[left_palm_prob] = 0
         rps[right_palm_prob] = 0
         rps[right_palm_pos_f] = 0
@@ -757,19 +758,19 @@ class ReachViz:
         rps[hidx] = 0
         lps[0:4] = 0  # remove any possible edge effect
         rps[0:4] = 0  # remove any possible edge effect
-        self.left_palm_maxima = find_peaks(lps, height=0.2, distance=8)[0]
+        self.left_palm_maxima = find_peaks(lps, height=0.2, distance=20)[0]
         initiation_window = 10  # Frames we take before thresholding, to ensure we have full reach in window
         if self.left_palm_maxima.any():
             print('Left Palm Reach')
             for ir in range(0, self.left_palm_maxima.shape[0]):
                 if self.left_palm_maxima[ir] > 20:
                     left_palm_below_thresh = np.argmin(
-                        self.left_palm_s[self.left_palm_maxima[ir] - 20: self.left_palm_maxima[ir]])
+                        self.left_palm_s[self.left_palm_maxima[ir] - 30: self.left_palm_maxima[ir]])
                 else:
                     left_palm_below_thresh = np.argmin(self.left_palm_s[0:self.left_palm_maxima[ir]])
                 left_palm_below_thresh_after = self.left_palm_maxima[ir] + \
                                                np.argmin(self.left_palm_s[
-                                                         self.left_palm_maxima[ir]: self.left_palm_maxima[ir] + 15])
+                                                         self.left_palm_maxima[ir]: self.left_palm_maxima[ir] + 20])
                 start_time_l = self.left_palm_maxima[ir] - left_palm_below_thresh - initiation_window
                 if start_time_l < 0:
                     start_time_l = 1
@@ -780,17 +781,17 @@ class ReachViz:
                 self.reach_duration.append(
                     self.time_vector[left_palm_below_thresh_after] - self.time_vector[start_time_l])
         # Find peaks in right palm time-series
-        self.right_palm_maxima = find_peaks(rps, height=0.2, distance=8)[0]
+        self.right_palm_maxima = find_peaks(rps, height=0.2, distance=20)[0]
         if self.right_palm_maxima.any():
             print('Right Palm Reach')
             for ir in range(0, self.right_palm_maxima.shape[0]):
                 if self.right_palm_maxima[ir] > 20:
                     right_palm_below_thresh = np.argmin(
-                        self.right_palm_s[self.right_palm_maxima[ir] - 20:self.right_palm_maxima[ir]])
+                        self.right_palm_s[self.right_palm_maxima[ir] - 30:self.right_palm_maxima[ir]])
                 else:
                     right_palm_below_thresh = np.argmin(self.right_palm_s[0:self.right_palm_maxima[ir]])
                 right_palm_below_thresh_after = self.right_palm_maxima[ir] + np.argmin(
-                    self.right_palm_s[self.right_palm_maxima[ir]:self.right_palm_maxima[ir] + 15])
+                    self.right_palm_s[self.right_palm_maxima[ir]:self.right_palm_maxima[ir] + 20])
                 start_time_r = self.right_palm_maxima[ir] - right_palm_below_thresh - initiation_window
                 if start_time_r < 0:
                     start_time_r = 1
@@ -1107,8 +1108,8 @@ class ReachViz:
                           'reach_duration': self.reach_end_time,
                           'left_end_time': self.left_reach_end_times, 'right_end_time': self.right_reach_end_times,
                           'left_reach_peak': self.left_peak_times, 'right_reach_peak': self.right_peak_times,
-                          'endpoint_error': self.endpoint_error,'endpoint_error_x': self.x_endpoint_error,
-                          'endpoint_error_y': self.y_endpoint_error, 'endpoint_error_z':self.z_endpoint_error,
+                          'endpoint_error': self.endpoint_error, 'endpoint_error_x': self.x_endpoint_error,
+                          'endpoint_error_y': self.y_endpoint_error, 'endpoint_error_z': self.z_endpoint_error,
                           # Sensor Data
                           'handle_moving_sensor': self.h_moving_sensor, 'lick_beam': self.lick_vector,
                           'reward_zone': self.reward_zone_sensor, 'time_vector': self.time_vector,
@@ -1363,9 +1364,11 @@ class ReachViz:
         plt.close()
         return
 
+    def plot_variables_and_graph(self, sts):
+
     def vid_splitter_and_grapher(self, trial_num=0, plot=True, timeseries_plot=True, plot_reach=True, save_data=False):
         """ Function to split and visualize reaching behavior from a given experimental session. """
-        tm = self.align_workspace_coordinates_session()
+        #tm = self.align_workspace_coordinates_session()
         for ix, sts in enumerate(self.trial_start_vectors):
             self.trial_index = sts
             if ix > trial_num:
@@ -1375,14 +1378,14 @@ class ReachViz:
                 self.sstr = bi + '/trial' + str(ix)
                 self.make_paths()
                 self.clip_path = self.sstr + '/videos/trial_video.mp4'
-                stp = self.trial_stop_vectors[ix]
+                #stp = self.trial_stop_vectors[ix]
                 self.split_trial_video(sts, sts + 300)
                 print('Split Trial' + str(ix) + ' Video')
                 self.segment_and_filter_kinematic_block(sts, sts + 300)
                 self.plot_verification_variables()
                 self.extract_sensor_data(sts, sts + 300)
                 self.segment_reaches_with_speed_peaks()
-                self.plot_velocities_against_probabilities()
+                # self.plot_velocities_against_probabilities()
                 print('Finished Plotting!   ' + str(ix))
                 if timeseries_plot:
                     self.plot_interpolation_variables_palm('total')
@@ -1436,10 +1439,10 @@ class ReachViz:
                     self.make_gif_reaching(segment=True, nr=0)
                     print('Reaching GIF made for reach ' + str(0) + 'in trial ' + str(ix))
                     self.images = []
-                    self.make_combined_gif(segment=True, nr=0)
-                self.seg_num = 0
-                self.start_trial_indice = []
-                self.images = []
+                    #self.make_combined_gif(segment=True, nr=0)
+            self.seg_num = 0
+            self.start_trial_indice = []
+            self.images = []
         if save_data:
             reaching_trial_indices_df = pd.DataFrame(self.block_cut_vector)
             reaching_trial_indices_df.to_csv(
@@ -1600,7 +1603,8 @@ class ReachViz:
             axel.set_zlim(0.4, 0.60)
             axel.plot([0.205, 0.205], [0, 0.5], [0.5, 0.5], c='g', linestyle='dashed', linewidth=5,
                       markersize=5, label='Trial Reward Zone')  # make a 3-D line for our "reward zone"
-            X, Y = np.meshgrid(np.linspace(0.2, 0, 10), np.linspace(0, 0.5, 10))
+            # MeshGrid to represent the staging area.
+            X, Y = np.meshgrid(np.linspace(0.15, 0, 10), np.linspace(0, 0.3, 10))
             Z = np.reshape(np.linspace(0.4, 0.4, 100), X.shape)
             axel.plot_surface(X, Y, Z, alpha=0.3, zorder=0)
             axel.scatter(self.handle[isx - self.lag: isx, 0], self.handle[isx - self.lag, 1],
@@ -1759,7 +1763,7 @@ class ReachViz:
             axel.set_xlabel('M (X)')
             axel.set_ylabel('M(Y)')
             axel.set_zlabel('M (Z)')
-            axel.view_init(10, -60)
+            axel.view_init(10, -45)
             axel2.plot(frames[0:isx], self.left_palm_s[0:isx], marker='.', c='red', label='Left Palm Speed')
             axel2.plot(frames[0:isx], self.right_palm_s[0:isx], marker='.', c='skyblue', label='Right Palm Speed')
             if self.start_trial_indice:
@@ -1770,8 +1774,9 @@ class ReachViz:
                         print('Plotted a reach..')
             axel2.set_xlabel('Time from trial onset (s)')
             axel2.set_ylabel('m/ s')
-            axel2.set_ylim(0, 2)
-            axel2.set_xlim(0, frames[-1])
+            axel2.set_ylim(0, 0.3)
+            axel2.set_xlim(0.1, frames[-1])
+            #axel2.set_zlim3d(0.35,0.5)
             fixit1.tight_layout(pad=0.005)
             plt.margins(0.0005)
             if legend_on:
@@ -1797,6 +1802,7 @@ class ReachViz:
         else:
             imageio.mimsave(self.sstr + '/videos/total_3d_movie.mp4', self.images, fps=self.fps)
             self.gif_save_path = self.sstr + '/videos/total_3d_movie.mp4'
+        self.images = [] # Clear memory
         return
 
     def make_combined_gif(self, segment=False, nr=0):
@@ -1816,6 +1822,7 @@ class ReachViz:
             new_image = np.vstack((img1, img2))
             writer.append_data(new_image)
         writer.close()
+        new_image = []
         return
 
     def split_trial_video(self, start_frame, stop_frame, segment=False, num_reach=0):
