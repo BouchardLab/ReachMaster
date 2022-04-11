@@ -1113,7 +1113,6 @@ class ReachViz:
                           # Sensor Data
                           'handle_moving_sensor': self.h_moving_sensor, 'lick_beam': self.lick_vector,
                           'reward_zone': self.reward_zone_sensor, 'time_vector': self.time_vector,
-                          'lick_vector': self.lick_vector,
                           'response_sensor': self.exp_response_sensor, 'x_rob': self.x_robot, 'y_rob': self.y_robot,
                           'z_rob': self.z_robot,
                           # Principle components

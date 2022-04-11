@@ -45,6 +45,11 @@ def select_colnames(df, colname_list):
     return return_df
 
 
+def get_sensor_data(i_df):
+    sensor_list = ['handle_moving_sensor', 'lick_beam', 'reward_zone', 'response_sensor', 'x_rob', 'y_rob', 'z_rob']
+    sensor_df = i_df.drop(i_df.columns.differences(sensor_list), axis=1)
+    return sensor_df
+
 def filterdf(df, trial, rat, session, date):
     rr = df.loc[df['Date'] == date]
     rr1 = rr.loc[rr['Session'] == session]
@@ -150,22 +155,25 @@ def get_matched_labels_and_data(dataframe_address, labels_address, var_col_names
     df = load_preprocessed_dataframe(dataframe_address)
     labels_df = load_ground_truth_labels(labels_address)
     pp_df = preprocess_df(df)
-    pp_df1 = select_colnames(pp_df, var_col_names)
+    pp_df_kinematics = select_colnames(pp_df, var_col_names)
+    pp_df_sensor_data = get_sensor_data(pp_df)
     if drop_session_list:
         for item in drop_session_list:
             labels_df = drop_labels_from_data(labels_df, item[0], item[1], item[2])
-    matched_data = match_input_data_with_labels_and_make_standardized_discrete_dataframe(pp_df1, labels_df)
+    matched_data = match_input_data_with_labels_and_make_standardized_discrete_dataframe(pp_df_kinematics, labels_df)
     concat_data = concat_labels_to_discrete_dataframe(labels_df, matched_data)
-    return concat_data, matched_data
+    return concat_data, matched_data, pp_df_sensor_data
 
 
 class Visualize:
 
     def __init__(self, dataframe_address, labels_address, col_names, drop_list):
-        self.matched_data, self.discrete_data = get_matched_labels_and_data(dataframe_address, labels_address,
-                                                                            col_names, drop_list)
+        self.matched_data, self.discrete_data, self.sensor_data = get_matched_labels_and_data(dataframe_address,
+                                                                                              labels_address,
+                                                                                               col_names, drop_list)
         self.PCA = PCA()
-        self.PCA_data = self.PCA.fit_transform(self.discrete_data)
+        self.PCA_kinematic_data = self.PCA.fit_transform(self.discrete_data)
+        self.PCA_sensor_data = self.PCA.fit_transform(self.sensor_data)
 
     def visualize_PCA_cumulative_sum(self):
         exp_var_cumul = np.cumsum(self.PCA_data.explained_variance_ratio_)
