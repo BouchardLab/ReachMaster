@@ -7,6 +7,7 @@ delivery, toggling lights, etc.).
 """
 
 #Camera trigger check, code to move robot to different positions every 5 seconds (no cameras), camera frame save
+# add camera shutdown, interface shutdown
 #Auditory stimuli checked, loaded into config.
 from . import config
 from .interfaces import camera_interface as camint
@@ -316,13 +317,13 @@ class Protocols(tk.Toplevel):
             pdb.set_trace()
         # obtain baseline for camera's to detect movement
         print('Baseline')
-        #self.start_acquiring_baseline()
+        self.start_acquiring_baseline()
         self.ready = True
         tf = 0 # triggered frame
         while self.ready:
             self.run_video_capture()
             tf += 1
-            if tf > 10000:
+            if tf > 1000:
                 self.ready = False
         #self.run_auditory_stimuli()  # runs sound at beginning of experiment!
         # debug
@@ -428,15 +429,7 @@ class Protocols(tk.Toplevel):
         in experiment settings."""
         expint.deliver_water(self.exp_controller)
 
-    # Auditory stimuli ---------------------------------------------------------------
-    def initialize_speaker(self):
-
-        return
-
-
     def run_auditory_stimuli(self):
-        # command to check if speaker is online
-
         # command to initiate auditory stimuli (single use in experiment)
         playsound(self.audio_file)
         return
@@ -461,8 +454,7 @@ class Protocols(tk.Toplevel):
                     self.config['ReachMaster']['data_dir'] + '/videos/trial' +
                     str(trial_num) + '_cam.mp4')
         # Set up video writer.
-        self.vidgear_writer_cal = WriteGear(output_filename=vid_fn, compression_mode=True, logging=True,
-                                            **self.ffmpeg_object)
+        self.vidgear_writer_cal = WriteGear(output_filename=vid_fn, compression_mode=True, logging=True)
 
     def start_acquiring_baseline(self):
         num_baseline = (
@@ -496,35 +488,23 @@ class Protocols(tk.Toplevel):
                 baseline_pois.append(np.zeros((1, num_imgs)))
         print('Got baseline arrays')
         # acquire baseline images
+        ## Rewrite this logic, remove loops
         for i in range(num_imgs):
-            print(i)
-            expint.trigger_image(self.exp_controller)
+            expint.trigger_image(self.exp_controller) # Trigger image
             for cam_id, cam_obj in enumerate(self.cams):
-                try:
-                    npimg = get_npimage(cam_obj, self.img)
-                    # Collect data from image data as numpy array
-                except:
-                    pdb.set_trace()
+                npimg = get_npimage(cam_obj, self.img) # get image statistics for camera.
                 for j in range(num_pois[cam_id]):
                     baseline_pois[cam_id][j, i] = npimg[
                         poi_indices[cam_id][j][1],
                         poi_indices[cam_id][j][0]]
-            sleep(0.05)  # wait 5ms before triggering next baseline image.
+            sleep(0.01)  # wait 1ms before triggering next baseline image.
         print('Got baseline images.')
         # compute summary stats
-        pdb.set_trace()
         for cam_id, cam_obj in enumerate(self.cams):
             poi_means = np.mean(baseline_pois[cam_id], axis=1)
             pdb.set_trace()
-            poi_std = np.std(
-                np.sum(
-                    np.square(
-                        baseline_pois[cam_id] - poi_means.reshape(num_pois, 1)
-                    ),
-                    axis=0
-                )
-            )
-            self.cam_poi_means.append(poi_means)  # append class object
+            poi_std = np.std(np.sum(np.square(baseline_pois[cam_id] - poi_means[cam_id]),axis=0))
+            self.cam_poi_means.append(poi_means[cam_id])  # append class object
             self.cam_poi_std.append(poi_std)  # append class object
         print('Got baseline statistics.')
 
@@ -555,9 +535,12 @@ class Protocols(tk.Toplevel):
         self.vidgear_writer_cal.write(frame)
 
     def stop_camera_recording(self):
-        self.vidgear_writer_cal.close()
+        try:
+            self.vidgear_writer_cal.close()
+        except:
+            print('Video writing not initialized.')
         stop_interface(self.cams)
-        self.cams_connected = Fals
+        self.cams_connected = False
     # Tools to estimate, report large light deviations in pre-set POI regions. This is how "reaches" are detected in
     # a trial.
 

@@ -30,6 +30,7 @@ import os
 from vidgear.gears import WriteGear
 import subprocess as sp
 import pdb
+import cv2
 
 class CameraSettings(tk.Toplevel):
     """The primary class for the camera settings window.
@@ -573,8 +574,9 @@ class CameraSettings(tk.Toplevel):
             if not os.path.isdir(calibration_path):
                 os.makedirs(calibration_path)
             vid_fn = calibration_path + str(datetime.datetime.now()) + '.mp4'
-            self.vidgear_writer_cal = WriteGear(output_filename=vid_fn, compression_mode=True,
-                                                logging=True, **self.ffmpeg_object)
+            # , compression_mode=True,logging=True, **self.ffmpeg_object
+            self.vidgear_writer_cal = WriteGear(output_filename=vid_fn, compression_mode=True, logging=True)
+            #self.cv2_writer = cv2.VideoWriter(vid_fn)
             self.delay = int(np.round(1.0/float(self.config['CameraSettings']['fps'])*1000.0))
             self.record = True
             self._rec()
