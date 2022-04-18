@@ -515,14 +515,14 @@ class Protocols(tk.Toplevel):
         try:
             for idx, cam_obj in enumerate(self.cams):
                 npimg = get_npimage(cam_obj, self.img)
+                dev.append(self._estimate_poi_deviation_single_camera(npimg, self.cam_poi_means[idx],
+                                                     self.cam_poi_std[idx]))
                 npimg = cv2.cvtColor(npimg, cv2.COLOR_BAYER_BG2BGR)
                 if idx == 0:
                     frame = npimg
                 else:
                     frame = np.hstack((frame, npimg))
-                dev.append(0)
-                #dev.append(self._estimate_poi_deviation_single_camera(npimg, self.cam_poi_means[idx],
-                #                                                      self.cam_poi_std[idx]))
+
         except Exception as err:
             pdb.set_trace()
             tkinter.messagebox.showinfo("Warning, couldn't trigger cameras. Please check experimental micro-controller."
