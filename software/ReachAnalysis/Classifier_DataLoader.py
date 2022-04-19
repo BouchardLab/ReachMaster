@@ -146,7 +146,7 @@ sessions = ['S1', 'S1', 'S2', 'S3', 'S3', 'S3', 'S4', 'S1', 'S2', 'S1', 'S4', 'S
 root = "C:\\Users\\bassp\\Desktop"
 os.chdir(root)
 block_video_file = 'Classification Project\\2019-09-20-S1-RM14_cam2DLC_FinalColors.mp4'
-save_df_address = 'Sample_Reaches.pkl'
+save_df_address = 'Class_Reaches.pkl'
 
 kinematics_addresses = ['DataFrames\\3D_positions_RM9.pkl',
                         'DataFrames\\3D_positions_RM10.pkl',

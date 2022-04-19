@@ -1,8 +1,8 @@
-import pdb
+
 from math import ceil
 from scipy import linalg
 import pandas as pd
-from Analysis_Utils import preprocessing_df as preprocessing
+from software.ReachSplitter.Analysis_Utils import preprocessing_df as preprocessing
 from moviepy.editor import *
 import cv2
 import numpy as np
@@ -11,6 +11,7 @@ import shutil
 from scipy import interpolate, signal
 from scipy.signal import butter, sosfiltfilt
 from csaps import csaps
+
 
 def read_from_csv(input_filepath):
     """ Function to read in csv. """
@@ -21,6 +22,7 @@ def read_from_csv(input_filepath):
 def autocorrelate(x, t=1):
     """ Function to compute regular auto correlation using numpy. """
     return np.corrcoef(np.array([x[:-t], x[t:]]))
+
 
 # Code adapted from Github page of agramfort
 def lowess(x, y, f=2. / 3., iter=3):
@@ -57,6 +59,7 @@ def lowess(x, y, f=2. / 3., iter=3):
 
     return yest
 
+
 def filter_vector_hamming(input_vector, window_length=3.14):
     """ Function to filter input vectors using Hamming-Cosine window. Used exclusively for DLC-based inputs, not 3-D
     trajectories. """
@@ -73,11 +76,12 @@ def butterworth_filtfilt(input_vector, nyquist_freq, cutoff, filt_order=4):
     return y.reshape(y.shape[1], y.shape[0])
 
 
-def cubic_spline_smoothing(input_vector, spline_coeff=0.1):
+def cubic_spline_smoothing(input_vector, p_weights, spline_coeff=0.1):
     timepoints = np.linspace(0, input_vector.shape[0], input_vector.shape[0])
     smoothed_vector = np.zeros(input_vector.shape)
     for i in range(0, 3):
-        smoothed_vector[:, i] = csaps(timepoints, input_vector[:, i], timepoints, normalizedsmooth=True,
+        smoothed_vector[:, i] = csaps(timepoints, input_vector[:, i], timepoints, weights=p_weights,
+                                      normalizedsmooth=True,
                                       smooth=spline_coeff)
     return smoothed_vector
 
@@ -133,7 +137,7 @@ def interpolate_3d_vector(xkin_three_vectors, velocity_index, prob_index, gap_nu
     return np.asarray(xkin_three_vectors), interpolation_number, np.squeeze(np.asarray(gap_index))
 
 
-def norm_coordinates(kin_three_vector, aff_t):
+def norm_coordinates(kin_three_vector):
     """ Function to import and transform kinematic data using pre-generated affine transformation. For more information on
     generating this transformation, see ReachPredict3D's documentation on handle matching."""
     ax = -1.0

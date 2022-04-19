@@ -2,14 +2,14 @@ from sklearn.decomposition import PCA
 import pandas as pd
 import pickle
 import matplotlib.pyplot as plt
-import DataStream_Vis_Utils as utils
+import software.ReachSplitter.DataStream_Vis_Utils as utils
 # import DataStream_Vis_Utils as utils
 from moviepy.editor import *
 import skvideo
 import cv2
 import imageio
 import numpy as np
-import viz_utils as vu
+import software.ReachSplitter.viz_utils as vu
 import scipy
 from scipy.signal import find_peaks
 from scipy.ndimage import gaussian_filter1d
@@ -350,16 +350,16 @@ class ReachViz:
 
     def calculate_number_of_speed_peaks_in_block(self):
         left_palm = vu.norm_coordinates(
-            self.kinematic_block[self.kinematic_block.columns[18:21]].values[0:-1, :], self.transformation_matrix)
+            self.kinematic_block[self.kinematic_block.columns[18:21]].values[0:-1, :])
         right_palm = vu.norm_coordinates(
-            self.kinematic_block[self.kinematic_block.columns[54:57]].values[0:-1, :], self.transformation_matrix)
+            self.kinematic_block[self.kinematic_block.columns[54:57]].values[0:-1, :])
         self.time_vector = list(right_palm[0, :])
         left_palm_p = np.mean(self.kinematic_block[self.kinematic_block.columns[18 + 81:21 + 81]].values[0:-1, :],
                               axis=1)
         right_palm_p = np.mean(self.kinematic_block[self.kinematic_block.columns[54 + 81:57 + 81]].values[0:-1, :],
                                axis=1)
-        left_palm_f = vu.cubic_spline_smoothing(np.copy(left_palm), spline_coeff=0.1)
-        right_palm_f = vu.cubic_spline_smoothing(np.copy(right_palm), spline_coeff=0.1)
+        left_palm_f = vu.cubic_spline_smoothing(np.copy(left_palm),left_palm_p, spline_coeff=0.1)
+        right_palm_f = vu.cubic_spline_smoothing(np.copy(right_palm),right_palm_p, spline_coeff=0.1)
         # If palms are < 0.8 p-value, remove chance at "maxima"
         left_palm_prob = np.where(left_palm_p < 0.5)[0]
         right_palm_prob = np.where(right_palm_p < 0.5)[0]
@@ -384,87 +384,59 @@ class ReachViz:
         # Threshold data if uncertainties in position > threshold
         self.prob_filter_index = np.where(self.prob_nose < coarse_threshold)[0]
         # Body parts, XYZ, used in ReachViz
-        nose = vu.norm_coordinates(self.kinematic_block[self.kinematic_block.columns[6:9]].values[cl1:cl2, :],
-                                   aff_t=self.transformation_matrix)
+        nose = vu.norm_coordinates(self.kinematic_block[self.kinematic_block.columns[6:9]].values[cl1:cl2, :])
         handle = np.mean(
-            [vu.norm_coordinates(self.kinematic_block[self.kinematic_block.columns[0:3]].values[cl1:cl2, :],
-                                 aff_t=self.transformation_matrix),
-             vu.norm_coordinates(self.kinematic_block[self.kinematic_block.columns[3:6]].values[cl1:cl2, :],
-                                 aff_t=self.transformation_matrix
-                                 )], axis=0)
+            [vu.norm_coordinates(self.kinematic_block[self.kinematic_block.columns[0:3]].values[cl1:cl2, :]),
+             vu.norm_coordinates(self.kinematic_block[self.kinematic_block.columns[3:6]].values[cl1:cl2, :])], axis=0)
         left_shoulder = vu.norm_coordinates(
-            self.kinematic_block[self.kinematic_block.columns[9:12]].values[cl1:cl2, :],
-            aff_t=self.transformation_matrix)  # 21 end
+            self.kinematic_block[self.kinematic_block.columns[9:12]].values[cl1:cl2, :])  # 21 end
         right_shoulder = vu.norm_coordinates(
-            self.kinematic_block[self.kinematic_block.columns[45:48]].values[cl1:cl2, :],
-            aff_t=self.transformation_matrix)  # 57 end
+            self.kinematic_block[self.kinematic_block.columns[45:48]].values[cl1:cl2, :])  # 57 end
         left_forearm = vu.norm_coordinates(
-            self.kinematic_block[self.kinematic_block.columns[12:15]].values[cl1:cl2, :],
-            aff_t=self.transformation_matrix)  # 21 end
+            self.kinematic_block[self.kinematic_block.columns[12:15]].values[cl1:cl2, :])  # 21 end
         right_forearm = vu.norm_coordinates(
-            self.kinematic_block[self.kinematic_block.columns[48:51]].values[cl1:cl2, :],
-            aff_t=self.transformation_matrix)  # 57 end
+            self.kinematic_block[self.kinematic_block.columns[48:51]].values[cl1:cl2, :])  # 57 end
         left_wrist = vu.norm_coordinates(
-            self.kinematic_block[self.kinematic_block.columns[15:18]].values[cl1:cl2, :],
-            aff_t=self.transformation_matrix)  # 21 end
+            self.kinematic_block[self.kinematic_block.columns[15:18]].values[cl1:cl2, :],)  # 21 end
         right_wrist = vu.norm_coordinates(
-            self.kinematic_block[self.kinematic_block.columns[51:54]].values[cl1:cl2, :],
-            aff_t=self.transformation_matrix)  # 57 end
+            self.kinematic_block[self.kinematic_block.columns[51:54]].values[cl1:cl2, :])  # 57 end
         left_palm = vu.norm_coordinates(
-            self.kinematic_block[self.kinematic_block.columns[18:21]].values[cl1:cl2, :],
-            aff_t=self.transformation_matrix)
+            self.kinematic_block[self.kinematic_block.columns[18:21]].values[cl1:cl2, :])
         right_palm = vu.norm_coordinates(
-            self.kinematic_block[self.kinematic_block.columns[54:57]].values[cl1:cl2, :],
-            aff_t=self.transformation_matrix)
+            self.kinematic_block[self.kinematic_block.columns[54:57]].values[cl1:cl2, :])
         # Digits, optional for now
         right_index_base = vu.norm_coordinates(
-            self.kinematic_block[self.kinematic_block.columns[27:30]].values[cl1:cl2, :],
-            aff_t=self.transformation_matrix)
+            self.kinematic_block[self.kinematic_block.columns[27:30]].values[cl1:cl2, :])
         right_index_tip = vu.norm_coordinates(
-            self.kinematic_block[self.kinematic_block.columns[30:33]].values[cl1:cl2, :],
-            aff_t=self.transformation_matrix)
+            self.kinematic_block[self.kinematic_block.columns[30:33]].values[cl1:cl2, :])
         right_middle_base = vu.norm_coordinates(
-            self.kinematic_block[self.kinematic_block.columns[36:39]].values[cl1:cl2, :],
-            aff_t=self.transformation_matrix)
+            self.kinematic_block[self.kinematic_block.columns[36:39]].values[cl1:cl2, :])
         right_middle_tip = vu.norm_coordinates(
-            self.kinematic_block[self.kinematic_block.columns[39:42]].values[cl1:cl2, :],
-            aff_t=self.transformation_matrix)
+            self.kinematic_block[self.kinematic_block.columns[39:42]].values[cl1:cl2, :])
         right_third_base = vu.norm_coordinates(
-            self.kinematic_block[self.kinematic_block.columns[42:45]].values[cl1:cl2, :],
-            aff_t=self.transformation_matrix)
+            self.kinematic_block[self.kinematic_block.columns[42:45]].values[cl1:cl2, :])
         right_third_tip = vu.norm_coordinates(
-            self.kinematic_block[self.kinematic_block.columns[45:48]].values[cl1:cl2, :],
-            aff_t=self.transformation_matrix)
+            self.kinematic_block[self.kinematic_block.columns[45:48]].values[cl1:cl2, :])
         right_end_base = vu.norm_coordinates(
-            self.kinematic_block[self.kinematic_block.columns[48:51]].values[cl1:cl2, :],
-            aff_t=self.transformation_matrix)
+            self.kinematic_block[self.kinematic_block.columns[48:51]].values[cl1:cl2, :])
         right_end_tip = vu.norm_coordinates(
-            self.kinematic_block[self.kinematic_block.columns[51:54]].values[cl1:cl2, :],
-            aff_t=self.transformation_matrix)
+            self.kinematic_block[self.kinematic_block.columns[51:54]].values[cl1:cl2, :])
         left_index_base = vu.norm_coordinates(
-            self.kinematic_block[self.kinematic_block.columns[54:57]].values[cl1:cl2, :],
-            aff_t=self.transformation_matrix)
+            self.kinematic_block[self.kinematic_block.columns[54:57]].values[cl1:cl2, :])
         left_index_tip = vu.norm_coordinates(
-            self.kinematic_block[self.kinematic_block.columns[57:60]].values[cl1:cl2, :],
-            aff_t=self.transformation_matrix)
+            self.kinematic_block[self.kinematic_block.columns[57:60]].values[cl1:cl2, :])
         left_middle_base = vu.norm_coordinates(
-            self.kinematic_block[self.kinematic_block.columns[60:63]].values[cl1:cl2, :],
-            aff_t=self.transformation_matrix)
+            self.kinematic_block[self.kinematic_block.columns[60:63]].values[cl1:cl2, :])
         left_middle_tip = vu.norm_coordinates(
-            self.kinematic_block[self.kinematic_block.columns[66:69]].values[cl1:cl2, :],
-            aff_t=self.transformation_matrix)
+            self.kinematic_block[self.kinematic_block.columns[66:69]].values[cl1:cl2, :])
         left_third_base = vu.norm_coordinates(
-            self.kinematic_block[self.kinematic_block.columns[69:72]].values[cl1:cl2, :],
-            aff_t=self.transformation_matrix)
+            self.kinematic_block[self.kinematic_block.columns[69:72]].values[cl1:cl2, :])
         left_third_tip = vu.norm_coordinates(
-            self.kinematic_block[self.kinematic_block.columns[72:75]].values[cl1:cl2, :],
-            aff_t=self.transformation_matrix)
+            self.kinematic_block[self.kinematic_block.columns[72:75]].values[cl1:cl2, :])
         left_end_base = vu.norm_coordinates(
-            self.kinematic_block[self.kinematic_block.columns[75:78]].values[cl1:cl2, :],
-            aff_t=self.transformation_matrix)
+            self.kinematic_block[self.kinematic_block.columns[75:78]].values[cl1:cl2, :])
         left_end_tip = vu.norm_coordinates(
-            self.kinematic_block[self.kinematic_block.columns[78:81]].values[cl1:cl2, :],
-            aff_t=self.transformation_matrix)
+            self.kinematic_block[self.kinematic_block.columns[78:81]].values[cl1:cl2, :])
         # Probabilities
         nose_p = np.mean(self.kinematic_block[self.kinematic_block.columns[6 + w:9 + w]].values[cl1:cl2, :], axis=1)
         handle_p = np.mean(self.kinematic_block[self.kinematic_block.columns[3 + w:6 + w]].values[cl1:cl2, :], axis=1)
@@ -517,7 +489,6 @@ class ReachViz:
         left_end_tip_p = np.mean(self.kinematic_block[self.kinematic_block.columns[78 + w:81 + w]].values[cl1:cl2, :],
                                  axis=1)
         self.extract_sensor_data(cl1, cl2, check_lick=False)  # Get time vectors for calculating kinematics.
-
         self.positions = [nose, handle, left_shoulder, left_forearm, left_wrist,
                           left_palm, left_index_base,
                           left_index_tip, left_middle_base, left_middle_tip, left_third_base,
@@ -548,7 +519,7 @@ class ReachViz:
         if preprocess:
             self.preprocess_kinematics(p_thresh=0.3)
         # Zero out any large outliers in the data, as well as any low probability events.
-        self.zero_out_outliers()
+        #self.zero_out_outliers()
         self.assign_final_variables()
         # Calculate principal components
         self.pos_v_a_pc, self.pos_v_a_pc_variance = get_principle_components(self.pos_holder, vel=self.vel_holder,
@@ -602,25 +573,25 @@ class ReachViz:
 
         return total_distance_error, x_distance_error, y_distance_error, z_distance_error
 
-    def preprocess_kinematics(self, p_thresh, spline=0.05):
+    def preprocess_kinematics(self, p_thresh, spline=0.85):
         for di, pos in enumerate(self.positions):
             o_positions = np.asarray(pos)
             probs = self.probabilities[di]
             prob_outliers = self.threshold_data_with_probabilities(probs, p_thresh=p_thresh)
             svd, acc, speed_c = self.calculate_kinematics_from_position(np.copy(pos), spline=False)
             self.raw_speeds.append(speed_c)
-            v_outlier_index = np.where(svd > 2)
+            v_outlier_index = np.where(svd > 1.2)
             possi, num_int, gap_ind = vu.interpolate_3d_vector(np.copy(o_positions), v_outlier_index, prob_outliers)
             try:
-                filtered_pos = vu.cubic_spline_smoothing(np.copy(possi), spline_coeff=spline)
+                filtered_pos = vu.cubic_spline_smoothing(np.copy(possi),np.copy(probs), spline_coeff=spline)
             except:
                 print('bad filter')
             try:
-                v, a, s = self.calculate_kinematics_from_position(np.copy(filtered_pos), spline=True)
+                v, a, s = self.calculate_kinematics_from_position(np.copy(filtered_pos), spline=False)
             except:
                 print('bf')
             # Find and save still-present outliers in the data
-            velocity_outlier_indexes = np.where(s > 1.4)[0]
+            velocity_outlier_indexes = np.where(s > 1.2)[0]
             # Find array of total outliers
             outliers = np.squeeze(np.union1d(velocity_outlier_indexes, self.prob_filter_index)).flatten()
             if outliers.any():
@@ -696,7 +667,7 @@ class ReachViz:
             # v_holder[ddx, :] = scipy.ndimage.gaussian_filter1d(v_holder[ddx, :], 3)
         # Get cubic spline representation of speeds after smoothing
         if spline:
-            v_holder = vu.cubic_spline_smoothing(v_holder, 0.1)
+            v_holder = vu.cubic_spline_smoothing(v_holder, 1)
             # v_holder = scipy.signal.medfilt2d(v_holder, 1)
         # Calculate speed, acceleration from smoothed (no time-dependent jumps) velocities
         try:
@@ -708,7 +679,7 @@ class ReachViz:
         except:
             pass
         if spline:
-            speed_holder = scipy.ndimage.gaussian_filter1d(speed_holder, sigma=1, mode='mirror')
+            speed_holder = vu.cubic_spline_smoothing(speed_holder, 1)
         return np.asarray(v_holder), np.asarray(a_holder), np.asarray(speed_holder)
 
     def segment_reaches_with_speed_peaks(self, block=False):
@@ -739,7 +710,6 @@ class ReachViz:
         else:
             self.rewarded = False
         # Find peaks in left palm time-series
-        pad_length = 5  # padding for ensuring we get the full reach
         lps = np.copy(self.left_palm_s[:])
         rps = np.copy(self.right_palm_s[:])
         lps[self.prob_filter_index] = 0
@@ -758,19 +728,20 @@ class ReachViz:
         rps[hidx] = 0
         lps[0:4] = 0  # remove any possible edge effect
         rps[0:4] = 0  # remove any possible edge effect
-        self.left_palm_maxima = find_peaks(lps, height=0.2, distance=20)[0]
-        initiation_window = 10  # Frames we take before thresholding, to ensure we have full reach in window
+        self.left_palm_maxima = find_peaks(lps, height=0.25, distance=40)[0]
+        initiation_window = 100  # Frames we take before thresholding, to ensure we have full reach in window
+        thresh_end_window = 100
         if self.left_palm_maxima.any():
             print('Left Palm Reach')
             for ir in range(0, self.left_palm_maxima.shape[0]):
                 if self.left_palm_maxima[ir] > 20:
                     left_palm_below_thresh = np.argmin(
-                        self.left_palm_s[self.left_palm_maxima[ir] - 30: self.left_palm_maxima[ir]])
+                        self.left_palm_s[self.left_palm_maxima[ir] - 20: self.left_palm_maxima[ir]])
                 else:
                     left_palm_below_thresh = np.argmin(self.left_palm_s[0:self.left_palm_maxima[ir]])
                 left_palm_below_thresh_after = self.left_palm_maxima[ir] + \
                                                np.argmin(self.left_palm_s[
-                                                         self.left_palm_maxima[ir]: self.left_palm_maxima[ir] + 20])
+                                                         self.left_palm_maxima[ir]: self.left_palm_maxima[ir] + thresh_end_window])
                 start_time_l = self.left_palm_maxima[ir] - left_palm_below_thresh - initiation_window
                 if start_time_l < 0:
                     start_time_l = 1
@@ -781,17 +752,17 @@ class ReachViz:
                 self.reach_duration.append(
                     self.time_vector[left_palm_below_thresh_after] - self.time_vector[start_time_l])
         # Find peaks in right palm time-series
-        self.right_palm_maxima = find_peaks(rps, height=0.2, distance=20)[0]
+        self.right_palm_maxima = find_peaks(rps, height=0.25, distance=40)[0]
         if self.right_palm_maxima.any():
             print('Right Palm Reach')
             for ir in range(0, self.right_palm_maxima.shape[0]):
                 if self.right_palm_maxima[ir] > 20:
                     right_palm_below_thresh = np.argmin(
-                        self.right_palm_s[self.right_palm_maxima[ir] - 30:self.right_palm_maxima[ir]])
+                        self.right_palm_s[self.right_palm_maxima[ir] - 20:self.right_palm_maxima[ir]])
                 else:
                     right_palm_below_thresh = np.argmin(self.right_palm_s[0:self.right_palm_maxima[ir]])
                 right_palm_below_thresh_after = self.right_palm_maxima[ir] + np.argmin(
-                    self.right_palm_s[self.right_palm_maxima[ir]:self.right_palm_maxima[ir] + 20])
+                    self.right_palm_s[self.right_palm_maxima[ir]:self.right_palm_maxima[ir] + thresh_end_window])
                 start_time_r = self.right_palm_maxima[ir] - right_palm_below_thresh - initiation_window
                 if start_time_r < 0:
                     start_time_r = 1
