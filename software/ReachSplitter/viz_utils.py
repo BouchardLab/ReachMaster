@@ -76,11 +76,11 @@ def butterworth_filtfilt(input_vector, nyquist_freq, cutoff, filt_order=4):
     return y.reshape(y.shape[1], y.shape[0])
 
 
-def cubic_spline_smoothing(input_vector, p_weights, spline_coeff=0.1):
+def cubic_spline_smoothing(input_vector, spline_coeff=0.1):
     timepoints = np.linspace(0, input_vector.shape[0], input_vector.shape[0])
     smoothed_vector = np.zeros(input_vector.shape)
     for i in range(0, 3):
-        smoothed_vector[:, i] = csaps(timepoints, input_vector[:, i], timepoints, weights=p_weights,
+        smoothed_vector[:, i] = csaps(timepoints, input_vector[:, i], timepoints,
                                       normalizedsmooth=True,
                                       smooth=spline_coeff)
     return smoothed_vector

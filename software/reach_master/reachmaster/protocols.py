@@ -299,10 +299,12 @@ class Protocols(tk.Toplevel):
         self.start_acquiring_baseline()
         self.ready = True
         tf = 0 # triggered frame
+        self.robot_set_move_times = [200, 400, 600, 800, 1000, 1200, 1400, 1600] # times for robot to intiate movement
         while self.ready:
-            self.run_video_capture()
+            #self.run_video_capture()
+            self.run_robot_positions_capture(tf)
             tf += 1
-            if tf > 1000:
+            if tf > 2000:
                 self.ready = False
         #self.run_auditory_stimuli()  # runs sound at beginning of experiment!
         # debug
@@ -545,6 +547,19 @@ class Protocols(tk.Toplevel):
         expint.write_message(self.exp_controller, self.control_message)
         self.exp_response = expint.read_response(self.exp_controller)
         # If/else logic loop to determine what next micro-controller output should be
+
+
+    def run_robot_positions_capture(self, total_frame):  # Normed PC time
+        if not self.lights_on:
+            self.lights_on = 1  # Make sure lights are on
+        dev, frame = self.trigger_record_and_save_image_from_camera_get_deviation()  # Trigger and save camera frame
+        self.write_video_frame(frame)
+        # Code here to read/write information from micro-controllers
+        expint.write_message(self.exp_controller, self.control_message)
+        self.exp_response = expint.read_response(self.exp_controller)
+        # If/else logic loop to determine what next micro-controller output should be
+        if total_frame in self.robot_set_move_times:
+            self.move_robot_callback()
 
     def run_continuous(self):
         """Operations performed for a single iteration of protocol type CONTINOUS.

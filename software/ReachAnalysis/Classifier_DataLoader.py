@@ -137,6 +137,7 @@ class DataLoader:
         except:
             pdb.set_trace()
         dd = R.get_reach_dataframe_from_block()
+        #dd = R.get_preprocessed_trial_blocks()
         return dd
 
 
