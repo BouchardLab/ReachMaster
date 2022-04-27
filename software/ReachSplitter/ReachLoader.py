@@ -519,7 +519,7 @@ class ReachViz:
         if preprocess:
             self.preprocess_kinematics(p_thresh=0.3)
         # Zero out any large outliers in the data, as well as any low probability events.
-        #self.zero_out_outliers()
+        self.zero_out_outliers()
         self.assign_final_variables()
         # Calculate principal components
         self.pos_v_a_pc, self.pos_v_a_pc_variance = get_principle_components(self.pos_holder, vel=self.vel_holder,

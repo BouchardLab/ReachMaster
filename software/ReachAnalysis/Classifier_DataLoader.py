@@ -136,8 +136,8 @@ class DataLoader:
             R = ReachViz(date, sesh, experiment_data, self.block_video_file, kin_data, ratt)
         except:
             pdb.set_trace()
-        dd = R.get_reach_dataframe_from_block()
-        #dd = R.get_preprocessed_trial_blocks()
+        #dd = R.get_reach_dataframe_from_block()
+        dd = R.get_preprocessed_trial_blocks()
         return dd
 
 
@@ -147,7 +147,7 @@ sessions = ['S1', 'S1', 'S2', 'S3', 'S3', 'S3', 'S4', 'S1', 'S2', 'S1', 'S4', 'S
 root = "C:\\Users\\bassp\\Desktop"
 os.chdir(root)
 block_video_file = 'Classification Project\\2019-09-20-S1-RM14_cam2DLC_FinalColors.mp4'
-save_df_address = 'Class_Reaches.pkl'
+save_df_address = 'Total_Reaches.pkl'
 
 kinematics_addresses = ['DataFrames\\3D_positions_RM9.pkl',
                         'DataFrames\\3D_positions_RM10.pkl',
