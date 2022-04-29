@@ -709,6 +709,15 @@ class ReachViz:
             print('Speed Filter')
         return np.asarray(v_holder), np.asarray(a_holder), np.asarray(speed_holder)
 
+    def tug_of_war_flag(self):
+        self.tug_flag = 0
+        self.lick_tug = 0
+        init_handle_speed = np.where(self.handle_s > 0.1)
+        if init_handle_speed.any():
+            self.tug_flag = 1
+        if self.first_lick_signal < 30:
+            self.lick_tug = 1
+
     def segment_reaches_with_speed_peaks(self, block=False):
         """ Function to segment out reaches using a positional and velocity threshold. """
         # find peaks of speed velocities
@@ -727,8 +736,7 @@ class ReachViz:
         # Get some basic information about what's going on in the trial from micro-controller data
         hidx = np.where(self.handle_s > .1)
         hid = np.zeros(self.handle_s.shape[0])
-        hid[hidx] = 1 # Mask for handle speed > 0.1
-
+        hid[hidx] = 1  # Mask for handle speed > 0.1
         if np.nonzero(hid):
             self.handle_moved = True
         else:
@@ -738,8 +746,8 @@ class ReachViz:
         else:
             self.rewarded = False
         # Find peaks in left palm time-series with masked data
-        lps = np.copy(self.left_palm_s[:]) # Masked left palm speed
-        rps = np.copy(self.right_palm_s[:]) # Masked right palm speed
+        lps = np.copy(self.left_palm_s[:])  # Masked left palm speed
+        rps = np.copy(self.right_palm_s[:])  # Masked right palm speed
         lps[self.prob_filter_index] = 0  # if p_values < 0.3
         rps[self.prob_filter_index] = 0
         # If palms are < 0.4 p-value, remove chance at "maxima"
@@ -767,7 +775,8 @@ class ReachViz:
                 if self.left_palm_maxima[ir] > 51:
                     try:
                         below_reach_speed = self.left_palm_s[self.left_palm_maxima[ir] - 50: self.left_palm_maxima[ir]]
-                        index_below = np.where(np.asarray(below_reach_speed) < 0.1)[-1][-1] # find last index where speed < 0.1
+                        index_below = np.where(np.asarray(below_reach_speed) < 0.1)[-1][
+                            -1]  # find last index where speed < 0.1
                         left_palm_below_thresh = self.left_palm_maxima[ir] - index_below - start_pad
                     except:
                         left_palm_below_thresh = self.left_palm_maxima[ir] - \
@@ -780,9 +789,10 @@ class ReachViz:
                     left_palm_below_thresh = self.left_palm_maxima[ir] - index_below - start_pad
                 try:
                     left_palm_below_thresh_after = self.left_palm_maxima[ir] + \
-                                               np.where(np.asarray(self.left_palm_s[
-                                                         self.left_palm_maxima[ir]:
-                                                         self.left_palm_maxima[ir] + 100]) < 0.1)[0][0] + start_pad
+                                                   np.where(np.asarray(self.left_palm_s[
+                                                                       self.left_palm_maxima[ir]:
+                                                                       self.left_palm_maxima[ir] + 100]) < 0.1)[0][
+                                                       0] + start_pad
                 except:
                     left_palm_below_thresh_after = self.left_palm_maxima[ir] + 50 + start_pad
                 try:
@@ -802,8 +812,10 @@ class ReachViz:
             for ir in range(0, self.right_palm_maxima.shape[0]):
                 if self.right_palm_maxima[ir] > 51:
                     try:
-                        below_reach_speed = self.right_palm_s[self.right_palm_maxima[ir] - 50: self.right_palm_maxima[ir]]
-                        index_below = np.where(np.asarray(below_reach_speed) < 0.1)[-1][-1]  # find last index where speed < 0.1
+                        below_reach_speed = self.right_palm_s[
+                                            self.right_palm_maxima[ir] - 50: self.right_palm_maxima[ir]]
+                        index_below = np.where(np.asarray(below_reach_speed) < 0.1)[-1][
+                            -1]  # find last index where speed < 0.1
                         right_palm_below_thresh = self.right_palm_maxima[ir] - index_below - start_pad
                     except:
                         self.right_palm_maxima[ir] - np.argmin(
@@ -815,9 +827,10 @@ class ReachViz:
                     right_palm_below_thresh = self.right_palm_maxima[ir] - index_below - start_pad
                 try:
                     right_palm_below_thresh_after = self.right_palm_maxima[ir] + \
-                                               np.where(np.asarray(self.right_palm_s[
-                                                        self.right_palm_maxima[ir]: self.right_palm_maxima[
-                                                                                       ir] + 100]) < 0.1)[0][0] + start_pad
+                                                    np.where(np.asarray(self.right_palm_s[
+                                                                        self.right_palm_maxima[ir]:
+                                                                        self.right_palm_maxima[
+                                                                            ir] + 100]) < 0.1)[0][0] + start_pad
                 except:
                     right_palm_below_thresh_after = self.left_palm_maxima[ir] + 50 + start_pad
                 try:
@@ -1134,11 +1147,11 @@ class ReachViz:
                           'right_third_tip_o': self.right_third_tip_o,
                           'right_end_base_o': self.right_end_base_o, 'right_end_tip_o': self.right_end_tip_o,
                           # Kinematic Features
-                          # 'reach_hand': self.arm_id_list, 'right_start_time': self.right_start_times,
-                          # 'left_start_time': self.left_start_times, 'reach_time': self.reach_start_time,
-                          # 'reach_duration': self.reach_end_time,
-                          # 'left_end_time': self.left_reach_end_times, 'right_end_time': self.right_reach_end_times,
-                          # 'left_reach_peak': self.left_peak_times, 'right_reach_peak': self.right_peak_times,
+                          'reach_hand': self.arm_id_list, 'right_start_time': self.right_start_times,
+                          'left_start_time': self.left_start_times, 'reach_start': self.reach_start_time, 'reach_duration':self.reach_duration,
+                          'reach_end': self.reach_end_time, 'tug_flag': self.tug_flag, 'lick_tug': self.lick_tug,
+                          'left_end_time': self.left_reach_end_times, 'right_end_time': self.right_reach_end_times,
+                          'left_reach_peak': self.left_peak_times, 'right_reach_peak': self.right_peak_times,
                           'endpoint_error': self.endpoint_error, 'endpoint_error_x': self.x_endpoint_error,
                           'endpoint_error_y': self.y_endpoint_error, 'endpoint_error_z': self.z_endpoint_error,
                           # Sensor Data
@@ -1314,13 +1327,13 @@ class ReachViz:
                     print('GIF MADE for  ' + str(ix))
                 print('Finished Plotting!   ' + str(ix))
                 self.segment_reaches_with_speed_peaks()
-                win_length = 200 # for non-reaching trials
+                win_length = 200  # for non-reaching trials
                 cut_reach_start_time = self.reach_start_time
                 # Create dataframe to plot for "reach" segmentation
                 print(self.reach_start_time, self.reach_end_time, self.num_peaks)
                 if self.reach_start_time:
                     if self.first_lick_signal:
-                        if self.reach_start_time  - 30 < 0:  # are we close to the start of the trial?
+                        if self.reach_start_time - 30 < 0:  # are we close to the start of the trial?
                             cut_reach_start_time = 0  # spacer to keep array values
                         self.split_trial_video(cut_reach_start_time + self.trial_index, self.trial_index +
                                                self.first_lick_signal + 20, segment=True, num_reach=0)
@@ -1341,7 +1354,7 @@ class ReachViz:
                         self.extract_sensor_data(cut_reach_start_time + self.trial_index,
                                                  self.trial_index + self.reach_end_time)
                 else:
-                    if self.first_lick_signal: # Tug of war
+                    if self.first_lick_signal:  # Tug of war
                         self.split_trial_video(self.trial_index, self.trial_index + self.first_lick_signal + 10,
                                                segment=True, num_reach=0)
                         self.segment_and_filter_kinematic_block(self.trial_index,
