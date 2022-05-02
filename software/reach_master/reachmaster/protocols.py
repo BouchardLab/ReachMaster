@@ -278,7 +278,7 @@ class Protocols(tk.Toplevel):
             tkinter.messagebox.showinfo("Warning", "No saved POIs")
             self.on_quit()
             return
-        # self.start_and_load_robot_interface()
+        #self.start_and_load_robot_interface()
         self.start_and_load_experimental_and_stimuli_variables()
         self.cams_connected = True
         self.start_and_initialize_cameras()
@@ -296,15 +296,14 @@ class Protocols(tk.Toplevel):
             pdb.set_trace()
         # obtain baseline for camera's to detect movement
         print('Baseline')
-        self.start_acquiring_baseline()
+        #self.start_acquiring_baseline()
         self.ready = True
         tf = 0 # triggered frame
-        self.robot_set_move_times = [200, 400, 600, 800, 1000, 1200, 1400, 1600] # times for robot to intiate movement
+        self.robot_runtime = [300, 600, 900, 1200, 1500, 1800, 2100, 2400, 2700]
         while self.ready:
-            #self.run_video_capture()
-            self.run_robot_positions_capture(tf)
+            self.run_video_capture(tf)
             tf += 1
-            if tf > 2000:
+            if tf > 3000:
                 self.ready = False
         #self.run_auditory_stimuli()  # runs sound at beginning of experiment!
         # debug
@@ -538,7 +537,7 @@ class Protocols(tk.Toplevel):
 
         # Protocol types ---------------------------------------------------------------
 
-    def run_video_capture(self):  # Normed PC time
+    def run_video_capture(self, frame):  # Normed PC time
         if not self.lights_on:
             self.lights_on = 1  # Make sure lights are on
         dev, frame = self.trigger_record_and_save_image_from_camera_get_deviation()  # Trigger and save camera frame
@@ -546,20 +545,9 @@ class Protocols(tk.Toplevel):
         # Code here to read/write information from micro-controllers
         expint.write_message(self.exp_controller, self.control_message)
         self.exp_response = expint.read_response(self.exp_controller)
+        #if frame in self.robot_runtime:
+        #    self.move_robot_callback()
         # If/else logic loop to determine what next micro-controller output should be
-
-
-    def run_robot_positions_capture(self, total_frame):  # Normed PC time
-        if not self.lights_on:
-            self.lights_on = 1  # Make sure lights are on
-        dev, frame = self.trigger_record_and_save_image_from_camera_get_deviation()  # Trigger and save camera frame
-        self.write_video_frame(frame)
-        # Code here to read/write information from micro-controllers
-        expint.write_message(self.exp_controller, self.control_message)
-        self.exp_response = expint.read_response(self.exp_controller)
-        # If/else logic loop to determine what next micro-controller output should be
-        if total_frame in self.robot_set_move_times:
-            self.move_robot_callback()
 
     def run_continuous(self):
         """Operations performed for a single iteration of protocol type CONTINOUS.
