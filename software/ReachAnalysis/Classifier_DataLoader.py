@@ -136,8 +136,8 @@ class DataLoader:
             R = ReachViz(date, sesh, experiment_data, self.block_video_file, kin_data, ratt)
         except:
             pdb.set_trace()
-        #dd = R.get_reach_dataframe_from_block()
-        dd = R.get_preprocessed_trial_blocks()
+        dd = R.get_reach_dataframe_from_block()
+        #dd = R.get_preprocessed_trial_blocks()
         return dd
 
 

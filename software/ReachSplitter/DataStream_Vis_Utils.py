@@ -1,13 +1,7 @@
 import numpy as np
-import seaborn as sns
-import numpy as np
 import matplotlib.pyplot as plt
-import matplotlib.pyplot as plt
-import mpl_toolkits.mplot3d.axes3d as axes3d
 import seaborn as sns
-import pandas
-import scipy
-import pdb
+
 
 ### MAKE MATLAB BEAUTIFUL
 CB91_Blue = '#2CBDFE'

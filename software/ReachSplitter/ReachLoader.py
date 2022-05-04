@@ -2,14 +2,14 @@ from sklearn.decomposition import PCA
 import pandas as pd
 import pickle
 import matplotlib.pyplot as plt
-import DataStream_Vis_Utils as utils
+import software.ReachSplitter.DataStream_Vis_Utils as utils
 # import DataStream_Vis_Utils as utils
 from moviepy.editor import *
 import skvideo
 import cv2
 import imageio
 import numpy as np
-import viz_utils as vu
+import software.ReachSplitter.viz_utils as vu
 import scipy
 from scipy.signal import find_peaks
 from scipy.ndimage import gaussian_filter1d
@@ -733,6 +733,7 @@ class ReachViz:
         self.left_reach_end_times = []
         self.reach_duration = []
         self.total_block_reaches = 0
+        self.reach_end_time = 0
         # Get some basic information about what's going on in the trial from micro-controller data
         hidx = np.where(self.handle_s > .1)
         hid = np.zeros(self.handle_s.shape[0])
@@ -785,8 +786,11 @@ class ReachViz:
                 else:
                     max = self.left_palm_maxima[ir]
                     below_reach_speed = self.left_palm_s[0:max]
-                    index_below = np.where(np.asarray(below_reach_speed) < 0.1)[-1][-1]
-                    left_palm_below_thresh = self.left_palm_maxima[ir] - index_below - start_pad
+                    try:
+                        index_below = np.where(np.asarray(below_reach_speed) < 0.1)[-1][-1]
+                        left_palm_below_thresh = self.left_palm_maxima[ir] - index_below - start_pad
+                    except:
+                        left_palm_below_thresh = 0
                 try:
                     left_palm_below_thresh_after = self.left_palm_maxima[ir] + \
                                                    np.where(np.asarray(self.left_palm_s[
@@ -799,13 +803,21 @@ class ReachViz:
                     start_time_l = left_palm_below_thresh
                 except:
                     start_time_l = 0
-            if start_time_l < 0:
-                start_time_l = 1
+            try:
+                if start_time_l < 0:
+                    start_time_l = 1
+            except:
+                pass
             self.left_start_times.append(start_time_l)
             self.left_peak_times.append(self.left_palm_maxima[ir])
             self.reach_peak_time.append(self.left_palm_maxima[ir])  # Record Peak
             self.left_reach_end_times.append(left_palm_below_thresh_after)  # Record putative end of motion
         # Find peaks in right palm time-series
+        else:
+            self.left_peak_times.append(None)
+            self.left_reach_end_times.append(None)
+            self.left_start_times.append(None)
+            self.reach_peak_time.append(None)
         self.right_palm_maxima = find_peaks(rps, height=0.15, distance=20)[0]
         if self.right_palm_maxima.any():
             print('Right Palm Reach')
@@ -823,8 +835,11 @@ class ReachViz:
                 else:
                     max = self.right_palm_maxima[ir]
                     below_reach_speed = self.right_palm_s[0:max]
-                    index_below = np.where(np.asarray(below_reach_speed) < 0.1)[0]
-                    right_palm_below_thresh = self.right_palm_maxima[ir] - index_below - start_pad
+                    try:
+                        index_below = np.where(np.asarray(below_reach_speed) < 0.1)[0]
+                        right_palm_below_thresh = self.right_palm_maxima[ir] - index_below - start_pad
+                    except:
+                        right_palm_below_thresh = 0
                 try:
                     right_palm_below_thresh_after = self.right_palm_maxima[ir] + \
                                                     np.where(np.asarray(self.right_palm_s[
@@ -837,44 +852,78 @@ class ReachViz:
                     start_time_r = right_palm_below_thresh
                 except:
                     start_time_r = 0
-                if start_time_r < 0:
-                    start_time_r = 1
+                try:
+                    if start_time_r < 0:
+                        start_time_r = 1
+                except:
+                    pass
                 self.right_start_times.append(start_time_r)
                 self.right_peak_times.append(self.right_palm_maxima[ir])
                 self.reach_peak_time.append(self.right_palm_maxima[ir])
                 self.right_reach_end_times.append(right_palm_below_thresh_after)
+        else:
+            self.right_peak_times.append(None)
+            self.right_reach_end_times.append(None)
+            self.right_start_times.append(None)
+            self.reach_peak_time.append(None)
         if block:
             self.total_block_reaches = 0
         # Check for unrealistic start and stop values (late in trial)
         for idx, time in enumerate(self.right_start_times):
-            if self.right_start_times[idx] > 650:
-                self.right_start_times[idx] = 650
-                if time > 700:
-                    self.right_reach_end_times[idx] = 700  # Max trial time.
+            if any in self.right_start_times is None:
+                continue
+            else:
+                try:
+                    if self.right_start_times[idx] > 650:
+                        self.right_start_times[idx] = 650
+                        if time > 700:
+                            self.right_reach_end_times[idx] = 700  # Max trial time.
+                except:
+                    pass
         for idx, time in enumerate(self.left_start_times):
-            if self.left_start_times[idx] > 650:
-                self.left_start_times[idx] = 650
-                if time > 700:
-                    self.left_reach_end_times[idx] = 700  # Max trial time.
+            if any in self.left_start_times is None:
+                continue
+            else:
+                try:
+                    if self.left_start_times[idx] > 650:
+                        self.left_start_times[idx] = 650
+                        if time > 700:
+                            self.left_reach_end_times[idx] = 700  # Max trial time.
+                except:
+                    pass
         # Take min of right and left start times as "reach times" for start of classification extraction
         if self.right_start_times and self.left_start_times:
-            self.reach_start_time = min(self.right_start_times + self.left_start_times)
-            self.reach_end_time = (self.right_reach_end_times + self.left_reach_end_times)[-1]
-            print('LR')
-        elif self.right_start_times:
-            self.reach_start_time = min(self.right_start_times)
-            self.reach_end_time = self.right_reach_end_times[-1]
-            print('R')
-        elif self.left_start_times:
-            self.reach_start_time = min(self.left_start_times)
-            self.reach_end_time = self.left_reach_end_times[-1]
-            print('L')
+            if all(ix is None for ix in self.right_start_times) and all(ix is None for ix in self.left_start_times):
+                self.reach_start_time = 0
+                self.reach_end_time = 200
+            elif all(ix is not None for ix in self.right_start_times):
+                self.reach_start_time = min(self.right_start_times)
+                self.reach_end_time = self.right_reach_end_times[-1]
+                print('r')
+            elif all(ix is not None for ix in self.left_start_times):
+                self.reach_start_time = min(self.left_start_times)
+                self.reach_end_time = self.left_reach_end_times[-1]
+                print('l')
+            elif all(ix is not None for ix in self.left_start_times) and all(ix is not None for ix in self.right_start_times):
+                pdb.set_trace()
+                self.reach_start_time = min(self.right_start_times + self.left_start_times)
+                self.reach_end_time = (self.right_reach_end_times + self.left_reach_end_times).sort()[-1]
+                print('LR')
         else:
             self.reach_start_time = 0
             self.reach_end_time = 200
             print('No LR')
-        self.num_peaks = len(self.left_palm_maxima) + len(self.right_palm_maxima)
-        self.reach_duration = self.reach_end_time - self.reach_start_time
+        if all(ix is not None for ix in self.left_palm_maxima) and all(ix is not None for ix in self.right_palm_maxima): # no reach flag
+            pass
+        elif all(ix is not None for ix in self.left_palm_maxima):
+            self.num_peaks = len(self.left_palm_maxima)
+        elif all(ix is not None for ix in self.right_start_times):
+            self.num_peaks = len(self.right_palm_maxima)
+        try:
+            self.reach_duration = self.reach_end_time - self.reach_start_time
+        except:
+            print('nt')
+            self.reach_duration = 0
         self.handle_moved = 0
         self.trial_cut_vector = []
         return
@@ -898,7 +947,35 @@ class ReachViz:
         """ Function that iterates over reaching indices,
             saves the segmented data and corresponding class labels into a dataframe.
         """
-        self.save_dict = {'nose_vx': np.asarray(self.nose_v[:, 0]), 'nose_vy': self.nose_v[:, 1],
+        # Check segment flags for none-type list
+        try:
+            if len(self.arm_id_list) == 0:
+                self.arm_id_list = 0
+        except:
+            pass
+        try:
+            if len(self.right_start_times[0]) == 0:
+                self.right_start_times = 0
+                self.right_reach_end_times = 0
+                self.right_peak_times = 0
+        except:
+            pass
+        try:
+            if len(self.left_start_times[0]) == 0:
+                self.left_start_times = 0
+                self.left_reach_end_times = 0
+                self.left_peak_times = 0
+        except:
+            pass
+        try:
+            if len(self.reach_start_time[0]) == 0:
+                self.reach_start_time = 0
+                self.reach_duration = 0
+                self.reach_end_time = 0
+        except:
+            pass
+        try:
+            self.save_dict = {'nose_vx': np.asarray(self.nose_v[:, 0]), 'nose_vy': self.nose_v[:, 1],
                           'nose_vz': self.nose_v[:, 2],
                           'handle_vx': self.handle_v[:, 0], 'handle_vy': self.handle_v[:, 1],
                           'handle_vz': self.handle_v[:, 2],
@@ -1149,7 +1226,7 @@ class ReachViz:
                           # Kinematic Features
                           'reach_hand': self.arm_id_list, 'right_start_time': self.right_start_times,
                           'left_start_time': self.left_start_times, 'reach_start': self.reach_start_time, 'reach_duration':self.reach_duration,
-                          'reach_end': self.reach_end_time, 'tug_flag': self.tug_flag, 'lick_tug': self.lick_tug,
+                          'reach_end': self.reach_end_time,
                           'left_end_time': self.left_reach_end_times, 'right_end_time': self.right_reach_end_times,
                           'left_reach_peak': self.left_peak_times, 'right_reach_peak': self.right_peak_times,
                           'endpoint_error': self.endpoint_error, 'endpoint_error_x': self.x_endpoint_error,
@@ -1158,17 +1235,12 @@ class ReachViz:
                           'handle_moving_sensor': self.h_moving_sensor, 'lick_beam': self.lick_vector,
                           'reward_zone': self.reward_zone_sensor, 'time_vector': self.time_vector,
                           'response_sensor': self.exp_response_sensor, 'x_rob': self.x_robot, 'y_rob': self.y_robot,
-                          'z_rob': self.z_robot,
-                          # Principle components
-                          'PC1': self.pos_v_a_pc[:, 0], 'PC2': self.pos_v_a_pc[:, 1], 'PC3': self.pos_v_a_pc[:, 2],
-                          'PCvar': self.pos_v_a_pc_variance,
-                          'Left_PC1': self.left_arm_pc_pos_v_a[:, 0], 'Left_PC2': self.left_arm_pc_pos_v_a[:, 0],
-                          'Left_PC3': self.left_arm_pc_pos_v_a[:, 0], 'LeftPCVar': self.left_arm_pos_v_a_pc_variance,
-                          'Right_PC1': self.right_arm_pc_pos_v_a[:, 0], 'Right_PC2': self.right_arm_pc_pos_v_a[:, 1],
-                          'Right_PC3': self.right_arm_pc_pos_v_a[:, 2], 'RightPCVar': self.right_arm_pos_v_a_pc_variance
+                          'z_rob': self.z_robot
                           }
         # Create dataframe object from df, containing
-        df = pd.DataFrame({key: pd.Series(np.asarray(value)) for key, value in self.save_dict.items()})
+            df = pd.DataFrame({key: pd.Series(np.asarray(value)) for key, value in self.save_dict.items()})
+        except:
+            pdb.set_trace()
         df['Trial'] = trial_num
         df.set_index('Trial', append=True, inplace=True)
         df['Date'] = self.date
