@@ -798,7 +798,10 @@ class ReachViz:
                                                                        self.left_palm_maxima[ir] + 100]) < 0.1)[0][
                                                        0] + start_pad
                 except:
-                    left_palm_below_thresh_after = self.left_palm_maxima[ir] + 50 + start_pad
+                    try:
+                        left_palm_below_thresh_after = self.left_palm_maxima[ir] + 50 + start_pad
+                    except:
+                        pdb.set_trace()
                 try:
                     start_time_l = left_palm_below_thresh
                 except:
@@ -847,7 +850,10 @@ class ReachViz:
                                                                         self.right_palm_maxima[
                                                                             ir] + 100]) < 0.1)[0][0] + start_pad
                 except:
-                    right_palm_below_thresh_after = self.left_palm_maxima[ir] + 50 + start_pad
+                    try:
+                        right_palm_below_thresh_after = self.right_palm_maxima[ir] + 50 + start_pad
+                    except:
+                        pdb.set_trace()
                 try:
                     start_time_r = right_palm_below_thresh
                 except:
@@ -870,45 +876,62 @@ class ReachViz:
             self.total_block_reaches = 0
         # Check for unrealistic start and stop values (late in trial)
         for idx, time in enumerate(self.right_start_times):
-            if any in self.right_start_times is None:
-                continue
-            else:
-                try:
-                    if self.right_start_times[idx] > 650:
-                        self.right_start_times[idx] = 650
-                        if time > 700:
-                            self.right_reach_end_times[idx] = 700  # Max trial time.
-                except:
-                    pass
+            try:
+                if any in self.right_start_times is None:
+                    continue
+                else:
+                    try:
+                        if self.right_start_times[idx] > 650:
+                            self.right_start_times[idx] = 650
+                            if time > 700:
+                                self.right_reach_end_times[idx] = 700  # Max trial time.
+                    except:
+                        pass
+            except:
+                pass
         for idx, time in enumerate(self.left_start_times):
-            if any in self.left_start_times is None:
-                continue
-            else:
-                try:
-                    if self.left_start_times[idx] > 650:
-                        self.left_start_times[idx] = 650
-                        if time > 700:
-                            self.left_reach_end_times[idx] = 700  # Max trial time.
-                except:
-                    pass
+            try:
+                if self.left_start_times.any() is None:
+                    continue
+                else:
+                    try:
+                        if self.left_start_times[idx] > 650:
+                            self.left_start_times[idx] = 650
+                            if time > 700:
+                                self.left_reach_end_times[idx] = 700  # Max trial time.
+                    except:
+                        pass
+            except:
+                pass
         # Take min of right and left start times as "reach times" for start of classification extraction
         if self.right_start_times and self.left_start_times:
             if all(ix is None for ix in self.right_start_times) and all(ix is None for ix in self.left_start_times):
                 self.reach_start_time = 0
                 self.reach_end_time = 200
             elif all(ix is not None for ix in self.right_start_times):
-                self.reach_start_time = min(self.right_start_times)
-                self.reach_end_time = self.right_reach_end_times[-1]
-                print('r')
+                try:
+                    self.reach_start_time = min(self.right_start_times)
+                    self.reach_end_time = self.right_reach_end_times[-1]
+                    print('r')
+                except:
+                    self.reach_start_time = self.right_start_times[0]
+                    self.reach_end_time = self.right_reach_end_times[-1]
             elif all(ix is not None for ix in self.left_start_times):
-                self.reach_start_time = min(self.left_start_times)
-                self.reach_end_time = self.left_reach_end_times[-1]
-                print('l')
+                try:
+                    self.reach_start_time = min(self.left_start_times)
+                    self.reach_end_time = self.left_reach_end_times[-1]
+                    print('l')
+                except:
+                    self.reach_start_time = self.left_start_times[0]
+                    self.reach_end_time = self.left_reach_end_times[-1]
             elif all(ix is not None for ix in self.left_start_times) and all(ix is not None for ix in self.right_start_times):
-                pdb.set_trace()
-                self.reach_start_time = min(self.right_start_times + self.left_start_times)
-                self.reach_end_time = (self.right_reach_end_times + self.left_reach_end_times).sort()[-1]
-                print('LR')
+                try:
+                    self.reach_start_time = min(self.right_start_times + self.left_start_times)
+                    self.reach_end_time = (self.right_reach_end_times + self.left_reach_end_times).sort()[-1]
+                    print('LR')
+                except:
+                    self.reach_end_time = (self.right_reach_end_times + self.left_reach_end_times).sort()[-1]
+                    self.reach_start_time = (self.right_start_times + self.left_start_times).sort()[0]
         else:
             self.reach_start_time = 0
             self.reach_end_time = 200
@@ -943,7 +966,7 @@ class ReachViz:
         plt.close()
         return
 
-    def segment_data_into_reach_dict(self, trial_num):
+    def segment_data_into_reach_dict(self, trial_num, error_flag = False):
         """ Function that iterates over reaching indices,
             saves the segmented data and corresponding class labels into a dataframe.
         """
@@ -1235,12 +1258,13 @@ class ReachViz:
                           'handle_moving_sensor': self.h_moving_sensor, 'lick_beam': self.lick_vector,
                           'reward_zone': self.reward_zone_sensor, 'time_vector': self.time_vector,
                           'response_sensor': self.exp_response_sensor, 'x_rob': self.x_robot, 'y_rob': self.y_robot,
-                          'z_rob': self.z_robot
+                          'z_rob': self.z_robot, 'error_flag':error_flag
                           }
         # Create dataframe object from df, containing
             df = pd.DataFrame({key: pd.Series(np.asarray(value)) for key, value in self.save_dict.items()})
         except:
-            pdb.set_trace()
+            print('bad df')
+            df = pd.DataFrame()
         df['Trial'] = trial_num
         df.set_index('Trial', append=True, inplace=True)
         df['Date'] = self.date
@@ -1318,39 +1342,46 @@ class ReachViz:
                                                                 np.asarray(self.speeds).flatten()))
                     self.total_outliers = np.hstack((np.asarray(self.outlier_list).flatten(), self.total_outliers))
             win_length = 90
+            error_flag = False
             # Segment reach block
-            if self.reach_start_time:  # If reach detected
-                # tt = self.reach_end_time - self.reach_start_time
-                end_pad = 1  # length of behavior
-                reach_end_time = self.reach_end_time + end_pad  # For equally-spaced arrays
-                print(self.reach_start_time, self.reach_end_time)
-                if self.lick_vector.any() == 1:  # If trial is rewarded
-                    self.first_lick_signal = np.where(self.lick_vector == 1)[0][0]
-                    if 5 < self.first_lick_signal < 20:  # If reward is delivered after initial time-out
-                        self.segment_and_filter_kinematic_block(sts, sts + 180)
-                        self.extract_sensor_data(sts, sts + 180)
-                        print('Possible Tug of War Behavior!')
-                    else:  # If a reach is detected (successful reach)
-                        try:
-                            self.segment_and_filter_kinematic_block(
-                                sts + self.reach_start_time - win_length,
-                                sts + reach_end_time + win_length)
-                            self.extract_sensor_data(sts + self.reach_start_time - win_length,
-                                                     sts + reach_end_time + win_length)
-                            print('Successful Reach Detected')
-                        except:
-                            continue
-                else:  # unrewarded reach
-                    self.segment_and_filter_kinematic_block(sts + self.reach_start_time - win_length,
-                                                            sts + reach_end_time + win_length)
-                    self.extract_sensor_data(sts + self.reach_start_time - win_length, sts +
-                                             reach_end_time + win_length)
-                    print('Un-Rewarded Reach Detected')
-            else:  # If reach not detected in trial
+            try:
+                if self.reach_start_time:  # If reach detected
+                    # tt = self.reach_end_time - self.reach_start_time
+                    end_pad = 1  # length of behavior
+                    reach_end_time = self.reach_end_time + end_pad  # For equally-spaced arrays
+                    print(self.reach_start_time, self.reach_end_time)
+                    if self.lick_vector.any() == 1:  # If trial is rewarded
+                        self.first_lick_signal = np.where(self.lick_vector == 1)[0][0]
+                        if 5 < self.first_lick_signal < 20:  # If reward is delivered after initial time-out
+                            self.segment_and_filter_kinematic_block(sts, sts + 180)
+                            self.extract_sensor_data(sts, sts + 180)
+                            print('Possible Tug of War Behavior!')
+                        else:  # If a reach is detected (successful reach)
+                            try:
+                                self.segment_and_filter_kinematic_block(
+                                    sts + self.reach_start_time - win_length,
+                                    sts + reach_end_time + win_length)
+                                self.extract_sensor_data(sts + self.reach_start_time - win_length,
+                                                         sts + reach_end_time + win_length)
+                                print('Successful Reach Detected')
+                            except:
+                                continue
+                    else:  # unrewarded reach
+                        self.segment_and_filter_kinematic_block(sts + self.reach_start_time - win_length,
+                                                                sts + reach_end_time + win_length)
+                        self.extract_sensor_data(sts + self.reach_start_time - win_length, sts +
+                                                 reach_end_time + win_length)
+                        print('Un-Rewarded Reach Detected')
+                else:  # If reach not detected in trial
+                    self.segment_and_filter_kinematic_block(sts - win_length, sts + 200)
+                    self.extract_sensor_data(sts - win_length, sts + 200)
+                    print('No Reaching Found in Trial Block' + str(ix))
+            except:
                 self.segment_and_filter_kinematic_block(sts - win_length, sts + 200)
                 self.extract_sensor_data(sts - win_length, sts + 200)
-                print('No Reaching Found in Trial Block' + str(ix))
-            df = self.segment_data_into_reach_dict(ix)
+                print('Error extracting')
+                error_flag = True
+            df = self.segment_data_into_reach_dict(ix, error_flag)
             self.seg_num = 0
             self.start_trial_indice = []
             self.images = []
