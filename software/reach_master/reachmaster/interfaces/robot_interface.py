@@ -22,7 +22,9 @@ import pdb
 import ast
 import json
 import time
-#private functions----------------------------------------------
+
+
+# private functions----------------------------------------------
 
 def _load_calibration_variable(rob_controller, varname, value):
     rob_controller.write(b"c")
@@ -39,7 +41,8 @@ def _load_calibration_variable(rob_controller, varname, value):
         print(varname + ' calibration failed')
         raise Exception(varname)
 
-def _load_command_variable(rob_controller, varname, value):  
+
+def _load_command_variable(rob_controller, varname, value):
     rob_controller.write(b"p")
     if rob_controller.read() == b"p":
         rob_controller.write((varname + "\n").encode('utf-8'))
@@ -51,11 +54,13 @@ def _load_command_variable(rob_controller, varname, value):
         print(varname + 'load failed')
         raise Exception(varname)
 
+
 def _variable_read(rob_controller, varname):
     rob_controller.write(b"g")
     if rob_controller.read() == b"g":
         rob_controller.write((varname + "\n").encode('utf-8'))
         return rob_controller.readline().decode('utf-8')
+
 
 def _variable_write(rob_controller, varname, value):
     rob_controller.write(b"v")
@@ -64,9 +69,11 @@ def _variable_write(rob_controller, varname, value):
         if rob_controller.read() == b"v":
             rob_controller.write(bytes(value + "\n", 'utf-8'))
 
+
 def read_calibration_file(calibration_file):
-    calibration_dict = pd.read_csv(calibration_file) # Read in Json
+    calibration_dict = pd.read_csv(calibration_file)  # Read in Json
     return calibration_dict
+
 
 def set_calibration_config(config):
     cal_file = read_calibration_file(config['RobotSettings']['calibration_file'])
@@ -75,11 +82,13 @@ def set_calibration_config(config):
     config['RobotSettings']['x_push_dur'] = np.asarray(cal_file['xPushDuration'])
     config['RobotSettings']['x_pull_dur'] = np.asarray(cal_file['xPullDuration'])
     config['RobotSettings']['y_push_dur'] = np.asarray(cal_file['yPushDuration'])
-    config['RobotSettings']['y_pull_dur']  =  np.asarray(cal_file['yPullDuration'])
+    config['RobotSettings']['y_pull_dur'] = np.asarray(cal_file['yPullDuration'])
     config['RobotSettings']['z_push_dur'] = np.asarray(cal_file['zPushDuration'])
     config['RobotSettings']['z_pull_dur'] = np.asarray(cal_file['zPullDuration'])
     return
-#public functions---------------------------------------------------
+
+
+# public functions---------------------------------------------------
 
 def start_interface(config):
     """Establish a serial connection with the robot
@@ -95,10 +104,10 @@ def start_interface(config):
     rob_controller : serial.serialposix.Serial  
         The serial interface to the robot controller.      
 
-    """ 
+    """
     rob_controller = serial.Serial(config['ReachMaster']['rob_control_port'],
-        config['ReachMaster']['serial_baud'],
-        timeout=config['ReachMaster']['control_timeout'])
+                                   config['ReachMaster']['serial_baud'],
+                                   timeout=config['ReachMaster']['control_timeout'])
     rob_controller.flushInput()
     rob_controller.write(b"h")
     response = rob_controller.read()
@@ -108,7 +117,8 @@ def start_interface(config):
     else:
         raise Exception("Robot controller failed to connect.")
 
-def stop_interface(rob_controller): 
+
+def stop_interface(rob_controller):
     """Perform a soft reboot of the robot controller
     and close the serial connection.
 
@@ -117,9 +127,10 @@ def stop_interface(rob_controller):
     rob_controller : serial.serialposix.Serial
         The serial interface to the robot controller.
 
-    """   
+    """
     rob_controller.write(b"e")
     rob_controller.close()
+
 
 def get_ports():
     """List all serial port with connected devices.
@@ -134,6 +145,7 @@ def get_ports():
     for i in range(len(port_list)):
         port_list[i] = port_list[i].device
     return port_list
+
 
 def load_config_calibration(rob_controller, config):
     """Load the calibration parameters to the robot controller.
@@ -161,6 +173,7 @@ def load_config_calibration(rob_controller, config):
         _load_calibration_variable(rob_controller, 'z_pull_dur', config['RobotSettings']['z_pull_dur'])
     except:
         pdb.set_trace()
+
 
 def load_config_commands(rob_controller, config):
     """Load the position commands to the robot controller.
@@ -197,7 +210,7 @@ def load_config_commands(rob_controller, config):
         the command values that were loaded.    
 
     """
-    #extract robot kinematic settings
+    # extract robot kinematic settings
     ygimbal_to_joint = config['RobotSettings']['ygimbal_to_joint']
     zgimbal_to_joint = config['RobotSettings']['zgimbal_to_joint']
     xgimbal_xoffset = config['RobotSettings']['xgimbal_xoffset']
@@ -205,100 +218,100 @@ def load_config_commands(rob_controller, config):
     zgimbal_zoffset = config['RobotSettings']['zgimbal_zoffset']
     x_origin = config['RobotSettings']['x_origin']
     y_origin = config['RobotSettings']['y_origin']
-    z_origin = config['RobotSettings']['z_origin'] 
+    z_origin = config['RobotSettings']['z_origin']
     reach_dist_min = config['RobotSettings']['reach_dist_min']
     reach_dist_max = config['RobotSettings']['reach_dist_max']
     reach_angle_max = config['RobotSettings']['reach_angle_max']
-    #generate commands according to selected command type     
+    # generate commands according to selected command type
     n = 100
-    if config['RobotSettings']['command_type'] == "parametric_sample":        
+    if config['RobotSettings']['command_type'] == "parametric_sample":
         r = (
-            reach_dist_min + 
-            (reach_dist_max - reach_dist_min)*
-            np.random.uniform(
-                low = 0.0, 
-                high = 1.0, 
-                size = 500*n
-                )**(1.0/3.0)
-            )
-        theta_y = reach_angle_max * np.random.uniform(low = -1, high = 1, size = 500*n)
-        theta_z = reach_angle_max * np.random.uniform(low = -1, high = 1, size = 500*n)
-        theta = np.sqrt(theta_y**2 + theta_z**2)
+                reach_dist_min +
+                (reach_dist_max - reach_dist_min) *
+                np.random.uniform(
+                    low=0.0,
+                    high=1.0,
+                    size=500 * n
+                ) ** (1.0 / 3.0)
+        )
+        theta_y = reach_angle_max * np.random.uniform(low=-1, high=1, size=500 * n)
+        theta_z = reach_angle_max * np.random.uniform(low=-1, high=1, size=500 * n)
+        theta = np.sqrt(theta_y ** 2 + theta_z ** 2)
         r = r[theta <= reach_angle_max][0:n]
         theta_y = theta_y[theta <= reach_angle_max][0:n]
         theta_z = theta_z[theta <= reach_angle_max][0:n]
     elif config['RobotSettings']['command_type'] == "sample_from_file":
         r_set, theta_y_set, theta_z_set = np.loadtxt(
             config['RobotSettings']['command_file'],
-            skiprows = 1, 
-            delimiter = ',', 
-            unpack = True, 
-            usecols = (1, 2, 3)
-            )
-        rand_sample = np.random.choice(list(range(len(r_set))), replace = True, size = n)
+            skiprows=1,
+            delimiter=',',
+            unpack=True,
+            usecols=(1, 2, 3)
+        )
+        rand_sample = np.random.choice(list(range(len(r_set))), replace=True, size=n)
         r = r_set[rand_sample]
         theta_y = theta_y_set[rand_sample]
         theta_z = theta_z_set[rand_sample]
     elif config['RobotSettings']['command_type'] == "read_from_file":
         r, theta_y, theta_z = np.loadtxt(
             config['RobotSettings']['command_file'],
-            skiprows = 1,
-            delimiter = ',',
-            unpack = True,
-            usecols = (1, 2, 3)
-            )
+            skiprows=1,
+            delimiter=',',
+            unpack=True,
+            usecols=(1, 2, 3)
+        )
     else:
-        raise Exception("Invalid command type.") 
-    #pass generated commands though inverse kinematic transformation       
+        raise Exception("Invalid command type.")
+        # pass generated commands though inverse kinematic transformation
     Ax = np.sqrt(
-        xgimbal_xoffset**2 + r**2 - 2*xgimbal_xoffset*r*np.cos(theta_y)*np.cos(theta_z)
-        )
+        xgimbal_xoffset ** 2 + r ** 2 - 2 * xgimbal_xoffset * r * np.cos(theta_y) * np.cos(theta_z)
+    )
     gammay = -np.arcsin(
-        np.sin(theta_y)*
+        np.sin(theta_y) *
         np.sqrt(
-            (r*np.cos(theta_y)*np.cos(theta_z))**2 + 
-            (r*np.sin(theta_y)*np.cos(theta_z))**2
-            )/
+            (r * np.cos(theta_y) * np.cos(theta_z)) ** 2 +
+            (r * np.sin(theta_y) * np.cos(theta_z)) ** 2
+        ) /
         np.sqrt(
-            (xgimbal_xoffset - r*np.cos(theta_y)*np.cos(theta_z))**2 +
-            (r*np.sin(theta_y)*np.cos(theta_z))**2
-            )
+            (xgimbal_xoffset - r * np.cos(theta_y) * np.cos(theta_z)) ** 2 +
+            (r * np.sin(theta_y) * np.cos(theta_z)) ** 2
         )
-    gammaz = -np.arcsin(r*np.sin(theta_z)/Ax)
+    )
+    gammaz = -np.arcsin(r * np.sin(theta_z) / Ax)
     Ay = np.sqrt(
-        (ygimbal_to_joint - ygimbal_to_joint*np.cos(gammay)*np.cos(gammaz))**2 + 
-        (ygimbal_yoffset - ygimbal_to_joint*np.sin(gammay)*np.cos(gammaz))**2 + 
-        (ygimbal_to_joint*np.sin(gammaz))**2
-        )
+        (ygimbal_to_joint - ygimbal_to_joint * np.cos(gammay) * np.cos(gammaz)) ** 2 +
+        (ygimbal_yoffset - ygimbal_to_joint * np.sin(gammay) * np.cos(gammaz)) ** 2 +
+        (ygimbal_to_joint * np.sin(gammaz)) ** 2
+    )
     Az = np.sqrt(
-        (zgimbal_to_joint - zgimbal_to_joint*np.cos(gammay)*np.cos(gammaz))**2 + 
-        (zgimbal_to_joint*np.sin(gammay)*np.cos(gammaz))**2 + 
-        (zgimbal_zoffset - zgimbal_to_joint*np.sin(gammaz))**2
-        )
-    Ax = np.round((Ax - xgimbal_xoffset)/50*1024 + x_origin, decimals = 1)
-    Ay = np.round((Ay - ygimbal_yoffset)/50*1024 + y_origin, decimals = 1)
-    Az = np.round((Az - zgimbal_zoffset)/50*1024 + z_origin, decimals = 1)
-    #convert tranformed commands to appropriate data types/format
-    x = np.array2string(Ax, formatter = {'float_kind': lambda Ax: "%.1f" % Ax})
-    y = np.array2string(Ay, formatter = {'float_kind': lambda Ay: "%.1f" % Ay})
-    z = np.array2string(Az, formatter = {'float_kind': lambda Az: "%.1f" % Az})
-    r = np.array2string(r, formatter = {'float_kind': lambda r: "%.1f" % r})
-    theta_y = np.array2string(theta_y, formatter = {'float_kind': lambda theta_y: "%.1f" % theta_y})
-    theta_z = np.array2string(theta_z, formatter = {'float_kind': lambda theta_z: "%.1f" % theta_z})
+        (zgimbal_to_joint - zgimbal_to_joint * np.cos(gammay) * np.cos(gammaz)) ** 2 +
+        (zgimbal_to_joint * np.sin(gammay) * np.cos(gammaz)) ** 2 +
+        (zgimbal_zoffset - zgimbal_to_joint * np.sin(gammaz)) ** 2
+    )
+    Ax = np.round((Ax - xgimbal_xoffset) / 50 * 1024 + x_origin, decimals=1)
+    Ay = np.round((Ay - ygimbal_yoffset) / 50 * 1024 + y_origin, decimals=1)
+    Az = np.round((Az - zgimbal_zoffset) / 50 * 1024 + z_origin, decimals=1)
+    # convert tranformed commands to appropriate data types/format
+    x = np.array2string(Ax, formatter={'float_kind': lambda Ax: "%.1f" % Ax})
+    y = np.array2string(Ay, formatter={'float_kind': lambda Ay: "%.1f" % Ay})
+    z = np.array2string(Az, formatter={'float_kind': lambda Az: "%.1f" % Az})
+    r = np.array2string(r, formatter={'float_kind': lambda r: "%.1f" % r})
+    theta_y = np.array2string(theta_y, formatter={'float_kind': lambda theta_y: "%.1f" % theta_y})
+    theta_z = np.array2string(theta_z, formatter={'float_kind': lambda theta_z: "%.1f" % theta_z})
     x = x[1:-1] + ' '
     y = y[1:-1] + ' '
     z = z[1:-1] + ' '
     r = r[1:-1] + ' '
     theta_y = theta_y[1:-1] + ' '
-    theta_z = theta_z[1:-1] + ' '    
-    #load commands to robot
+    theta_z = theta_z[1:-1] + ' '
+    # load commands to robot
     try:
         _load_command_variable(rob_controller, 'x_command_pos', x)
         _load_command_variable(rob_controller, 'y_command_pos', y)
         _load_command_variable(rob_controller, 'z_command_pos', z)
     except Exception as varname:
         raise Exception("Failed to load: " + varname)
-    #record the loaded commands to the config
+    # record the loaded commands to the config
     config['RobotSettings']['x'] = x
     config['RobotSettings']['y'] = y
     config['RobotSettings']['z'] = z
@@ -306,6 +319,7 @@ def load_config_commands(rob_controller, config):
     config['RobotSettings']['theta_y'] = theta_y
     config['RobotSettings']['theta_z'] = theta_z
     return config
+
 
 def set_rob_controller(rob_controller, config):
     """Load all the robot settings to the robot controller.
@@ -326,6 +340,7 @@ def set_rob_controller(rob_controller, config):
     """
     set_calibration_config(config)  # Make sure current calibration settings are uploaded.
     config = load_config_commands(rob_controller, config)
+    load_config_calibration(rob_controller, config)
     _variable_write(rob_controller, 'pos_smoothing', str(config['RobotSettings']['pos_smoothing']))
     _variable_write(rob_controller, 'tol', str(config['RobotSettings']['tol']))
     _variable_write(rob_controller, 'period', str(config['RobotSettings']['period']))
@@ -342,5 +357,4 @@ def set_rob_controller(rob_controller, config):
     _variable_write(rob_controller, 'rew_zone_y_max', str(config['RobotSettings']['rew_zone_y_max']))
     _variable_write(rob_controller, 'rew_zone_z_min', str(config['RobotSettings']['rew_zone_z_min']))
     _variable_write(rob_controller, 'rew_zone_z_max', str(config['RobotSettings']['rew_zone_z_max']))
-    load_config_calibration(rob_controller, config)
     return config
