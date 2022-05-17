@@ -18,7 +18,7 @@ from sklearn.pipeline import make_pipeline
 # from Classification_Visualization import visualize_model, print_preds
 from scipy import ndimage
 import pickle
-import Trial_Classifier as TC
+import Trial_Classifier_Training as TC
 
 
 def norm_coordinates(kin_three_vector, transform=True, filtering=False):

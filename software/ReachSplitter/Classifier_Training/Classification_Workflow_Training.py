@@ -15,7 +15,7 @@ import joblib  # for saving sklearn models
 from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import accuracy_score
 from sklearn.linear_model import LogisticRegression
-import Classification_Utils as CU
+from PycharmProjects.ReachMaster.software.ReachSplitter.Classifier_Training import Classification_Utils as CU
 import pandas as pd
 import numpy as np
 import h5py
@@ -147,8 +147,6 @@ def main_2_kin_exp_blocks(kin_data, exp_data, all_block_names, save=False):
     print("Finished creating kin & exp blocks.")
     return all_kin_blocks, all_exp_blocks, all_kin_file_names, all_exp_file_names
 
-# TODO find matching exp to kin block
-# TODO change ML function below to new format
 
 def main_3_ml_feat_labels(vectorized_labels, label_key_names,
                           kin_blocks, exp_blocks, kin_file_names, exp_file_names,
@@ -454,9 +452,6 @@ def main_4_classify(final_ML_feature_array, final_labels_array, feat_names, load
     X_train_hand, y_train_hand = CU.remove_trials(X_train_reaches, y_train_reaches, predictions_hand, toRemove)
     print(X_train_hand.shape, y_train_hand.shape)
 
-    #clf = joblib.load('which_hand_classifier.joblib')
-    #print(clf)
-
     print(score_null, score_hand, score_reaches)
     print("Finished classification.")
 
@@ -538,7 +533,6 @@ if __name__ == "__main__":
                       'kin_block_RM160190917S2',
                       'kin_block_RM160190917S1',
                       'kin_block_RM160190918S1',
-
                       'kin_block_RM140190920S1',
                       'kin_block_RM140190918S2']
 
@@ -547,7 +541,6 @@ if __name__ == "__main__":
                       'exp_block_RM160190917S2',
                       'exp_block_RM160190917S1',
                       'exp_block_RM160190918S1',
-
                       'exp_block_RM140190920S1',
                       'exp_block_RM140190918S2']
 
@@ -558,9 +551,11 @@ if __name__ == "__main__":
     window_length = 4  # TODO change to preferences, default = 250
     pre = 2  # TODO change to preferences, default = 10
 
+    # Create vectorized list of input training labels
     if args.function == 1:
         vectorized_labels = main_1_vec_labels(labels, label_key_names, save=True)
 
+    # Create experimental input data (depreciated)
     elif args.function == 2:
         kin_blocks, exp_blocks, kin_file_names, exp_file_names = \
             main_2_kin_exp_blocks(kin_data_path, exp_data_path, block_names, save=True)
