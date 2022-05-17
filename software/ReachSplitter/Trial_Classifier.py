@@ -1,4 +1,4 @@
-""" Written by Brett Nelson, UC Berkeley/ Lawrence Berkeley National Labs, NSDS Lab 12/8/2020
+""" Written by Brett Nelson, UC Berkeley/ Lawrence Berkeley National Labs, NSDS Lab 5/18/2022
     Functions to classify trials, which are inputs from the ReachLoader class. Classes that are considered
     are the trial type (null, reach present), the number of reaches (1 vs multiple), and the handedness (L/R).
     If multiple reaches are present, additional classification is performed to determine the number of reaches.

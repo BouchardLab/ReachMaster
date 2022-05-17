@@ -1,14 +1,19 @@
-from sklearn.decomposition import PCA
-import pandas as pd
-import pickle
-import matplotlib.pyplot as plt
+"""Written by Brett Nelson, UC Berkeley/ Lawrence Berkeley National Labs, NSDS Lab 5/18/2022
+    Library intended to perform initial analysis on pre-processed 3-D kinematic predictions and experimental
+    sensor data from the ReachMaster system. Data is preprocessed using the /ReachPredict3D library. Recording
+    blocks are divided into coarse trials, then properly classified, segmented, and visualized. """
 import software.ReachSplitter.DataStream_Vis_Utils as utils
+import software.ReachSplitter.viz_utils as vu
+import software.Trial_Classifier as Classifier
 from moviepy.editor import *
 import skvideo
 import cv2
 import imageio
 import numpy as np
-import software.ReachSplitter.viz_utils as vu
+from sklearn.decomposition import PCA
+import pandas as pd
+import pickle
+import matplotlib.pyplot as plt
 from scipy.signal import find_peaks
 from scipy.ndimage import gaussian_filter1d
 import pdb
