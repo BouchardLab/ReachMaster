@@ -10,21 +10,14 @@ from unittest import TestCase
 
 import random
 import sklearn
-import Classification_Utils as CU
-import Trial_Classifier as TC
+from PycharmProjects.ReachMaster.software.ReachSplitter.Classifier_Training import Classification_Utils as CU
+import Trial_Classifier_Training as TC
 import pandas as pd
 import numpy as np
 import os
-import joblib  # for saving sklearn models
-from imblearn.over_sampling import SMOTE  # for adjusting class imbalances
 # classification
-from collections import Counter
 from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier
-from sklearn.model_selection import cross_val_score, RandomizedSearchCV, train_test_split, GridSearchCV, cross_validate
 from sklearn.pipeline import make_pipeline, Pipeline
-from matplotlib import pyplot
-from sklearn import preprocessing
-from sklearn.metrics import accuracy_score
 from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import accuracy_score
 from sklearn.linear_model import LogisticRegression, RidgeClassifier

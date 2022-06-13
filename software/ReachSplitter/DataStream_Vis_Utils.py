@@ -3,45 +3,6 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 
 
-### MAKE MATLAB BEAUTIFUL
-CB91_Blue = '#2CBDFE'
-CB91_Green = '#47DBCD'
-CB91_Pink = '#F3A0F2'
-CB91_Purple = '#9D2EC5'
-CB91_Violet = '#661D98'
-CB91_Amber = '#F5B14C'
-color_list = [CB91_Blue, CB91_Pink, CB91_Green, CB91_Amber,
-              CB91_Purple, CB91_Violet]
-plt.rcParams['axes.prop_cycle'] = plt.cycler(color=color_list)
-sns.set(font='Franklin Gothic Book',
-        rc={
-            'axes.axisbelow': False,
-            'axes.edgecolor': 'lightgrey',
-            'axes.facecolor': 'None',
-            'axes.grid': False,
-            'axes.labelcolor': 'dimgrey',
-            'axes.spines.right': False,
-            'axes.spines.top': False,
-            'figure.facecolor': 'white',
-            'lines.solid_capstyle': 'round',
-            'patch.edgecolor': 'w',
-            'patch.force_edgecolor': True,
-            'text.color': 'dimgrey',
-            'xtick.bottom': False,
-            'xtick.color': 'dimgrey',
-            'xtick.direction': 'out',
-            'xtick.top': False,
-            'ytick.color': 'dimgrey',
-            'ytick.direction': 'out',
-            'ytick.left': False,
-            'ytick.right': False})
-sns.set_context("notebook", rc={"font.size": 16,
-                                "axes.titlesize": 20,
-                                "axes.labelsize": 18})
-
-plt.legend(frameon=False)
-
-
 def get_single_trial(df, date, session, rat):
     rr = df.loc[df['Date'] == date]
     rr = rr.loc[rr['S'] == session]
@@ -54,8 +15,8 @@ def sample_around_point(list_of_data, n):
     for i in list_of_data:
         d = sample_around_n_rand(i, n)
         l.append(d)
-    l = np.asarray(l)
-    return l
+    li = np.asarray(l)
+    return li
 
 
 def sample_around_n_rand(i, n):
@@ -64,37 +25,8 @@ def sample_around_n_rand(i, n):
     return d
 
 
-def make_list_pts(x_array, y_array, z_array):
-    big_x = []
-    big_y = []
-    big_z = []
-    for c, v in enumerate(x_array):
-        cx = sample_around_point()
-    return cx
-
-
-def k3d_plot(x, y, z):
-    x_rewz = [4.2, 1.5, 1.5, 4.3]
-    y_rewz = [-4.5, 2.03, 2.03, -4.5]
-    z_rewz = [3.3, 10.4, -10.6, -13.1]
-    p = np.vstack([x, y, z]).T
-    indices = Triangulation(x_rewz, y_rewz).triangles.astype(np.uint32)
-    plot = k3d.plot(name='points')
-    plt_points = k3d.points(positions=p, point_size=0.2)
-    plot += plt_points
-    plt_mesh = k3d.mesh(np.vstack([x_rewz, y_rewz, z_rewz]).T, indices,
-                        color_map=k3d.colormaps.basic_color_maps.Jet,
-                        attribute=z,
-                        color_range=[-1.1, 2.01])
-    plot += plt_mesh
-    plt_points.shader = '3d'
-    plot.display()
-
-
 def oned_plot(X, Y, Z, zeros, x_rewz_s, y_rewz_s, z_rewz_s, savepath=False):
     sns.set_style("whitegrid", {'axes.grid': False})
-    elev = -180
-    azim = -90
     fig = plt.figure(figsize=(13, 13))
     ax = fig.add_subplot(1, 1, 1, projection='3d', label='Reaching Volume Projection')
     ax.scatter(X, zeros, zeros, marker='o', color='r', s=6, label='Reach Locations 1-D (X)')
@@ -120,7 +52,6 @@ def oned_plot(X, Y, Z, zeros, x_rewz_s, y_rewz_s, z_rewz_s, savepath=False):
     ax.set_ylabel('y(mm)')
     ax.set_zlabel('z(mm)')
     plt.legend()
-    # ax.view_init(elev,azim)
     plt.title('Reaching Workspace for Fall 2020 Experiments- 3D Points: 1-D Line(s)')
     if savepath:
         plt.savefig('Reaching_1dplanes_FinalF2020.png')
@@ -129,8 +60,6 @@ def oned_plot(X, Y, Z, zeros, x_rewz_s, y_rewz_s, z_rewz_s, savepath=False):
 
 def single_plot(X, Y, Z, x_rewz_s, y_rewz_s, z_rewz_s, savepath=False):
     sns.set_style("whitegrid", {'axes.grid': False})
-    elev = -180
-    azim = -90
     fig = plt.figure(figsize=(12, 12))
     ax = fig.add_subplot(1, 1, 1, projection='3d', label='Reaching Volume Projection')
     ax.scatter(X, Y, Z, marker='o', color='b', s=6, label='Reach Locations 2-D (X-Y Plane)')
@@ -157,8 +86,6 @@ def single_plot(X, Y, Z, x_rewz_s, y_rewz_s, z_rewz_s, savepath=False):
 
 def twod_plot(X, Y, Z, zeros, x_rewz_s, y_rewz_s, z_rewz_s, savepath=False, surfaces=False):
     sns.set_style("whitegrid", {'axes.grid': False})
-    elev = -180
-    azim = -90
     fig = plt.figure(figsize=(12, 12))
     ax = fig.add_subplot(1, 1, 1, projection='3d', label='Reaching Volume Projection')
     ax.scatter(X, Y, Z, marker='o', color='r', s=6, label='Reach Locations 2-D (X-Y)')
@@ -198,7 +125,6 @@ def twod_plot(X, Y, Z, zeros, x_rewz_s, y_rewz_s, z_rewz_s, savepath=False, surf
     ax.quiver(20, 10, 15, 0, 0, 1, length=8, linewidths=5, color='b', alpha=0.8)
     ax.text(24, -5, 30, '%s' % ('Z'), size=20, zorder=1,
             color='b')
-    # ax.quiver(xi,yi,zi,ui,vi,wi,arrow_length_ratio=1)
     ax.set_xlabel('x (pos mm)')
     ax.set_ylabel('y (pos mm)')
     ax.set_zlabel('z (pos mm)')
@@ -254,8 +180,6 @@ def inverse_xform_coords(r, theta_y, theta_z):
     Ax = np.round((Ax - xgimbal_xoffset) / 50 * 1024 + x_origin, decimals=1)  # bits
     Ay = np.round((Ay - ygimbal_yoffset) / 50 * 1024 + y_origin, decimals=1)  # bits
     Az = np.round((Az - zgimbal_zoffset) / 50 * 1024 + z_origin, decimals=1)  # bits
-    # convert tranformed commands to appropriate data types/format
-
     return Ax, Ay, Az
 
 
@@ -284,8 +208,6 @@ def forward_xform_coords(x, y, z):
     U3 = np.dot(c3, u)
     V3 = np.dot(c3, v)
     sd = np.dot(c3, c3)
-    cos_top = (Az_est ** 2 + Lz ** 2 - sd)
-    cos_bot = (2 * Az_est * Lz)
     r3 = np.sqrt(
         Az_est ** 2 + (Ly - Lz) ** 2 - (2 * Az_est * (Ly - Lz) * np.cos(np.pi - np.arccos((Az_est ** 2 + Lz ** 2 - sd)
                                                                                           / (2 * Az_est * Lz)))))

@@ -3,8 +3,6 @@
     Functions to visualize classifier and segmentation model results using the yellowbrick library.
     Functions are designed to work with a classifier of your choice.
 
-    Edited: 12/14/2020
-
 """
 
 from sklearn.metrics import f1_score

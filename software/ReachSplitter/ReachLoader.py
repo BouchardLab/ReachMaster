@@ -1,23 +1,24 @@
-from sklearn.decomposition import PCA
-import pandas as pd
-import pickle
-import matplotlib.pyplot as plt
+"""Written by Brett Nelson, UC Berkeley/ Lawrence Berkeley National Labs, NSDS Lab 5/18/2022
+    Library intended to perform initial analysis on pre-processed 3-D kinematic predictions and experimental
+    sensor data from the ReachMaster system. Data is preprocessed using the /ReachPredict3D library. Recording
+    blocks are divided into coarse trials, then properly classified, segmented, and visualized. """
 import software.ReachSplitter.DataStream_Vis_Utils as utils
-# import DataStream_Vis_Utils as utils
+import software.ReachSplitter.viz_utils as vu
+import software.Trial_Classifier as Classifier
 from moviepy.editor import *
 import skvideo
 import cv2
 import imageio
 import numpy as np
-import software.ReachSplitter.viz_utils as vu
-import scipy
+from sklearn.decomposition import PCA
+import pandas as pd
+import pickle
+import matplotlib.pyplot as plt
 from scipy.signal import find_peaks
 from scipy.ndimage import gaussian_filter1d
-# from software.ReachAnalysis.DataLoader import DataLoader as DL
 import pdb
 
-# Import ffmpeg to write videos here..
-
+# set ffmpeg path manually (if necessary)
 ffm_path = 'C:/Users/bassp/OneDrive/Desktop/ffmpeg/bin/'
 skvideo.setFFmpegPath(ffm_path)
 import skvideo.io
@@ -96,9 +97,7 @@ def gkern(input_vector, sig=1.0):
     return resulting_vector
 
 
-# noinspection PyTypeChecker,PyBroadException
 class ReachViz:
-    # noinspection SpellCheckingInspection
     def __init__(self, date, session, data_path, block_vid_file, kin_path, rat):
         self.endpoint_error, self.x_endpoint_error, self.y_endpoint_error, self.z_endpoint_error = 0, 0, 0, 0
         self.preprocessed_rmse, self.outlier_list, self.transformation_matrix = [], [], []
@@ -281,30 +280,6 @@ class ReachViz:
         self.trial_stop_vectors = self.block_exp_df['r_stop'].values[0]
         print('Number of Trials: ' + str(len(self.trial_start_vectors)))
         return
-
-    def align_workspace_coordinates_session(self, plot_handle_transformation=False):
-        """ Function to align our potentiometer-based coordinate system with our DeepLabCut predictions
-            coordinate system"""
-        x_int = 0.15
-        y_int = 0.15
-        z_int = 0.4
-        self.handle = np.mean(
-            [self.kinematic_block[self.kinematic_block.columns[0:3]].values[100:500, :],
-             self.kinematic_block[self.kinematic_block.columns[3:6]].values[100:500, :]], axis=0)
-        # Take robot data from entire block
-        self.extract_sensor_data(100, 500, check_lick=False)
-        df_matrix = np.vstack([self.x_robot, self.y_robot, self.z_robot]).T
-        # Use input data to generate linear transformation matrix between DLC handle coordinates and pot coordinates
-        self.handle[:, 0] = self.handle[:, 0] + x_int
-        self.handle[:, 1] = self.handle[:, 1] + y_int
-        self.handle[:, 2] = self.handle[:, 2] + z_int
-        self.transformation_matrix = find_linear_transformation_between_DLC_and_robot(self.handle, df_matrix)
-        if plot_handle_transformation:
-            handle_transformed = apply_linear_transformation_to_DLC_data(self.handle, self.transformation_matrix)
-            plot_session_alignment(self.handle[:, 0], df_matrix[:, 0], handle_transformed[:, 0])
-            plot_session_alignment(self.handle[:, 1], df_matrix[:, 1], handle_transformed[:, 1], dim='y')
-            plot_session_alignment(self.handle[:, 2], df_matrix[:, 2], handle_transformed[:, 2], dim='z')
-        return self.transformation_matrix
 
     def extract_sensor_data(self, idxstrt, idxstp, check_lick=True, filter=False):
         """ Function to extract probability thresholded sensor data from ReachMaster. Data has the option for it to be
@@ -541,19 +516,6 @@ class ReachViz:
         # Zero out any large outliers in the data, as well as any low probability events.
         self.zero_out_outliers()
         self.assign_final_variables()
-        # Calculate principal components
-        self.pos_v_a_pc, self.pos_v_a_pc_variance = get_principle_components(self.pos_holder, vel=self.vel_holder,
-                                                                             acc=self.acc_holder)
-        self.left_arm_pc_pos_v_a, self.left_arm_pos_v_a_pc_variance = get_principle_components(self.pos_holder[2:14],
-                                                                                               vel=self.vel_holder[
-                                                                                                   2:14],
-                                                                                               acc=self.acc_holder[
-                                                                                                   2:14])
-        self.right_arm_pc_pos_v_a, self.right_arm_pos_v_a_pc_variance = get_principle_components(self.pos_holder[14:-1],
-                                                                                                 vel=self.vel_holder[
-                                                                                                     14:-1],
-                                                                                                 acc=self.acc_holder[
-                                                                                                     14:-1])
         # method to obtain variables for plotting
         right_speeds = np.mean(self.uninterpolated_right_palm_v, axis=1)
         left_speeds = np.mean(self.uninterpolated_left_palm_v, axis=1)
@@ -590,7 +552,6 @@ class ReachViz:
                                min(self.right_palm[1, :] - self.handle[1, :]))
         z_distance_error = min(min(self.left_palm[2, :] - self.handle[2, :]),
                                min(self.right_palm[2, :] - self.handle[2, :]))
-
         return total_distance_error, x_distance_error, y_distance_error, z_distance_error
 
     def preprocess_kinematics(self, p_thresh, spline=0.05):
@@ -598,7 +559,7 @@ class ReachViz:
             o_positions = np.asarray(pos)
             probs = self.probabilities[di]
             prob_outliers = self.threshold_data_with_probabilities(probs, p_thresh=p_thresh)
-            svd, acc, speed_c = self.calculate_kinematics_from_position(np.copy(pos), spline=False)
+            svd, acc, speed_c = self.calculate_kinematics_from_position(np.copy(pos))
             self.raw_speeds.append(speed_c)
             v_outlier_index = np.where(svd > 1.2)
             possi, num_int, gap_ind = vu.interpolate_3d_vector(np.copy(o_positions), v_outlier_index, prob_outliers)
@@ -607,7 +568,7 @@ class ReachViz:
             except:
                 print('bad filter')
             try:
-                v, a, s = self.calculate_kinematics_from_position(np.copy(filtered_pos), spline=True)
+                v, a, s = self.calculate_kinematics_from_position(np.copy(filtered_pos))
             except:
                 print('bf')
             # Find and save still-present outliers in the data
@@ -675,7 +636,7 @@ class ReachViz:
          self.right_end_base_o, self.right_end_tip_o] = self.outlier_list
         return
 
-    def calculate_kinematics_from_position(self, pos_v, spline=False):
+    def calculate_kinematics_from_position(self, pos_v):
         """ Function that calculates velocity, speed, and acceleration on a per-bodypart basis."""
         v_holder = np.zeros(pos_v.shape)
         a_holder = np.zeros(pos_v.shape)
@@ -691,22 +652,13 @@ class ReachViz:
                 v_holder = vu.cubic_spline_smoothing(v_holder, .1)
             except:
                 print('Vel holder')
-            # v_holder = scipy.signal.medfilt2d(v_holder, 1)
         # Calculate speed, acceleration from smoothed (no time-dependent jumps) velocities
-        try:
-            for ddx in range(0, pos_v.shape[0]):
-                speed_holder[ddx] = np.sqrt(v_holder[ddx, 0] ** 2 + v_holder[ddx, 1] ** 2 + v_holder[ddx, 2] ** 2)
-            for ddx in range(0, pos_v.shape[0]):
-                a_holder[ddx, :] = np.copy(
-                    (v_holder[ddx, :] - v_holder[ddx - 1, :]) / (self.time_vector[ddx] - self.time_vector[ddx - 1]))
-        except:
-            pass
-
-        try:
-            if spline:
-                speed_holder = gkern(speed_holder, 3)
-        except:
-            print('Speed Filter')
+        for ddx in range(0, pos_v.shape[0]):
+            speed_holder[ddx] = np.sqrt(v_holder[ddx, 0] ** 2 + v_holder[ddx, 1] ** 2 + v_holder[ddx, 2] ** 2)
+        for ddx in range(0, pos_v.shape[0]):
+            a_holder[ddx, :] = np.copy(
+                (v_holder[ddx, :] - v_holder[ddx - 1, :]) / (self.time_vector[ddx] - self.time_vector[ddx - 1]))
+            speed_holder = gkern(speed_holder, 3)
         return np.asarray(v_holder), np.asarray(a_holder), np.asarray(speed_holder)
 
     def tug_of_war_flag(self):
@@ -924,7 +876,8 @@ class ReachViz:
                 except:
                     self.reach_start_time = self.left_start_times[0]
                     self.reach_end_time = self.left_reach_end_times[-1]
-            elif all(ix is not None for ix in self.left_start_times) and all(ix is not None for ix in self.right_start_times):
+            elif all(ix is not None for ix in self.left_start_times) and all(
+                    ix is not None for ix in self.right_start_times):
                 try:
                     self.reach_start_time = min(self.right_start_times + self.left_start_times)
                     self.reach_end_time = (self.right_reach_end_times + self.left_reach_end_times).sort()[-1]
@@ -936,7 +889,8 @@ class ReachViz:
             self.reach_start_time = 0
             self.reach_end_time = 200
             print('No LR')
-        if all(ix is not None for ix in self.left_palm_maxima) and all(ix is not None for ix in self.right_palm_maxima): # no reach flag
+        if all(ix is not None for ix in self.left_palm_maxima) and all(
+                ix is not None for ix in self.right_palm_maxima):  # no reach flag
             pass
         elif all(ix is not None for ix in self.left_palm_maxima):
             self.num_peaks = len(self.left_palm_maxima)
@@ -966,7 +920,7 @@ class ReachViz:
         plt.close()
         return
 
-    def segment_data_into_reach_dict(self, trial_num, error_flag = False):
+    def segment_data_into_reach_dict(self, trial_num, error_flag=False):
         """ Function that iterates over reaching indices,
             saves the segmented data and corresponding class labels into a dataframe.
         """
@@ -999,268 +953,269 @@ class ReachViz:
             pass
         try:
             self.save_dict = {'nose_vx': np.asarray(self.nose_v[:, 0]), 'nose_vy': self.nose_v[:, 1],
-                          'nose_vz': self.nose_v[:, 2],
-                          'handle_vx': self.handle_v[:, 0], 'handle_vy': self.handle_v[:, 1],
-                          'handle_vz': self.handle_v[:, 2],
-                          'left_shoulder_vx': self.left_shoulder_v[:, 0],
-                          'left_shoulder_vy': self.left_shoulder_v[:, 1],
-                          'left_shoulder_vz': self.left_shoulder_v[:, 2],
-                          'left_forearm_vx': self.left_forearm_v[:, 0],
-                          'left_forearm_vy': self.left_forearm_v[:, 1],
-                          'left_forearm_vz': self.left_forearm_v[:, 2],
-                          'left_wrist_vx': self.left_wrist_v[:, 0], 'left_wrist_vy': self.left_wrist_v[:, 1],
-                          'left_wrist_vz': self.left_wrist_v[:, 2],
-                          'left_palm_vx': self.left_palm_v[:, 0], 'left_palm_vy': self.left_palm_v[:, 1],
-                          'left_palm_vz': self.left_palm_v[:, 2],
-                          'left_index_base_vx': self.left_index_base_v[:, 0],
-                          'left_index_base_vy': self.left_index_base_v[:, 1],
-                          'left_index_base_vz': self.left_index_base_v[:, 2],
-                          'left_index_tip_vx': self.left_index_tip_v[:, 0],
-                          'left_index_tip_vy': self.left_index_tip_v[:, 1],
-                          'left_index_tip_vz': self.left_index_tip_v[:, 2],
-                          'left_middle_base_vx': self.left_middle_base_v[:, 0],
-                          'left_middle_base_vy': self.left_middle_base_v[:, 1],
-                          'left_middle_base_vz': self.left_middle_base_v[:, 2],
-                          'left_middle_tip_vx': self.left_middle_tip_v[:, 0],
-                          'left_middle_tip_vy': self.left_middle_tip_v[:, 1],
-                          'left_middle_tip_vz': self.left_middle_tip_v[:, 2],
-                          'left_third_base_vx': self.left_third_base_v[:, 0],
-                          'left_third_base_vy': self.left_third_base_v[:, 1],
-                          'left_third_base_vz': self.left_third_base_v[:, 2],
-                          'left_third_tip_vx': self.left_third_tip_v[:, 0],
-                          'left_third_tip_vy': self.left_third_tip_v[:, 1],
-                          'left_third_tip_vz': self.left_third_tip_v[:, 2],
-                          'left_end_base_vx': self.left_end_base_v[:, 0],
-                          'left_end_base_vy': self.left_end_base_v[:, 1],
-                          'left_end_base_vz': self.left_end_base_v[:, 2],
-                          'left_end_tip_vx': self.left_end_tip_v[:, 0],
-                          'left_end_tip_vy': self.left_end_tip_v[:, 1],
-                          'left_end_tip_vz': self.left_end_tip_v[:, 2],
-                          'right_shoulder_vx': self.right_shoulder_v[:, 0],
-                          'right_shoulder_vy': self.right_shoulder_v[:, 1],
-                          'right_shoulder_vz': self.right_shoulder_v[:, 2],
-                          'right_forearm_vx': self.right_forearm_v[:, 0],
-                          'right_forearm_vy': self.right_forearm_v[:, 1],
-                          'right_forearm_vz': self.right_forearm_v[:, 2],
-                          'right_wrist_vx': self.right_wrist_v[:, 0], 'right_wrist_vy': self.right_wrist_v[:, 1],
-                          'right_wrist_vz': self.right_wrist_v[:, 2],
-                          'right_palm_vx': self.right_palm_v[:, 0], 'right_palm_vy': self.right_palm_v[:, 1],
-                          'right_palm_vz': self.right_palm_v[:, 2],
-                          'right_index_base_vx': self.right_index_base_v[:, 0],
-                          'right_index_base_vy': self.right_index_base_v[:, 1],
-                          'right_index_base_vz': self.right_index_base_v[:, 1],
-                          'right_index_tip_vx': self.right_index_tip_v[:, 0],
-                          'right_index_tip_vy': self.right_index_tip_v[:, 1],
-                          'right_index_tip_vz': self.right_index_tip_v[:, 1],
-                          'right_middle_base_vx': self.right_middle_base_v[:, 0],
-                          'right_middle_base_vy': self.right_middle_base_v[:, 1],
-                          'right_middle_base_vz': self.right_middle_base_v[:, 2],
-                          'right_middle_tip_vx': self.right_middle_tip_v[:, 0],
-                          'right_middle_tip_vy': self.right_middle_tip_v[:, 1],
-                          'right_middle_tip_vz': self.right_middle_tip_v[:, 2],
-                          'right_third_base_vx': self.right_third_base_v[:, 0],
-                          'right_third_base_vy': self.right_third_base_v[:, 1],
-                          'right_third_base_vz': self.right_third_base_v[:, 2],
-                          'right_third_tip_vx': self.right_third_tip_v[:, 0],
-                          'right_third_tip_vy': self.right_third_tip_v[:, 1],
-                          'right_third_tip_vz': self.right_third_tip_v[:, 2],
-                          'right_end_base_vx': self.right_end_base_v[:, 0],
-                          'right_end_base_vy': self.right_end_base_v[:, 1],
-                          'right_end_base_vz': self.right_end_base_v[:, 2],
-                          'right_end_tip_vx': self.right_end_tip_v[:, 0],
-                          'right_end_tip_vy': self.right_end_tip_v[:, 1],
-                          'right_end_tip_vz': self.right_end_tip_v[:, 2],
-                          # Accelerations
-                          'nose_ax': self.nose_a[:, 0], 'nose_ay': self.nose_a[:, 1], 'nose_az': self.nose_a[:, 2],
-                          'handle_ax': self.handle_a[:, 0], 'handle_ay': self.handle_a[:, 1],
-                          'handle_az': self.handle_a[:, 2],
-                          'left_shoulder_ax': self.left_shoulder_a[:, 0],
-                          'left_shoulder_ay': self.left_shoulder_a[:, 1],
-                          'left_shoulder_az': self.left_shoulder_a[:, 2],
-                          'left_forearm_ax': self.left_forearm_a[:, 0],
-                          'left_forearm_ay': self.left_forearm_a[:, 1],
-                          'left_forearm_az': self.left_forearm_a[:, 2],
-                          'left_wrist_ax': self.left_wrist_a[:, 0], 'left_wrist_ay': self.left_wrist_a[:, 1],
-                          'left_wrist_az': self.left_wrist_a[:, 2],
-                          'left_palm_ax': self.left_palm_a[:, 0], 'left_palm_ay': self.left_palm_a[:, 1],
-                          'left_palm_az': self.left_palm_a[:, 2],
-                          'left_index_base_ax': self.left_index_base_a[:, 0],
-                          'left_index_base_ay': self.left_index_base_a[:, 1],
-                          'left_index_base_az': self.left_index_base_a[:, 2],
-                          'left_index_tip_ax': self.left_index_tip_a[:, 0],
-                          'left_index_tip_ay': self.left_index_tip_a[:, 1],
-                          'left_index_tip_az': self.left_index_tip_a[:, 2],
-                          'left_middle_base_ax': self.left_middle_base_a[:, 0],
-                          'left_middle_base_ay': self.left_middle_base_a[:, 1],
-                          'left_middle_base_az': self.left_middle_base_a[:, 2],
-                          'left_middle_tip_ax': self.left_middle_tip_a[:, 0],
-                          'left_middle_tip_ay': self.left_middle_tip_a[:, 1],
-                          'left_middle_tip_az': self.left_middle_tip_a[:, 2],
-                          'left_third_base_ax': self.left_third_base_a[:, 0],
-                          'left_third_base_ay': self.left_third_base_a[:, 1],
-                          'left_third_base_az': self.left_third_base_a[:, 2],
-                          'left_third_tip_ax': self.left_third_tip_a[:, 0],
-                          'left_third_tip_ay': self.left_third_tip_a[:, 1],
-                          'left_third_tip_az': self.left_third_tip_a[:, 2],
-                          'left_end_base_ax': self.left_end_base_a[:, 0],
-                          'left_end_base_ay': self.left_end_base_a[:, 1],
-                          'left_end_base_az': self.left_end_base_a[:, 2],
-                          'left_end_tip_ax': self.left_end_tip_a[:, 0],
-                          'left_end_tip_ay': self.left_end_tip_a[:, 1],
-                          'left_end_tip_az': self.left_end_tip_a[:, 2],
-                          'right_shoulder_ax': self.right_shoulder_a[:, 0],
-                          'right_shoulder_ay': self.right_shoulder_a[:, 1],
-                          'right_shoulder_az': self.right_shoulder_a[:, 2],
-                          'right_forearm_ax': self.right_forearm_a[:, 0],
-                          'right_forearm_ay': self.right_forearm_a[:, 1],
-                          'right_forearm_az': self.right_forearm_a[:, 2],
-                          'right_wrist_ax': self.right_wrist_a[:, 0], 'right_wrist_ay': self.right_wrist_a[:, 1],
-                          'right_wrist_az': self.right_wrist_a[:, 2],
-                          'right_palm_ax': self.right_palm_a[:, 0], 'right_palm_ay': self.right_palm_a[:, 1],
-                          'right_palm_az': self.right_palm_a[:, 2],
-                          'right_index_base_ax': self.right_index_base_a[:, 0],
-                          'right_index_base_ay': self.right_index_base_a[:, 1],
-                          'right_index_base_az': self.right_index_base_a[:, 1],
-                          'right_index_tip_ax': self.right_index_tip_a[:, 0],
-                          'right_index_tip_ay': self.right_index_tip_a[:, 1],
-                          'right_index_tip_az': self.right_index_tip_a[:, 1],
-                          'right_middle_base_ax': self.right_middle_base_a[:, 0],
-                          'right_middle_base_ay': self.right_middle_base_a[:, 1],
-                          'right_middle_base_az': self.right_middle_base_a[:, 2],
-                          'right_middle_tip_ax': self.right_middle_tip_a[:, 0],
-                          'right_middle_tip_ay': self.right_middle_tip_a[:, 1],
-                          'right_middle_tip_az': self.right_middle_tip_a[:, 2],
-                          'right_third_base_ax': self.right_third_base_a[:, 0],
-                          'right_third_base_ay': self.right_third_base_a[:, 1],
-                          'right_third_base_az': self.right_third_base_a[:, 2],
-                          'right_third_tip_ax': self.right_third_tip_a[:, 0],
-                          'right_third_tip_ay': self.right_third_tip_a[:, 1],
-                          'right_third_tip_az': self.right_third_tip_a[:, 2],
-                          'right_end_base_ax': self.right_end_base_a[:, 0],
-                          'right_end_base_ay': self.right_end_base_a[:, 1],
-                          'right_end_base_az': self.right_end_base_a[:, 2],
-                          'right_end_tip_ax': self.right_end_tip_a[:, 0],
-                          'right_end_tip_ay': self.right_end_tip_a[:, 1],
-                          'right_end_tip_az': self.right_end_tip_a[:, 2],
-                          # Speeds
-                          'nose_s': self.nose_s, 'handle_s': self.handle_s, 'left_shoulder_s': self.left_shoulder_s,
-                          'left_forearm_s': self.left_forearm_s, 'left_wrist_s': self.left_wrist_s,
-                          'left_palm_s': self.left_palm_s, 'left_index_base_s': self.left_index_base_s,
-                          'left_index_tip_s': self.left_index_tip_s, 'left_middle_base_s': self.left_middle_base_s,
-                          'left_middle_tip_s': self.left_middle_tip_s,
-                          'left_third_base_s': self.left_third_base_s, 'left_third_tip_s': self.left_third_tip_s,
-                          'left_end_base_s': self.left_end_base_s,
-                          'left_end_tip_s': self.left_end_tip_s, 'right_shoulder_s': self.right_shoulder_s,
-                          'right_forearm_s': self.right_forearm_s, 'right_wrist_s': self.right_wrist_s,
-                          'right_palm_s': self.right_palm_s, 'right_index_base_s': self.right_index_base_s,
-                          'right_index_tip_s': self.right_index_tip_s,
-                          'right_middle_base_s': self.right_middle_base_s,
-                          'right_middle_tip_s': self.right_middle_tip_s,
-                          'right_third_base_s': self.right_third_base_s,
-                          'right_third_tip_s': self.right_third_tip_s,
-                          'right_end_base_s': self.right_end_base_s, 'right_end_tip_s': self.right_end_tip_s,
-                          # Positions
-                          'nose_px': self.nose[:, 0], 'nose_py': self.nose[:, 1], 'nose_pz': self.nose[:, 2],
-                          'handle_px': self.handle[:, 0], 'handle_py': self.handle[:, 1],
-                          'handle_pz': self.handle[:, 2],
-                          'left_shoulder_px': self.left_shoulder[:, 0],
-                          'left_shoulder_py': self.left_shoulder[:, 1],
-                          'left_shoulder_pz': self.left_shoulder[:, 2],
-                          'left_forearm_px': self.left_forearm[:, 0], 'left_forearm_py': self.left_forearm[:, 1],
-                          'left_forearm_pz': self.left_forearm[:, 2],
-                          'left_wrist_px': self.left_wrist[:, 0], 'left_wrist_py': self.left_wrist[:, 1],
-                          'left_wrist_pz': self.left_wrist[:, 2],
-                          'left_palm_px': self.left_palm[:, 0], 'left_palm_py': self.left_palm[:, 1],
-                          'left_palm_pz': self.left_palm[:, 2],
-                          'left_index_base_px': self.left_index_base[:, 0],
-                          'left_index_base_py': self.left_index_base[:, 1],
-                          'left_index_base_pz': self.left_index_base[:, 2],
-                          'left_index_tip_px': self.left_index_tip[:, 0],
-                          'left_index_tip_py': self.left_index_tip[:, 1],
-                          'left_index_tip_pz': self.left_index_tip[:, 2],
-                          'left_middle_base_px': self.left_middle_base[:, 0],
-                          'left_middle_base_py': self.left_middle_base[:, 1],
-                          'left_middle_base_pz': self.left_middle_base[:, 2],
-                          'left_middle_tip_px': self.left_middle_tip[:, 0],
-                          'left_middle_tip_py': self.left_middle_tip[:, 1],
-                          'left_middle_tip_pz': self.left_middle_tip[:, 2],
-                          'left_third_base_px': self.left_third_base[:, 0],
-                          'left_third_base_py': self.left_third_base[:, 1],
-                          'left_third_base_pz': self.left_third_base[:, 2],
-                          'left_third_tip_px': self.left_third_tip[:, 0],
-                          'left_third_tip_py': self.left_third_tip[:, 1],
-                          'left_third_tip_pz': self.left_third_tip[:, 2],
-                          'left_end_base_px': self.left_end_base[:, 0],
-                          'left_end_base_py': self.left_end_base[:, 1],
-                          'left_end_base_pz': self.left_end_base[:, 2],
-                          'left_end_tip_px': self.left_end_tip[:, 0], 'left_end_tip_py': self.left_end_tip[:, 1],
-                          'left_end_tip_pz': self.left_end_tip_a[:, 2],
-                          'right_shoulder_px': self.right_shoulder[:, 0],
-                          'right_shoulder_py': self.right_shoulder[:, 1],
-                          'right_shoulder_pz': self.right_shoulder[:, 2],
-                          'right_forearm_px': self.right_forearm[:, 0],
-                          'right_forearm_py': self.right_forearm[:, 1],
-                          'right_forearm_pz': self.right_forearm[:, 2],
-                          'right_wrist_px': self.right_wrist[:, 0], 'right_wrist_py': self.right_wrist[:, 1],
-                          'right_wrist_pz': self.right_wrist[:, 2],
-                          'right_palm_px': self.right_palm[:, 0], 'right_palm_py': self.right_palm[:, 1],
-                          'right_palm_pz': self.right_palm[:, 2],
-                          'right_index_base_px': self.right_index_base[:, 0],
-                          'right_index_base_py': self.right_index_base[:, 1],
-                          'right_index_base_pz': self.right_index_base[:, 1],
-                          'right_index_tip_px': self.right_index_tip[:, 0],
-                          'right_index_tip_py': self.right_index_tip[:, 1],
-                          'right_index_tip_pz': self.right_index_tip[:, 1],
-                          'right_middle_base_px': self.right_middle_base[:, 0],
-                          'right_middle_base_py': self.right_middle_base[:, 1],
-                          'right_middle_base_pz': self.right_middle_base[:, 2],
-                          'right_middle_tip_px': self.right_middle_tip[:, 0],
-                          'right_middle_tip_py': self.right_middle_tip[:, 1],
-                          'right_middle_tip_pz': self.right_middle_tip[:, 2],
-                          'right_third_base_px': self.right_third_base[:, 0],
-                          'right_third_base_py': self.right_third_base[:, 1],
-                          'right_third_base_pz': self.right_third_base[:, 2],
-                          'right_third_tip_px': self.right_third_tip[:, 0],
-                          'right_third_tip_py': self.right_third_tip[:, 1],
-                          'right_third_tip_pz': self.right_third_tip[:, 2],
-                          'right_end_base_px': self.right_end_base[:, 0],
-                          'right_end_base_py': self.right_end_base[:, 1],
-                          'right_end_base_pz': self.right_end_base[:, 2],
-                          'right_end_tip_px': self.right_end_tip[:, 0],
-                          'right_end_tip_py': self.right_end_tip[:, 1],
-                          'right_end_tip_pz': self.right_end_tip[:, 2],
-                          #            # Outliers
-                          'nose_o': self.nose_o, 'handle_o': self.handle_o, 'left_shoulder_o': self.left_shoulder_o,
-                          'left_forearm_o': self.left_forearm_o, 'left_wrist_o': self.left_wrist_o,
-                          'left_palm_o': self.left_palm_o, 'left_index_base_o': self.left_index_base_o,
-                          'left_index_tip_o': self.left_index_tip_o, 'left_middle_base_o': self.left_middle_base_o,
-                          'left_middle_tip_o': self.left_middle_tip_o,
-                          'left_third_base_o': self.left_third_base_o, 'left_third_tip_o': self.left_third_tip_o,
-                          'left_end_base_o': self.left_end_base_o,
-                          'left_end_tip_o': self.left_end_tip_o, 'right_shoulder_o': self.right_shoulder_o,
-                          'right_forearm_o': self.right_forearm_o, 'right_wrist_o': self.right_wrist_o,
-                          'right_palm_o': self.right_palm_o, 'right_index_base_o': self.right_index_base_o,
-                          'right_index_tip_o': self.right_index_tip_o,
-                          'right_middle_base_o': self.right_middle_base_o,
-                          'right_middle_tip_o': self.right_middle_tip_o,
-                          'right_third_base_o': self.right_third_base_o,
-                          'right_third_tip_o': self.right_third_tip_o,
-                          'right_end_base_o': self.right_end_base_o, 'right_end_tip_o': self.right_end_tip_o,
-                          # Kinematic Features
-                          'reach_hand': self.arm_id_list, 'right_start_time': self.right_start_times,
-                          'left_start_time': self.left_start_times, 'reach_start': self.reach_start_time, 'reach_duration':self.reach_duration,
-                          'reach_end': self.reach_end_time,
-                          'left_end_time': self.left_reach_end_times, 'right_end_time': self.right_reach_end_times,
-                          'left_reach_peak': self.left_peak_times, 'right_reach_peak': self.right_peak_times,
-                          'endpoint_error': self.endpoint_error, 'endpoint_error_x': self.x_endpoint_error,
-                          'endpoint_error_y': self.y_endpoint_error, 'endpoint_error_z': self.z_endpoint_error,
-                          # Sensor Data
-                          'handle_moving_sensor': self.h_moving_sensor, 'lick_beam': self.lick_vector,
-                          'reward_zone': self.reward_zone_sensor, 'time_vector': self.time_vector,
-                          'response_sensor': self.exp_response_sensor, 'x_rob': self.x_robot, 'y_rob': self.y_robot,
-                          'z_rob': self.z_robot, 'error_flag':error_flag
-                          }
-        # Create dataframe object from df, containing
+                              'nose_vz': self.nose_v[:, 2],
+                              'handle_vx': self.handle_v[:, 0], 'handle_vy': self.handle_v[:, 1],
+                              'handle_vz': self.handle_v[:, 2],
+                              'left_shoulder_vx': self.left_shoulder_v[:, 0],
+                              'left_shoulder_vy': self.left_shoulder_v[:, 1],
+                              'left_shoulder_vz': self.left_shoulder_v[:, 2],
+                              'left_forearm_vx': self.left_forearm_v[:, 0],
+                              'left_forearm_vy': self.left_forearm_v[:, 1],
+                              'left_forearm_vz': self.left_forearm_v[:, 2],
+                              'left_wrist_vx': self.left_wrist_v[:, 0], 'left_wrist_vy': self.left_wrist_v[:, 1],
+                              'left_wrist_vz': self.left_wrist_v[:, 2],
+                              'left_palm_vx': self.left_palm_v[:, 0], 'left_palm_vy': self.left_palm_v[:, 1],
+                              'left_palm_vz': self.left_palm_v[:, 2],
+                              'left_index_base_vx': self.left_index_base_v[:, 0],
+                              'left_index_base_vy': self.left_index_base_v[:, 1],
+                              'left_index_base_vz': self.left_index_base_v[:, 2],
+                              'left_index_tip_vx': self.left_index_tip_v[:, 0],
+                              'left_index_tip_vy': self.left_index_tip_v[:, 1],
+                              'left_index_tip_vz': self.left_index_tip_v[:, 2],
+                              'left_middle_base_vx': self.left_middle_base_v[:, 0],
+                              'left_middle_base_vy': self.left_middle_base_v[:, 1],
+                              'left_middle_base_vz': self.left_middle_base_v[:, 2],
+                              'left_middle_tip_vx': self.left_middle_tip_v[:, 0],
+                              'left_middle_tip_vy': self.left_middle_tip_v[:, 1],
+                              'left_middle_tip_vz': self.left_middle_tip_v[:, 2],
+                              'left_third_base_vx': self.left_third_base_v[:, 0],
+                              'left_third_base_vy': self.left_third_base_v[:, 1],
+                              'left_third_base_vz': self.left_third_base_v[:, 2],
+                              'left_third_tip_vx': self.left_third_tip_v[:, 0],
+                              'left_third_tip_vy': self.left_third_tip_v[:, 1],
+                              'left_third_tip_vz': self.left_third_tip_v[:, 2],
+                              'left_end_base_vx': self.left_end_base_v[:, 0],
+                              'left_end_base_vy': self.left_end_base_v[:, 1],
+                              'left_end_base_vz': self.left_end_base_v[:, 2],
+                              'left_end_tip_vx': self.left_end_tip_v[:, 0],
+                              'left_end_tip_vy': self.left_end_tip_v[:, 1],
+                              'left_end_tip_vz': self.left_end_tip_v[:, 2],
+                              'right_shoulder_vx': self.right_shoulder_v[:, 0],
+                              'right_shoulder_vy': self.right_shoulder_v[:, 1],
+                              'right_shoulder_vz': self.right_shoulder_v[:, 2],
+                              'right_forearm_vx': self.right_forearm_v[:, 0],
+                              'right_forearm_vy': self.right_forearm_v[:, 1],
+                              'right_forearm_vz': self.right_forearm_v[:, 2],
+                              'right_wrist_vx': self.right_wrist_v[:, 0], 'right_wrist_vy': self.right_wrist_v[:, 1],
+                              'right_wrist_vz': self.right_wrist_v[:, 2],
+                              'right_palm_vx': self.right_palm_v[:, 0], 'right_palm_vy': self.right_palm_v[:, 1],
+                              'right_palm_vz': self.right_palm_v[:, 2],
+                              'right_index_base_vx': self.right_index_base_v[:, 0],
+                              'right_index_base_vy': self.right_index_base_v[:, 1],
+                              'right_index_base_vz': self.right_index_base_v[:, 1],
+                              'right_index_tip_vx': self.right_index_tip_v[:, 0],
+                              'right_index_tip_vy': self.right_index_tip_v[:, 1],
+                              'right_index_tip_vz': self.right_index_tip_v[:, 1],
+                              'right_middle_base_vx': self.right_middle_base_v[:, 0],
+                              'right_middle_base_vy': self.right_middle_base_v[:, 1],
+                              'right_middle_base_vz': self.right_middle_base_v[:, 2],
+                              'right_middle_tip_vx': self.right_middle_tip_v[:, 0],
+                              'right_middle_tip_vy': self.right_middle_tip_v[:, 1],
+                              'right_middle_tip_vz': self.right_middle_tip_v[:, 2],
+                              'right_third_base_vx': self.right_third_base_v[:, 0],
+                              'right_third_base_vy': self.right_third_base_v[:, 1],
+                              'right_third_base_vz': self.right_third_base_v[:, 2],
+                              'right_third_tip_vx': self.right_third_tip_v[:, 0],
+                              'right_third_tip_vy': self.right_third_tip_v[:, 1],
+                              'right_third_tip_vz': self.right_third_tip_v[:, 2],
+                              'right_end_base_vx': self.right_end_base_v[:, 0],
+                              'right_end_base_vy': self.right_end_base_v[:, 1],
+                              'right_end_base_vz': self.right_end_base_v[:, 2],
+                              'right_end_tip_vx': self.right_end_tip_v[:, 0],
+                              'right_end_tip_vy': self.right_end_tip_v[:, 1],
+                              'right_end_tip_vz': self.right_end_tip_v[:, 2],
+                              # Accelerations
+                              'nose_ax': self.nose_a[:, 0], 'nose_ay': self.nose_a[:, 1], 'nose_az': self.nose_a[:, 2],
+                              'handle_ax': self.handle_a[:, 0], 'handle_ay': self.handle_a[:, 1],
+                              'handle_az': self.handle_a[:, 2],
+                              'left_shoulder_ax': self.left_shoulder_a[:, 0],
+                              'left_shoulder_ay': self.left_shoulder_a[:, 1],
+                              'left_shoulder_az': self.left_shoulder_a[:, 2],
+                              'left_forearm_ax': self.left_forearm_a[:, 0],
+                              'left_forearm_ay': self.left_forearm_a[:, 1],
+                              'left_forearm_az': self.left_forearm_a[:, 2],
+                              'left_wrist_ax': self.left_wrist_a[:, 0], 'left_wrist_ay': self.left_wrist_a[:, 1],
+                              'left_wrist_az': self.left_wrist_a[:, 2],
+                              'left_palm_ax': self.left_palm_a[:, 0], 'left_palm_ay': self.left_palm_a[:, 1],
+                              'left_palm_az': self.left_palm_a[:, 2],
+                              'left_index_base_ax': self.left_index_base_a[:, 0],
+                              'left_index_base_ay': self.left_index_base_a[:, 1],
+                              'left_index_base_az': self.left_index_base_a[:, 2],
+                              'left_index_tip_ax': self.left_index_tip_a[:, 0],
+                              'left_index_tip_ay': self.left_index_tip_a[:, 1],
+                              'left_index_tip_az': self.left_index_tip_a[:, 2],
+                              'left_middle_base_ax': self.left_middle_base_a[:, 0],
+                              'left_middle_base_ay': self.left_middle_base_a[:, 1],
+                              'left_middle_base_az': self.left_middle_base_a[:, 2],
+                              'left_middle_tip_ax': self.left_middle_tip_a[:, 0],
+                              'left_middle_tip_ay': self.left_middle_tip_a[:, 1],
+                              'left_middle_tip_az': self.left_middle_tip_a[:, 2],
+                              'left_third_base_ax': self.left_third_base_a[:, 0],
+                              'left_third_base_ay': self.left_third_base_a[:, 1],
+                              'left_third_base_az': self.left_third_base_a[:, 2],
+                              'left_third_tip_ax': self.left_third_tip_a[:, 0],
+                              'left_third_tip_ay': self.left_third_tip_a[:, 1],
+                              'left_third_tip_az': self.left_third_tip_a[:, 2],
+                              'left_end_base_ax': self.left_end_base_a[:, 0],
+                              'left_end_base_ay': self.left_end_base_a[:, 1],
+                              'left_end_base_az': self.left_end_base_a[:, 2],
+                              'left_end_tip_ax': self.left_end_tip_a[:, 0],
+                              'left_end_tip_ay': self.left_end_tip_a[:, 1],
+                              'left_end_tip_az': self.left_end_tip_a[:, 2],
+                              'right_shoulder_ax': self.right_shoulder_a[:, 0],
+                              'right_shoulder_ay': self.right_shoulder_a[:, 1],
+                              'right_shoulder_az': self.right_shoulder_a[:, 2],
+                              'right_forearm_ax': self.right_forearm_a[:, 0],
+                              'right_forearm_ay': self.right_forearm_a[:, 1],
+                              'right_forearm_az': self.right_forearm_a[:, 2],
+                              'right_wrist_ax': self.right_wrist_a[:, 0], 'right_wrist_ay': self.right_wrist_a[:, 1],
+                              'right_wrist_az': self.right_wrist_a[:, 2],
+                              'right_palm_ax': self.right_palm_a[:, 0], 'right_palm_ay': self.right_palm_a[:, 1],
+                              'right_palm_az': self.right_palm_a[:, 2],
+                              'right_index_base_ax': self.right_index_base_a[:, 0],
+                              'right_index_base_ay': self.right_index_base_a[:, 1],
+                              'right_index_base_az': self.right_index_base_a[:, 1],
+                              'right_index_tip_ax': self.right_index_tip_a[:, 0],
+                              'right_index_tip_ay': self.right_index_tip_a[:, 1],
+                              'right_index_tip_az': self.right_index_tip_a[:, 1],
+                              'right_middle_base_ax': self.right_middle_base_a[:, 0],
+                              'right_middle_base_ay': self.right_middle_base_a[:, 1],
+                              'right_middle_base_az': self.right_middle_base_a[:, 2],
+                              'right_middle_tip_ax': self.right_middle_tip_a[:, 0],
+                              'right_middle_tip_ay': self.right_middle_tip_a[:, 1],
+                              'right_middle_tip_az': self.right_middle_tip_a[:, 2],
+                              'right_third_base_ax': self.right_third_base_a[:, 0],
+                              'right_third_base_ay': self.right_third_base_a[:, 1],
+                              'right_third_base_az': self.right_third_base_a[:, 2],
+                              'right_third_tip_ax': self.right_third_tip_a[:, 0],
+                              'right_third_tip_ay': self.right_third_tip_a[:, 1],
+                              'right_third_tip_az': self.right_third_tip_a[:, 2],
+                              'right_end_base_ax': self.right_end_base_a[:, 0],
+                              'right_end_base_ay': self.right_end_base_a[:, 1],
+                              'right_end_base_az': self.right_end_base_a[:, 2],
+                              'right_end_tip_ax': self.right_end_tip_a[:, 0],
+                              'right_end_tip_ay': self.right_end_tip_a[:, 1],
+                              'right_end_tip_az': self.right_end_tip_a[:, 2],
+                              # Speeds
+                              'nose_s': self.nose_s, 'handle_s': self.handle_s, 'left_shoulder_s': self.left_shoulder_s,
+                              'left_forearm_s': self.left_forearm_s, 'left_wrist_s': self.left_wrist_s,
+                              'left_palm_s': self.left_palm_s, 'left_index_base_s': self.left_index_base_s,
+                              'left_index_tip_s': self.left_index_tip_s, 'left_middle_base_s': self.left_middle_base_s,
+                              'left_middle_tip_s': self.left_middle_tip_s,
+                              'left_third_base_s': self.left_third_base_s, 'left_third_tip_s': self.left_third_tip_s,
+                              'left_end_base_s': self.left_end_base_s,
+                              'left_end_tip_s': self.left_end_tip_s, 'right_shoulder_s': self.right_shoulder_s,
+                              'right_forearm_s': self.right_forearm_s, 'right_wrist_s': self.right_wrist_s,
+                              'right_palm_s': self.right_palm_s, 'right_index_base_s': self.right_index_base_s,
+                              'right_index_tip_s': self.right_index_tip_s,
+                              'right_middle_base_s': self.right_middle_base_s,
+                              'right_middle_tip_s': self.right_middle_tip_s,
+                              'right_third_base_s': self.right_third_base_s,
+                              'right_third_tip_s': self.right_third_tip_s,
+                              'right_end_base_s': self.right_end_base_s, 'right_end_tip_s': self.right_end_tip_s,
+                              # Positions
+                              'nose_px': self.nose[:, 0], 'nose_py': self.nose[:, 1], 'nose_pz': self.nose[:, 2],
+                              'handle_px': self.handle[:, 0], 'handle_py': self.handle[:, 1],
+                              'handle_pz': self.handle[:, 2],
+                              'left_shoulder_px': self.left_shoulder[:, 0],
+                              'left_shoulder_py': self.left_shoulder[:, 1],
+                              'left_shoulder_pz': self.left_shoulder[:, 2],
+                              'left_forearm_px': self.left_forearm[:, 0], 'left_forearm_py': self.left_forearm[:, 1],
+                              'left_forearm_pz': self.left_forearm[:, 2],
+                              'left_wrist_px': self.left_wrist[:, 0], 'left_wrist_py': self.left_wrist[:, 1],
+                              'left_wrist_pz': self.left_wrist[:, 2],
+                              'left_palm_px': self.left_palm[:, 0], 'left_palm_py': self.left_palm[:, 1],
+                              'left_palm_pz': self.left_palm[:, 2],
+                              'left_index_base_px': self.left_index_base[:, 0],
+                              'left_index_base_py': self.left_index_base[:, 1],
+                              'left_index_base_pz': self.left_index_base[:, 2],
+                              'left_index_tip_px': self.left_index_tip[:, 0],
+                              'left_index_tip_py': self.left_index_tip[:, 1],
+                              'left_index_tip_pz': self.left_index_tip[:, 2],
+                              'left_middle_base_px': self.left_middle_base[:, 0],
+                              'left_middle_base_py': self.left_middle_base[:, 1],
+                              'left_middle_base_pz': self.left_middle_base[:, 2],
+                              'left_middle_tip_px': self.left_middle_tip[:, 0],
+                              'left_middle_tip_py': self.left_middle_tip[:, 1],
+                              'left_middle_tip_pz': self.left_middle_tip[:, 2],
+                              'left_third_base_px': self.left_third_base[:, 0],
+                              'left_third_base_py': self.left_third_base[:, 1],
+                              'left_third_base_pz': self.left_third_base[:, 2],
+                              'left_third_tip_px': self.left_third_tip[:, 0],
+                              'left_third_tip_py': self.left_third_tip[:, 1],
+                              'left_third_tip_pz': self.left_third_tip[:, 2],
+                              'left_end_base_px': self.left_end_base[:, 0],
+                              'left_end_base_py': self.left_end_base[:, 1],
+                              'left_end_base_pz': self.left_end_base[:, 2],
+                              'left_end_tip_px': self.left_end_tip[:, 0], 'left_end_tip_py': self.left_end_tip[:, 1],
+                              'left_end_tip_pz': self.left_end_tip_a[:, 2],
+                              'right_shoulder_px': self.right_shoulder[:, 0],
+                              'right_shoulder_py': self.right_shoulder[:, 1],
+                              'right_shoulder_pz': self.right_shoulder[:, 2],
+                              'right_forearm_px': self.right_forearm[:, 0],
+                              'right_forearm_py': self.right_forearm[:, 1],
+                              'right_forearm_pz': self.right_forearm[:, 2],
+                              'right_wrist_px': self.right_wrist[:, 0], 'right_wrist_py': self.right_wrist[:, 1],
+                              'right_wrist_pz': self.right_wrist[:, 2],
+                              'right_palm_px': self.right_palm[:, 0], 'right_palm_py': self.right_palm[:, 1],
+                              'right_palm_pz': self.right_palm[:, 2],
+                              'right_index_base_px': self.right_index_base[:, 0],
+                              'right_index_base_py': self.right_index_base[:, 1],
+                              'right_index_base_pz': self.right_index_base[:, 1],
+                              'right_index_tip_px': self.right_index_tip[:, 0],
+                              'right_index_tip_py': self.right_index_tip[:, 1],
+                              'right_index_tip_pz': self.right_index_tip[:, 1],
+                              'right_middle_base_px': self.right_middle_base[:, 0],
+                              'right_middle_base_py': self.right_middle_base[:, 1],
+                              'right_middle_base_pz': self.right_middle_base[:, 2],
+                              'right_middle_tip_px': self.right_middle_tip[:, 0],
+                              'right_middle_tip_py': self.right_middle_tip[:, 1],
+                              'right_middle_tip_pz': self.right_middle_tip[:, 2],
+                              'right_third_base_px': self.right_third_base[:, 0],
+                              'right_third_base_py': self.right_third_base[:, 1],
+                              'right_third_base_pz': self.right_third_base[:, 2],
+                              'right_third_tip_px': self.right_third_tip[:, 0],
+                              'right_third_tip_py': self.right_third_tip[:, 1],
+                              'right_third_tip_pz': self.right_third_tip[:, 2],
+                              'right_end_base_px': self.right_end_base[:, 0],
+                              'right_end_base_py': self.right_end_base[:, 1],
+                              'right_end_base_pz': self.right_end_base[:, 2],
+                              'right_end_tip_px': self.right_end_tip[:, 0],
+                              'right_end_tip_py': self.right_end_tip[:, 1],
+                              'right_end_tip_pz': self.right_end_tip[:, 2],
+                              #            # Outliers
+                              'nose_o': self.nose_o, 'handle_o': self.handle_o, 'left_shoulder_o': self.left_shoulder_o,
+                              'left_forearm_o': self.left_forearm_o, 'left_wrist_o': self.left_wrist_o,
+                              'left_palm_o': self.left_palm_o, 'left_index_base_o': self.left_index_base_o,
+                              'left_index_tip_o': self.left_index_tip_o, 'left_middle_base_o': self.left_middle_base_o,
+                              'left_middle_tip_o': self.left_middle_tip_o,
+                              'left_third_base_o': self.left_third_base_o, 'left_third_tip_o': self.left_third_tip_o,
+                              'left_end_base_o': self.left_end_base_o,
+                              'left_end_tip_o': self.left_end_tip_o, 'right_shoulder_o': self.right_shoulder_o,
+                              'right_forearm_o': self.right_forearm_o, 'right_wrist_o': self.right_wrist_o,
+                              'right_palm_o': self.right_palm_o, 'right_index_base_o': self.right_index_base_o,
+                              'right_index_tip_o': self.right_index_tip_o,
+                              'right_middle_base_o': self.right_middle_base_o,
+                              'right_middle_tip_o': self.right_middle_tip_o,
+                              'right_third_base_o': self.right_third_base_o,
+                              'right_third_tip_o': self.right_third_tip_o,
+                              'right_end_base_o': self.right_end_base_o, 'right_end_tip_o': self.right_end_tip_o,
+                              # Kinematic Features
+                              'reach_hand': self.arm_id_list, 'right_start_time': self.right_start_times,
+                              'left_start_time': self.left_start_times, 'reach_start': self.reach_start_time,
+                              'reach_duration': self.reach_duration,
+                              'reach_end': self.reach_end_time,
+                              'left_end_time': self.left_reach_end_times, 'right_end_time': self.right_reach_end_times,
+                              'left_reach_peak': self.left_peak_times, 'right_reach_peak': self.right_peak_times,
+                              'endpoint_error': self.endpoint_error, 'endpoint_error_x': self.x_endpoint_error,
+                              'endpoint_error_y': self.y_endpoint_error, 'endpoint_error_z': self.z_endpoint_error,
+                              # Sensor Data
+                              'handle_moving_sensor': self.h_moving_sensor, 'lick_beam': self.lick_vector,
+                              'reward_zone': self.reward_zone_sensor, 'time_vector': self.time_vector,
+                              'response_sensor': self.exp_response_sensor, 'x_rob': self.x_robot, 'y_rob': self.y_robot,
+                              'z_rob': self.z_robot, 'error_flag': error_flag
+                              }
+            # Create dataframe object from df, containing
             df = pd.DataFrame({key: pd.Series(np.asarray(value)) for key, value in self.save_dict.items()})
         except:
             print('bad df')
@@ -1391,7 +1346,6 @@ class ReachViz:
                 self.reaching_dataframe = pd.concat([df, self.reaching_dataframe])
         # savefile = self.sstr + str(self.rat) + str(self.date) + str(self.session) + 'final_save_data.csv'
         # self.save_reaching_dataframe(savefile)
-        # self.plot_verification_variables()
         return self.reaching_dataframe
 
     def save_reaching_dataframe(self, filename):
@@ -1489,29 +1443,6 @@ class ReachViz:
             print('Saved reaching indices and bouts for block..' + str(self.date) + str(self.session))
         return self.block_cut_vector
 
-    def plot_verification_variables(self):
-        bins = [0, 0.2, 0.4, 0.6, 0.8, 1.0, 1.2, 1.4, 1.6, 1.8, 2]
-        plt.hist(np.asarray(self.total_raw_speeds).flatten(), bins=bins, color='r', log=True, label='Raw')
-        plt.hist(np.asarray(self.speed_holder).flatten(), bins=bins, color='b', log=True, label='Final')
-        plt.xlabel('Speeds')
-        plt.ylabel('Log Counts')
-        plt.title('Speeds Over Block')
-        plt.legend()
-        plt.savefig(self.sstr + 'total_speed_comparison.png', dpi=1200)
-        plt.close()
-        fig, [ax, ax1] = plt.subplots(nrows=1, ncols=2)
-        ax.hist(np.asarray(self.total_raw_speeds[14:-1]).flatten(), bins=bins, color='r', log=True, label='Raw')
-        ax.hist(np.asarray(self.speed_holder[14:-1]).flatten(), bins=bins, color='b', log=True, label='Final')
-        ax1.hist(np.asarray(self.total_raw_speeds[2:14]).flatten(), bins=bins, color='g', log=True, label='Raw')
-        ax1.hist(np.asarray(self.speed_holder[2:14]).flatten(), bins=bins, color='b', log=True, label='Raw')
-        ax1.set_xlabel('Speeds')
-        ax1.set_ylabel('Log Counts')
-        plt.title('Speeds Over Block: Left and Right Hands')
-        plt.legend()
-        plt.savefig(self.sstr + 'arm_speed_boxplot.png', dpi=1200)
-        plt.close('all')
-        return
-
     def plot_interpolation_variables_palm(self, filtype):
         """ Plots displaying feature variables for the left and right palms. """
         filename_pos = self.sstr + '/timeseries/' + str(filtype) + 'interpolation_timeseries.png'
@@ -1601,7 +1532,6 @@ class ReachViz:
                              label='End Reach Right Palm')
         except:
             pass
-        # Book-keeping for visuals (metrics, etc)
         ax2.set_xlabel('Time (s) ')
         ax2.set_ylabel('Distance (M) ')
         ax1.legend(loc=1, fontsize='small')
@@ -1731,10 +1661,6 @@ class ReachViz:
             self.lag = 3
         if isx == 4:
             self.lag = 4
-        return
-
-    def plot_verification_histograms(self):
-
         return
 
     def plot_predictions_videos(self, segment=False, multi_segment_plot=True, plot_digits=False, draw_skeleton=True,
