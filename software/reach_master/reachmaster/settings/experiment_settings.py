@@ -82,8 +82,8 @@ class ExperimentSettings(tk.Toplevel):
         self.flush_dur.set(str(self.config['ExperimentSettings']['flush_dur']))
         self.reach_delay = tk.StringVar()
         self.reach_delay.set(str(self.config['ExperimentSettings']['reach_delay']))
-        self.audio_file = tk.StringVar()
-        self.audio_file.set(str(self.config['ExperimentSettings']['audio_file']))
+        #self.audio_file = tk.StringVar()
+        #self.audio_file.set(str(self.config['ExperimentSettings']['audio_file']))
         self._configure_window()
 
     def on_quit(self):

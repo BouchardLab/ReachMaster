@@ -140,19 +140,19 @@ class CameraSettings(tk.Toplevel):
         self.config = config.load_config('./temp/tmp_config.json')
         self.ffmpeg_object = {
             '-f':'rawvideo',
-            '-thread_queue_size': '512',
+            '-thread_queue_size': '2048',
+            '-s': str(
+            self.config['CameraSettings']['img_width'] *
+            self.config['CameraSettings']['num_cams']
+        ) + 'x' + str(self.config['CameraSettings']['img_height']),
             '-pix_fmt': 'bgr24',
-            '-s':str(
-                self.config['CameraSettings']['img_width'] *
-                self.config['CameraSettings']['num_cams']
-            ) + 'x' + str(self.config['CameraSettings']['img_height']),
             '-r': str(self.config['CameraSettings']['fps']),
             '-i': '-',
             '-b:v': '2M',
+            '-vsync': '0',
             '-maxrate': '2M',
             '-bufsize': '1M',
             '-c:v': 'libx264',
-            '-preset': 'superfast',
             '-pix_fmt': 'yuv420p'
         }
         self.ffmpeg_command = [
@@ -160,11 +160,11 @@ class CameraSettings(tk.Toplevel):
         '-hwaccel', 'cuvid', 
         '-f', 'rawvideo',  
         '-s', str(
-            self.config['CameraSettings']['img_width'] * 
+            self.config['CameraSettings']['img_width'] *
             self.config['CameraSettings']['num_cams']
-            ) + 'x' + str(self.config['CameraSettings']['img_height']), 
+            ) + 'x' + str(self.config['CameraSettings']['img_height']),
         '-pix_fmt', 'bgr24',
-        '-r', str(self.config['CameraSettings']['fps']), 
+        '-r', str(self.config['CameraSettings']['fps']),
         '-i', '-',
         '-b:v', '2M', 
         '-maxrate', '2M', 
@@ -248,7 +248,10 @@ class CameraSettings(tk.Toplevel):
                 self._on_stream_quit()
         except:
             pass
-        expint.stop_interface(self.exp_controller)
+        try:
+            expint.stop_interface(self.exp_controller)
+        except:
+            print('No interface created.')
         self.destroy()
 
     def _configure_window(self):        
@@ -489,7 +492,6 @@ class CameraSettings(tk.Toplevel):
         self.cams_connected = True
         self.img = camint.init_image()
         if not self.streaming:
-            pdb.set_trace()
             self._start_stream()
         else: 
             tkinter.messagebox.showinfo("Warning", "Already streaming.") 
@@ -575,7 +577,7 @@ class CameraSettings(tk.Toplevel):
                 os.makedirs(calibration_path)
             vid_fn = calibration_path + str(datetime.datetime.now()) + '.mp4'
             # , compression_mode=True,logging=True, **self.ffmpeg_object
-            self.vidgear_writer_cal = WriteGear(output_filename=vid_fn, compression_mode=True, logging=True)
+            self.vidgear_writer_cal = WriteGear(output_filename=vid_fn, compression_mode=True)
             #self.cv2_writer = cv2.VideoWriter(vid_fn)
             self.delay = int(np.round(1.0/float(self.config['CameraSettings']['fps'])*1000.0))
             self.record = True
@@ -708,7 +710,7 @@ class CameraSettings(tk.Toplevel):
                     if i == 0:
                         frame = npimg
                     else:
-                        frame = np.hstack((frame, npimg))  
+                        frame = np.hstack((frame, npimg))
             except Exception as err:
                 tkinter.messagebox.showinfo("Warning", err)
                 self.stop_rec_callback() 

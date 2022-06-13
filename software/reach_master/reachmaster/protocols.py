@@ -278,7 +278,7 @@ class Protocols(tk.Toplevel):
             tkinter.messagebox.showinfo("Warning", "No saved POIs")
             self.on_quit()
             return
-        #self.start_and_load_robot_interface()
+        self.start_and_load_robot_interface()
         self.start_and_load_experimental_and_stimuli_variables()
         self.cams_connected = True
         self.start_and_initialize_cameras()
@@ -288,15 +288,9 @@ class Protocols(tk.Toplevel):
         self.control_message = 'b'  # Send experimental micro-controller message indicating initiation of camera
         # trigger.
         self.img = init_image()
-        try:
-            expint.trigger_image(self.exp_controller)  # If camera's not triggerable..
-            print('triggering.')
-        except:
-            print('No Trigger Detected.')
-            pdb.set_trace()
         # obtain baseline for camera's to detect movement
         print('Baseline')
-        #self.start_acquiring_baseline()
+        self.simply_acquire_baseline(400) # hard-coded due to wierd over-flow error w/ ximea cameras.
         self.ready = True
         tf = 0 # triggered frame
         self.robot_runtime = [300, 600, 900, 1200, 1500, 1800, 2100, 2400, 2700]
@@ -307,7 +301,7 @@ class Protocols(tk.Toplevel):
                 self.ready = False
         #self.run_auditory_stimuli()  # runs sound at beginning of experiment!
         # debug
-        pdb.set_trace()
+        self.run()
 
     def start_and_load_robot_interface(self):
         """ Called on class initiation, starts robot software module."""
@@ -316,7 +310,9 @@ class Protocols(tk.Toplevel):
         self.rob_connected = True
         print("loading robot settings...")
         self.config = robint.set_rob_controller(self.rob_controller, self.config)
-        sleep(5)
+
+    def set_controller(self):
+        expint.set_exp_controller(self.exp_controller, self.config)
 
     def start_and_load_experimental_and_stimuli_variables(self):
         """ Called on class initiation, starts audio and experiment micro-controller-based class module. """
@@ -326,7 +322,14 @@ class Protocols(tk.Toplevel):
         sleep(1)
         self.exp_connected = True
         print("loading experiment settings...")
-        expint.set_exp_controller(self.exp_controller, self.config)
+        while True:
+            try:
+                self.set_controller()
+                break
+            except Exception as err:
+                pdb.set_trace()
+                tkinter.messagebox.showinfo("Warning, couldn't trigger cameras. Please check experimental micro-controller."
+                                            , err)
         self.exp_response = expint.start_experiment(self.exp_controller)  # start experiment
 
     def _init_data_output(self):
@@ -434,30 +437,27 @@ class Protocols(tk.Toplevel):
                     self.config['ReachMaster']['data_dir'] + '/videos/trial' +
                     str(trial_num) + '_cam.mp4')
         # Set up video writer.
-        self.vidgear_writer_cal = WriteGear(output_filename=vid_fn, compression_mode=True, logging=True)
+        self.vidgear_writer_cal = WriteGear(output_filename=vid_fn, compression_mode=True)
 
-    def start_acquiring_baseline(self):
-        num_baseline = (
-            int(
-                np.round(
-                    float(
-                        self.config['ExperimentSettings']['baseline_dur']
-                    ) *
-                    float(
-                        self.config['CameraSettings']['fps']
-                    ),
-                    decimals=0
-                )
-            )
-        )
-        print('num_baseline images = ' + str(num_baseline))
-        if num_baseline > 0:
-            self.simply_acquire_baseline(num_baseline)  # for each camera, find the POI's
+    def write_video_frame(self, frame):
+        self.vidgear_writer_cal.write(frame)
+
+    def trigger_image(self):
+        expint.trigger_image(self.exp_controller)
+
+    def stop_camera_recording(self):
+        try:
+            self.vidgear_writer_cal.close()
+        except:
+            print('Video writing not initialized.')
+        stop_interface(self.cams)
+        self.cams_connected = False
 
     def simply_acquire_baseline(self, num_imgs):
         baseline_pois = []  # List of baseline poi vectors.
         poi_indices = []
         num_pois = []
+        poi_std = []
         for cam_id in range(self.config['CameraSettings']['num_cams']):
             poi_indices.append(self.config['CameraSettings']['saved_pois'][cam_id])  # Take POI regions
             num_pois.append(len(poi_indices[cam_id]))
@@ -468,59 +468,54 @@ class Protocols(tk.Toplevel):
                 baseline_pois.append(np.zeros((1, num_imgs)))
         print('Got baseline arrays')
         # acquire baseline images
-        ## Rewrite this logic, remove loops
-        for i in range(num_imgs):
-            expint.trigger_image(self.exp_controller) # Trigger image
+        for i in range(0,num_imgs):
+            expint.trigger_image(self.exp_controller)
             for cam_id, cam_obj in enumerate(self.cams):
-                npimg = get_npimage(cam_obj, self.img) # get image statistics for camera.
+                npimg = get_npimage(cam_obj, self.img)  # get image statistics for camera.
                 for j in range(num_pois[cam_id]):
                     baseline_pois[cam_id][j, i] = npimg[
                         poi_indices[cam_id][j][1],
                         poi_indices[cam_id][j][0]]
-            sleep(0.01)  # wait 1ms before triggering next baseline image.
         print('Got baseline images.')
         # compute summary stats
-        for cam_id, cam_obj in enumerate(self.cams):
-            poi_means = np.mean(baseline_pois[cam_id], axis=1)
-            pdb.set_trace()
-            poi_std = np.std(np.sum(np.square(baseline_pois[cam_id] - poi_means[cam_id]),axis=0))
-            self.cam_poi_means.append(poi_means[cam_id])  # append class object
-            self.cam_poi_std.append(poi_std)  # append class object
+        for cam_id in range(0, len(baseline_pois)):
+                poi_means = np.mean(baseline_pois[cam_id], axis=1) # length num_poi
+                for i in range(0,baseline_pois[cam_id].shape[0]): # npoi's, n_baseline
+                    poi_std_l = np.std(np.square(baseline_pois[cam_id][i] - poi_means[i])) # Length 1
+                    poi_std.append(poi_std_l)
+                poi_std = np.asarray(poi_std)
+                pdb.set_trace()
+                self.cam_poi_means.append(poi_means)  # append class object
+                self.cam_poi_std.append(poi_std)  # append class object
+                poi_std = []
         print('Got baseline statistics.')
+        pdb.set_trace()
 
     def trigger_record_and_save_image_from_camera_get_deviation(self):
         frame = 0
-        expint.trigger_image(self.exp_controller)  # camera triggered here
+        while True:
+            try:
+                self.trigger_image()
+                break# camera triggered here
+            except:
+                print('Warning, No Trigger')
         dev = []
         try:
             for idx, cam_obj in enumerate(self.cams):
                 npimg = get_npimage(cam_obj, self.img)
-                dev.append(self._estimate_poi_deviation_single_camera(npimg, self.cam_poi_means[idx],
-                                                     self.cam_poi_std[idx]))
+                dev.append(self._estimate_poi_deviation_single_camera(npimg, self.cam_poi_means[idx],self.cam_poi_std[idx]))
                 npimg = cv2.cvtColor(npimg, cv2.COLOR_BAYER_BG2BGR)
                 if idx == 0:
                     frame = npimg
                 else:
                     frame = np.hstack((frame, npimg))
-
         except Exception as err:
             pdb.set_trace()
-            tkinter.messagebox.showinfo("Warning, couldn't trigger cameras. Please check experimental micro-controller."
+            tkinter.messagebox.showinfo("Warning, couldn't save images."
                                         , err)
             self.stop_camera_recording()
             return
         return dev, frame
-
-    def write_video_frame(self, frame):
-        self.vidgear_writer_cal.write(frame)
-
-    def stop_camera_recording(self):
-        try:
-            self.vidgear_writer_cal.close()
-        except:
-            print('Video writing not initialized.')
-        stop_interface(self.cams)
-        self.cams_connected = False
     # Tools to estimate, report large light deviations in pre-set POI regions. This is how "reaches" are detected in
     # a trial.
 
@@ -541,6 +536,9 @@ class Protocols(tk.Toplevel):
         if not self.lights_on:
             self.lights_on = 1  # Make sure lights are on
         dev, frame = self.trigger_record_and_save_image_from_camera_get_deviation()  # Trigger and save camera frame
+        for d in dev:
+            if d > 15:
+                print('Reach detected.')
         self.write_video_frame(frame)
         # Code here to read/write information from micro-controllers
         expint.write_message(self.exp_controller, self.control_message)
@@ -589,6 +587,7 @@ class Protocols(tk.Toplevel):
             self.reach_init = now
             self.reach_detected = True  # Can use this value to manipulate robot callback
             self.control_message = 'r'
+            print('Reach detected')
         elif self.exp_response[1] == 'e':  # Trial has fully reset, reset reach value.
             self.poi_deviation = 0
             self.control_message = 's'
