@@ -2,9 +2,9 @@
     Library intended to perform initial analysis on pre-processed 3-D kinematic predictions and experimental
     sensor data from the ReachMaster system. Data is preprocessed using the /ReachPredict3D library. Recording
     blocks are divided into coarse trials, then properly classified, segmented, and visualized. """
-import software.ReachSplitter.DataStream_Vis_Utils as utils
-import software.ReachSplitter.viz_utils as vu
-import software.Trial_Classifier as Classifier
+import DataStream_Vis_Utils as utils
+import viz_utils as vu
+from Trial_Classifier import Trial_Classify as Classifier
 from moviepy.editor import *
 import skvideo
 import cv2
@@ -13,16 +13,21 @@ import numpy as np
 from sklearn.decomposition import PCA
 import pandas as pd
 import pickle
+import csv
 import matplotlib.pyplot as plt
-from scipy.signal import find_peaks
+from scipy.signal import find_peaks, savgol_filter
 from scipy.ndimage import gaussian_filter1d
 import pdb
+
 
 # set ffmpeg path manually (if necessary)
 ffm_path = 'C:/Users/bassp/OneDrive/Desktop/ffmpeg/bin/'
 skvideo.setFFmpegPath(ffm_path)
 import skvideo.io
-
+# Global variables
+trial_classifier_path = 'models/null_model.joblib'
+hand_classifier_path = 'models/numReach_model.joblib'
+num_reach_classifier_path = 'models/whichHand_model.joblib'
 
 # Public functions
 def find_linear_transformation_between_DLC_and_robot(handle_vector, robot_vector):
@@ -57,7 +62,7 @@ def plot_session_alignment(input_data, robot_data, transformed_data, dim='x'):
     plt.show()
 
 
-def get_principle_components(positions, vel=0, acc=0, num_pcs=10):
+def get_principle_components(positions, vel=None, acc=None, num_pcs=10):
     pca = PCA(n_components=num_pcs, whiten=True, svd_solver='full')
     if vel:
         if acc:
@@ -85,8 +90,8 @@ def get_principle_components(positions, vel=0, acc=0, num_pcs=10):
         else:
             pos = np.asarray(positions)
             pc_vector = pca.fit_transform(pos.reshape(pos.shape[1], pos.shape[0] * pos.shape[2]))
-    explained_variance_ratio = pca.explained_variance_ratio_
-    return pc_vector, explained_variance_ratio
+    #explained_variance_ratio = pca.explained_variance_ratio_
+    return pc_vector
 
 
 def gkern(input_vector, sig=1.0):
@@ -99,12 +104,13 @@ def gkern(input_vector, sig=1.0):
 
 class ReachViz:
     def __init__(self, date, session, data_path, block_vid_file, kin_path, rat):
+        self.tug_flag = None
         self.endpoint_error, self.x_endpoint_error, self.y_endpoint_error, self.z_endpoint_error = 0, 0, 0, 0
         self.preprocessed_rmse, self.outlier_list, self.transformation_matrix = [], [], []
         self.probabilities, self.bi_reach_vector, self.trial_index, self.first_lick_signal, self.outlier_indexes = \
             [], [], [], [], []
         self.pos_holder, self.acc_holder, self.vel_holder, self.speed_holder = [], [], [], []
-
+        self.reach_hand_type, self.num_reaches_split = [], None
         self.rat = rat
         self.date = date
         self.session = session
@@ -117,7 +123,9 @@ class ReachViz:
         self.reaching_dataframe = pd.DataFrame()
         self.trial_start_vectors = 0
         self.trial_stop_vectors = 0
+        self.predicted_trial_type, self.trial_type, self.trial_type_outlier = False, False, False
         self.arm_id_list = []
+        self.predicted_num_reaches, self.handle_sensor_speed = None, []
         self.pos_pc, self.pos_v_pc, self.pos_v_a_pc, self.freq_decomp_pos = [], [], [], []
         self.sstr, self.lick_index = 0, []
         self.rat_gaps, self.total_ints, self.interpolation_rmse, self.outlier_rmse, self.valid_rmse = [], [], [], [], []
@@ -133,11 +141,11 @@ class ReachViz:
         self.exp_response_sensor, self.trial_sensors, self.h_moving_sensor, self.reward_zone_sensor, self.lick, \
         self.trial_num = 0, 0, 0, 0, 0, 0
         self.time_vector, self.images, self.bout_vector = [], [], []
-        self.trial_rewarded = False
-        self.filename = None
+        self.trial_rewarded, self.single_hand  = False, None
+        self.filename, self.csv_writer = None, None
         self.total_outliers, self.rewarded, self.left_palm_f_x, self.right_palm_f_x = [], [], [], []
         self.total_raw_speeds, self.total_preprocessed_speeds, self.total_probabilities = [], [], []
-        self.reach_start_time = []
+        self.behavior_start_time, self.prediction_information = [] , {}
         self.reach_peak_time, self.right_palm_maxima = [], []
         self.left_start_times = []
         self.left_peak_times, self.left_palm_maxima = [], []
@@ -221,8 +229,16 @@ class ReachViz:
             0, 0, 0, 0, 0]
         self.prob_right_index, self.prob_left_index, self.bi_pos_index, self.r_reach_vector, self.l_reach_vector, \
         self.left_prob_index, self.right_prob_index = [0, 0, 0, 0, 0, 0, 0]
+        self.left_PCS, self.right_PCS, self.total_PCS = None, None, None
         self.prob_list, self.pos_list, self.interpolation_rmse_list, self.valid_rmse_list, \
         self.outlier_rmse_list = [], [], [], [], []
+        self.predictions_header = ['Trial Number', 'Null Prediction', 'Num Reaches Prediction', 'Handedness Prediction',
+                                   'Null Outlier Flag', 'Num Reaches Outlier Flag', 'Handedness Prediction Outlier Flag',
+                                   'Segmented Reaches', 'Segmented Null', 'Segmented Num', 'Segmented Hand']
+        #self.prediction_information = dict.fromkeys(self.predictions_header, [0])
+        self.total_block_reaches, self.individual_reach_peak_times, self.retract_start, self.retract_end = 0, [], 0, 0
+        self.behavior_duration, self.behavior_end_time, self.total_block_reaches, self.sweep_total_reaches = [], [], 0, 0
+        self.block_outlier_flag, self.prediction_information_list, self.speed_robot, self.reward_zone = False, [], [], False
         return
 
     def load_data(self):
@@ -246,6 +262,18 @@ class ReachViz:
         vu.mkdir_p(self.sstr + '/timeseries_analysis_plots/reaches')
         return
 
+    def create_csv_block_predictions(self):
+        """ Function to create csv writer object that writes rows of data """
+        csv_path = str(self.rat) + str(self.date) + str(self.session) + 'predictions.csv'
+        idf = pd.DataFrame(self.prediction_information_list)
+        #with open(csv_path, 'a', newline='') as f:
+        #    csv_writer = csv.DictWriter(f, fieldnames=self.prediction_information_list[0].keys())
+        #    csv_writer.writeheader()
+        #    for dicts in self.prediction_information_list:
+        #        csv_writer.writerow(dicts)
+        #f.close()
+        idf.to_csv(csv_path)
+        pdb.set_trace()
     def get_block_data(self):
         """ Function to fetch block positional and sensor data from rat database. """
         for kin_items in self.d:
@@ -305,19 +333,11 @@ class ReachViz:
 
         r, theta, phi, self.x_robot, self.y_robot, self.z_robot = utils.forward_xform_coords(
             x_pot[idxstrt:idxstp], y_pot[idxstrt:idxstp], z_pot[idxstrt:idxstp])
+        self.x_robot = gkern(self.x_robot, 11)
+        self.y_robot = gkern(self.y_robot, 11)
+        self.z_robot = gkern(self.z_robot, 11)
         if check_lick:
             self.check_licking_times_and_make_vector()
-        if filter:
-            try:
-                self.h_moving_sensor[self.prob_filter_index] = 0
-                self.reward_zone_sensor[self.prob_filter_index] = 0
-                self.lick[self.prob_filter_index] = 0
-                self.exp_response_sensor[self.prob_filter_index] = 0
-                self.x_robot[self.prob_filter_index] = 0
-                self.y_robot[self.prob_filter_index] = 0
-                self.z_robot[self.prob_filter_index] = 0
-            except:  # all the values are filtered by nose_probability (ie rat isn't there..)
-                pass
         self.sensor_data_list = [self.h_moving_sensor, self.lick_vector, self.reward_zone_sensor,
                                  self.exp_response_sensor,
                                  self.x_robot, self.y_robot, self.z_robot]
@@ -355,16 +375,23 @@ class ReachViz:
                                axis=1)
         left_palm_f = vu.cubic_spline_smoothing(np.copy(left_palm), spline_coeff=0.1)
         right_palm_f = vu.cubic_spline_smoothing(np.copy(right_palm), spline_coeff=0.1)
+        left_palm_v, left_palm_a, left_palm_s = self.calculate_kinematics_from_position(left_palm_f)
+        right_palm_v, right_palm_a, right_palm_s = self.calculate_kinematics_from_position(right_palm_f)
         # If palms are < 0.8 p-value, remove chance at "maxima
-        left_palm_prob = np.where(left_palm_p < 0.5)[0]
-        right_palm_prob = np.where(right_palm_p < 0.5)[0]
+        left_palm_prob = np.where(left_palm_p < 0.3)[0]
+        right_palm_prob = np.where(right_palm_p < 0.3)[0]
         # If palms are > 0.21m in the x-direction towards the handle 0 position.
-        left_palm_f[left_palm_prob, 0] = 0
-        right_palm_f[right_palm_prob, 0] = 0
-        right_palm_maxima = find_peaks(right_palm_f[:, 0], height=0.17, distance=8)[0]
-        left_palm_maxima = find_peaks(left_palm_f[:, 0], height=0.17, distance=8)[0]
+        left_palm_s[left_palm_prob] = 0
+        right_palm_s[right_palm_prob] = 0
+        left_palm_pos_f = np.where(left_palm_f[:, 0] < .14)[0]
+        right_palm_pos_f = np.where(left_palm_f[:, 0] < .14)[0]
+        left_palm_s[left_palm_pos_f] = 0
+        right_palm_s[right_palm_pos_f] = 0
+        right_palm_maxima = find_peaks(right_palm_s, height=0.25, distance=30)[0]
+        left_palm_maxima = find_peaks(left_palm_s, height=0.25, distance=30)[0]
         num_peaks = len(right_palm_maxima) + len(left_palm_maxima)
         print("Number of tentative reaching actions detected:  " + str(num_peaks))
+        self.sweep_total_reaches = num_peaks
         return num_peaks
 
     def segment_and_filter_kinematic_block(self, cl1, cl2, p_thresh=0.5, coarse_threshold=0.3,
@@ -516,6 +543,11 @@ class ReachViz:
         # Zero out any large outliers in the data, as well as any low probability events.
         self.zero_out_outliers()
         self.assign_final_variables()
+        self.left_PCS = get_principle_components(self.positions[2:14],vel=self.vel_holder[2:14], acc = self.acc_holder[2:14],
+                                            num_pcs=3)
+        self.right_PCS = get_principle_components(self.positions[14:], vel=self.vel_holder[14:], acc=self.acc_holder[14:],
+                                            num_pcs=3)
+        self.total_PCS = get_principle_components(self.positions, vel= self.vel_holder, acc= self.acc_holder, num_pcs=3)
         # method to obtain variables for plotting
         right_speeds = np.mean(self.uninterpolated_right_palm_v, axis=1)
         left_speeds = np.mean(self.uninterpolated_left_palm_v, axis=1)
@@ -534,6 +566,16 @@ class ReachViz:
             self.pos_holder[idx][outlier_index] = 0
             self.vel_holder[idx][outlier_index] = 0
             self.acc_holder[idx][outlier_index] = 0
+            spatial_outliers = np.where(pos[0,:] < 0.135)[0] # X-value less than cage length
+            self.speed_holder[idx][spatial_outliers] = 0
+            self.pos_holder[idx][spatial_outliers] = 0
+            self.vel_holder[idx][spatial_outliers] = 0
+            self.acc_holder[idx][spatial_outliers] = 0
+            prob_outliers = np.where(self.probabilities[idx] < 0.2)[0]
+            self.speed_holder[idx][prob_outliers] = 0
+            self.pos_holder[idx][prob_outliers] = 0
+            self.vel_holder[idx][prob_outliers] = 0
+            self.acc_holder[idx][prob_outliers] = 0
 
     def calculate_endpoint_error(self):
         """Function to calculate the kinematic feature 'endpoint_error' by finding the minimum distance between
@@ -586,6 +628,474 @@ class ReachViz:
             self.speed_holder.append(s)
         return
 
+    def calculate_kinematics_from_position(self, pos_v):
+        """ Function that calculates velocity, speed, and acceleration on a per-bodypart basis."""
+        v_hold = np.zeros(pos_v.shape)
+        a_hold = np.zeros(pos_v.shape)
+        speed_hold = np.zeros(pos_v.shape[0])
+        pos_v = pos_v[0:len(self.time_vector)]  # Make sure we don't have a leading number ie extra "time" frame
+        for ddx in range(0, pos_v.shape[0]):
+            v_hold[ddx, :] = np.copy((pos_v[ddx, :] - pos_v[ddx - 1, :]) / (
+                    self.time_vector[ddx] - self.time_vector[ddx - 1]))
+        try:
+            for ddx in range(0,3):
+                v_hold[:,ddx] = savgol_filter(v_hold[:,ddx],9, 2)
+        except:
+            pdb.set_trace()
+        # Calculate speed, acceleration from smoothed (no time-dependent jumps) velocities
+        for ddx in range(0, pos_v.shape[0]):
+            speed_hold[ddx] = np.sqrt(v_hold[ddx, 0] ** 2 + v_hold[ddx, 1] ** 2 + v_hold[ddx, 2] ** 2)
+            speed_holder = gkern(speed_hold, 1)
+        #speed_holder = savgol_filter(speed_hold,11, 1)
+        for ddx in range(0, pos_v.shape[0]):
+            a_hold[ddx, :] = np.copy(
+                (v_hold[ddx, :] - v_hold[ddx - 1, :]) / (self.time_vector[ddx] - self.time_vector[ddx - 1]))
+        for ddx in range(0,3):
+            a_hold[:,ddx] = savgol_filter(a_hold[:, ddx],9, 2)
+            #speed_holder = vu.cubic_spline_smoothing(speed_holder,spline_coeff=.05)
+        return np.asarray(v_hold), np.asarray(a_hold), np.asarray(speed_holder)
+
+    def tug_of_war_flag(self):
+        self.tug_flag = 0
+        self.lick_tug = 0
+        init_handle_speed = np.where(self.handle_s[0:10] > 0.04)
+        if init_handle_speed.any():
+            self.tug_flag = 1
+        if self.first_lick_signal < 30:
+            self.lick_tug = 1
+
+    def get_filtered_speed_data(self, p_filter=0.3, pos_filter=0.14):
+        # Find peaks in left palm time-series with masked data
+        lps = np.copy(self.left_palm_s[:])  # Masked left palm speed
+        rps = np.copy(self.right_palm_s[:])  # Masked right palm speed
+        lps[self.prob_filter_index] = 0  # if p_values < 0.3
+        rps[self.prob_filter_index] = 0
+        hidx = np.where(self.handle_s > .03)
+        lps[hidx] = 0
+        rps[hidx] = 0
+        # If palms are < 0.4 p-value, remove chance at "maxima"
+        left_palm_prob = np.where(self.left_palm_p < p_filter)[0]
+        right_palm_prob = np.where(self.right_palm_p < p_filter)[0]
+        # If palms are > 0.13m in the x-direction towards the handle 0 position.
+        left_palm_pos_f = np.where(self.left_palm[:, 0] < pos_filter)[0]
+        right_palm_pos_f = np.where(self.right_palm[:, 0] < pos_filter)[0]
+        lps[left_palm_prob] = 0
+        rps[right_palm_prob] = 0
+        rps[right_palm_pos_f] = 0
+        lps[left_palm_pos_f] = 0
+        lps[0:4] = 0  # remove any possible edge effect
+        rps[0:4] = 0  # remove any possible edge effect
+        return lps,rps
+
+    def calculate_robot_handle_speed(self):
+        v_hold_x, v_hold_y, v_hold_z = np.zeros((len(self.time_vector))), np.zeros((len(self.time_vector))), \
+                                       np.zeros((len(self.time_vector)))
+        for ddx in range(0, len(self.time_vector)):
+            v_hold_x[ddx] = np.copy((self.x_robot[ddx] - self.x_robot[ddx - 1]) / (
+                    self.time_vector[ddx] - self.time_vector[ddx - 1]))
+            v_hold_y[ddx] = np.copy((self.y_robot[ddx] - self.y_robot[ddx - 1]) / (
+                    self.time_vector[ddx] - self.time_vector[ddx - 1]))
+            v_hold_z[ddx] = np.copy((self.z_robot[ddx] - self.z_robot[ddx - 1]) / (
+                    self.time_vector[ddx] - self.time_vector[ddx - 1]))
+        self.speed_robot = np.sqrt(v_hold_x ** 2 + v_hold_y ** 2 + v_hold_z ** 2)
+
+    def reward_zone_reach(self):
+        if np.where(self.reward_zone_sensor > 0)[0].any():
+            self.reward_zone = True
+        else:
+            self.reward_zone = False
+
+    def segment_reaches_with_speed_peaks(self,p_filter_val=0.4, pos_filter_val = 0.14, n_peaks = None, hand=None):
+        """ Function to segment out reaches using a positional and velocity threshold. Thresholds are tunable """
+        # find peaks of speed velocities
+        # For each peak > 0.4 m/s, find the local minima (s < 0.05) for that time series
+        # Take minima - 15 as tentative reach start time
+        self.behavior_start_time = []
+        self.retract_start, self.retract_end = None, None
+        self.reach_peak_time = []
+        self.left_start_times = []
+        self.right_start_times = []
+        self.left_peak_times = []
+        self.right_peak_times = []
+        self.right_reach_end_times = []
+        self.left_reach_end_times = []
+        self.behavior_duration = []
+        self.total_block_reaches = 0
+        self.behavior_end_time = 0
+        self.handle_movement_mask = False
+        # Get some basic information about what's going on in the trial from micro-controller data
+        self.reward_zone_reach()
+        self.calculate_robot_handle_speed()
+        hidx = np.where(self.handle_s > .08)
+        hid = np.zeros(self.handle_s.shape[0])
+        hid[hidx] = 1  # Mask for handle speed > 0.1
+        self.handle_movement_mask = hid
+        if np.count_nonzero(hid) > 1:
+            self.handle_moved = True
+            print('Handle Movement Detected')
+            try:
+                self.retract_start = np.where(hid == 1)[0][0]
+                self.grasp = self.retract_start
+                self.retract_end = np.where(hid == 1)[0][-1] + 5
+            # Find where handle stops moving
+            except:
+                self.retract_start = None
+                self.retract_end = None
+                self.grasp = None
+        else:
+            self.handle_moved = False
+            self.retract_start, self.retract_end, self.grasp = None, None, None
+        if self.reward_zone: # Handle made it to reward zone area.
+            self.rewarded = True
+        else:
+            self.rewarded = False
+        lps, rps = self.get_filtered_speed_data(p_filter= p_filter_val, pos_filter=pos_filter_val)
+        start_pad = 10
+        # Get possible reach peaks, use to segment reaching behavior
+        self.left_palm_maxima = find_peaks(lps, height=0.25, distance=40)[0]
+        self.right_palm_maxima = find_peaks(rps, height=0.25, distance=40)[0]
+        if self.handle_moved:
+            #pdb.set_trace()
+            if np.where(self.reward_zone_sensor[0:20] > 0)[0].any():# Handle in reward zone too early
+                    self.tug_flag = True
+                    print('Tug of War')
+            if self.left_palm_maxima.any() or self.right_palm_maxima.any():
+                print('Reaches Found')
+            else:
+                # Get lps with less stringent filters
+                lps, rps = self.get_filtered_speed_data(p_filter= 0.4, pos_filter=.135)
+                self.left_palm_maxima = np.asarray(np.argmax(lps)).reshape(1) # Take max value
+                self.right_palm_maxima = np.asarray(np.argmax(rps)).reshape(1) # Take max value
+                if self.left_palm_maxima.any():
+                    if self.left_palm_s[self.left_palm_maxima[0]] < 0.1:
+                        self.left_palm_maxima = np.array([])
+                if self.right_palm_maxima.any():
+                    if self.right_palm_s[self.right_palm_maxima[0]] < 0.1:
+                        self.right_palm_maxima = np.array([])
+
+        if self.left_palm_maxima.any():
+            print('Left Palm Reach')
+            left_palm_max_list = self.left_palm_maxima.tolist()
+            for ir, maxes in enumerate(left_palm_max_list):
+                try:
+                    if maxes + 35 > left_palm_max_list[ir+1]: # is next entry close?
+                        left_palm_max_list.pop(ir+1)
+                except:
+                    pass
+            self.left_palm_maxima = np.asarray(left_palm_max_list)
+            # demarcate multiple reaches through looking at steps (<40 between peaks is multiple)
+            for ir in range(0, self.left_palm_maxima.shape[0]):
+                if self.left_palm_maxima[ir] > 31:
+                    try:
+                        below_reach_speed = self.left_palm_s[self.left_palm_maxima[ir] - 30: self.left_palm_maxima[ir]]
+                        index_below = np.where(np.asarray(below_reach_speed) < 0.2)[-1][
+                            -1]  # find last index where speed < 0.1
+                        left_palm_below_thresh = self.left_palm_maxima[ir] - index_below - start_pad
+                    except:
+                        left_palm_below_thresh = self.left_palm_maxima[ir] - \
+                                                 np.argmin(self.left_palm_s[self.left_palm_maxima[ir] - 30:
+                                                                            self.left_palm_maxima[ir]]) - start_pad
+                else:
+                    lmax = self.left_palm_maxima[ir]
+                    below_reach_speed = self.left_palm_s[0:lmax]
+                    try:
+                        index_below = np.where(np.asarray(below_reach_speed) < 0.2)[-1][-1]
+                        if index_below < start_pad:
+                            left_palm_below_thresh = 0
+                        else:
+                            left_palm_below_thresh = self.left_palm_maxima[ir] - index_below - start_pad
+                    except:
+                        pdb.set_trace()
+                        left_palm_below_thresh = 0
+
+                try:
+                    left_palm_below_thresh_after = self.left_palm_maxima[ir] + \
+                                               np.where(np.asarray(self.left_palm_s[
+                                                                   self.left_palm_maxima[ir]:
+                                                                   self.left_palm_maxima[ir] + 50]) < 0.15)[0][0]
+                except:
+                    left_palm_below_thresh_after = self.left_palm_maxima[ir] + 30
+                start_time_l = left_palm_below_thresh
+                try:
+                    if start_time_l < 0:
+                        start_time_l = 1
+                except:
+                    pass
+                self.left_start_times.append(start_time_l)
+                self.left_peak_times.append(self.left_palm_maxima[ir])
+                self.reach_peak_time.append(self.left_palm_maxima[ir])  # Record Peak
+                self.left_reach_end_times.append(left_palm_below_thresh_after)  # Record putative end of motion
+            # Find peaks in right palm time-series
+        else:
+            self.left_peak_times.append(None)
+            self.left_reach_end_times.append(None)
+            self.left_start_times.append(None)
+            self.reach_peak_time.append(None)
+        if self.right_palm_maxima.any():
+            print('Right Palm Reach')
+            right_palm_max_list = self.right_palm_maxima.tolist()
+            for ir, maxes in enumerate(right_palm_max_list):
+                try:
+                    if maxes + 35 > right_palm_max_list[ir+1]: # is next entry close?
+                        right_palm_max_list.pop(ir+1)
+                except:
+                    pass
+            self.right_palm_maxima = np.asarray(right_palm_max_list)
+            for ir in range(0, self.right_palm_maxima.shape[0]):
+                if self.right_palm_maxima[ir] > 31:
+                    try:
+                        below_reach_speed = self.right_palm_s[
+                                            self.right_palm_maxima[ir] - 30: self.right_palm_maxima[ir]]
+                        index_below = np.where(np.asarray(below_reach_speed) < 0.2)[-1][-1]  # find last index where speed < 0.1
+                        right_palm_below_thresh = self.right_palm_maxima[ir] - index_below - start_pad
+                    except:
+                        right_palm_below_thresh = self.right_palm_maxima[ir] - np.argmin(
+                            self.right_palm_s[self.right_palm_maxima[ir] - 30: self.right_palm_maxima[ir]] - start_pad)
+                else:
+                    rmax = self.right_palm_maxima[ir]
+                    below_reach_speed = self.right_palm_s[0:rmax]
+                    try:
+                        index_below = np.where(np.asarray(below_reach_speed) < 0.2)[0]
+                        if index_below < start_pad:
+                            right_palm_below_thresh = 0
+                        else:
+                            right_palm_below_thresh = self.right_palm_maxima[ir] - index_below - start_pad
+                    except:
+                        right_palm_below_thresh = 0
+                try:
+                    right_palm_below_thresh_after = self.right_palm_maxima[ir] + \
+                                                    np.where(np.asarray(self.right_palm_s[
+                                                                        self.right_palm_maxima[ir]:
+                                                                        self.right_palm_maxima[
+                                                                            ir] + 50]) < 0.15)[0][0]
+                except:
+                        right_palm_below_thresh_after = self.right_palm_maxima[ir] + 10
+                start_time_r = right_palm_below_thresh
+                try:
+                    if start_time_r < 0:
+                        start_time_r = 1
+                except:
+                    pass
+                self.right_start_times.append(start_time_r)
+                self.right_peak_times.append(self.right_palm_maxima[ir])
+                self.reach_peak_time.append(self.right_palm_maxima[ir])
+                self.right_reach_end_times.append(right_palm_below_thresh_after)
+        else:
+            self.right_peak_times.append(None)
+            self.right_reach_end_times.append(None)
+            self.right_start_times.append(None)
+            self.reach_peak_time.append(None)
+        #pdb.set_trace()
+        # Check for unrealistic start and stop values (late in trial), adjust accordingly
+        for idx, time in enumerate(self.right_start_times):
+            try:
+                if any in self.right_start_times is None:
+                    continue
+                else:
+                    try:
+                        if self.right_start_times[idx] > 650:
+                            self.right_start_times[idx] = 650
+                            if time > 700:
+                                self.right_reach_end_times[idx] = 700  # Max trial time.
+                    except:
+                        pass
+            except:
+                pass
+        for idx, time in enumerate(self.left_start_times):
+            try:
+                if self.left_start_times.any() is None:
+                    continue
+                else:
+                    try:
+                        if self.left_start_times[idx] > 650:
+                            self.left_start_times[idx] = 650
+                            if time > 700:
+                                self.left_reach_end_times[idx] = 700  # Max trial time.
+                    except:
+                        pass
+            except:
+                pass
+        #pdb.set_trace()
+        self.find_reach_information() # obtain general information about reaching in trial
+        self.trial_cut_vector = []
+
+    def find_reach_information(self):
+        self.multiple_reaches_flag = False
+        self.individual_reach_times, self.individual_reach_end_times, self.individual_reach_peak_times = [], [], []
+        self.reach_hand_type = []
+        self.num_peaks = 0
+        self.num_reaches_split = 0
+        self.individual_grasp_times, self.individual_retract_times, self.individual_reach_duration = [], [], []
+        in_flag = True
+        # Check Handle Behavior wrt reaching statistics to detect tug of war or pre-reaching
+        if self.handle_moved is True and self.right_start_times is None and self.left_start_times is None:
+            self.handle_moved = False
+        # Take min of right and left start times as "reach times" for start of classification extraction
+        self.individual_grasp_times.append(self.grasp)
+        self.individual_retract_times.append(self.retract_start)
+        if None in self.right_start_times and None in self.left_start_times: # No reaching in trial found
+            self.trial_type = False
+            self.num_peaks = 0
+            self.num_reaches_split = None
+            self.reach_hand_type.append(None)
+            self.individual_reach_times.append(None)
+            self.individual_grasp_times.append(None)
+            self.individual_retract_times.append(None)
+            self.individual_reach_duration.append(None)
+            self.behavior_start_time = 0
+            self.behavior_end_time = 200
+        # Right start times
+        elif None in self.left_start_times:
+            self.trial_type = True
+            self.num_peaks = len(self.right_peak_times)
+            self.num_reaches_split = len(self.right_start_times)
+            if self.num_reaches_split > 1:
+                self.multiple_reaches_flag = True
+                self.individual_reach_times = self.right_start_times
+                self.individual_reach_end_times = self.right_reach_end_times
+                self.individual_reach_peak_times = self.right_peak_times
+            else:
+                self.individual_reach_times = [self.right_start_times[-1]]
+                self.individual_reach_end_times = [self.right_reach_end_times[-1]]
+                self.individual_reach_peak_times = [self.right_peak_times[-1]]
+
+            for items in self.right_start_times:
+                self.reach_hand_type.append('Right')
+            try:
+                self.behavior_start_time = min(self.right_start_times)
+                self.behavior_end_time = self.retract_end
+            except:
+                self.behavior_start_time = self.right_start_times[0]
+                self.behavior_end_time = self.right_reach_end_times[-1]
+        # Left start times
+        elif None in self.right_start_times: # If there are none in right_start_times
+            self.trial_type = True
+            self.num_peaks = len(self.left_peak_times)
+            self.num_reaches_split = len(self.left_start_times)
+            if self.num_reaches_split > 1: # Count and append parts of behavior
+                self.multiple_reaches_flag = True
+                self.individual_reach_times = self.left_start_times
+                self.individual_reach_end_times = self.left_reach_end_times
+                self.individual_reach_peak_times = self.left_peak_times
+                self.individual_grasp_times = self.grasp
+                self.individual_retract_times = self.retract_start
+            else: # Count and append different parts of behavior
+                self.individual_reach_times = [self.left_start_times[-1]]
+                self.individual_reach_end_times = [self.left_reach_end_times[-1]]
+                self.individual_reach_peak_times = [self.left_peak_times[-1]]
+            for items in self.left_start_times: # Append hand type.
+                self.reach_hand_type.append('Left')
+            try: # Get beginning and end times
+                self.behavior_start_time = min(self.left_start_times)
+                self.behavior_end_time = self.retract_end
+            except:
+                self.behavior_start_time = self.left_start_times[0]
+                self.behavior_end_time = self.left_reach_end_times[-1]
+        # Both hands perform reaching behavior
+        elif None not in self.left_start_times and None not in self.right_start_times:
+            # Two-hands reaching, check times that reaching occurs in both hands
+            # If one hand is ~20 frames within eachother, seperate reaches
+            # If hands together, bimanual
+            self.trial_type = True
+            for idr, r_reach in enumerate(self.right_start_times): # Compare indexes
+                r_reach_end_time = self.right_reach_end_times[idr]
+                r_reach_peak_time = self.right_peak_times[idr]
+                for idl, l_reach in enumerate(self.left_start_times):
+                    l_reach_end_time = self.left_start_times[idl]
+                    l_reach_peak_time = self.left_peak_times[idl]
+                # Check here for each reach
+                    if l_reach - 5 < r_reach < l_reach + 5: # is r reach within 30 frames of a l reach
+                        print('bimanual')
+                        print(l_reach, r_reach)
+                        self.reach_hand_type.append('Bimanual')
+                        self.num_reaches_split += 1
+                        if l_reach < r_reach:
+                            self.individual_reach_times.append(l_reach)
+                            self.individual_reach_end_times.append(l_reach_end_time)
+                            self.individual_reach_peak_times.append(l_reach_peak_time)
+                        else:
+                            self.individual_reach_times.append(r_reach)
+                            self.individual_reach_end_times.append(r_reach_end_time)
+                            self.individual_reach_peak_times.append(r_reach_peak_time)
+            for l_reach in self.left_start_times:
+                        if l_reach not in self.individual_reach_times:
+                            for reaches in self.individual_reach_times:
+                                if l_reach - 10 < reaches < l_reach + 10:
+                                    print('no add')
+                                    in_flag=False
+                        if in_flag:
+                            #pdb.set_trace()
+                            self.reach_hand_type.append('Left')
+                            self.individual_reach_times.append(l_reach)
+                            self.individual_reach_peak_times.append(l_reach_peak_time)
+                            self.individual_reach_end_times.append(l_reach_end_time)
+                            self.num_reaches_split += 1
+                        in_flag = True
+            for r_reach in self.right_start_times:
+                        if r_reach not in self.individual_reach_times:
+                            for reaches in self.individual_reach_times:
+                                if r_reach - 20 < reaches < r_reach + 20:
+                                    print('no add')
+                                    in_flag = False
+                        if in_flag:
+                            #pdb.set_trace()
+                            self.reach_hand_type.append('Right')
+                            self.individual_reach_times.append(r_reach)
+                            self.individual_reach_peak_times.append(r_reach_peak_time)
+                            self.individual_reach_end_times.append(r_reach_end_time)
+                            self.num_reaches_split += 1
+                        in_flag = True
+            self.num_peaks = len(self.individual_reach_times)
+            try:
+                self.behavior_start_time = np.amin(
+                    np.hstack((np.asarray(self.right_start_times), np.asarray(self.left_start_times))))
+                if self.retract_end is not None:
+                    self.behavior_end_time = self.retract_end
+                else:
+                    self.behavior_end_time = np.amax(np.hstack((np.asarray(self.right_reach_end_times),
+                                                                np.asarray(self.left_reach_end_times))))
+            except:
+                print('fail b loop')
+                pdb.set_trace()
+                self.behavior_start_time = np.amin(
+                    np.hstack((np.asarray(self.right_start_times), np.asarray(self.left_start_times))))
+                self.behavior_end_time = np.amax(np.hstack((np.asarray(self.right_reach_end_times),
+                                                            np.asarray(self.left_reach_end_times))))
+        else:
+            self.trial_type = False
+            self.behavior_start_time = 0
+            self.behavior_end_time = 200
+            self.num_peaks = 0
+            self.reach_hand_type.append(None)
+            self.individual_reach_times.append(None)
+        if self.individual_reach_times is not None:
+            for irx, reaches in enumerate(self.individual_reach_times):
+                try:
+                    self.individual_reach_duration.append(self.individual_reach_end_times[irx] - reaches)
+                except:
+                    self.individual_reach_duration.append(None)
+        print('npeaks = ' + str(self.num_peaks), self.reach_hand_type, self.individual_reach_times)
+        if self.behavior_end_time is not None:
+            if self.behavior_end_time < 20 and self.handle_moved is False: # unsuccessful reach early into trial
+                self.behavior_end_time = self.behavior_end_time + 40 # Pad by 200ms
+        if all(ix is not None for ix in self.left_palm_maxima) and all(
+                ix is not None for ix in self.right_palm_maxima):  # no reach flag
+            pass
+        if self.behavior_start_time is not None and self.behavior_end_time is None:
+            if self.retract_end:
+                self.behavior_end_time=self.retract_end
+            elif self.individual_reach_end_times is not None:
+                self.behavior_end_time = self.individual_reach_end_times[-1]
+            else:
+                self.behavior_end_time = self.behavior_start_time + 150
+        if self.trial_type:
+            try:
+                self.behavior_duration = self.behavior_end_time - self.behavior_start_time
+            except:
+                pdb.set_trace()
+        else:
+            self.behavior_duration = None
+
     def assign_final_variables(self):
         [self.nose, self.handle, self.left_shoulder, self.left_forearm, self.left_wrist,
          self.left_palm, self.left_index_base, self.left_index_tip, self.left_middle_base,
@@ -636,291 +1146,8 @@ class ReachViz:
          self.right_end_base_o, self.right_end_tip_o] = self.outlier_list
         return
 
-    def calculate_kinematics_from_position(self, pos_v):
-        """ Function that calculates velocity, speed, and acceleration on a per-bodypart basis."""
-        v_holder = np.zeros(pos_v.shape)
-        a_holder = np.zeros(pos_v.shape)
-        speed_holder = np.zeros(pos_v.shape[0])
-        pos_v = pos_v[0:len(self.time_vector)]  # Make sure we don't have a leading number ie extra "time" frame
-        for ddx in range(0, pos_v.shape[0]):
-            v_holder[ddx, :] = np.copy((pos_v[ddx, :] - pos_v[ddx - 1, :]) / (
-                    self.time_vector[ddx] - self.time_vector[ddx - 1]))
-            # v_holder[ddx, :] = scipy.ndimage.gaussian_filter1d(v_holder[ddx, :], 3)
-        # Get cubic spline representation of speeds after smoothing
-        if spline:
-            try:
-                v_holder = vu.cubic_spline_smoothing(v_holder, .1)
-            except:
-                print('Vel holder')
-        # Calculate speed, acceleration from smoothed (no time-dependent jumps) velocities
-        for ddx in range(0, pos_v.shape[0]):
-            speed_holder[ddx] = np.sqrt(v_holder[ddx, 0] ** 2 + v_holder[ddx, 1] ** 2 + v_holder[ddx, 2] ** 2)
-        for ddx in range(0, pos_v.shape[0]):
-            a_holder[ddx, :] = np.copy(
-                (v_holder[ddx, :] - v_holder[ddx - 1, :]) / (self.time_vector[ddx] - self.time_vector[ddx - 1]))
-            speed_holder = gkern(speed_holder, 3)
-        return np.asarray(v_holder), np.asarray(a_holder), np.asarray(speed_holder)
-
-    def tug_of_war_flag(self):
-        self.tug_flag = 0
-        self.lick_tug = 0
-        init_handle_speed = np.where(self.handle_s > 0.1)
-        if init_handle_speed.any():
-            self.tug_flag = 1
-        if self.first_lick_signal < 30:
-            self.lick_tug = 1
-
-    def segment_reaches_with_speed_peaks(self, block=False):
-        """ Function to segment out reaches using a positional and velocity threshold. """
-        # find peaks of speed velocities
-        # For each peak > 0.4 m/s, find the local minima (s < 0.05) for that time series
-        # Take minima - 15 as tentative reach start time
-        self.reach_start_time = []
-        self.reach_peak_time = []
-        self.left_start_times = []
-        self.right_start_times = []
-        self.left_peak_times = []
-        self.right_peak_times = []
-        self.right_reach_end_times = []
-        self.left_reach_end_times = []
-        self.reach_duration = []
-        self.total_block_reaches = 0
-        self.reach_end_time = 0
-        # Get some basic information about what's going on in the trial from micro-controller data
-        hidx = np.where(self.handle_s > .1)
-        hid = np.zeros(self.handle_s.shape[0])
-        hid[hidx] = 1  # Mask for handle speed > 0.1
-        if np.nonzero(hid):
-            self.handle_moved = True
-        else:
-            self.handle_moved = False
-        if np.nonzero(self.lick):
-            self.rewarded = True
-        else:
-            self.rewarded = False
-        # Find peaks in left palm time-series with masked data
-        lps = np.copy(self.left_palm_s[:])  # Masked left palm speed
-        rps = np.copy(self.right_palm_s[:])  # Masked right palm speed
-        lps[self.prob_filter_index] = 0  # if p_values < 0.3
-        rps[self.prob_filter_index] = 0
-        # If palms are < 0.4 p-value, remove chance at "maxima"
-        left_palm_prob = np.where(self.left_palm_p < 0.5)[0]
-        right_palm_prob = np.where(self.right_palm_p < 0.5)[0]
-        # If palms are > 0.13m in the x-direction towards the handle 0 position.
-        left_palm_pos_f = np.where(self.left_palm[:, 0] < 0.14)[0]
-        right_palm_pos_f = np.where(self.right_palm[:, 0] < 0.14)[0]
-        lps[left_palm_prob] = 0
-        rps[right_palm_prob] = 0
-        rps[right_palm_pos_f] = 0
-        lps[left_palm_pos_f] = 0
-        lps[hidx] = 0  # zero out handle speed time-points (handle is moving, we are retracting
-        rps[hidx] = 0
-        lps[0:4] = 0  # remove any possible edge effect
-        rps[0:4] = 0  # remove any possible edge effect
-        start_pad = 80
-        self.left_palm_maxima = find_peaks(lps, height=0.15, distance=20)[0]
-        if self.left_palm_maxima.any():
-            print('Left Palm Reach')
-            # demarcate multiple reaches through looking at steps (<40 between peaks is multiple)
-            # use x position to find where speeds are valid (for x in not in outlier_vector)
-            for ir in range(0, self.left_palm_maxima.shape[0]):
-                # find first speed < 0.1, this is reach start. pad by 10 to get initial.
-                if self.left_palm_maxima[ir] > 51:
-                    try:
-                        below_reach_speed = self.left_palm_s[self.left_palm_maxima[ir] - 50: self.left_palm_maxima[ir]]
-                        index_below = np.where(np.asarray(below_reach_speed) < 0.1)[-1][
-                            -1]  # find last index where speed < 0.1
-                        left_palm_below_thresh = self.left_palm_maxima[ir] - index_below - start_pad
-                    except:
-                        left_palm_below_thresh = self.left_palm_maxima[ir] - \
-                                                 np.argmin(self.left_palm_s[self.left_palm_maxima[ir] - 50:
-                                                                            self.left_palm_maxima[ir]]) - start_pad
-                else:
-                    max = self.left_palm_maxima[ir]
-                    below_reach_speed = self.left_palm_s[0:max]
-                    try:
-                        index_below = np.where(np.asarray(below_reach_speed) < 0.1)[-1][-1]
-                        left_palm_below_thresh = self.left_palm_maxima[ir] - index_below - start_pad
-                    except:
-                        left_palm_below_thresh = 0
-                try:
-                    left_palm_below_thresh_after = self.left_palm_maxima[ir] + \
-                                                   np.where(np.asarray(self.left_palm_s[
-                                                                       self.left_palm_maxima[ir]:
-                                                                       self.left_palm_maxima[ir] + 100]) < 0.1)[0][
-                                                       0] + start_pad
-                except:
-                    try:
-                        left_palm_below_thresh_after = self.left_palm_maxima[ir] + 50 + start_pad
-                    except:
-                        pdb.set_trace()
-                try:
-                    start_time_l = left_palm_below_thresh
-                except:
-                    start_time_l = 0
-            try:
-                if start_time_l < 0:
-                    start_time_l = 1
-            except:
-                pass
-            self.left_start_times.append(start_time_l)
-            self.left_peak_times.append(self.left_palm_maxima[ir])
-            self.reach_peak_time.append(self.left_palm_maxima[ir])  # Record Peak
-            self.left_reach_end_times.append(left_palm_below_thresh_after)  # Record putative end of motion
-        # Find peaks in right palm time-series
-        else:
-            self.left_peak_times.append(None)
-            self.left_reach_end_times.append(None)
-            self.left_start_times.append(None)
-            self.reach_peak_time.append(None)
-        self.right_palm_maxima = find_peaks(rps, height=0.15, distance=20)[0]
-        if self.right_palm_maxima.any():
-            print('Right Palm Reach')
-            for ir in range(0, self.right_palm_maxima.shape[0]):
-                if self.right_palm_maxima[ir] > 51:
-                    try:
-                        below_reach_speed = self.right_palm_s[
-                                            self.right_palm_maxima[ir] - 50: self.right_palm_maxima[ir]]
-                        index_below = np.where(np.asarray(below_reach_speed) < 0.1)[-1][
-                            -1]  # find last index where speed < 0.1
-                        right_palm_below_thresh = self.right_palm_maxima[ir] - index_below - start_pad
-                    except:
-                        self.right_palm_maxima[ir] - np.argmin(
-                            self.right_palm_s[self.right_palm_maxima[ir] - 50: self.right_palm_maxima[ir]]) - start_pad
-                else:
-                    max = self.right_palm_maxima[ir]
-                    below_reach_speed = self.right_palm_s[0:max]
-                    try:
-                        index_below = np.where(np.asarray(below_reach_speed) < 0.1)[0]
-                        right_palm_below_thresh = self.right_palm_maxima[ir] - index_below - start_pad
-                    except:
-                        right_palm_below_thresh = 0
-                try:
-                    right_palm_below_thresh_after = self.right_palm_maxima[ir] + \
-                                                    np.where(np.asarray(self.right_palm_s[
-                                                                        self.right_palm_maxima[ir]:
-                                                                        self.right_palm_maxima[
-                                                                            ir] + 100]) < 0.1)[0][0] + start_pad
-                except:
-                    try:
-                        right_palm_below_thresh_after = self.right_palm_maxima[ir] + 50 + start_pad
-                    except:
-                        pdb.set_trace()
-                try:
-                    start_time_r = right_palm_below_thresh
-                except:
-                    start_time_r = 0
-                try:
-                    if start_time_r < 0:
-                        start_time_r = 1
-                except:
-                    pass
-                self.right_start_times.append(start_time_r)
-                self.right_peak_times.append(self.right_palm_maxima[ir])
-                self.reach_peak_time.append(self.right_palm_maxima[ir])
-                self.right_reach_end_times.append(right_palm_below_thresh_after)
-        else:
-            self.right_peak_times.append(None)
-            self.right_reach_end_times.append(None)
-            self.right_start_times.append(None)
-            self.reach_peak_time.append(None)
-        if block:
-            self.total_block_reaches = 0
-        # Check for unrealistic start and stop values (late in trial)
-        for idx, time in enumerate(self.right_start_times):
-            try:
-                if any in self.right_start_times is None:
-                    continue
-                else:
-                    try:
-                        if self.right_start_times[idx] > 650:
-                            self.right_start_times[idx] = 650
-                            if time > 700:
-                                self.right_reach_end_times[idx] = 700  # Max trial time.
-                    except:
-                        pass
-            except:
-                pass
-        for idx, time in enumerate(self.left_start_times):
-            try:
-                if self.left_start_times.any() is None:
-                    continue
-                else:
-                    try:
-                        if self.left_start_times[idx] > 650:
-                            self.left_start_times[idx] = 650
-                            if time > 700:
-                                self.left_reach_end_times[idx] = 700  # Max trial time.
-                    except:
-                        pass
-            except:
-                pass
-        # Take min of right and left start times as "reach times" for start of classification extraction
-        if self.right_start_times and self.left_start_times:
-            if all(ix is None for ix in self.right_start_times) and all(ix is None for ix in self.left_start_times):
-                self.reach_start_time = 0
-                self.reach_end_time = 200
-            elif all(ix is not None for ix in self.right_start_times):
-                try:
-                    self.reach_start_time = min(self.right_start_times)
-                    self.reach_end_time = self.right_reach_end_times[-1]
-                    print('r')
-                except:
-                    self.reach_start_time = self.right_start_times[0]
-                    self.reach_end_time = self.right_reach_end_times[-1]
-            elif all(ix is not None for ix in self.left_start_times):
-                try:
-                    self.reach_start_time = min(self.left_start_times)
-                    self.reach_end_time = self.left_reach_end_times[-1]
-                    print('l')
-                except:
-                    self.reach_start_time = self.left_start_times[0]
-                    self.reach_end_time = self.left_reach_end_times[-1]
-            elif all(ix is not None for ix in self.left_start_times) and all(
-                    ix is not None for ix in self.right_start_times):
-                try:
-                    self.reach_start_time = min(self.right_start_times + self.left_start_times)
-                    self.reach_end_time = (self.right_reach_end_times + self.left_reach_end_times).sort()[-1]
-                    print('LR')
-                except:
-                    self.reach_end_time = (self.right_reach_end_times + self.left_reach_end_times).sort()[-1]
-                    self.reach_start_time = (self.right_start_times + self.left_start_times).sort()[0]
-        else:
-            self.reach_start_time = 0
-            self.reach_end_time = 200
-            print('No LR')
-        if all(ix is not None for ix in self.left_palm_maxima) and all(
-                ix is not None for ix in self.right_palm_maxima):  # no reach flag
-            pass
-        elif all(ix is not None for ix in self.left_palm_maxima):
-            self.num_peaks = len(self.left_palm_maxima)
-        elif all(ix is not None for ix in self.right_start_times):
-            self.num_peaks = len(self.right_palm_maxima)
-        try:
-            self.reach_duration = self.reach_end_time - self.reach_start_time
-        except:
-            print('nt')
-            self.reach_duration = 0
-        self.handle_moved = 0
-        self.trial_cut_vector = []
-        return
-
-    def plot_velocities_against_probabilities(self):
-        fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(8, 8))
-        bins_list = [0, 0.2, 0.4, 0.6, 0.8, 1.0, 1.2, 1.4, 1.6, 1.8, 2]
-        plt.hist(np.asarray(self.raw_speeds).flatten(), bins=bins_list, alpha=0.7, color='r', log=True,
-                 label='Raw Speeds')
-        plt.hist(np.asarray(self.speeds).flatten(), bins=bins_list, alpha=0.9, color='b', log=True,
-                 label='Cubic Filtered Speeds')
-        plt.title('Speeds Vs Probabilities')
-        ax.set_xlabel('Speed Values')
-        ax.set_ylabel('Log Counts')
-        plt.legend()
-        plt.savefig(self.sstr + '/timeseries/p_v_hist.png', dpi=1200)
-        plt.close()
-        return
-
-    def segment_data_into_reach_dict(self, trial_num, error_flag=False):
+    def segment_data_into_reach_dict(self, trial_num, error_flag=False, append_reach_information = False,
+                                     append_outliers = False):
         """ Function that iterates over reaching indices,
             saves the segmented data and corresponding class labels into a dataframe.
         """
@@ -945,281 +1172,277 @@ class ReachViz:
         except:
             pass
         try:
-            if len(self.reach_start_time[0]) == 0:
-                self.reach_start_time = 0
-                self.reach_duration = 0
-                self.reach_end_time = 0
+            if len(self.behavior_start_time[0]) == 0:
+                self.behavior_start_time = 0
+                self.behavior_duration = 0
+                self.behavior_end_time = 0
         except:
             pass
-        try:
-            self.save_dict = {'nose_vx': np.asarray(self.nose_v[:, 0]), 'nose_vy': self.nose_v[:, 1],
-                              'nose_vz': self.nose_v[:, 2],
-                              'handle_vx': self.handle_v[:, 0], 'handle_vy': self.handle_v[:, 1],
-                              'handle_vz': self.handle_v[:, 2],
-                              'left_shoulder_vx': self.left_shoulder_v[:, 0],
-                              'left_shoulder_vy': self.left_shoulder_v[:, 1],
-                              'left_shoulder_vz': self.left_shoulder_v[:, 2],
-                              'left_forearm_vx': self.left_forearm_v[:, 0],
-                              'left_forearm_vy': self.left_forearm_v[:, 1],
-                              'left_forearm_vz': self.left_forearm_v[:, 2],
-                              'left_wrist_vx': self.left_wrist_v[:, 0], 'left_wrist_vy': self.left_wrist_v[:, 1],
-                              'left_wrist_vz': self.left_wrist_v[:, 2],
-                              'left_palm_vx': self.left_palm_v[:, 0], 'left_palm_vy': self.left_palm_v[:, 1],
-                              'left_palm_vz': self.left_palm_v[:, 2],
-                              'left_index_base_vx': self.left_index_base_v[:, 0],
-                              'left_index_base_vy': self.left_index_base_v[:, 1],
-                              'left_index_base_vz': self.left_index_base_v[:, 2],
-                              'left_index_tip_vx': self.left_index_tip_v[:, 0],
-                              'left_index_tip_vy': self.left_index_tip_v[:, 1],
-                              'left_index_tip_vz': self.left_index_tip_v[:, 2],
-                              'left_middle_base_vx': self.left_middle_base_v[:, 0],
-                              'left_middle_base_vy': self.left_middle_base_v[:, 1],
-                              'left_middle_base_vz': self.left_middle_base_v[:, 2],
-                              'left_middle_tip_vx': self.left_middle_tip_v[:, 0],
-                              'left_middle_tip_vy': self.left_middle_tip_v[:, 1],
-                              'left_middle_tip_vz': self.left_middle_tip_v[:, 2],
-                              'left_third_base_vx': self.left_third_base_v[:, 0],
-                              'left_third_base_vy': self.left_third_base_v[:, 1],
-                              'left_third_base_vz': self.left_third_base_v[:, 2],
-                              'left_third_tip_vx': self.left_third_tip_v[:, 0],
-                              'left_third_tip_vy': self.left_third_tip_v[:, 1],
-                              'left_third_tip_vz': self.left_third_tip_v[:, 2],
-                              'left_end_base_vx': self.left_end_base_v[:, 0],
-                              'left_end_base_vy': self.left_end_base_v[:, 1],
-                              'left_end_base_vz': self.left_end_base_v[:, 2],
-                              'left_end_tip_vx': self.left_end_tip_v[:, 0],
-                              'left_end_tip_vy': self.left_end_tip_v[:, 1],
-                              'left_end_tip_vz': self.left_end_tip_v[:, 2],
-                              'right_shoulder_vx': self.right_shoulder_v[:, 0],
-                              'right_shoulder_vy': self.right_shoulder_v[:, 1],
-                              'right_shoulder_vz': self.right_shoulder_v[:, 2],
-                              'right_forearm_vx': self.right_forearm_v[:, 0],
-                              'right_forearm_vy': self.right_forearm_v[:, 1],
-                              'right_forearm_vz': self.right_forearm_v[:, 2],
-                              'right_wrist_vx': self.right_wrist_v[:, 0], 'right_wrist_vy': self.right_wrist_v[:, 1],
-                              'right_wrist_vz': self.right_wrist_v[:, 2],
-                              'right_palm_vx': self.right_palm_v[:, 0], 'right_palm_vy': self.right_palm_v[:, 1],
-                              'right_palm_vz': self.right_palm_v[:, 2],
-                              'right_index_base_vx': self.right_index_base_v[:, 0],
-                              'right_index_base_vy': self.right_index_base_v[:, 1],
-                              'right_index_base_vz': self.right_index_base_v[:, 1],
-                              'right_index_tip_vx': self.right_index_tip_v[:, 0],
-                              'right_index_tip_vy': self.right_index_tip_v[:, 1],
-                              'right_index_tip_vz': self.right_index_tip_v[:, 1],
-                              'right_middle_base_vx': self.right_middle_base_v[:, 0],
-                              'right_middle_base_vy': self.right_middle_base_v[:, 1],
-                              'right_middle_base_vz': self.right_middle_base_v[:, 2],
-                              'right_middle_tip_vx': self.right_middle_tip_v[:, 0],
-                              'right_middle_tip_vy': self.right_middle_tip_v[:, 1],
-                              'right_middle_tip_vz': self.right_middle_tip_v[:, 2],
-                              'right_third_base_vx': self.right_third_base_v[:, 0],
-                              'right_third_base_vy': self.right_third_base_v[:, 1],
-                              'right_third_base_vz': self.right_third_base_v[:, 2],
-                              'right_third_tip_vx': self.right_third_tip_v[:, 0],
-                              'right_third_tip_vy': self.right_third_tip_v[:, 1],
-                              'right_third_tip_vz': self.right_third_tip_v[:, 2],
-                              'right_end_base_vx': self.right_end_base_v[:, 0],
-                              'right_end_base_vy': self.right_end_base_v[:, 1],
-                              'right_end_base_vz': self.right_end_base_v[:, 2],
-                              'right_end_tip_vx': self.right_end_tip_v[:, 0],
-                              'right_end_tip_vy': self.right_end_tip_v[:, 1],
-                              'right_end_tip_vz': self.right_end_tip_v[:, 2],
-                              # Accelerations
-                              'nose_ax': self.nose_a[:, 0], 'nose_ay': self.nose_a[:, 1], 'nose_az': self.nose_a[:, 2],
-                              'handle_ax': self.handle_a[:, 0], 'handle_ay': self.handle_a[:, 1],
-                              'handle_az': self.handle_a[:, 2],
-                              'left_shoulder_ax': self.left_shoulder_a[:, 0],
-                              'left_shoulder_ay': self.left_shoulder_a[:, 1],
-                              'left_shoulder_az': self.left_shoulder_a[:, 2],
-                              'left_forearm_ax': self.left_forearm_a[:, 0],
-                              'left_forearm_ay': self.left_forearm_a[:, 1],
-                              'left_forearm_az': self.left_forearm_a[:, 2],
-                              'left_wrist_ax': self.left_wrist_a[:, 0], 'left_wrist_ay': self.left_wrist_a[:, 1],
-                              'left_wrist_az': self.left_wrist_a[:, 2],
-                              'left_palm_ax': self.left_palm_a[:, 0], 'left_palm_ay': self.left_palm_a[:, 1],
-                              'left_palm_az': self.left_palm_a[:, 2],
-                              'left_index_base_ax': self.left_index_base_a[:, 0],
-                              'left_index_base_ay': self.left_index_base_a[:, 1],
-                              'left_index_base_az': self.left_index_base_a[:, 2],
-                              'left_index_tip_ax': self.left_index_tip_a[:, 0],
-                              'left_index_tip_ay': self.left_index_tip_a[:, 1],
-                              'left_index_tip_az': self.left_index_tip_a[:, 2],
-                              'left_middle_base_ax': self.left_middle_base_a[:, 0],
-                              'left_middle_base_ay': self.left_middle_base_a[:, 1],
-                              'left_middle_base_az': self.left_middle_base_a[:, 2],
-                              'left_middle_tip_ax': self.left_middle_tip_a[:, 0],
-                              'left_middle_tip_ay': self.left_middle_tip_a[:, 1],
-                              'left_middle_tip_az': self.left_middle_tip_a[:, 2],
-                              'left_third_base_ax': self.left_third_base_a[:, 0],
-                              'left_third_base_ay': self.left_third_base_a[:, 1],
-                              'left_third_base_az': self.left_third_base_a[:, 2],
-                              'left_third_tip_ax': self.left_third_tip_a[:, 0],
-                              'left_third_tip_ay': self.left_third_tip_a[:, 1],
-                              'left_third_tip_az': self.left_third_tip_a[:, 2],
-                              'left_end_base_ax': self.left_end_base_a[:, 0],
-                              'left_end_base_ay': self.left_end_base_a[:, 1],
-                              'left_end_base_az': self.left_end_base_a[:, 2],
-                              'left_end_tip_ax': self.left_end_tip_a[:, 0],
-                              'left_end_tip_ay': self.left_end_tip_a[:, 1],
-                              'left_end_tip_az': self.left_end_tip_a[:, 2],
-                              'right_shoulder_ax': self.right_shoulder_a[:, 0],
-                              'right_shoulder_ay': self.right_shoulder_a[:, 1],
-                              'right_shoulder_az': self.right_shoulder_a[:, 2],
-                              'right_forearm_ax': self.right_forearm_a[:, 0],
-                              'right_forearm_ay': self.right_forearm_a[:, 1],
-                              'right_forearm_az': self.right_forearm_a[:, 2],
-                              'right_wrist_ax': self.right_wrist_a[:, 0], 'right_wrist_ay': self.right_wrist_a[:, 1],
-                              'right_wrist_az': self.right_wrist_a[:, 2],
-                              'right_palm_ax': self.right_palm_a[:, 0], 'right_palm_ay': self.right_palm_a[:, 1],
-                              'right_palm_az': self.right_palm_a[:, 2],
-                              'right_index_base_ax': self.right_index_base_a[:, 0],
-                              'right_index_base_ay': self.right_index_base_a[:, 1],
-                              'right_index_base_az': self.right_index_base_a[:, 1],
-                              'right_index_tip_ax': self.right_index_tip_a[:, 0],
-                              'right_index_tip_ay': self.right_index_tip_a[:, 1],
-                              'right_index_tip_az': self.right_index_tip_a[:, 1],
-                              'right_middle_base_ax': self.right_middle_base_a[:, 0],
-                              'right_middle_base_ay': self.right_middle_base_a[:, 1],
-                              'right_middle_base_az': self.right_middle_base_a[:, 2],
-                              'right_middle_tip_ax': self.right_middle_tip_a[:, 0],
-                              'right_middle_tip_ay': self.right_middle_tip_a[:, 1],
-                              'right_middle_tip_az': self.right_middle_tip_a[:, 2],
-                              'right_third_base_ax': self.right_third_base_a[:, 0],
-                              'right_third_base_ay': self.right_third_base_a[:, 1],
-                              'right_third_base_az': self.right_third_base_a[:, 2],
-                              'right_third_tip_ax': self.right_third_tip_a[:, 0],
-                              'right_third_tip_ay': self.right_third_tip_a[:, 1],
-                              'right_third_tip_az': self.right_third_tip_a[:, 2],
-                              'right_end_base_ax': self.right_end_base_a[:, 0],
-                              'right_end_base_ay': self.right_end_base_a[:, 1],
-                              'right_end_base_az': self.right_end_base_a[:, 2],
-                              'right_end_tip_ax': self.right_end_tip_a[:, 0],
-                              'right_end_tip_ay': self.right_end_tip_a[:, 1],
-                              'right_end_tip_az': self.right_end_tip_a[:, 2],
-                              # Speeds
-                              'nose_s': self.nose_s, 'handle_s': self.handle_s, 'left_shoulder_s': self.left_shoulder_s,
-                              'left_forearm_s': self.left_forearm_s, 'left_wrist_s': self.left_wrist_s,
-                              'left_palm_s': self.left_palm_s, 'left_index_base_s': self.left_index_base_s,
-                              'left_index_tip_s': self.left_index_tip_s, 'left_middle_base_s': self.left_middle_base_s,
-                              'left_middle_tip_s': self.left_middle_tip_s,
-                              'left_third_base_s': self.left_third_base_s, 'left_third_tip_s': self.left_third_tip_s,
-                              'left_end_base_s': self.left_end_base_s,
-                              'left_end_tip_s': self.left_end_tip_s, 'right_shoulder_s': self.right_shoulder_s,
-                              'right_forearm_s': self.right_forearm_s, 'right_wrist_s': self.right_wrist_s,
-                              'right_palm_s': self.right_palm_s, 'right_index_base_s': self.right_index_base_s,
-                              'right_index_tip_s': self.right_index_tip_s,
-                              'right_middle_base_s': self.right_middle_base_s,
-                              'right_middle_tip_s': self.right_middle_tip_s,
-                              'right_third_base_s': self.right_third_base_s,
-                              'right_third_tip_s': self.right_third_tip_s,
-                              'right_end_base_s': self.right_end_base_s, 'right_end_tip_s': self.right_end_tip_s,
-                              # Positions
-                              'nose_px': self.nose[:, 0], 'nose_py': self.nose[:, 1], 'nose_pz': self.nose[:, 2],
-                              'handle_px': self.handle[:, 0], 'handle_py': self.handle[:, 1],
-                              'handle_pz': self.handle[:, 2],
-                              'left_shoulder_px': self.left_shoulder[:, 0],
-                              'left_shoulder_py': self.left_shoulder[:, 1],
-                              'left_shoulder_pz': self.left_shoulder[:, 2],
-                              'left_forearm_px': self.left_forearm[:, 0], 'left_forearm_py': self.left_forearm[:, 1],
-                              'left_forearm_pz': self.left_forearm[:, 2],
-                              'left_wrist_px': self.left_wrist[:, 0], 'left_wrist_py': self.left_wrist[:, 1],
-                              'left_wrist_pz': self.left_wrist[:, 2],
-                              'left_palm_px': self.left_palm[:, 0], 'left_palm_py': self.left_palm[:, 1],
-                              'left_palm_pz': self.left_palm[:, 2],
-                              'left_index_base_px': self.left_index_base[:, 0],
-                              'left_index_base_py': self.left_index_base[:, 1],
-                              'left_index_base_pz': self.left_index_base[:, 2],
-                              'left_index_tip_px': self.left_index_tip[:, 0],
-                              'left_index_tip_py': self.left_index_tip[:, 1],
-                              'left_index_tip_pz': self.left_index_tip[:, 2],
-                              'left_middle_base_px': self.left_middle_base[:, 0],
-                              'left_middle_base_py': self.left_middle_base[:, 1],
-                              'left_middle_base_pz': self.left_middle_base[:, 2],
-                              'left_middle_tip_px': self.left_middle_tip[:, 0],
-                              'left_middle_tip_py': self.left_middle_tip[:, 1],
-                              'left_middle_tip_pz': self.left_middle_tip[:, 2],
-                              'left_third_base_px': self.left_third_base[:, 0],
-                              'left_third_base_py': self.left_third_base[:, 1],
-                              'left_third_base_pz': self.left_third_base[:, 2],
-                              'left_third_tip_px': self.left_third_tip[:, 0],
-                              'left_third_tip_py': self.left_third_tip[:, 1],
-                              'left_third_tip_pz': self.left_third_tip[:, 2],
-                              'left_end_base_px': self.left_end_base[:, 0],
-                              'left_end_base_py': self.left_end_base[:, 1],
-                              'left_end_base_pz': self.left_end_base[:, 2],
-                              'left_end_tip_px': self.left_end_tip[:, 0], 'left_end_tip_py': self.left_end_tip[:, 1],
-                              'left_end_tip_pz': self.left_end_tip_a[:, 2],
-                              'right_shoulder_px': self.right_shoulder[:, 0],
-                              'right_shoulder_py': self.right_shoulder[:, 1],
-                              'right_shoulder_pz': self.right_shoulder[:, 2],
-                              'right_forearm_px': self.right_forearm[:, 0],
-                              'right_forearm_py': self.right_forearm[:, 1],
-                              'right_forearm_pz': self.right_forearm[:, 2],
-                              'right_wrist_px': self.right_wrist[:, 0], 'right_wrist_py': self.right_wrist[:, 1],
-                              'right_wrist_pz': self.right_wrist[:, 2],
-                              'right_palm_px': self.right_palm[:, 0], 'right_palm_py': self.right_palm[:, 1],
-                              'right_palm_pz': self.right_palm[:, 2],
-                              'right_index_base_px': self.right_index_base[:, 0],
-                              'right_index_base_py': self.right_index_base[:, 1],
-                              'right_index_base_pz': self.right_index_base[:, 1],
-                              'right_index_tip_px': self.right_index_tip[:, 0],
-                              'right_index_tip_py': self.right_index_tip[:, 1],
-                              'right_index_tip_pz': self.right_index_tip[:, 1],
-                              'right_middle_base_px': self.right_middle_base[:, 0],
-                              'right_middle_base_py': self.right_middle_base[:, 1],
-                              'right_middle_base_pz': self.right_middle_base[:, 2],
-                              'right_middle_tip_px': self.right_middle_tip[:, 0],
-                              'right_middle_tip_py': self.right_middle_tip[:, 1],
-                              'right_middle_tip_pz': self.right_middle_tip[:, 2],
-                              'right_third_base_px': self.right_third_base[:, 0],
-                              'right_third_base_py': self.right_third_base[:, 1],
-                              'right_third_base_pz': self.right_third_base[:, 2],
-                              'right_third_tip_px': self.right_third_tip[:, 0],
-                              'right_third_tip_py': self.right_third_tip[:, 1],
-                              'right_third_tip_pz': self.right_third_tip[:, 2],
-                              'right_end_base_px': self.right_end_base[:, 0],
-                              'right_end_base_py': self.right_end_base[:, 1],
-                              'right_end_base_pz': self.right_end_base[:, 2],
-                              'right_end_tip_px': self.right_end_tip[:, 0],
-                              'right_end_tip_py': self.right_end_tip[:, 1],
-                              'right_end_tip_pz': self.right_end_tip[:, 2],
-                              #            # Outliers
-                              'nose_o': self.nose_o, 'handle_o': self.handle_o, 'left_shoulder_o': self.left_shoulder_o,
-                              'left_forearm_o': self.left_forearm_o, 'left_wrist_o': self.left_wrist_o,
-                              'left_palm_o': self.left_palm_o, 'left_index_base_o': self.left_index_base_o,
-                              'left_index_tip_o': self.left_index_tip_o, 'left_middle_base_o': self.left_middle_base_o,
-                              'left_middle_tip_o': self.left_middle_tip_o,
-                              'left_third_base_o': self.left_third_base_o, 'left_third_tip_o': self.left_third_tip_o,
-                              'left_end_base_o': self.left_end_base_o,
-                              'left_end_tip_o': self.left_end_tip_o, 'right_shoulder_o': self.right_shoulder_o,
-                              'right_forearm_o': self.right_forearm_o, 'right_wrist_o': self.right_wrist_o,
-                              'right_palm_o': self.right_palm_o, 'right_index_base_o': self.right_index_base_o,
-                              'right_index_tip_o': self.right_index_tip_o,
-                              'right_middle_base_o': self.right_middle_base_o,
-                              'right_middle_tip_o': self.right_middle_tip_o,
-                              'right_third_base_o': self.right_third_base_o,
-                              'right_third_tip_o': self.right_third_tip_o,
-                              'right_end_base_o': self.right_end_base_o, 'right_end_tip_o': self.right_end_tip_o,
-                              # Kinematic Features
-                              'reach_hand': self.arm_id_list, 'right_start_time': self.right_start_times,
-                              'left_start_time': self.left_start_times, 'reach_start': self.reach_start_time,
-                              'reach_duration': self.reach_duration,
-                              'reach_end': self.reach_end_time,
-                              'left_end_time': self.left_reach_end_times, 'right_end_time': self.right_reach_end_times,
-                              'left_reach_peak': self.left_peak_times, 'right_reach_peak': self.right_peak_times,
-                              'endpoint_error': self.endpoint_error, 'endpoint_error_x': self.x_endpoint_error,
-                              'endpoint_error_y': self.y_endpoint_error, 'endpoint_error_z': self.z_endpoint_error,
-                              # Sensor Data
-                              'handle_moving_sensor': self.h_moving_sensor, 'lick_beam': self.lick_vector,
-                              'reward_zone': self.reward_zone_sensor, 'time_vector': self.time_vector,
-                              'response_sensor': self.exp_response_sensor, 'x_rob': self.x_robot, 'y_rob': self.y_robot,
-                              'z_rob': self.z_robot, 'error_flag': error_flag
-                              }
-            # Create dataframe object from df, containing
-            df = pd.DataFrame({key: pd.Series(np.asarray(value)) for key, value in self.save_dict.items()})
-        except:
-            print('bad df')
-            df = pd.DataFrame()
+        self.save_dict = {'nose_vx': np.asarray(self.nose_v[:, 0]), 'nose_vy': self.nose_v[:, 1],
+                          'nose_vz': self.nose_v[:, 2],
+                          'handle_vx': self.handle_v[:, 0], 'handle_vy': self.handle_v[:, 1],
+                          'handle_vz': self.handle_v[:, 2],
+                          'left_shoulder_vx': self.left_shoulder_v[:, 0],
+                          'left_shoulder_vy': self.left_shoulder_v[:, 1],
+                          'left_shoulder_vz': self.left_shoulder_v[:, 2],
+                          'left_forearm_vx': self.left_forearm_v[:, 0],
+                          'left_forearm_vy': self.left_forearm_v[:, 1],
+                          'left_forearm_vz': self.left_forearm_v[:, 2],
+                          'left_wrist_vx': self.left_wrist_v[:, 0], 'left_wrist_vy': self.left_wrist_v[:, 1],
+                          'left_wrist_vz': self.left_wrist_v[:, 2],
+                          'left_palm_vx': self.left_palm_v[:, 0], 'left_palm_vy': self.left_palm_v[:, 1],
+                          'left_palm_vz': self.left_palm_v[:, 2],
+                          'left_index_base_vx': self.left_index_base_v[:, 0],
+                          'left_index_base_vy': self.left_index_base_v[:, 1],
+                          'left_index_base_vz': self.left_index_base_v[:, 2],
+                          'left_index_tip_vx': self.left_index_tip_v[:, 0],
+                          'left_index_tip_vy': self.left_index_tip_v[:, 1],
+                          'left_index_tip_vz': self.left_index_tip_v[:, 2],
+                          'left_middle_base_vx': self.left_middle_base_v[:, 0],
+                          'left_middle_base_vy': self.left_middle_base_v[:, 1],
+                          'left_middle_base_vz': self.left_middle_base_v[:, 2],
+                          'left_middle_tip_vx': self.left_middle_tip_v[:, 0],
+                          'left_middle_tip_vy': self.left_middle_tip_v[:, 1],
+                          'left_middle_tip_vz': self.left_middle_tip_v[:, 2],
+                          'left_third_base_vx': self.left_third_base_v[:, 0],
+                          'left_third_base_vy': self.left_third_base_v[:, 1],
+                          'left_third_base_vz': self.left_third_base_v[:, 2],
+                          'left_third_tip_vx': self.left_third_tip_v[:, 0],
+                          'left_third_tip_vy': self.left_third_tip_v[:, 1],
+                          'left_third_tip_vz': self.left_third_tip_v[:, 2],
+                          'left_end_base_vx': self.left_end_base_v[:, 0],
+                          'left_end_base_vy': self.left_end_base_v[:, 1],
+                          'left_end_base_vz': self.left_end_base_v[:, 2],
+                          'left_end_tip_vx': self.left_end_tip_v[:, 0],
+                          'left_end_tip_vy': self.left_end_tip_v[:, 1],
+                          'left_end_tip_vz': self.left_end_tip_v[:, 2],
+                          'right_shoulder_vx': self.right_shoulder_v[:, 0],
+                          'right_shoulder_vy': self.right_shoulder_v[:, 1],
+                          'right_shoulder_vz': self.right_shoulder_v[:, 2],
+                          'right_forearm_vx': self.right_forearm_v[:, 0],
+                          'right_forearm_vy': self.right_forearm_v[:, 1],
+                          'right_forearm_vz': self.right_forearm_v[:, 2],
+                          'right_wrist_vx': self.right_wrist_v[:, 0], 'right_wrist_vy': self.right_wrist_v[:, 1],
+                          'right_wrist_vz': self.right_wrist_v[:, 2],
+                          'right_palm_vx': self.right_palm_v[:, 0], 'right_palm_vy': self.right_palm_v[:, 1],
+                          'right_palm_vz': self.right_palm_v[:, 2],
+                          'right_index_base_vx': self.right_index_base_v[:, 0],
+                          'right_index_base_vy': self.right_index_base_v[:, 1],
+                          'right_index_base_vz': self.right_index_base_v[:, 1],
+                          'right_index_tip_vx': self.right_index_tip_v[:, 0],
+                          'right_index_tip_vy': self.right_index_tip_v[:, 1],
+                          'right_index_tip_vz': self.right_index_tip_v[:, 1],
+                          'right_middle_base_vx': self.right_middle_base_v[:, 0],
+                          'right_middle_base_vy': self.right_middle_base_v[:, 1],
+                          'right_middle_base_vz': self.right_middle_base_v[:, 2],
+                          'right_middle_tip_vx': self.right_middle_tip_v[:, 0],
+                          'right_middle_tip_vy': self.right_middle_tip_v[:, 1],
+                          'right_middle_tip_vz': self.right_middle_tip_v[:, 2],
+                          'right_third_base_vx': self.right_third_base_v[:, 0],
+                          'right_third_base_vy': self.right_third_base_v[:, 1],
+                          'right_third_base_vz': self.right_third_base_v[:, 2],
+                          'right_third_tip_vx': self.right_third_tip_v[:, 0],
+                          'right_third_tip_vy': self.right_third_tip_v[:, 1],
+                          'right_third_tip_vz': self.right_third_tip_v[:, 2],
+                          'right_end_base_vx': self.right_end_base_v[:, 0],
+                          'right_end_base_vy': self.right_end_base_v[:, 1],
+                          'right_end_base_vz': self.right_end_base_v[:, 2],
+                          'right_end_tip_vx': self.right_end_tip_v[:, 0],
+                          'right_end_tip_vy': self.right_end_tip_v[:, 1],
+                          'right_end_tip_vz': self.right_end_tip_v[:, 2],
+                          # Accelerations
+                          'nose_ax': self.nose_a[:, 0], 'nose_ay': self.nose_a[:, 1], 'nose_az': self.nose_a[:, 2],
+                          'handle_ax': self.handle_a[:, 0], 'handle_ay': self.handle_a[:, 1],
+                          'handle_az': self.handle_a[:, 2],
+                          'left_shoulder_ax': self.left_shoulder_a[:, 0],
+                          'left_shoulder_ay': self.left_shoulder_a[:, 1],
+                          'left_shoulder_az': self.left_shoulder_a[:, 2],
+                          'left_forearm_ax': self.left_forearm_a[:, 0],
+                          'left_forearm_ay': self.left_forearm_a[:, 1],
+                          'left_forearm_az': self.left_forearm_a[:, 2],
+                          'left_wrist_ax': self.left_wrist_a[:, 0], 'left_wrist_ay': self.left_wrist_a[:, 1],
+                          'left_wrist_az': self.left_wrist_a[:, 2],
+                          'left_palm_ax': self.left_palm_a[:, 0], 'left_palm_ay': self.left_palm_a[:, 1],
+                          'left_palm_az': self.left_palm_a[:, 2],
+                          'left_index_base_ax': self.left_index_base_a[:, 0],
+                          'left_index_base_ay': self.left_index_base_a[:, 1],
+                          'left_index_base_az': self.left_index_base_a[:, 2],
+                          'left_index_tip_ax': self.left_index_tip_a[:, 0],
+                          'left_index_tip_ay': self.left_index_tip_a[:, 1],
+                          'left_index_tip_az': self.left_index_tip_a[:, 2],
+                          'left_middle_base_ax': self.left_middle_base_a[:, 0],
+                          'left_middle_base_ay': self.left_middle_base_a[:, 1],
+                          'left_middle_base_az': self.left_middle_base_a[:, 2],
+                          'left_middle_tip_ax': self.left_middle_tip_a[:, 0],
+                          'left_middle_tip_ay': self.left_middle_tip_a[:, 1],
+                          'left_middle_tip_az': self.left_middle_tip_a[:, 2],
+                          'left_third_base_ax': self.left_third_base_a[:, 0],
+                          'left_third_base_ay': self.left_third_base_a[:, 1],
+                          'left_third_base_az': self.left_third_base_a[:, 2],
+                          'left_third_tip_ax': self.left_third_tip_a[:, 0],
+                          'left_third_tip_ay': self.left_third_tip_a[:, 1],
+                          'left_third_tip_az': self.left_third_tip_a[:, 2],
+                          'left_end_base_ax': self.left_end_base_a[:, 0],
+                          'left_end_base_ay': self.left_end_base_a[:, 1],
+                          'left_end_base_az': self.left_end_base_a[:, 2],
+                          'left_end_tip_ax': self.left_end_tip_a[:, 0],
+                          'left_end_tip_ay': self.left_end_tip_a[:, 1],
+                          'left_end_tip_az': self.left_end_tip_a[:, 2],
+                          'right_shoulder_ax': self.right_shoulder_a[:, 0],
+                          'right_shoulder_ay': self.right_shoulder_a[:, 1],
+                          'right_shoulder_az': self.right_shoulder_a[:, 2],
+                          'right_forearm_ax': self.right_forearm_a[:, 0],
+                          'right_forearm_ay': self.right_forearm_a[:, 1],
+                          'right_forearm_az': self.right_forearm_a[:, 2],
+                          'right_wrist_ax': self.right_wrist_a[:, 0], 'right_wrist_ay': self.right_wrist_a[:, 1],
+                          'right_wrist_az': self.right_wrist_a[:, 2],
+                          'right_palm_ax': self.right_palm_a[:, 0], 'right_palm_ay': self.right_palm_a[:, 1],
+                          'right_palm_az': self.right_palm_a[:, 2],
+                          'right_index_base_ax': self.right_index_base_a[:, 0],
+                          'right_index_base_ay': self.right_index_base_a[:, 1],
+                          'right_index_base_az': self.right_index_base_a[:, 1],
+                          'right_index_tip_ax': self.right_index_tip_a[:, 0],
+                          'right_index_tip_ay': self.right_index_tip_a[:, 1],
+                          'right_index_tip_az': self.right_index_tip_a[:, 1],
+                          'right_middle_base_ax': self.right_middle_base_a[:, 0],
+                          'right_middle_base_ay': self.right_middle_base_a[:, 1],
+                          'right_middle_base_az': self.right_middle_base_a[:, 2],
+                          'right_middle_tip_ax': self.right_middle_tip_a[:, 0],
+                          'right_middle_tip_ay': self.right_middle_tip_a[:, 1],
+                          'right_middle_tip_az': self.right_middle_tip_a[:, 2],
+                          'right_third_base_ax': self.right_third_base_a[:, 0],
+                          'right_third_base_ay': self.right_third_base_a[:, 1],
+                          'right_third_base_az': self.right_third_base_a[:, 2],
+                          'right_third_tip_ax': self.right_third_tip_a[:, 0],
+                          'right_third_tip_ay': self.right_third_tip_a[:, 1],
+                          'right_third_tip_az': self.right_third_tip_a[:, 2],
+                          'right_end_base_ax': self.right_end_base_a[:, 0],
+                          'right_end_base_ay': self.right_end_base_a[:, 1],
+                          'right_end_base_az': self.right_end_base_a[:, 2],
+                          'right_end_tip_ax': self.right_end_tip_a[:, 0],
+                          'right_end_tip_ay': self.right_end_tip_a[:, 1],
+                          'right_end_tip_az': self.right_end_tip_a[:, 2],
+                          # Speeds
+                          'nose_s': self.nose_s, 'handle_s': self.handle_s, 'left_shoulder_s': self.left_shoulder_s,
+                          'left_forearm_s': self.left_forearm_s, 'left_wrist_s': self.left_wrist_s,
+                          'left_palm_s': self.left_palm_s, 'left_index_base_s': self.left_index_base_s,
+                          'left_index_tip_s': self.left_index_tip_s, 'left_middle_base_s': self.left_middle_base_s,
+                          'left_middle_tip_s': self.left_middle_tip_s,
+                          'left_third_base_s': self.left_third_base_s, 'left_third_tip_s': self.left_third_tip_s,
+                          'left_end_base_s': self.left_end_base_s,
+                          'left_end_tip_s': self.left_end_tip_s, 'right_shoulder_s': self.right_shoulder_s,
+                          'right_forearm_s': self.right_forearm_s, 'right_wrist_s': self.right_wrist_s,
+                          'right_palm_s': self.right_palm_s, 'right_index_base_s': self.right_index_base_s,
+                          'right_index_tip_s': self.right_index_tip_s,
+                          'right_middle_base_s': self.right_middle_base_s,
+                          'right_middle_tip_s': self.right_middle_tip_s,
+                          'right_third_base_s': self.right_third_base_s,
+                          'right_third_tip_s': self.right_third_tip_s,
+                          'right_end_base_s': self.right_end_base_s, 'right_end_tip_s': self.right_end_tip_s,
+                          # Positions
+                          'nose_px': self.nose[:, 0], 'nose_py': self.nose[:, 1], 'nose_pz': self.nose[:, 2],
+                          'handle_px': self.handle[:, 0], 'handle_py': self.handle[:, 1],
+                          'handle_pz': self.handle[:, 2],
+                          'left_shoulder_px': self.left_shoulder[:, 0],
+                          'left_shoulder_py': self.left_shoulder[:, 1],
+                          'left_shoulder_pz': self.left_shoulder[:, 2],
+                          'left_forearm_px': self.left_forearm[:, 0], 'left_forearm_py': self.left_forearm[:, 1],
+                          'left_forearm_pz': self.left_forearm[:, 2],
+                          'left_wrist_px': self.left_wrist[:, 0], 'left_wrist_py': self.left_wrist[:, 1],
+                          'left_wrist_pz': self.left_wrist[:, 2],
+                          'left_palm_px': self.left_palm[:, 0], 'left_palm_py': self.left_palm[:, 1],
+                          'left_palm_pz': self.left_palm[:, 2],
+                          'left_index_base_px': self.left_index_base[:, 0],
+                          'left_index_base_py': self.left_index_base[:, 1],
+                          'left_index_base_pz': self.left_index_base[:, 2],
+                          'left_index_tip_px': self.left_index_tip[:, 0],
+                          'left_index_tip_py': self.left_index_tip[:, 1],
+                          'left_index_tip_pz': self.left_index_tip[:, 2],
+                          'left_middle_base_px': self.left_middle_base[:, 0],
+                          'left_middle_base_py': self.left_middle_base[:, 1],
+                          'left_middle_base_pz': self.left_middle_base[:, 2],
+                          'left_middle_tip_px': self.left_middle_tip[:, 0],
+                          'left_middle_tip_py': self.left_middle_tip[:, 1],
+                          'left_middle_tip_pz': self.left_middle_tip[:, 2],
+                          'left_third_base_px': self.left_third_base[:, 0],
+                          'left_third_base_py': self.left_third_base[:, 1],
+                          'left_third_base_pz': self.left_third_base[:, 2],
+                          'left_third_tip_px': self.left_third_tip[:, 0],
+                          'left_third_tip_py': self.left_third_tip[:, 1],
+                          'left_third_tip_pz': self.left_third_tip[:, 2],
+                          'left_end_base_px': self.left_end_base[:, 0],
+                          'left_end_base_py': self.left_end_base[:, 1],
+                          'left_end_base_pz': self.left_end_base[:, 2],
+                          'left_end_tip_px': self.left_end_tip[:, 0], 'left_end_tip_py': self.left_end_tip[:, 1],
+                          'left_end_tip_pz': self.left_end_tip_a[:, 2],
+                          'right_shoulder_px': self.right_shoulder[:, 0],
+                          'right_shoulder_py': self.right_shoulder[:, 1],
+                          'right_shoulder_pz': self.right_shoulder[:, 2],
+                          'right_forearm_px': self.right_forearm[:, 0],
+                          'right_forearm_py': self.right_forearm[:, 1],
+                          'right_forearm_pz': self.right_forearm[:, 2],
+                          'right_wrist_px': self.right_wrist[:, 0], 'right_wrist_py': self.right_wrist[:, 1],
+                          'right_wrist_pz': self.right_wrist[:, 2],
+                          'right_palm_px': self.right_palm[:, 0], 'right_palm_py': self.right_palm[:, 1],
+                          'right_palm_pz': self.right_palm[:, 2],
+                          'right_index_base_px': self.right_index_base[:, 0],
+                          'right_index_base_py': self.right_index_base[:, 1],
+                          'right_index_base_pz': self.right_index_base[:, 1],
+                          'right_index_tip_px': self.right_index_tip[:, 0],
+                          'right_index_tip_py': self.right_index_tip[:, 1],
+                          'right_index_tip_pz': self.right_index_tip[:, 1],
+                          'right_middle_base_px': self.right_middle_base[:, 0],
+                          'right_middle_base_py': self.right_middle_base[:, 1],
+                          'right_middle_base_pz': self.right_middle_base[:, 2],
+                          'right_middle_tip_px': self.right_middle_tip[:, 0],
+                          'right_middle_tip_py': self.right_middle_tip[:, 1],
+                          'right_middle_tip_pz': self.right_middle_tip[:, 2],
+                          'right_third_base_px': self.right_third_base[:, 0],
+                          'right_third_base_py': self.right_third_base[:, 1],
+                          'right_third_base_pz': self.right_third_base[:, 2],
+                          'right_third_tip_px': self.right_third_tip[:, 0],
+                          'right_third_tip_py': self.right_third_tip[:, 1],
+                          'right_third_tip_pz': self.right_third_tip[:, 2],
+                          'right_end_base_px': self.right_end_base[:, 0],
+                          'right_end_base_py': self.right_end_base[:, 1],
+                          'right_end_base_pz': self.right_end_base[:, 2],
+                          'right_end_tip_px': self.right_end_tip[:, 0],
+                          'right_end_tip_py': self.right_end_tip[:, 1],
+                          'right_end_tip_pz': self.right_end_tip[:, 2],
+                          # Kinematic Features
+                           'reach_start': self.behavior_start_time,
+                          'reach_duration': self.behavior_duration,
+                          'reach_end': self.behavior_end_time,
+                          'endpoint_error': self.endpoint_error, 'endpoint_error_x': self.x_endpoint_error,
+                          'endpoint_error_y': self.y_endpoint_error, 'endpoint_error_z': self.z_endpoint_error, 'response_sensor': self.exp_response_sensor,
+                          # Sensor Data
+                          'handle_moving_sensor': self.h_moving_sensor, 'lick_beam': self.lick_vector,
+                          'reward_zone': self.reward_zone_sensor, 'time_vector': self.time_vector,
+                           'x_rob': self.x_robot, 'y_rob': self.y_robot,
+                          'z_rob': self.z_robot}
+        if append_outliers:
+            self.save_dict.append({'nose_o': self.nose_o, 'handle_o': self.handle_o, 'left_shoulder_o': self.left_shoulder_o,
+                          'left_forearm_o': self.left_forearm_o, 'left_wrist_o': self.left_wrist_o,
+                          'left_palm_o': self.left_palm_o, 'left_index_base_o': self.left_index_base_o,
+                          'left_index_tip_o': self.left_index_tip_o, 'left_middle_base_o': self.left_middle_base_o,
+                          'left_middle_tip_o': self.left_middle_tip_o,
+                          'left_third_base_o': self.left_third_base_o, 'left_third_tip_o': self.left_third_tip_o,
+                          'left_end_base_o': self.left_end_base_o,
+                          'left_end_tip_o': self.left_end_tip_o, 'right_shoulder_o': self.right_shoulder_o,
+                          'right_forearm_o': self.right_forearm_o, 'right_wrist_o': self.right_wrist_o,
+                          'right_palm_o': self.right_palm_o, 'right_index_base_o': self.right_index_base_o,
+                          'right_index_tip_o': self.right_index_tip_o,
+                          'right_middle_base_o': self.right_middle_base_o,
+                          'right_middle_tip_o': self.right_middle_tip_o,
+                          'right_third_base_o': self.right_third_base_o,
+                          'right_third_tip_o': self.right_third_tip_o,
+                          'right_end_base_o': self.right_end_base_o, 'right_end_tip_o': self.right_end_tip_o})
+        if append_reach_information:
+            self.save_dict.append({'right_start_time': self.right_start_times, 'left_start_time': self.left_start_times,
+                          'left_reach_peak': self.left_peak_times, 'right_reach_peak': self.right_peak_times,
+                          'left_end_time': self.left_reach_end_times, 'right_end_time': self.right_reach_end_times,
+                              'reach_hand': self.arm_id_list, 'error_flag': error_flag})
+        df = pd.DataFrame({key: pd.Series(np.asarray(value)) for key, value in self.save_dict.items()})
         df['Trial'] = trial_num
         df.set_index('Trial', append=True, inplace=True)
         df['Date'] = self.date
@@ -1228,6 +1451,7 @@ class ReachViz:
         df.set_index('Session', append=True, inplace=True)
         df['Rat'] = self.rat
         df.set_index('Rat', append=True, inplace=True)
+        # Create CSV file for block
         return df
 
     def get_preprocessed_trial_blocks(self):
@@ -1254,7 +1478,59 @@ class ReachViz:
                 self.reaching_dataframe = pd.concat([df, self.reaching_dataframe])
         return self.reaching_dataframe
 
-    def get_reach_dataframe_from_block(self, outlier_data=False):
+    def perform_trial_classification(self, df):
+        Classifier_var = Classifier(df)
+        pdb.set_trace()
+        if Classifier_var.null_class_result == 0:
+            print('Null Trial')
+            self.predicted_trial_type = 0
+        else:
+            print('Reaching Detected')
+            self.predicted_trial_type = 1
+            if Classifier_var.num_reaches == 1:
+                self.predicted_num_reaches = 1
+                if Classifier_var.hand_result == 1:
+                    self.single_hand = 'L'
+                    print('Left Single Reach')
+                else:
+                    self.single_hand = 'R'
+                    print('Right Single Reach')
+            else:
+                self.predicted_num_reaches = 2
+
+    def populate_block_predictions(self):
+        """ Function to add trialized predictions about our data to a dictionary. This dictionary is saved as a
+            csv file, in order to manually annotate possible outliers in the segregation and classification of
+            our reaching data. """
+
+        self.prediction_information = {}
+        for key in self.predictions_header:
+            if 'Trial' in key:
+                self.prediction_information[key] = self.trial_num
+            if 'Null Prediction' in key:
+                self.prediction_information[key] = self.predicted_trial_type
+            if 'Num Reaches Prediction' in key:
+                self.prediction_information[key] = self.predicted_num_reaches
+            if 'Handedness Prediction' in key:
+                self.prediction_information[key] = self.single_hand
+            if 'Null Outlier Flag' in key:
+               self.prediction_information[key].append()
+            if 'Num Reaches Outlier Flag' in key:
+                self.prediction_information[key].append()
+            if 'Handedness Prediction Outlier Flag' in key:
+                self.prediction_information[key].append()
+            if 'Segmented Reaches' in key:
+                self.prediction_information[key] = self.individual_reach_times
+            if 'Segmented Null' in key:
+                self.prediction_information[key] = len(self.individual_reach_times)
+            if 'Segmented Num' in key:
+                self.prediction_information[key] = len(self.individual_reach_times)
+            if 'Segmented Hand' in key:
+                self.prediction_information[key] = self.reach_hand_type
+        self.prediction_information_list.append(self.prediction_information)
+        #pdb.set_trace()
+
+    def get_reach_dataframe_from_block(self):
         """ Function that obtains a trialized (based on reaching start times)
             pandas dataframe for a provided experimental session. """
         self.total_speeds = []
@@ -1263,9 +1539,6 @@ class ReachViz:
         self.left_hand_raw_speeds = []
         self.right_hand_raw_speeds = []
         self.total_outliers = []
-        # Obtain workspace coordinate alignment
-        self.align_workspace_coordinates_session()
-        # Code here to count # of "peaks" in total data
         self.calculate_number_of_speed_peaks_in_block()
         for ix, sts in enumerate(self.trial_start_vectors):
             self.trial_index = sts
@@ -1277,34 +1550,18 @@ class ReachViz:
                 stp = sts + 350  # bad trial stop information from arduino..use first 3 1/2 seconds
             self.trial_num = int(ix)
             print('Making dataframe for trial:' + str(ix))
-            # Obtain values from experimental data
             self.segment_and_filter_kinematic_block(sts, stp)
             self.extract_sensor_data(sts, stp)
-            # Collect data about the trial
-            self.left_hand_raw_speeds.append(np.asarray(self.raw_speeds[2:14]))
-            self.right_hand_raw_speeds.append(np.asarray(self.raw_speeds[2:14]))
-            # Find and obtain basic classifications for each reach in the data
             self.segment_reaches_with_speed_peaks()
-            # Collect data about outliers, robustness of kinematics
-            if outlier_data:
-                if ix == 0:
-                    self.total_raw_speeds = np.asarray(self.raw_speeds).flatten()
-                    self.total_preprocessed_speeds = np.asarray(self.speeds).flatten()
-                    self.total_outliers = np.asarray(self.outlier_list).flatten()
-                else:
-                    self.total_raw_speeds = np.hstack((self.total_raw_speeds, np.asarray(self.raw_speeds).flatten()))
-                    self.total_preprocessed_speeds = np.hstack((self.total_preprocessed_speeds,
-                                                                np.asarray(self.speeds).flatten()))
-                    self.total_outliers = np.hstack((np.asarray(self.outlier_list).flatten(), self.total_outliers))
+            df = self.segment_data_into_reach_dict(ix)
+            self.perform_trial_classification(df)
             win_length = 90
             error_flag = False
-            # Segment reach block
             try:
-                if self.reach_start_time:  # If reach detected
-                    # tt = self.reach_end_time - self.reach_start_time
+                if self.behavior_start_time:  # If reach detected
                     end_pad = 1  # length of behavior
-                    reach_end_time = self.reach_end_time + end_pad  # For equally-spaced arrays
-                    print(self.reach_start_time, self.reach_end_time)
+                    reach_end_time = self.behavior_end_time + end_pad  # For equally-spaced arrays
+                    print(self.behavior_start_time, self.behavior_end_time)
                     if self.lick_vector.any() == 1:  # If trial is rewarded
                         self.first_lick_signal = np.where(self.lick_vector == 1)[0][0]
                         if 5 < self.first_lick_signal < 20:  # If reward is delivered after initial time-out
@@ -1314,17 +1571,17 @@ class ReachViz:
                         else:  # If a reach is detected (successful reach)
                             try:
                                 self.segment_and_filter_kinematic_block(
-                                    sts + self.reach_start_time - win_length,
+                                    sts + self.behavior_start_time - win_length,
                                     sts + reach_end_time + win_length)
-                                self.extract_sensor_data(sts + self.reach_start_time - win_length,
+                                self.extract_sensor_data(sts + self.behavior_start_time - win_length,
                                                          sts + reach_end_time + win_length)
                                 print('Successful Reach Detected')
                             except:
                                 continue
                     else:  # unrewarded reach
-                        self.segment_and_filter_kinematic_block(sts + self.reach_start_time - win_length,
+                        self.segment_and_filter_kinematic_block(sts + self.behavior_start_time - win_length,
                                                                 sts + reach_end_time + win_length)
-                        self.extract_sensor_data(sts + self.reach_start_time - win_length, sts +
+                        self.extract_sensor_data(sts + self.behavior_start_time - win_length, sts +
                                                  reach_end_time + win_length)
                         print('Un-Rewarded Reach Detected')
                 else:  # If reach not detected in trial
@@ -1336,16 +1593,21 @@ class ReachViz:
                 self.extract_sensor_data(sts - win_length, sts + 200)
                 print('Error extracting')
                 error_flag = True
-            df = self.segment_data_into_reach_dict(ix, error_flag)
+            df = self.segment_data_into_reach_dict(ix, error_flag, append_reach_information=True, append_outliers=True)
             self.seg_num = 0
             self.start_trial_indice = []
             self.images = []
+            #self.total_block_reaches += self.num_reaches_split
             if ix == 0:
                 self.reaching_dataframe = df
             else:
                 self.reaching_dataframe = pd.concat([df, self.reaching_dataframe])
-        # savefile = self.sstr + str(self.rat) + str(self.date) + str(self.session) + 'final_save_data.csv'
-        # self.save_reaching_dataframe(savefile)
+            self.populate_block_predictions()
+        if self.total_block_reaches - 10 < self.sweep_total_reaches < self.total_block_reaches + 10:
+            self.block_outlier_flag = False
+        else:
+            self.block_outlier_flag = True
+        self.create_csv_block_predictions()
         return self.reaching_dataframe
 
     def save_reaching_dataframe(self, filename):
@@ -1354,8 +1616,8 @@ class ReachViz:
 
     def vid_splitter_and_grapher(self, trial_num=0, plot=True, timeseries_plot=True, plot_reach=True, save_data=False):
         """ Function to split and visualize reaching behavior from a given experimental session. """
-        # tm = self.align_workspace_coordinates_session()
         for ix, sts in enumerate(self.trial_start_vectors):
+            self.trial_num = ix
             self.trial_index = sts
             if ix > trial_num:
                 self.fps = 30
@@ -1371,11 +1633,7 @@ class ReachViz:
                 self.split_trial_video(sts, stp)
                 print('Split Trial' + str(ix) + ' Video')
                 self.segment_and_filter_kinematic_block(sts, stp)
-                # self.plot_verification_variables()
-                # self.plot_velocities_against_probabilities()
                 self.extract_sensor_data(sts, stp)
-                if timeseries_plot:
-                    self.plot_interpolation_variables_palm('total')
                 if plot:
                     self.plot_predictions_videos(plot_digits=False)
                     self.make_gif_reaching()
@@ -1385,56 +1643,65 @@ class ReachViz:
                 print('Finished Plotting!   ' + str(ix))
                 self.segment_reaches_with_speed_peaks()
                 win_length = 200  # for non-reaching trials
-                cut_reach_start_time = self.reach_start_time
+                cut_reach_start_time = self.behavior_start_time
                 # Create dataframe to plot for "reach" segmentation
-                print(self.reach_start_time, self.reach_end_time, self.num_peaks)
-                if self.reach_start_time:
-                    if self.first_lick_signal:
-                        if self.reach_start_time - 30 < 0:  # are we close to the start of the trial?
+                print(self.behavior_start_time, self.behavior_end_time, self.retract_end, self.num_peaks, self.behavior_duration)
+                if self.behavior_start_time is not None and self.trial_type is not False:
+                    if self.retract_end is not None and self.handle_moved is not False and self.trial_type is not False and self.tug_flag is False:
+                        print('Successful Reach')
+                        if cut_reach_start_time - 30 < 0:  # are we close to the start of the trial?
                             cut_reach_start_time = 0  # spacer to keep array values
                         self.split_trial_video(cut_reach_start_time + self.trial_index, self.trial_index +
-                                               self.first_lick_signal + 20, segment=True, num_reach=0)
+                                               self.retract_end, segment=True, num_reach=0, low_fps=True)
                         self.segment_and_filter_kinematic_block(
                             cut_reach_start_time + self.trial_index,
-                            self.trial_index + self.first_lick_signal + 20)
+                            self.trial_index + self.retract_end)
                         self.extract_sensor_data(self.trial_index + cut_reach_start_time, self.trial_index +
-                                                 self.first_lick_signal + 20)
+                                                 self.retract_end)
+                    elif self.tug_flag is True:  # No reaching but handle movement during trial
+                        print ('Tug of War Detected')
+                        self.split_trial_video(self.trial_index, self.trial_index + 100,
+                                               segment=True, num_reach=0, low_fps=True)
+                        self.segment_and_filter_kinematic_block(self.trial_index,
+                                                                self.trial_index+100)
+                        self.extract_sensor_data(self.trial_index, self.trial_index + 100)
                     else:
-                        if self.reach_start_time - 30 < 0:  # are we close to the start of the trial?
+                        print('Unsuccessful Reaching')
+                        if self.behavior_start_time - 30 < 0:  # are we close to the start of the trial?
                             cut_reach_start_time = 0  # spacer to keep array values
                         self.split_trial_video(cut_reach_start_time + self.trial_index,
-                                               self.trial_index + self.reach_end_time,
-                                               segment=True, num_reach=0)
+                                               self.trial_index + self.behavior_end_time + 40,
+                                               segment=True, num_reach=0, low_fps=True)
                         self.segment_and_filter_kinematic_block(
                             cut_reach_start_time + self.trial_index,
-                            self.trial_index + self.reach_end_time)
+                            self.trial_index + self.behavior_end_time + 40)
                         self.extract_sensor_data(cut_reach_start_time + self.trial_index,
-                                                 self.trial_index + self.reach_end_time)
+                                                 self.trial_index + self.behavior_end_time + 40)
                 else:
-                    if self.first_lick_signal:  # Tug of war
-                        self.split_trial_video(self.trial_index, self.trial_index + self.first_lick_signal + 10,
-                                               segment=True, num_reach=0)
-                        self.segment_and_filter_kinematic_block(self.trial_index,
-                                                                self.first_lick_signal + self.trial_index + 10)
-                        self.extract_sensor_data(self.trial_index, self.trial_index + self.first_lick_signal + 10)
-                    else:
                         print('No Reach Detected.')
                         self.split_trial_video(self.trial_index, self.trial_index + win_length, segment=True,
-                                               num_reach=0)
+                                               num_reach=0, low_fps=True)
                         self.segment_and_filter_kinematic_block(self.trial_index, self.trial_index + win_length)
                         self.extract_sensor_data(self.trial_index, self.trial_index + win_length)
                 if timeseries_plot:
-                    self.plot_interpolation_variables_palm('reach')
+                    #self.plot_interpolation_variables_palm('reach')
                     self.plot_timeseries_features()
                 if plot_reach:
-                    self.plot_predictions_videos(segment=True, plot_digits=False)
+                    self.plot_predictions_videos(segment=True)
                     self.make_gif_reaching(segment=True, nr=0)
                     print('Reaching GIF made for reach ' + str(0) + 'in trial ' + str(ix))
                     self.images = []
-                    self.make_combined_gif(segment=True, nr=0)
+                    self.make_combined_gif(segment=True, nr=0, )
+                try:
+                    self.total_block_reaches += self.num_reaches_split
+                except:
+                    pass
+                self.populate_block_predictions()
             self.seg_num = 0
             self.start_trial_indice = []
             self.images = []
+            self.tug_flag = False
+        self.write_reach_information_to_csv()
         if save_data:
             reaching_trial_indices_df = pd.DataFrame(self.block_cut_vector)
             reaching_trial_indices_df.to_csv(
@@ -1472,9 +1739,9 @@ class ReachViz:
                  label='Right Palm Pre-Outlier Removal: Z')
         ax1.set_xlabel('Time (s) ')
         ax1.set_ylabel('Distance (M) ')
-        ax2.set_ylim(0, 0.8)
-        ax1.set_ylim(0, 0.8)
-        ax3.set_ylim(0, 1)
+        ax2.set_ylim(0, 0.5)
+        ax1.set_ylim(0, 0.5)
+        ax3.set_ylim(0, 0.5)
         ax1.plot(times[2:-1], self.left_palm[2:-1, 0], color='r', linestyle='dashed',
                  label='Post-Interpolation/Smoothing: Left Palm X')
         ax1.plot(times[2:-1], self.left_palm[2:-1, 1], color='darkred', linestyle='dashed',
@@ -1563,21 +1830,16 @@ class ReachViz:
         filename_speed = self.sstr + '/timeseries/' + 'full_speed_timeseries.png'
         xyzpalms = self.sstr + '/timeseries/' + 'xyzpalms_timeseries.png'
         rightvsleftxy = self.sstr + '/timeseries/' + 'rlxypalms_timeseries.png'
-        axel0 = plt.figure(figsize=(8, 4))
+        plt.figure(figsize=(10,10))
+        axel0 = plt.axes(projection="3d")
         frames_n = np.around(self.time_vector, 2)
         frames = frames_n - frames_n[0]  # normalize frame values by first entry.
-        plt.title('Principal Components of Position, P+V, P+V+A')
-        # plt.plot(self.pos_v_a_pc_variance[:, 0], self.pos_v_a_pc_variance[:, 1], c='r', label='PCs for total kinematics')
-        # plt.plot(self.right_arm_pc_pos[:, 0], self.right_arm_pc_pos[:, 1], c='b', label='Right Arm PC')
-        axel0.tight_layout(pad=0.005)
+        plt.title('Principal Components of Kinematics for Each Arm')
+        plt.plot(self.left_PCS[:, 0], self.left_PCS[:, 1],self.left_PCS[:,2], c='r', label='Left PCS')
+        plt.plot(self.right_PCS[:, 0], self.right_PCS[:, 1],self.right_PCS[:, 2], c='b', label='Right PCS')
         axel0.legend()
-        axel0.savefig(filename_pc, bbox_inches='tight')
-        plt.close()
+        plt.savefig(filename_pc)
         axel = plt.figure(figsize=(10, 4))
-        try:
-            plt.axvline(frames[self.reach_start_time], color='black', label='Reach Start ')
-        except:
-            pass
         plt.title('Palm Positions During Trial')
         plt.plot(frames, self.right_palm[:, 0], c='g', label='X Right Palm')
         plt.plot(frames, self.right_palm[:, 1], c='g', linestyle='dashed', label='Y Right Palm')
@@ -1586,16 +1848,21 @@ class ReachViz:
         plt.plot(frames, self.left_palm[:, 1], c='r', linestyle='dashed', label='Y Left Palm')
         plt.plot(frames, self.left_palm[:, 2], c='r', linestyle='dotted', label='Z Left Palm')
         plt.plot(frames, self.lick_vector / 10, color='y', label='Licks Occurring')
-        try:
-            for tsi, segment_trials in enumerate(self.start_trial_indice):
-                plt.axvline(frames[segment_trials], color='black', label='Trial ' + str(tsi))
-        except:
-            pass
+        if self.behavior_start_time is not None:
+            try:
+                for idx, reaches in enumerate(self.individual_reach_times):
+                        end_time = self.individual_reach_end_times[idx]
+                        peak_time = self.individual_reach_peak_times[idx]
+                        plt.axvline(frames[reaches - self.behavior_start_time], color='b', label='Reach ' + str(idx) + ' Start')
+                        plt.axvline(frames[peak_time - self.behavior_start_time], color='m', label ='Peak' + str(idx))
+                        plt.axvline(frames[end_time - self.behavior_start_time], color='c', label='Reach' + str(idx) + 'end')
+            except:
+                pass
         plt.xlabel('Time (s)')
         plt.ylabel('Position (m)')
-        axel.tight_layout(pad=0.005)
+        #axel.tight_layout(pad=0.005)
         axel.legend()
-        axel.savefig(filename_pos, bbox_inches='tight')
+        axel.savefig(filename_pos, bbox_inches='tight', dpi=800)
         plt.close()
         axel1 = plt.figure(figsize=(10, 4))
         plt.title('Palm Velocities During Trial')
@@ -1606,13 +1873,22 @@ class ReachViz:
         plt.plot(frames, self.left_palm_v[:, 1], c='r', linestyle='dashed', label='Y Left Palm')
         plt.plot(frames, self.left_palm_v[:, 2], c='r', linestyle='dotted', label='Z Left Palm')
         plt.ylim(-1, 1.6)
+        if self.behavior_start_time is not None:
+            try:
+                for idx, reaches in enumerate(self.individual_reach_times):
+                        end_time = self.individual_reach_end_times[idx]
+                        peak_time = self.individual_reach_peak_times[idx]
+                        plt.axvline(frames[reaches - self.behavior_start_time], color='b', label='Reach ' + str(idx) + ' Start')
+                        plt.axvline(frames[peak_time - self.behavior_start_time], color='m', label ='Peak' + str(idx))
+                        plt.axvline(frames[end_time - self.behavior_start_time], color='c', label ='Reach' + str(idx) + 'end')
+            except:
+                pass
         plt.xlabel('Time (s)')
         plt.ylabel(' Palm Velocity (m/s)')
         axel1.legend()
-        axel1.tight_layout(pad=0.005)
+        #axel1.tight_layout(pad=0.005)
         # pdb.set_trace()
-        axel1.savefig(filename_vel, bbox_inches='tight')
-        plt.close()
+        axel1.savefig(filename_vel, bbox_inches='tight', dpi=800)
         axel2 = plt.figure(figsize=(10, 4))
         plt.title('Speeds (Arm, Palm) During Trial')
         plt.plot(frames, self.right_palm_s, c='b', label='Right palm speed')
@@ -1622,10 +1898,21 @@ class ReachViz:
         plt.ylim(0, 1.6)
         plt.xlabel('Time (s) ')
         plt.ylabel('Speed (m/s)')
+        if self.behavior_start_time is not None:
+            try:
+                for idx, reaches in enumerate(self.individual_reach_times):
+                        end_time = self.individual_reach_end_times[idx]
+                        peak_time = self.individual_reach_peak_times[idx]
+                        plt.axvline(frames[reaches - self.behavior_start_time], color='b', label='Reach ' + str(idx) + ' Start')
+                        plt.axvline(frames[peak_time - self.behavior_start_time], color='m', label ='Peak' + str(idx))
+                        plt.axvline(frames[end_time - self.behavior_start_time], color='c', label='Reach' + str(idx) +
+                                                                                               'End')
+            except:
+                pass
         axel2.legend()
-        axel2.tight_layout(pad=0.0005)
-        axel2.savefig(filename_speed, bbox_inches='tight')
-        plt.close()
+        #axel2.tight_layout(pad=0.0005)
+        axel2.savefig(filename_speed, bbox_inches='tight', dpi=800)
+
         # ap = np.mean([np.mean(self.prob_right_arm, axis=1), np.mean(self.prob_left_arm, axis=1)], axis=0)
         # print(ap.shape)
         axel3 = plt.figure(figsize=(8, 8))
@@ -1636,9 +1923,8 @@ class ReachViz:
         plt.xlabel('M')
         plt.ylabel('M')
         axel3.legend()
-        axel3.tight_layout(pad=0.0005)
-        axel3.savefig(xyzpalms, bbox_inches='tight')
-        plt.close()
+        #axel3.tight_layout(pad=0.0005)
+        axel3.savefig(xyzpalms, bbox_inches='tight', dpi=800)
         axel4 = plt.figure(figsize=(8, 8))
         plt.title(' R vs L X Y Z Plots')
         plt.plot(self.right_palm[:, 0], self.right_palm[:, 1], c='r', label='Right Palm')
@@ -1646,10 +1932,47 @@ class ReachViz:
         plt.xlabel('M')
         plt.ylabel('M')
         axel4.legend()
-        axel4.tight_layout(pad=0.0005)
-        axel4.savefig(rightvsleftxy, bbox_inches='tight')
+        #axel4.tight_layout(pad=0.0005)
+        axel4.savefig(rightvsleftxy, bbox_inches='tight', dpi=800)
         plt.close('all')
+        self.plot_palm_spectrograms()
         return
+
+    def plot_palm_spectrograms(self):
+        filename_specgram = self.sstr + 'specgram.png'
+        plt.subplot(211)
+        plt.title('Right Palm Speed Spectrogram')
+        plt.specgram(self.right_palm_s, Fs=180/2)
+        if self.behavior_start_time is not None:
+            try:
+                for idx, reaches in enumerate(self.individual_reach_times):
+                        end_time = self.individual_reach_end_times[idx]
+                        peak_time = self.individual_reach_peak_times[idx]
+                        plt.axvline(frames[reaches - self.behavior_start_time], color='b', label='Reach ' + str(idx) + ' Start')
+                        plt.axvline(frames[peak_time - self.behavior_start_time], color='m', label ='Peak' + str(idx))
+                        plt.axvline(frames[end_time - self.behavior_start_time], color ='c')
+            except:
+                pass
+        plt.xlabel('Time')
+        plt.ylabel('Frequency')
+        plt.subplot(212)
+        plt.title('Left Palm Speed Spectrogram')
+        plt.specgram(self.left_palm_s, Fs=180/2)
+        if self.behavior_start_time is not None:
+            try:
+                for idx, reaches in enumerate(self.individual_reach_times):
+                        end_time = self.individual_reach_end_times[idx]
+                        peak_time = self.individual_reach_peak_times[idx]
+                        plt.axvline(frames[reaches - self.behavior_start_time], color='b', label='Reach ' + str(idx) + ' Start')
+                        plt.axvline(frames[peak_time - self.behavior_start_time], color='m', label ='Peak' + str(idx))
+                        plt.axvline(frames[end_time - self.behavior_start_time], color='o')
+            except:
+                pass
+        plt.xlabel('Time')
+        plt.ylabel('Frequency')
+        plt.legend()
+        plt.savefig(filename_specgram, dpi=900)
+        plt.clf()
 
     def set_lag_plot_term(self, isx):
         """ Function to set "lag", or additional frames to plot. """
@@ -1663,8 +1986,7 @@ class ReachViz:
             self.lag = 4
         return
 
-    def plot_predictions_videos(self, segment=False, multi_segment_plot=True, plot_digits=False, draw_skeleton=True,
-                                clean=False, legend_on=False):
+    def plot_predictions_videos(self, segment=False, clean=False):
         """ Function to plot, frame by frame, the full 3-D reaching behavior over time. """
         tldr = self.left_palm.shape[0]  # set range in single trial
         tlde = 0
@@ -1674,194 +1996,56 @@ class ReachViz:
         for isx in range(tlde, tldr):
             self.filename = self.sstr + '/plots/' + str(isx) + 'palm_prob_timeseries.png'
             self.set_lag_plot_term(isx)
-            fixit1 = plt.figure(figsize=(44 / 4, 52 / 4))
-            axel = plt.subplot2grid((56, 44), (0, 0), colspan=44, rowspan=44, projection='3d')
-            axel2 = plt.subplot2grid((56, 44), (46, 8), colspan=30, rowspan=11)
+            fixit1 = plt.figure(figsize=(28,28/2))
+            axel = plt.subplot(311)
+            axel1 = plt.subplot(312, sharex=axel)
+            axel2 = plt.subplot(313, sharex=axel)
             plt.subplots_adjust(top=0.95)
-            axel.set_xlim(0, 0.4)
-            axel.set_ylim(0, 0.5)
-            axel.set_zlim(0.4, 0.60)
-            axel.plot([0.205, 0.205], [0, 0.5], [0.5, 0.5], c='g', linestyle='dashed', linewidth=5,
-                      markersize=5, label='Trial Reward Zone')  # make a 3-D line for our "reward zone"
-            # MeshGrid to represent the staging area.
-            X, Y = np.meshgrid(np.linspace(0.15, 0, 10), np.linspace(0, 0.3, 10))
-            Z = np.reshape(np.linspace(0.4, 0.4, 100), X.shape)
-            axel.plot_surface(X, Y, Z, alpha=0.3, zorder=0)
-            axel.scatter(self.handle[isx - self.lag: isx, 0], self.handle[isx - self.lag, 1],
-                         self.handle[isx - self.lag:isx, 2], marker='x',
-                         s=400, c='gold', label='Handle')
-            axel.scatter(self.nose[isx - self.lag: isx, 0], self.nose[isx - self.lag, 1],
-                         self.nose[isx - self.lag:isx, 2], c='m',
-                         s=50 + 100 * (self.prob_nose[isx]), alpha=(self.prob_nose[isx]),
-                         label='Nose')
-            axel.scatter(self.right_palm[isx - self.lag: isx, 0], self.right_palm[isx - self.lag: isx, 1],
-                         self.right_palm[isx - self.lag: isx, 2], marker='.',
-                         s=150 + 300 * (self.right_palm_p[isx]), c='skyblue',
-                         alpha=(self.right_palm_p[isx]), label='Right Palm')
-            axel.scatter(self.left_palm[isx - self.lag: isx, 0], self.left_palm[isx - self.lag: isx, 1],
-                         self.left_palm[isx - self.lag: isx, 2], marker='.',
-                         s=150 + 300 * (self.left_palm_p[isx]), c='salmon',
-                         alpha=(self.left_palm_p[isx]), label='Left Palm')
-            if multi_segment_plot:
-                axel.scatter(self.right_forearm[isx - self.lag: isx, 0], self.right_forearm[isx - self.lag: isx, 1],
-                             self.right_forearm[isx - self.lag: isx, 2],
-                             s=100 + 300 * (self.right_forearm_p[isx]), c='royalblue',
-                             alpha=(self.right_forearm_p[isx]), label='Right Forearm')
-                axel.scatter(self.right_wrist[isx - self.lag: isx, 0], self.right_wrist[isx - self.lag: isx, 1],
-                             self.right_wrist[isx - self.lag: isx, 2],
-                             s=150 + 300 * (self.right_wrist_p[isx]), c='b',
-                             alpha=(self.right_wrist_p[isx]), label='Right Wrist')
-                axel.scatter(self.left_wrist[isx - self.lag: isx, 0], self.left_wrist[isx - self.lag: isx, 1],
-                             self.left_wrist[isx - self.lag: isx, 2],
-                             s=150 + 300 * (self.left_wrist_p[isx]), c='salmon',
-                             alpha=(self.left_wrist_p[isx]), label='Left Wrist ')
-                axel.scatter(self.left_forearm[isx - self.lag: isx, 0], self.left_forearm[isx - self.lag: isx, 1],
-                             self.left_forearm[isx - self.lag: isx, 2],
-                             s=100 + 300 * (self.left_forearm_p[isx]), c='r',
-                             alpha=(self.left_forearm_p[isx]), label='Left Forearm')
-                axel.scatter(self.left_shoulder[isx - self.lag: isx, 0], self.left_shoulder[isx - self.lag: isx, 1],
-                             self.left_shoulder[isx - self.lag: isx, 2],
-                             s=150 + 300 * (self.left_shoulder_p[isx]), c='darkred',
-                             alpha=(self.left_shoulder_p[isx]), label='Left Shoulder ')
-                axel.scatter(self.right_shoulder[isx - self.lag: isx, 0], self.right_shoulder[isx - self.lag: isx, 1],
-                             self.right_shoulder[isx - self.lag: isx, 2],
-                             s=100 + 300 * (self.right_shoulder_p[isx]), c='navy',
-                             alpha=(self.right_shoulder_p[isx]), label='Right Shoulder')
-
-            if draw_skeleton:
-                axel.plot([self.right_wrist[isx, 0], self.right_forearm[isx, 0]],
-                          [self.right_wrist[isx, 1], self.right_forearm[isx, 1]],
-                          [self.right_wrist[isx, 2], self.right_forearm[isx, 2]],
-                          alpha=(self.right_wrist_p[isx]),
-                          markersize=55 + 50 * np.mean(self.right_wrist_p[isx]),
-                          c='r', linestyle='dashed')
-                axel.plot([self.right_forearm[isx, 0], self.right_shoulder[isx, 0]],
-                          [self.right_forearm[isx, 1], self.right_shoulder[isx, 1]],
-                          [self.right_forearm[isx, 2], self.right_shoulder[isx, 2]],
-                          alpha=(self.right_shoulder_p[isx]),
-                          markersize=55 + 50 * np.mean(self.right_shoulder_p[isx]),
-                          c='b', linestyle='dashed')
-                axel.plot([self.left_forearm[isx, 0], self.left_shoulder[isx, 0]],
-                          [self.left_forearm[isx, 1], self.left_shoulder[isx, 1]],
-                          [self.left_forearm[isx, 2], self.left_shoulder[isx, 2]],
-                          alpha=(self.left_forearm_p[isx]),
-                          markersize=55 + 50 * np.mean(self.left_forearm_p[isx]),
-                          c='r', linestyle='dashed')
-                axel.plot([self.right_wrist[isx, 0], self.right_palm[isx, 0]],
-                          [self.right_wrist[isx, 1], self.right_palm[isx, 1]],
-                          [self.right_wrist[isx, 2], self.right_palm[isx, 2]],
-                          alpha=(self.right_wrist_p[isx]),
-                          markersize=55 + 35 * np.mean(self.right_wrist_p[isx]),
-                          c='r', linestyle='dashed')
-                axel.plot([self.left_wrist[isx, 0], self.left_forearm[isx, 0]],
-                          [self.left_wrist[isx, 1], self.left_forearm[isx, 1]],
-                          [self.left_wrist[isx, 2], self.left_forearm[isx, 2]],
-                          alpha=(self.left_forearm_p[isx]),
-                          markersize=55 + 50 * np.mean(self.left_forearm_p[isx]),
-                          c='c', linestyle='dashed')
-                axel.plot([self.left_wrist[isx, 0], self.left_palm[isx, 0]],
-                          [self.left_wrist[isx, 1], self.left_palm[isx, 1]],
-                          [self.left_wrist[isx, 2], self.left_palm[isx, 2]],
-                          alpha=(self.left_palm_p[isx]),
-                          markersize=55 + 40 * np.mean(self.left_palm_p[isx]),
-                          c='c', linestyle='dashed')
-            if plot_digits:
-                axel.scatter(self.left_index_base[isx - self.lag: isx, 0], self.left_index_base[isx - self.lag: isx, 1],
-                             self.left_index_base[isx - self.lag: isx, 2], marker='D',
-                             s=50 + 30 * self.left_index_base_p[isx], c='dodgerblue',
-                             alpha=self.left_index_base_p[isx], label='Left Index Base ')
-                axel.scatter(self.right_index_base[isx - self.lag: isx, 0],
-                             self.right_index_base[isx - self.lag: isx, 1],
-                             self.right_index_base[isx - self.lag: isx, 2], marker='D',
-                             s=50 + 30 * self.right_index_base_p[isx], c='pink',
-                             alpha=self.right_index_base_p[isx], label='Right Index Base ')
-                axel.scatter(self.left_middle_base[isx - self.lag: isx, 0],
-                             self.left_middle_base[isx - self.lag: isx, 1],
-                             self.left_middle_base[isx - self.lag: isx, 2], marker='D',
-                             s=50 + 30 * self.left_middle_base_p[isx], c='dodgerblue',
-                             alpha=self.left_middle_base_p[isx], label='Left Middle Base ')
-                axel.scatter(self.right_middle_base[isx - self.lag: isx, 0],
-                             self.right_middle_base[isx - self.lag: isx, 1],
-                             self.right_middle_base[isx - self.lag: isx, 2], marker='D',
-                             s=50 + 30 * self.right_middle_base_p[isx], c='pink',
-                             alpha=self.right_middle_base_p[isx], label='Right Middle Base ')
-                axel.scatter(self.left_third_base[isx - self.lag: isx, 0], self.left_third_base[isx - self.lag: isx, 1],
-                             self.left_third_base[isx - self.lag: isx, 2], marker='D',
-                             s=50 + 30 * self.left_third_base_p[isx], c='skyblue',
-                             alpha=self.left_third_base_p[isx], label='Left Third Base ')
-                axel.scatter(self.right_third_base[isx - self.lag: isx, 0],
-                             self.right_third_base[isx - self.lag: isx, 1],
-                             self.right_third_base[isx - self.lag: isx, 2], marker='D',
-                             s=50 + 30 * self.right_third_base_p[isx], c='salmon',
-                             alpha=self.left_third_base_p[isx], label='Right Third Base ')
-                axel.scatter(self.left_end_base[isx - self.lag: isx, 0], self.left_end_base[isx - self.lag: isx, 1],
-                             self.left_end_base[isx - self.lag: isx, 2], marker='D',
-                             s=50 + 30 * self.left_end_base_p[isx], c='azure',
-                             alpha=self.left_end_base_p[isx], label='Left End Base ')
-                axel.scatter(self.right_end_base[isx - self.lag: isx, 0],
-                             self.right_end_base[isx - self.lag: isx, 1],
-                             self.right_end_base[isx - self.lag: isx, 2], marker='D',
-                             s=50 + 30 * self.right_end_base_p[isx], c='mistyrose',
-                             alpha=self.right_end_base_p[isx], label='Right End Base ')
-                axel.scatter(self.left_index_tip[isx - self.lag: isx, 0], self.left_index_tip[isx - self.lag: isx, 1],
-                             self.left_index_tip[isx - self.lag: isx, 2], marker='_',
-                             s=50 + 30 * self.left_index_tip_p[isx], c='azure',
-                             alpha=self.left_index_tip_p[isx], label='Left Index Tip ')
-                axel.scatter(self.right_index_tip[isx - self.lag: isx, 0],
-                             self.right_index_tip[isx - self.lag: isx, 1],
-                             self.right_index_tip[isx - self.lag: isx, 2], marker='_',
-                             s=50 + 30 * self.right_index_tip_p[isx], c='mistyrose',
-                             alpha=self.right_index_tip_p[isx], label='Right Index Tip ')
-                axel.scatter(self.left_middle_tip[isx - self.lag: isx, 0],
-                             self.left_middle_tip[isx - self.lag: isx, 1],
-                             self.left_middle_tip[isx - self.lag: isx, 2], marker='_',
-                             s=50 + 30 * self.left_middle_tip_p[isx], c='azure',
-                             alpha=self.left_middle_tip_p[isx], label='Left Middle Tip ')
-                axel.scatter(self.right_middle_tip[isx - self.lag: isx, 0],
-                             self.right_middle_tip[isx - self.lag: isx, 1],
-                             self.right_middle_tip[isx - self.lag: isx, 2], marker='_',
-                             s=50 + 30 * self.right_middle_tip_p[isx], c='mistyrose',
-                             alpha=self.right_middle_tip_p[isx], label='Right Middle Tip ')
-                axel.scatter(self.left_third_tip[isx - self.lag: isx, 0], self.left_third_tip[isx - self.lag: isx, 1],
-                             self.left_third_tip[isx - self.lag: isx, 2], marker='_',
-                             s=50 + 30 * self.left_third_tip_p[isx], c='azure',
-                             alpha=self.left_third_tip_p[isx], label='Left Third Tip ')
-                axel.scatter(self.right_third_tip[isx - self.lag: isx, 0],
-                             self.right_third_tip[isx - self.lag: isx, 1],
-                             self.right_third_tip[isx - self.lag: isx, 2], marker='_',
-                             s=50 + 30 * self.right_third_tip_p[isx], c='mistyrose',
-                             alpha=self.right_third_tip_p[isx], label='Right Third Tip ')
-                axel.scatter(self.left_end_tip[isx - self.lag: isx, 0], self.left_end_tip[isx - self.lag: isx, 1],
-                             self.left_end_tip[isx - self.lag: isx, 2], marker='_',
-                             s=50 + 30 * self.left_end_tip_p[isx], c='dodgerblue',
-                             alpha=self.left_end_tip_p[isx], label='Left End Tip ')
-                axel.scatter(self.right_end_tip[isx - self.lag: isx, 0],
-                             self.right_end_tip[isx - self.lag: isx, 1],
-                             self.right_end_tip[isx - self.lag: isx, 2], marker='_',
-                             s=50 + 30 * self.right_end_tip_p[isx], c='pink',
-                             alpha=self.right_end_tip_p[isx], label='Right End Tip ')
-            axel.set_xlabel('M (X)')
-            axel.set_ylabel('M(Y)')
-            axel.set_zlabel('M (Z)')
-            axel.view_init(10, -45)
+            plt.tick_params('x', labelbottom=False) # first plot don't plot x-axis
+            # Plot sensor information (binary)
+            axel.plot(frames[0:isx], self.reward_zone_sensor[0:isx], label='Reward Zone')
+            axel.plot(frames[0:isx], self.lick_vector[0:isx], label='Licking Activity')
+            if self.behavior_start_time is not None:
+                for idx, reaches in enumerate(self.individual_reach_times):
+                    if reaches-self.behavior_start_time <= isx:
+                        axel1.axvline(frames[reaches - self.behavior_start_time], color='k',
+                                    label='Reach ' + str(idx) + ' Start')
+                        axel2.axvline(frames[reaches - self.behavior_start_time], color='k',
+                                      label='Reach ' + str(idx) + ' Start')
+                    end_time = self.individual_reach_end_times[idx]
+                    if end_time - self.behavior_start_time <= isx:
+                        axel1.axvline(frames[end_time - self.behavior_start_time], color='k',
+                                    label='Reach' + str(idx) + 'end')
+                        axel2.axvline(frames[end_time - self.behavior_start_time], color='k',
+                                      label='Reach' + str(idx) + 'end')
+                    peak_time = self.individual_reach_peak_times[idx]
+                    if peak_time - self.behavior_start_time <= isx:
+                        axel1.axvline(frames[peak_time - self.behavior_start_time], color='gold', label='Peak' + str(idx))
+                        axel2.axvline(frames[peak_time - self.behavior_start_time], color='gold',
+                                      label='Peak' + str(idx))
+            axel.set_ylabel('On/Off')
+            # Plot kinematic data
+            axel2.plot(frames[0:isx], self.handle_s[0:isx], c='y', label='Handle Speed')
             axel2.plot(frames[0:isx], self.left_palm_s[0:isx], marker='.', c='red', label='Left Palm Speed')
-            axel2.plot(frames[0:isx], self.right_palm_s[0:isx], marker='.', c='skyblue', label='Right Palm Speed')
-            if self.start_trial_indice:
-                for ere, tre in enumerate(self.start_trial_indice):
-                    if isx - 10 > tre > isx + 10:
-                        axel2.axvline(tre, 0, 1, c='black', markersize=30, linestyle='dotted',
-                                      label='REACH ' + str(ere))
-                        print('Plotted a reach..')
+            axel2.plot(frames[0:isx], self.right_palm_s[0:isx], marker='.', c='g', label='Right Palm Speed')
+            axel1.plot(frames[0:isx], self.left_wrist_s[0:isx], marker='.', c='salmon', label='Left Wrist Speed')
+            axel1.plot(frames[0:isx], self.right_wrist_s[0:isx], marker='.', c='springgreen', label='Right Wrist Speed')
+            axel1.plot(frames[0:isx], self.left_index_tip_s[0:isx], marker='.', c='r', label='Left Index Speed')
+            axel1.plot(frames[0:isx], self.right_index_tip_s[0:isx], marker='.', c='g', label='Right Index Speed')
             axel2.set_xlabel('Time from trial onset (s)')
             axel2.set_ylabel('m/ s')
-            axel2.set_ylim(0, 0.3)
-            axel2.set_xlim(0.1, frames[-1])
+            axel2.set_ylim(0, 1.2)
+            axel1.set_xlabel('Time from trial onset (s)')
+            axel1.set_ylabel('m/ s')
+            axel1.set_ylim(0, 1.2)
+            axel.set_ylim(0,1)
+            axel2.set_xlim(0, frames[-1])
             # axel2.set_zlim3d(0.35,0.5)
             fixit1.tight_layout(pad=0.005)
             plt.margins(0.0005)
-            if legend_on:
-                axel2.legend(loc="upper right", fontsize='x-small')
-                axel.legend(fontsize='large')
+            axel2.legend(loc="upper right", fontsize="x-large")
+            axel.legend(loc="upper right", fontsize="x-large")
+            axel1.legend(loc="upper right", fontsize="x-large")
             if segment:
                 self.filename = self.sstr + '/plots/reaches/' + str(isx) + 'palm_prob_timeseries.png'
             else:
@@ -1877,10 +2061,10 @@ class ReachViz:
         """ Function to make a per-trial GIF from the compilation of diagnostic plots made using ReachLoader. """
         if segment:
             imageio.mimsave(self.sstr + '/videos/reaches/reach_' + str(nr) + '3d_movie.mp4', self.images,
-                            fps=self.fps)
+                            fps=10)
             self.gif_save_path = self.sstr + '/videos/reaches/reach_' + str(nr) + '3d_movie.mp4'
         else:
-            imageio.mimsave(self.sstr + '/videos/total_3d_movie.mp4', self.images, fps=self.fps)
+            imageio.mimsave(self.sstr + '/videos/total_3d_movie.mp4', self.images, fps=10)
             self.gif_save_path = self.sstr + '/videos/total_3d_movie.mp4'
         self.images = []  # Clear memory
         return
@@ -1892,19 +2076,25 @@ class ReachViz:
         number_of_frames = int(min(vid_gif.shape[0], plot_gif.shape[0]))
         if segment:
             writer = imageio.get_writer(self.sstr + '/videos/reaches/reach_' + str(nr) + 'split_movie.mp4',
-                                        fps=self.fps)
+                                        fps=10)
         else:
-            writer = imageio.get_writer(self.sstr + '/videos/total_split_movie.mp4', fps=self.fps)
+            writer = imageio.get_writer(self.sstr + '/videos/total_split_movie.mp4', fps=10)
         for frame_number in range(number_of_frames):
             img1 = np.squeeze(vid_gif[frame_number, :, :, :])
             img2 = np.squeeze(plot_gif[frame_number, :, :, :])
-            img1 = np.copy(img1[0:img2.shape[0], 0:img2.shape[1]])
-            new_image = np.vstack((img1, img2))
+            if img2.shape[1] >= img1.shape[1]:
+                img2 = np.copy(img2[0:img1.shape[0],0:img1.shape[1], :])
+            else:
+                img1 = np.copy(img1[0:img2.shape[0], 0:img2.shape[1], :])
+            try:
+                new_image = np.vstack((img1, img2))
+            except:
+                pdb.set_trace()
             writer.append_data(new_image)
         writer.close()
         return
 
-    def split_trial_video(self, start_frame, stop_frame, segment=False, num_reach=0):
+    def split_trial_video(self, start_frame, stop_frame, num_reach=0, segment=False, low_fps = False):
         """ Function to split and save the trial video per trial."""
         vc = cv2.VideoCapture(self.block_video_path)
         if vc.isOpened():
@@ -1916,10 +2106,44 @@ class ReachViz:
         fourcc = cv2.VideoWriter_fourcc(*'XVID')
         if segment:
             self.clip_path = self.sstr + '/videos/reaches/reach_' + str(num_reach) + '_trial.mp4'
-        out = cv2.VideoWriter(self.clip_path, fourcc, self.fps, (w, h))
+        if low_fps:
+            out = cv2.VideoWriter(self.clip_path, fourcc, 10, (w, h))
+        else:
+            out = cv2.VideoWriter(self.clip_path, fourcc, self.fps, (w, h))
         c = 0
-        while rval:
+        word_add = 'No Reaching'
+        while rval: # Write text here for loop over reaches, peaks etc.
             rval, frame = vc.read()
+            if segment:
+                if c >= start_frame:
+                    if self.individual_reach_times:
+                        for irx, reach in enumerate(self.individual_reach_times):
+                            # subtract the reach start (reach) from individual, peak, end time values
+                            if c >= 0:
+                                try:
+                                    if reach-reach <= c < reach - reach + start_frame + 2:
+                                        word_add = 'Reach' + str(irx) + str(self.reach_hand_type[irx] + ' Start')
+                                    elif reach-reach + start_frame + 2 < c <= self.individual_reach_peak_times[irx]- reach + start_frame-1:
+                                        word_add = 'Reach ' + str(irx) + str(self.reach_hand_type[irx])
+                                    elif self.individual_reach_peak_times[irx]- reach + start_frame - 1 <= c <= self.individual_reach_peak_times[irx] - reach + start_frame + 3:
+                                        word_add = 'Reach' + str(irx) + str(self.reach_hand_type[irx] + ' Peak' )
+                                    elif self.individual_reach_peak_times[irx] - reach + start_frame + 3 <= c < self.individual_reach_end_times[irx] + start_frame - reach - 5:
+                                        word_add = 'Reach' + str(irx) + str(self.reach_hand_type[irx])
+                                    elif self.individual_reach_end_times[irx] + start_frame - reach - 2 <= c <= self.individual_reach_end_times[irx] - reach + start_frame:
+                                        word_add = 'Reach' + str(irx) + str(self.reach_hand_type[irx] + ' End' )
+                                    elif self.individual_reach_end_times[irx] + start_frame - reach - 1  <= c <= self.individual_grasp_times[irx] + start_frame - reach + 3:
+                                        word_add = 'Reach' + str(irx) + str(self.reach_hand_type[irx] + ' Grasp' )
+                                    elif self.individual_retract_times + start_frame - reach + 4 <= c <= self.retract_end + start_frame - reach +2:
+                                        word_add = 'Reach ' + str(irx)  + str(self.reach_hand_type[irx] + ' Retract')
+                                    elif self.tug_flag:
+                                        word_add = 'Tug of War'
+                                    else:
+                                        word_add = 'No Reaching'
+                                except:
+                                    pass
+
+            font = cv2.FONT_HERSHEY_SIMPLEX
+            cv2.putText(frame, word_add, (50, 50), font, 2, (255, 255, 0), 2)
             nfr = vu.rescale_frame(frame)
             if start_frame <= c < stop_frame:
                 out.write(nfr)

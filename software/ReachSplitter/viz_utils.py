@@ -80,9 +80,12 @@ def cubic_spline_smoothing(input_vector, spline_coeff=0.1):
     timepoints = np.linspace(0, input_vector.shape[0], input_vector.shape[0])
     smoothed_vector = np.zeros(input_vector.shape)
     for i in range(0, 3):
-        smoothed_vector[:, i] = csaps(timepoints, input_vector[:, i], timepoints,
+        try:
+            smoothed_vector[:, i] = csaps(timepoints, input_vector[:, i], timepoints,
                                       normalizedsmooth=True,
                                       smooth=spline_coeff)
+        except:
+            pass
     return smoothed_vector
 
 
