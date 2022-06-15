@@ -293,15 +293,15 @@ class Protocols(tk.Toplevel):
         self.simply_acquire_baseline(400) # hard-coded due to wierd over-flow error w/ ximea cameras.
         self.ready = True
         tf = 0 # triggered frame
-        self.robot_runtime = [300, 600, 900, 1200, 1500, 1800, 2100, 2400, 2700]
-        while self.ready:
-            self.run_video_capture(tf)
-            tf += 1
-            if tf > 3000:
-                self.ready = False
+        #self.robot_runtime = [300, 1200,  2100]
+        #while self.ready:
+        #    self.run_video_capture(tf)
+        #    tf += 1
+        #    if tf > 3000:
+        #        self.ready = False
         #self.run_auditory_stimuli()  # runs sound at beginning of experiment!
         # debug
-        self.run()
+        self.run_continuous()
 
     def start_and_load_robot_interface(self):
         """ Called on class initiation, starts robot software module."""
@@ -454,6 +454,8 @@ class Protocols(tk.Toplevel):
         self.cams_connected = False
 
     def simply_acquire_baseline(self, num_imgs):
+        """ """
+        #self.toggle_lights_callback()
         baseline_pois = []  # List of baseline poi vectors.
         poi_indices = []
         num_pois = []
@@ -481,15 +483,15 @@ class Protocols(tk.Toplevel):
         for cam_id in range(0, len(baseline_pois)):
                 poi_means = np.mean(baseline_pois[cam_id], axis=1) # length num_poi
                 for i in range(0,baseline_pois[cam_id].shape[0]): # npoi's, n_baseline
-                    poi_std_l = np.std(np.square(baseline_pois[cam_id][i] - poi_means[i])) # Length 1
+                    poi_std_l = np.std(baseline_pois[cam_id][i] - poi_means[i]) # Length 1
+
                     poi_std.append(poi_std_l)
                 poi_std = np.asarray(poi_std)
-                pdb.set_trace()
                 self.cam_poi_means.append(poi_means)  # append class object
                 self.cam_poi_std.append(poi_std)  # append class object
                 poi_std = []
         print('Got baseline statistics.')
-        pdb.set_trace()
+        print(self.cam_poi_std)
 
     def trigger_record_and_save_image_from_camera_get_deviation(self):
         frame = 0
@@ -500,21 +502,17 @@ class Protocols(tk.Toplevel):
             except:
                 print('Warning, No Trigger')
         dev = []
-        try:
-            for idx, cam_obj in enumerate(self.cams):
-                npimg = get_npimage(cam_obj, self.img)
-                dev.append(self._estimate_poi_deviation_single_camera(npimg, self.cam_poi_means[idx],self.cam_poi_std[idx]))
-                npimg = cv2.cvtColor(npimg, cv2.COLOR_BAYER_BG2BGR)
-                if idx == 0:
-                    frame = npimg
-                else:
-                    frame = np.hstack((frame, npimg))
-        except Exception as err:
-            pdb.set_trace()
-            tkinter.messagebox.showinfo("Warning, couldn't save images."
-                                        , err)
-            self.stop_camera_recording()
-            return
+        for idx, cam_obj in enumerate(self.cams):
+            npimg = get_npimage(cam_obj, self.img)
+            try:
+                dev.append(self._estimate_poi_deviation_single_camera(idx, npimg, self.cam_poi_means[idx],self.cam_poi_std[idx]))
+            except:
+                dev.append(0)
+            npimg = cv2.cvtColor(npimg, cv2.COLOR_BAYER_BG2BGR)
+            if idx == 0:
+                frame = npimg
+            else:
+                frame = np.hstack((frame, npimg))
         return dev, frame
     # Tools to estimate, report large light deviations in pre-set POI regions. This is how "reaches" are detected in
     # a trial.
@@ -525,14 +523,12 @@ class Protocols(tk.Toplevel):
         poi_obs = np.zeros(num_pois)
         for j in range(num_pois):
             poi_obs[j] = npimg[poi_indices[j][1], poi_indices[j][0]]
-        dev = int(
-            np.sum(np.square(poi_obs - poi_means)) / (poi_std + np.finfo(float).eps)
-        )
+        dev = int(np.mean(poi_obs - poi_means / poi_std))
         return dev
 
         # Protocol types ---------------------------------------------------------------
 
-    def run_video_capture(self, frame):  # Normed PC time
+    def run_video_capture(self, frame_n):  # Normed PC time
         if not self.lights_on:
             self.lights_on = 1  # Make sure lights are on
         dev, frame = self.trigger_record_and_save_image_from_camera_get_deviation()  # Trigger and save camera frame
@@ -543,9 +539,9 @@ class Protocols(tk.Toplevel):
         # Code here to read/write information from micro-controllers
         expint.write_message(self.exp_controller, self.control_message)
         self.exp_response = expint.read_response(self.exp_controller)
-        #if frame in self.robot_runtime:
-        #    self.move_robot_callback()
-        # If/else logic loop to determine what next micro-controller output should be
+        if frame_n in self.robot_runtime:
+            self.move_robot_callback()
+            print('start_move')
 
     def run_continuous(self):
         """Operations performed for a single iteration of protocol type CONTINOUS.
@@ -561,12 +557,11 @@ class Protocols(tk.Toplevel):
 
         """
         now = str(int(round(time() * 1000)))  # Normed PC time
-        if self.exp_response[3] == '1':  # If a trial is taking place, capture image and save it, calculate dev
-            self.lights_on = 1  # Keep lights on
+        if self.exp_response[1] == 's':  # If a trial is taking place, capture image and save it, calculate dev
             self.poi_deviation, frame = self.trigger_record_and_save_image_from_camera_get_deviation()  # get deviation from captured frame
         else:  # If trial is re-setting, robot moving etc
-            self.lights_on = 0  # turn off lights
-            self.poi_deviation = 0  # reset deviation
+            self.poi_deviation, frame = self.trigger_record_and_save_image_from_camera_get_deviation()  # get deviation from captured frame
+            self.poi_deviation = [0,0,0]  # reset deviation
         # write, read exp controller output
         self.write_video_frame(frame)
         expint.write_message(self.exp_controller, self.control_message)
@@ -576,14 +571,17 @@ class Protocols(tk.Toplevel):
             now + " " + self.exp_response[0:-1:1] + " " + str(self.poi_deviation) + "\n"
         )
         self.exp_response = self.exp_response.split()
-
+        #print(self.poi_deviation, self.exp_response)
+        if self.exp_response[2] == '0':
+            robot_stopped = True
+        else:
+            robot_stopped = False
         # Trial commands to micro-controller.
         if (
                 self.exp_response[1] == 's' and  # No robot movement
-                self.exp_response[2] == '0' and  # Not trial reset
+                self.exp_response[2] == '0' and  # trial underway
                 # Are any poi deviations
-                all(self.poi_deviation) > self.config['CameraSettings']['poi_threshold']
-        ):
+                np.mean(self.poi_deviation) > self.config['CameraSettings']['poi_threshold'] ):
             self.reach_init = now
             self.reach_detected = True  # Can use this value to manipulate robot callback
             self.control_message = 'r'
@@ -592,15 +590,20 @@ class Protocols(tk.Toplevel):
             self.poi_deviation = 0
             self.control_message = 's'
             self.reach_detected = False
-            print((self.exp_response[0]))
+            self.lights_on = 1
+        elif self.exp_response[1] == 'r' and robot_stopped and self.reach_detected == False:
+            self.control_message = 's'
+            self.poi_deviation = 0
+            self.reach_detected = False
+            print('Trial Start')
         elif (
                 self.reach_detected and
                 (int(now) - int(self.reach_init)) >
-                self.config['ExperimentSettings']['reach_timeout'] and
-                self.exp_response[4] == '0'
-        ):
+                self.config['ExperimentSettings']['reach_timeout']):
+            self.lights_on = 0
             self.move_robot_callback()
             self.reach_detected = False
+            print('Trial End')
 
     def run_trials(self):
         """Operations performed for a single iteration of protocol type TRIALS.
@@ -638,20 +641,16 @@ class Protocols(tk.Toplevel):
         ):
             self.reach_init = now
             self.reach_detected = True
-            self.reach_detected = True
             self.control_message = 'r'
-        elif self.exp_response[1] == 'e':
-            #self.trial_ended()
+        elif self.exp_response[1] == 'e' or self.exp_response[2] == 0:
             self.poi_deviation = 0
             self.control_message = 's'
             self.reach_detected = False
-            print((self.exp_response[0]))
+
         elif (
                 self.reach_detected and
                 (int(now) - int(self.reach_init)) >
-                self.config['ExperimentSettings']['reach_timeout'] and
-                self.exp_response[4] == '0'
-        ):
+                self.config['ExperimentSettings']['reach_timeout'] ):
             self.move_robot_callback()
             self.reach_detected = False
 
