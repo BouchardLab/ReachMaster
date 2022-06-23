@@ -7,7 +7,7 @@ library(mgcViz)
 Sys.setenv(LIBGL_ALWAYS_SOFTWARE=1)
 
 #load data
-calibrationDF <- read.csv(file="/home/cns/Desktop/Trodes/linux/calibrationDF.csv", header=TRUE, sep=",")
+calibrationDF <- read.csv(file="/Users/bassp/PyCharmProjects/ReachMaster/software/robot_calibration/calibrationDF_1.csv", header=TRUE, sep=",")
 
 #preprocess data (convert to bits, microseconds, etc.)
 calibrationDF$x_displacement <- calibrationDF$x_displacement/5*1023
@@ -237,12 +237,12 @@ fullPred <- data.frame("displacement" = rep(dis,each=npos),
                        "zPullDuration" = zPullDur)
 fullPred <- round(fullPred,digits=1)
 
-write.table(fullPred,"/home/cns/Desktop/calibrationFile.txt",sep=",")
-write.table(fullPred$position,"/home/cns/Desktop/Trodes/linux/position.txt",sep=",",row.names=FALSE,col.names=FALSE,eol = ",")
-write.table(fullPred$displacement,"/home/cns/Desktop/Trodes/linux/displacement.txt",sep=",",row.names=FALSE,col.names=FALSE,eol = ",")
-write.table(fullPred$xPushDuration,"/home/cns/Desktop/Trodes/linux/xPushDuration.txt",sep=",",row.names=FALSE,col.names=FALSE,eol = ",")
-write.table(fullPred$xPullDuration,"/home/cns/Desktop/Trodes/linux/xPullDuration.txt",sep=",",row.names=FALSE,col.names=FALSE,eol = ",")
-write.table(fullPred$yPushDuration,"/home/cns/Desktop/Trodes/linux/yPushDuration.txt",sep=",",row.names=FALSE,col.names=FALSE,eol = ",")
-write.table(fullPred$yPullDuration,"/home/cns/Desktop/Trodes/linux/yPullDuration.txt",sep=",",row.names=FALSE,col.names=FALSE,eol = ",")
-write.table(fullPred$zPushDuration,"/home/cns/Desktop/Trodes/linux/zPushDuration.txt",sep=",",row.names=FALSE,col.names=FALSE,eol = ",")
-write.table(fullPred$zPullDuration,"/home/cns/Desktop/Trodes/linux/zPullDuration.txt",sep=",",row.names=FALSE,col.names=FALSE,eol = ",")
+write.table(fullPred,"calibrationFile_1.txt",sep=",")
+#write.table(fullPred$position,"/home/cns/Desktop/Trodes/linux/position.txt",sep=",",row.names=FALSE,col.names=FALSE,eol = ",")
+#write.table(fullPred$displacement,"/home/cns/Desktop/Trodes/linux/displacement.txt",sep=",",row.names=FALSE,col.names=FALSE,eol = ",")
+#write.table(fullPred$xPushDuration,"/home/cns/Desktop/Trodes/linux/xPushDuration.txt",sep=",",row.names=FALSE,col.names=FALSE,eol = ",")
+#write.table(fullPred$xPullDuration,"/home/cns/Desktop/Trodes/linux/xPullDuration.txt",sep=",",row.names=FALSE,col.names=FALSE,eol = ",")
+#write.table(fullPred$yPushDuration,"/home/cns/Desktop/Trodes/linux/yPushDuration.txt",sep=",",row.names=FALSE,col.names=FALSE,eol = ",")
+#write.table(fullPred$yPullDuration,"/home/cns/Desktop/Trodes/linux/yPullDuration.txt",sep=",",row.names=FALSE,col.names=FALSE,eol = ",")
+#write.table(fullPred$zPushDuration,"/home/cns/Desktop/Trodes/linux/zPushDuration.txt",sep=",",row.names=FALSE,col.names=FALSE,eol = ",")
+#write.table(fullPred$zPullDuration,"/home/cns/Desktop/Trodes/linux/zPullDuration.txt",sep=",",row.names=FALSE,col.names=FALSE,eol = ",")
