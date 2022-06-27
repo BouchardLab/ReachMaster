@@ -14,24 +14,31 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.decomposition import PCA
 import pdb
 
+
 class Trial_Classify:
     def __init__(self, input_dataframe, n_components=100):
         """ Method to perform classification on single-trial data using n principal components."""
-        self.null_pca_path = 'models/null_PCA.sav'
-        self.num_pca_path = 'models/num_reach_PCA.sav'
-        self.hand_pca_path = 'models/hand_PCA.sav'
-        self.null_model_path = 'models/null_model.joblib'
-        self.reach_model_path = 'models/numReach_model.joblib'
-        self.hand_model_path = 'models/whichHand_model.joblib'
-        self.model_null = joblib.load(self.null_model_path)
+        #path_to_rm = 'Users/bassp/PycharmProjects/ReachMaster/software/ReachSplitter/models/'
+        path_to_rm = ''
+        self.null_pca_path = path_to_rm + 'null_PCA.sav'
+        self.num_pca_path = path_to_rm + 'num_reach_PCA.sav'
+        self.hand_pca_path = path_to_rm + 'hand_PCA.sav'
+        self.null_model_path = 'null_model.joblib'
+        self.null_model_path = path_to_rm + 'null_model.joblib'
+        self.reach_model_path = path_to_rm + 'numReach_model.joblib'
+        self.hand_model_path = path_to_rm + 'whichHand_model.joblib'
+        try:
+            self.model_null = joblib.load(self.null_model_path)
+        except:
+            pdb.set_trace()
         self.model_num = joblib.load(self.reach_model_path)
         self.model_hand = joblib.load(self.hand_model_path)
         self.PCA_null = joblib.load(self.null_pca_path)
         self.PCA_num = joblib.load(self.num_pca_path)
         self.PCA_hand = joblib.load(self.hand_pca_path)
-        self.hand_PCS, self.null_PCS, self.num_PCS = 0,0,0
+        self.hand_PCS, self.null_PCS, self.num_PCS = 0, 0, 0
         self.null_result, self.num_result, self.hand_result, self.outlier_flag_null, self.outlier_flag_num, \
-            self.outlier_flag_hand, self.preprocessed_data, self.preprocessed_data_PCS = \
+        self.outlier_flag_hand, self.preprocessed_data, self.preprocessed_data_PCS = \
             [], [], [], [], [], [], [], []
         self.num_reaches, self.three_or_more_reaches = None, False
         self.PCA = PCA(whiten=True, n_components=n_components)  # Use 100 components of PCA for classification
@@ -45,8 +52,7 @@ class Trial_Classify:
             if self.num_result == 1:
                 self.hand_class_result()
             else:
-                self.hand_result = 2 # no classification performed
-
+                self.hand_result = 2  # no classification performed
 
     def null_class_result(self):
         """ Function to perform classification using pre-trained networks for trial type."""
@@ -57,11 +63,11 @@ class Trial_Classify:
         self.num_result = self.model_num.predict(self.num_PCS)
         if self.num_result == 0:
             self.num_reaches = 1
-        else: # Predict 2 or more
-            #self.double_or_more = self.model_double_num.predict(self.preprocessed_data_PCS) # Need to set up network for 2 vs more
-            #if self.double_or_more == 0:
+        else:  # Predict 2 or more
+            # self.double_or_more = self.model_double_num.predict(self.preprocessed_data_PCS) # Need to set up network for 2 vs more
+            # if self.double_or_more == 0:
             self.num_reaches = 2
-            #else:
+            # else:
             #    self.three_or_more_reaches = True
 
     def hand_class_result(self):
@@ -92,10 +98,10 @@ class Trial_Classify:
                     data[f'{col_name}_p50'].append(p50)
                     data[f'{col_name}_p75'].append(p75)
                     data[f'{col_name}_p95'].append(p95)
-                except: # Bad data type
+                except:  # Bad data type
                     print(col_name + 'bad')
             else:
-                print("Not a Time SERIES")
+                pass
         pdb.set_trace()
         discrete_df = pd.DataFrame(data)
         discrete_df2 = StandardScaler().fit_transform(discrete_df)
