@@ -10,6 +10,7 @@ delivery, toggling lights, etc.).
 # add camera shutdown, interface shutdown
 #Auditory stimuli checked, loaded into config.
 from . import config
+import pandas as pd
 from .interfaces import camera_interface as camint
 from .interfaces import robot_interface as robint
 from .interfaces import experiment_interface as expint
@@ -226,6 +227,7 @@ class Protocols(tk.Toplevel):
     def __init__(self, parent):
         self.cams = None
         self.ready = False
+        self.t_on = 0
         # create window
         self.cam_poi_means = []
         self.cam_poi_std = []
@@ -249,6 +251,13 @@ class Protocols(tk.Toplevel):
         self.rob_controller = None
         self.exp_response = None
         self.vidgear_writer_cal = None
+        self.time_start = 0
+        self.num_reaches = 0
+        self.num_trials = 0
+        self.robot_stopped, self.robot_stop_times = False, []
+        self.experiment_timeout = 5000 # ms
+        self.timeout = False
+        self.timeout_init = 0
         # New config for sliding camera's into protocols
         self.ffmpeg_object = {
             '-f': 'rawvideo',
@@ -272,14 +281,15 @@ class Protocols(tk.Toplevel):
         self.poi_deviation_pipes = []
         self.trial_ended_pipes = []
         self.cams_started = False
-        #self.audio_file = config['ExperimentSettings']['audio_file']
+        self.start_and_load_robot_interface()
+        self.start_and_load_experimental_and_stimuli_variables()
+        self.audio_file = self.config['ExperimentSettings']['audio_file']
+        self.run_auditory_stimuli()
         # check config for errors
         if len(self.config['CameraSettings']['saved_pois']) == 0:
             tkinter.messagebox.showinfo("Warning", "No saved POIs")
             self.on_quit()
             return
-        self.start_and_load_robot_interface()
-        self.start_and_load_experimental_and_stimuli_variables()
         self.cams_connected = True
         self.start_and_initialize_cameras()
         sleep(10)  # give the cameras time to start, capture baseline images.
@@ -291,16 +301,16 @@ class Protocols(tk.Toplevel):
         # obtain baseline for camera's to detect movement
         print('Baseline')
         self.simply_acquire_baseline(400) # hard-coded due to wierd over-flow error w/ ximea cameras.
+        self.move_robot_callback()
         self.ready = True
         tf = 0 # triggered frame
-        #self.robot_runtime = [300, 1200,  2100]
+        # debug
+        #self.robot_runtime = [500, 1000,  1500, 2000, 2500, 3000, 3500, 4000, 4500 ]
         #while self.ready:
         #    self.run_video_capture(tf)
         #    tf += 1
-        #    if tf > 3000:
+        #    if tf > 5500:
         #        self.ready = False
-        #self.run_auditory_stimuli()  # runs sound at beginning of experiment!
-        # debug
         self.run_continuous()
 
     def start_and_load_robot_interface(self):
@@ -381,6 +391,10 @@ class Protocols(tk.Toplevel):
 
         """
         self.ready = False
+        reaching_information_dataframe = pd.DataFrame([self.num_trials, self.num_reaches])
+        reaching_information_dataframe.to_csv('reach_information.csv')
+        rd_df = pd.DataFrame(self.robot_stop_times)
+        rd_df.to_csv('robot_stop_times.csv')
         if self.exp_connected:
             expint.stop_interface(self.exp_controller)
         if self.rob_connected:
@@ -414,7 +428,7 @@ class Protocols(tk.Toplevel):
 
     def run_auditory_stimuli(self):
         # command to initiate auditory stimuli (single use in experiment)
-        playsound(self.audio_file)
+        playsound.playsound(self.audio_file)
         return
 
     # Camera processes and functions -----------------------------------------
@@ -532,9 +546,8 @@ class Protocols(tk.Toplevel):
         if not self.lights_on:
             self.lights_on = 1  # Make sure lights are on
         dev, frame = self.trigger_record_and_save_image_from_camera_get_deviation()  # Trigger and save camera frame
-        for d in dev:
-            if d > 15:
-                print('Reach detected.')
+        if np.mean(dev) > 15:
+            print('Reach detected.')
         self.write_video_frame(frame)
         # Code here to read/write information from micro-controllers
         expint.write_message(self.exp_controller, self.control_message)
@@ -557,8 +570,9 @@ class Protocols(tk.Toplevel):
 
         """
         now = str(int(round(time() * 1000)))  # Normed PC time
-        if self.exp_response[1] == 's':  # If a trial is taking place, capture image and save it, calculate dev
+        if self.exp_response[1] == 's' and self.robot_stopped and self.timeout is False:  # If a trial is taking place, capture image and save it, calculate dev
             self.poi_deviation, frame = self.trigger_record_and_save_image_from_camera_get_deviation()  # get deviation from captured frame
+            #print(self.poi_deviation)
         else:  # If trial is re-setting, robot moving etc
             self.poi_deviation, frame = self.trigger_record_and_save_image_from_camera_get_deviation()  # get deviation from captured frame
             self.poi_deviation = [0,0,0]  # reset deviation
@@ -568,41 +582,53 @@ class Protocols(tk.Toplevel):
         self.exp_response = expint.read_response(self.exp_controller)
         # Write experiment controller data to a text file
         self.outputfile.write(
-            now + " " + self.exp_response[0:-1:1] + " " + str(self.poi_deviation) + "\n"
-        )
+            now + " " + self.exp_response[0:-1:1] + " " + str(self.poi_deviation) + "\n")
         self.exp_response = self.exp_response.split()
-        #print(self.poi_deviation, self.exp_response)
+        robot_stop_time = 0
         if self.exp_response[2] == '0':
-            robot_stopped = True
+            if self.t_on > 5:
+                self.robot_stopped = True
+                robot_stop_time = int(now) - self.time_start
+                print('Time for robot to stop is ' + str(robot_stop_time) + 'seconds')
+                self.robot_stop_times.append(robot_stop_time)
+            self.t_on = 0
         else:
-            robot_stopped = False
-        # Trial commands to micro-controller.
+            self.robot_stopped = False
+            if self.t_on < 1:
+                self.time_start = int(now)
+            self.t_on += 1
+        if self.timeout:
+            if int(now) - self.timeout_init  > self.experiment_timeout:
+                if self.robot_stopped:
+                    self.timeout = False
         if (
                 self.exp_response[1] == 's' and  # No robot movement
                 self.exp_response[2] == '0' and  # trial underway
-                # Are any poi deviations
+                self.reach_detected is False and self.timeout is False and
                 np.mean(self.poi_deviation) > self.config['CameraSettings']['poi_threshold'] ):
             self.reach_init = now
             self.reach_detected = True  # Can use this value to manipulate robot callback
             self.control_message = 'r'
             print('Reach detected')
-        elif self.exp_response[1] == 'e':  # Trial has fully reset, reset reach value.
-            self.poi_deviation = 0
+            self.num_trials += 1
+        elif self.exp_response[1] == 'r' and self.robot_stopped and self.reach_detected is False\
+                and self.timeout is False:
             self.control_message = 's'
+            self.poi_deviation = 0
             self.reach_detected = False
             self.lights_on = 1
-        elif self.exp_response[1] == 'r' and robot_stopped and self.reach_detected == False:
-            self.control_message = 's'
-            self.poi_deviation = 0
-            self.reach_detected = False
             print('Trial Start')
         elif (
-                self.reach_detected and
+                self.reach_detected and self.timeout is False and self.robot_stopped and
                 (int(now) - int(self.reach_init)) >
                 self.config['ExperimentSettings']['reach_timeout']):
-            self.lights_on = 0
             self.move_robot_callback()
             self.reach_detected = False
+            self.timeout = True
+            self.timeout_init = int(now)
+            self.toggle_lights_callback()
+            if self.exp_response[4] == '1': # Mark trial as reach if handle within reward zone.
+                self.num_reaches += 1
             print('Trial End')
 
     def run_trials(self):

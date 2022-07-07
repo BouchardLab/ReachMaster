@@ -62,7 +62,7 @@ def default_config():
             'lights_off_dur': 3000,
             'lights_on_dur': 5000,
             'reach_delay': 100,
-            'audio_file': 'default_trial_audio.mp4'
+            'audio_file': 'data/tones/default_pulse_1k.wav.mp4'
         },
         'RobotSettings': {
             'calibration_file': None,

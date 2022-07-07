@@ -8,6 +8,7 @@ etc.).
 from .. import config
 import tkinter as tk 
 import tkinter.messagebox
+import pdb
 
 class ExperimentSettings(tk.Toplevel):
     """The primary class for the experiment settings window.  
@@ -82,8 +83,8 @@ class ExperimentSettings(tk.Toplevel):
         self.flush_dur.set(str(self.config['ExperimentSettings']['flush_dur']))
         self.reach_delay = tk.StringVar()
         self.reach_delay.set(str(self.config['ExperimentSettings']['reach_delay']))
-        #self.audio_file = tk.StringVar()
-        #self.audio_file.set(str(self.config['ExperimentSettings']['audio_file']))
+        self.audio_file = tk.StringVar()
+        self.audio_file.set(str(self.config['ExperimentSettings']['audio_file']))
         self._configure_window()
 
     def on_quit(self):
@@ -101,6 +102,10 @@ class ExperimentSettings(tk.Toplevel):
         self.config['ExperimentSettings']['solenoid_bounce_dur'] = int(self.solenoid_bounce_dur.get())
         self.config['ExperimentSettings']['flush_dur'] = int(self.flush_dur.get())
         self.config['ExperimentSettings']['reach_delay'] = int(self.reach_delay.get())
+        try:
+            self.config['ExperimentSettings']['audio_file'] = str(self.audio_file.get())
+        except:
+            self.destroy()
         config.save_tmp(self.config)
         self.destroy()
 
@@ -181,7 +186,7 @@ class ExperimentSettings(tk.Toplevel):
             anchor = "e"
             ).grid(row = 8, column = 0)   
         tk.Entry(self, textvariable = self.flush_dur, width = 17).grid(row=8, column = 1)
-        tk.Entry(self, textvariable=self.audio_file, width=17).grid(row=9, column=1)
+        #tk.Entry(self, textvariable=self.audio_file, width=17).grid(row=9, column=1)
         tk.Label(
             self,
             text="Auditory Stimuli",
@@ -189,5 +194,16 @@ class ExperimentSettings(tk.Toplevel):
             bg="white",
             width=23,
             anchor="e"
-        ).grid(row=8, column=0)
-        tk.Entry(self, textvariable=self.audio_file, width=17).grid(row=9, column=1)
+        ).grid(row=9, column=0)
+        self.audio_menu = tk.OptionMenu(
+            self,
+            self.audio_file,
+            "data/tones/default_pulse_1k.wav",
+            "data/tones/onesecond_pulse_2k.wav",
+            "data/tones/onesecond_pulse_6k.wav",
+            "data/tones/onesecond_pulse_10k.wav",
+            "data/tones/onesecond_pulse_14k.wav",
+            "data/tones/onesecond_pulse_20k.wav")
+        self.audio_menu.configure(width=12, anchor="w")
+        self.audio_menu.grid(row=9, column=1)
+
