@@ -28,15 +28,6 @@ The ReachMaster robot is a pneumatically-actuated, passively balanced, parallel 
 
 The robot workspace (shown in red) can be empirically estimated by acquiring potentiometer data from the robot as it explores its full range of motion, passing the trajectory through an analytically-derived forward kinematics transformation (:ref:`Kinematics`), and then fitting a surface to the extrema of the resulting scatter plot (see link_to_code). Similary, command positions can be derived by sampling points from a relevant subspace of the robot workspace (e.g., the rodent workspace shown in blue), and then passing those points through an analytically-derived inverse kinematics transformation that returns the corresponding potentiometer values.  
 
-Kinematics
-^^^^^^^^^^
-<figure>
-
-Make new figure with all relevant kinematic variables labeled. Provide mathematical derivation of forward and inverse kinematics. Link to relevant sections of user interface and data preprocessing codes.
-
-<link_to_forward_kinematics_code>
-
-Link to inverse kinematics code:
 
 :func:`reachmaster.interfaces.robot_interface.load_config_commands`
 
@@ -54,7 +45,7 @@ Actuation
 	:align: center
 	:width: 400
 
-Add discussion of our current SMC cylinders, and Airpel as an alternative.
+Our lab uses SMC cylindrical actuation to power robot movement.
 
 Position Sensing
 ^^^^^^^^^^^^^^^^
@@ -62,25 +53,18 @@ Position Sensing
 	:align: center
 	:width: 400
 
-Add discussion of linear potentiometers and contactless alternatives.
-
-Gimbal 
-^^^^^^
-picture
-
-Describe each of the 3D printed gimbal pieces.
+Our lab uses linear potentiometer sensing to ensure positions are highly accurate. Additional options include
+contactless sensing, which may provide more robust durability.
 
 Handles
 ^^^^^^^
-Discuss various handles types, threading and weight requirements.
+ReachMaster is able to accommodate unique handle types.
 
-Mounting
-^^^^^^^^
-Discuss mounting issues with the base plate and other Thor Labs components.
 
-Pressure Sensing
-^^^^^^^^^^^^^^^^
-Discuss pressure sensors. Link to Todorov PID paper
+Auditory Cues
+^^^^^^^^^^^^^^
+ReachMaster is able to provide auditory cues, delivered at the beginning of each trial. Auditory cues
+may be generated, then utilized in an experiment using the GUI.
 
 Cameras
 -------
@@ -88,15 +72,16 @@ Cameras
 	:align: center
 	:width: 400
 
-Discuss current Ximea XiQ USB3.0 cameras highspeed color cameras, and IR and newer PCIe altenernatives. Lenses and resolution tradeoffs, trigger and synchronization options. Point to SpikeGadgets slack channel for discussion of additional options? Trodes camera module? USB card requirements/limitations.
-
+Our lab currently uses XIMEA-Q camera
 Lighting
 --------
 .. image:: /art/neopixels.png
 	:align: center
 	:width: 400
 
-Discuss neopixels and what you can do with them. Discuss electrical noise issues, IR lighting alternatives, more diffuse lighting alternatives. Point to Whishaw rat pellet reaching chapter for product.
+Lighting is provided by micro-controller operated NeoPixels LED light arrays (12x12). While setting intensity
+is not currently an option within the ReachMaster software, these parameters may be altered in experimental_microcontroller.cpp
+
 
 Reward Delivery
 ---------------
@@ -104,36 +89,41 @@ Reward Delivery
 	:align: center
 	:width: 250
 
-Discuss the Lee solenoids and proper maintainance, other alternatives. Calibration. Link to code and website tutorial.
+Water is delivered using a calibrated, micro-controller operated Lee solenoid.
+
 
 Lick Detection
 --------------
 <picture>
 
-Discuss the IR emitters/receivers, the driver circuit, and other variants. Link to website tutorial(s).
-
+We use a modification of Feldman Lab's lick detector. Documentation may be found at http://brianisett.com/2016/03/26/diy-lickometer/
 Controllers
 -----------
-<picture>
 
-Discuss Arduino, Teensy, mbed, general requirements, and alternatives.
+Our lab uses Teensy arduino microcontrollers to operate robot and other sensors in the ReachMaster platform.
 
 Data Acquisition
 ----------------
-<picture>
 
-Discuss SpikeGadgets and link to thier site. Discuss National Instruments options?
+We gather sensor data from pneumatics and other electronics using the SpikeGadgets data acquisition hardware system.
+More information may be found at https://spikegadgets.com/ .
 
-Computers
+Compute Requirements
 ---------
-<picture>
 
-Discuss CPU, motherboard, GPU and USB/PCIe requirements. 
+ReachMaster requires minimum installation on two local compute stations. One,
+controlling trodes and overhead camera data,
+requires 4+core CPU > 1.8 gb/s, 16GB memory minimum.
+The second requires 4+core > 2 gb/s, 32GB memory minimum. The second compute station will run
+the micro-processor and camera system as well as store data locally.
+It is advised to move raw data to cloud ASAP ( our lab uses a script after each experiment).
 
-Build Instructions
-------------------
-coming soon
 
+ECOG Headstage Casing
+^^^^^^^^^^^^^^^^^^^^^^^
+
+CAD design files for our ECOG grid casing, used for in-vivo neurophysiological recordings, may be found in the hardware design.
+3-D print compatible files are included. Bouchard Lab currently uses a Form2 3-D printer with grey resin to print casing.
 
 
 
