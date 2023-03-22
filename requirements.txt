@@ -1,7 +1,4 @@
-
-
 docutils<0.18
-scipy~=1.5.4
 sphinx
 sphinx-gallery
 sphinx_rtd_theme~=0.4.3
@@ -13,7 +10,7 @@ h5py~=2.10.0
 pyserial~=3.4
 pillow>=8.3.2
 setuptools~=50.3.1
-scipy~=1.4.1
+scipy
 matplotlib~=3.3.3
 pynwb~=1.5.1
 opencv-python~=4.4.0.46
@@ -23,6 +20,5 @@ future~=0.18.2
 python-dateutil~=2.8.0
 numpy~=1.19
 tqdm~=4.50.2
-scikit-learn~=0.23.2
 joblib~=0.17.0
 pandas~=1.1.4
