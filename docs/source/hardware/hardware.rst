@@ -37,7 +37,9 @@ Air Delivery
 	:align: center
 	:width: 400
 
-Add discussion of compressor(s), manifold(s), valve(s), vents, circuit(s), tubing, etc. 
+Our lab uses a custom-machined manifold to direct compressed air for pnuematics. We then route air through silenced S070
+3-port solenoid valves. Calibration routines ensure that the measured pressure is matched to positional sensors, discussed below.
+
 
 Actuation
 ^^^^^^^^^
@@ -68,16 +70,10 @@ may be generated, then utilized in an experiment using the GUI.
 
 Cameras
 -------
-.. image:: /art/cameras.png
-	:align: center
-	:width: 400
 
 Our lab currently uses XIMEA-Q camera
 Lighting
 --------
-.. image:: /art/neopixels.png
-	:align: center
-	:width: 400
 
 Lighting is provided by micro-controller operated NeoPixels LED light arrays (12x12). While setting intensity
 is not currently an option within the ReachMaster software, these parameters may be altered in experimental_microcontroller.cpp
@@ -94,7 +90,6 @@ Water is delivered using a calibrated, micro-controller operated Lee solenoid.
 
 Lick Detection
 --------------
-<picture>
 
 We use a modification of Feldman Lab's lick detector. Documentation may be found at http://brianisett.com/2016/03/26/diy-lickometer/
 Controllers
